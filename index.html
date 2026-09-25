@@ -1161,6 +1161,57 @@ footer .wrap{ position:relative; z-index:1; }
 .pf-tree text.act{ fill:var(--cy); }
 
 /* ============================================================
+   49 — DETAIL DIALOG
+   ============================================================ */
+#dlg .ov-card{ top:6vh; width:min(1020px, calc(100vw - 32px)); max-height:88vh; display:flex; flex-direction:column; }
+.dlg-bar{ display:flex; align-items:center; gap:14px; padding:16px 22px; border-bottom:1px solid var(--line); flex:none; }
+.dlg-bar .sp{ flex:1; }
+.dlg-x{ width:34px; height:34px; display:grid; place-items:center; cursor:pointer; color:var(--fg-dim);
+        border:1px solid var(--line); transition:color .3s, border-color .3s, transform .4s var(--spring); }
+.dlg-x:hover{ color:var(--fg); border-color:var(--fg); transform:rotate(90deg); }
+.dlg-body{ overflow-y:auto; padding:clamp(20px,3vw,34px); }
+.dlg-cols{ display:grid; grid-template-columns:1.05fr .95fr; gap:clamp(20px,3vw,40px); align-items:start; }
+@media (max-width:820px){ .dlg-cols{ grid-template-columns:1fr; } }
+.dlg-body h3{ font-size:clamp(1.5rem,3vw,2.4rem); font-weight:800; letter-spacing:-.03em; line-height:1.04; }
+.dlg-body p{ color:var(--fg-dim); font-size:.92rem; line-height:1.7; margin-top:14px; }
+.dlg-body p + p{ margin-top:12px; }
+.dlg-kv{ margin-top:20px; }
+.dlg-kv div{ display:flex; justify-content:space-between; gap:12px; padding-block:8px; border-bottom:1px solid var(--line); }
+.dlg-kv div:last-child{ border-bottom:none; }
+.xv{ width:100%; aspect-ratio:6/5; border:1px solid var(--line); background:var(--bg); position:relative; }
+.xv svg{ position:absolute; inset:0; width:100%; height:100%; }
+.xv .prt{ transition:transform 1s var(--spring); }
+.xv .lbl{ fill:var(--fg-faint); font-family:var(--mono); font-size:5px; letter-spacing:.18em; text-transform:uppercase;
+          opacity:0; transition:opacity .5s .5s; }
+.xv.boom .lbl{ opacity:1; }
+.xv .ln2{ stroke:var(--cy); stroke-width:.6; opacity:0; transition:opacity .5s .5s; }
+.xv.boom .ln2{ opacity:.6; }
+.xv-ctl{ position:absolute; right:10px; bottom:10px; }
+.quote{
+  border-left:2px solid var(--cy); padding:4px 0 4px 18px; margin-top:22px;
+  font-size:1.02rem; line-height:1.6; color:var(--fg);
+}
+.quote cite{ display:block; margin-top:10px; font-family:var(--mono); font-size:.62rem; letter-spacing:.2em;
+             text-transform:uppercase; color:var(--fg-faint); font-style:normal; }
+.mini-map{ width:100%; aspect-ratio:2/1; border:1px solid var(--line); background:var(--bg); position:relative; margin-top:18px; }
+.mini-map svg{ position:absolute; inset:0; width:100%; height:100%; }
+.mini-map .mm-n{ fill:var(--bg); stroke:var(--fg-faint); stroke-width:1; }
+.mini-map .mm-n.was{ fill:var(--cy); stroke:var(--cy); }
+.mini-map .mm-p{ stroke:var(--cy); stroke-width:1.2; fill:none; stroke-dasharray:var(--l2); stroke-dashoffset:var(--l2);
+                 animation:drawP 1.6s var(--ease) .3s forwards; }
+@keyframes drawP{ to{ stroke-dashoffset:0 } }
+.mini-map text{ fill:var(--fg-faint); font-family:var(--mono); font-size:6px; letter-spacing:.16em; }
+.tl-more{ font-family:var(--mono); font-size:.6rem; letter-spacing:.18em; text-transform:uppercase; color:var(--cy);
+          margin-top:14px; display:inline-flex; align-items:center; gap:8px; cursor:pointer; background:none; }
+.tl-more .a2{ transition:transform .4s var(--spring); }
+.ev .box:hover .tl-more .a2{ transform:translateX(5px); }
+.tcard{ cursor:pointer; }
+.tcard .more2{ font-family:var(--mono); font-size:.6rem; letter-spacing:.18em; text-transform:uppercase; color:var(--cy);
+               display:flex; align-items:center; gap:8px; }
+.tcard .more2 i{ transition:transform .4s var(--spring); font-style:normal; }
+.tcard:hover .more2 i{ transform:translateX(5px); }
+
+/* ============================================================
    19 — REDUCED MOTION
    ============================================================ */
 @media (prefers-reduced-motion:reduce){
@@ -1216,6 +1267,18 @@ footer .wrap{ position:relative; z-index:1; }
 </div>
 
 <nav id="rail" aria-label="Sektionen"></nav>
+
+<!-- Detail dialog -->
+<div class="ov" id="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgT">
+  <div class="ov-card">
+    <div class="dlg-bar">
+      <span class="label" id="dlgK">—</span>
+      <span class="sp"></span>
+      <button class="dlg-x" id="dlgX" aria-label="Schließen">✕</button>
+    </div>
+    <div class="dlg-body" id="dlgB"></div>
+  </div>
+</div>
 
 <!-- Command palette -->
 <div class="ov" id="pal" role="dialog" aria-modal="true" aria-label="Befehlspalette">
@@ -5298,6 +5361,213 @@ registerCmd({ ic:"◇", title:"Karriere-Pfadfinder", sub:"Sektion", run:()=>jump
 TERM_CMDS.path = { d:"Pfadfinder zurücksetzen", run(){
   Path.reset(); tOut("Pfadfinder zurückgesetzt.","ok"); ovClose(); jump("path");
 }};
+
+/* ============================================================
+   50 — DETAIL DIALOG (tech, chronicle, crew)
+   ============================================================ */
+const Dlg = (function(){
+  const el=$("#dlg"), kind=$("#dlgK"), body=$("#dlgB");
+  $("#dlgX").addEventListener("click", ()=> ovClose());
+  function open(k, html){
+    kind.textContent=k;
+    body.innerHTML=html;
+    body.scrollTop=0;
+    ovOpen(el, $("#dlgX"));
+    /* let the exploded view settle, then fly it apart */
+    const xv=$(".xv", body);
+    if(xv) setTimeout(()=> xv.classList.add("boom"), reduced?0:260);
+  }
+  return { open };
+})();
+
+/* ---------- exploded schematic, generated per technology ---------- */
+function explodedSVG(parts){
+  /* parts: [label, shape] stacked along the axis and flown apart on open */
+  const n=parts.length;
+  const rows = parts.map((pt,i)=>{
+    /* stacked on the axis, then spread symmetrically so nothing leaves the frame */
+    const y = 100;
+    const dy = n>1 ? (i-(n-1)/2) * (140/(n-1)) : 0;
+    return '<g class="prt" style="transform:translateY('+dy.toFixed(1)+'px)">'+
+             '<g transform="translate(0,'+y.toFixed(1)+')">'+pt[1]+'</g>'+
+           '</g>'+
+           '<line class="ln2" x1="118" y1="'+(y+dy).toFixed(1)+'" x2="146" y2="'+(y+dy).toFixed(1)+'"/>'+
+           '<text class="lbl" x="150" y="'+(y+dy+2).toFixed(1)+'">'+pt[0]+'</text>';
+  }).join("");
+  return '<div class="xv"><svg viewBox="0 0 240 200" aria-hidden="true">'+
+    '<g stroke="var(--line)" stroke-width=".4">'+
+      Array.from({length:9},(_,i)=>'<line x1="0" y1="'+(i*25)+'" x2="240" y2="'+(i*25)+'"/>').join("")+
+      Array.from({length:10},(_,i)=>'<line x1="'+(i*25)+'" y1="0" x2="'+(i*25)+'" y2="200"/>').join("")+
+    '</g>'+rows+'</svg></div>';
+}
+const SH = {
+  ring:  '<ellipse cx="66" cy="0" rx="46" ry="11" fill="none" stroke="var(--cy)" stroke-width="1.2"/>'+
+         '<ellipse cx="66" cy="0" rx="26" ry="6" fill="none" stroke="var(--fg-faint)" stroke-width=".8"/>',
+  plate: '<rect x="22" y="-9" width="88" height="18" rx="2" fill="var(--bg-3)" stroke="var(--cy)" stroke-width="1.1"/>'+
+         '<line x1="34" y1="0" x2="98" y2="0" stroke="var(--fg-faint)" stroke-width=".7"/>',
+  grid:  '<rect x="26" y="-10" width="80" height="20" rx="1" fill="none" stroke="var(--cy)" stroke-width="1.1"/>'+
+         Array.from({length:7},(_,i)=>'<line x1="'+(32+i*11)+'" y1="-10" x2="'+(32+i*11)+'" y2="10" stroke="var(--fg-faint)" stroke-width=".6"/>').join(""),
+  cone:  '<path d="M26 -12 L110 -4 L110 4 L26 12 Z" fill="var(--bg-3)" stroke="var(--cy)" stroke-width="1.1"/>',
+  coil:  Array.from({length:8},(_,i)=>'<circle cx="'+(34+i*10)+'" cy="0" r="7.5" fill="none" stroke="var(--cy)" stroke-width=".9"/>').join(""),
+  core:  '<circle cx="66" cy="0" r="13" fill="var(--cy-soft)" stroke="var(--cy)" stroke-width="1.2"/>'+
+         '<circle cx="66" cy="0" r="5" fill="none" stroke="var(--fg-faint)" stroke-width=".8"/>'
+};
+
+const TECH_DETAIL = {
+  "VESPER": { k:"Antrieb", parts:[["Ionisator",SH.coil],["Gitter",SH.grid],["Neutralisator",SH.ring],["Düsenkorb",SH.cone]],
+    p:["Xenon wird in der Kammer ionisiert, durch ein Gitterpaar auf etwa vierzig Kilometer pro Sekunde beschleunigt und hinter dem Schiff wieder neutralisiert. Der Schub ist lächerlich — sechs Komma neun Kilonewton für vierzehntausend Tonnen.",
+       "Der Trick ist nicht die Kraft, sondern die Dauer. Vierhundert Tage ununterbrochen, ohne eine einzige Abschaltung. Eine Chemierakete hat ihre Arbeit nach acht Minuten getan und braucht danach drei Umlaufmanöver für dieselbe Strecke."],
+    kv:[["Spezifischer Impuls","9.800 s"],["Triebwerke","18 × 383 N"],["Schub gesamt","6,9 kN"],["Treibstoff","Xenon, 165 K"],["Dauerbetrieb","400+ Tage"],["Erstflug","2158"]] },
+  "KRYO-9": { k:"Bohrkopf", parts:[["Schneidkrone",SH.ring],["Verbundmantel",SH.plate],["Kühlkanäle",SH.coil],["Gestängeaufnahme",SH.cone]],
+    p:["Diamantverbund, auf zweiundzwanzig Kelvin heruntergekühlt. Bei der Temperatur bricht Regolith spröde, statt sich abzuschleifen — die Flanke bleibt scharf, weil kein Material darüber fließt.",
+       "Ein Kopf hält vierzehnhundert Betriebsstunden. Danach wird er eingeschmolzen und neu gesintert, denn Diamant aus dem Gürtel zurück in den inneren Ring zu fliegen, kostet mehr als er wert ist."],
+    kv:[["Betriebstemperatur","22 K"],["Standzeit","1.400 h"],["Vorschub","0,9 m/h"],["Durchmesser","880 mm"],["Köpfe pro Loch","1 bis 4"],["Entwurf","T. Renn, 2171"]] },
+  "LEVITAS": { k:"Schmelze", parts:[["Feldspule",SH.coil],["Schwebezone",SH.core],["Schirmung",SH.ring],["Kokille",SH.plate]],
+    p:["Elektromagnetische Schwebeschmelze. Das Metall berührt nichts, während es flüssig ist — kein Tiegel, also auch keine Verunreinigung aus dem Tiegel.",
+       "Sechs Neunen und eine Neun: 99,99994 Prozent. Das ist der höchste Reinheitsgrad, der je außerhalb eines Gravitationsschachts erreicht wurde, und er ist nur deshalb möglich, weil hier draußen nichts nach unten fällt."],
+    kv:[["Reinheit","6N9"],["Öfen","11"],["Durchsatz","62 t/Tag"],["Feldstärke","2,4 T"],["Chargendauer","9 h"],["Durchgesetzt von","A. Oduya"]] },
+  "ANCHOR": { k:"Habitat", parts:[["Außenring",SH.ring],["Wasserwand",SH.plate],["Wohndeck",SH.grid],["Nabe",SH.core]],
+    p:["Ein rotierender Torus mit null Komma achtunddreißig g auf der Außenbahn. Zwei Komma eins Umdrehungen pro Minute — knapp unter der Schwelle, ab der das Innenohr protestiert.",
+       "Die Wasserwand nach außen ist Strahlenschutz und Vorrat zugleich. Sie wird über die Rotation dünner, und irgendwann entscheidet jemand, ob getrunken oder abgeschirmt wird."],
+    kv:[["Schwerkraft","0,38 g"],["Rotation","2,1 U/min"],["Plätze","180"],["Wasserwand","1,1 m"],["Rotationsdauer","4 Jahre"],["In Betrieb seit","2166"]] },
+  "PULSAR-FIX": { k:"Navigation", parts:[["Antennenschale",SH.cone],["Korrelator",SH.grid],["Zeitnormal",SH.core],["Rechenwerk",SH.plate]],
+    p:["Elf Millisekundenpulsare, jeder mit einer Umlaufperiode, die stabiler ist als jede gebaute Uhr. Aus den Laufzeitunterschieden ergibt sich die Position — ohne ein einziges Signal von der Erde.",
+       "Dreihundertzwanzig Meter Genauigkeit auf siebenundvierzig Astronomische Einheiten. Das entspricht einem Fehler von zwei Teilen in vierzig Millionen."],
+    kv:[["Quellen","11 Pulsare"],["Genauigkeit","±320 m"],["Reichweite","47 AE"],["Messdauer","44 min"],["Unabhängig von","Bodensignal"],["Ausfälle","0"]] },
+  "TETHER-C": { k:"Bergung", parts:[["Fangkopf",SH.core],["Leiterseil",SH.coil],["Spannwerk",SH.grid],["Trommel",SH.ring]],
+    p:["Vierzehn Kilometer elektrodynamische Fangleine, aufgerollt im Bugspant. Strom durch die Leine, Magnetfeld des Sonnenwinds dagegen, und es entsteht Zug — ohne einen Tropfen Treibstoff.",
+       "Dreimal eingesetzt. Beim zweiten Mal, 2174, hat sie KESTREL nach elf Tagen Drift eingeholt. Alle zweiundzwanzig an Bord haben überlebt. Seitdem hat AETHERIUM keinen Frachter mehr verloren."],
+    kv:[["Länge","14 km"],["Zugkraft","2,1 kN"],["Leitermasse","31 t"],["Ausfahrzeit","40 min"],["Einsätze","3"],["Gerettet","22 Personen"]] }
+};
+
+$$(".tcard").forEach(card=>{
+  const name=$(".big", card).textContent.trim();
+  const d=TECH_DETAIL[name];
+  if(!d) return;
+  const more=document.createElement("div");
+  more.className="more2";
+  more.innerHTML="Aufschneiden <i>→</i>";
+  card.appendChild(more);
+  card.setAttribute("role","button");
+  card.setAttribute("tabindex","0");
+  card.setAttribute("aria-label", name+" im Detail");
+  const open=()=> Dlg.open("Technologie / "+d.k,
+    '<div class="dlg-cols"><div>'+
+      '<h3>'+name+'</h3>'+ d.p.map(x=>'<p>'+x+'</p>').join("")+
+      '<div class="dlg-kv">'+ d.kv.map(r=>'<div><span class="mini">'+r[0]+'</span><span class="mini val">'+r[1]+'</span></div>').join("") +'</div>'+
+    '</div><div>'+ explodedSVG(d.parts) +
+      '<div class="mini" style="margin-top:10px">Explosionsdarstellung · schematisch</div>'+
+    '</div></div>');
+  card.addEventListener("click", open);
+  card.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+  registerCmd({ ic:"⚙", title:name, sub:"Technologie · "+d.k, run:()=>{ jump("tech"); setTimeout(open, 600); } });
+});
+
+/* ---------- chronicle archive ---------- */
+const ARCHIVE={
+  "2141":{ who:"Sieben Gründungsmitglieder", tag:"Gründungsakte AE-0001",
+    p:["Die Werft über Callisto war ausgemustert, weil ihr Druckkörper zwei Zertifizierungsrunden nicht bestanden hatte. Sie kostete vierzig Millionen Credits, geliehen gegen die persönliche Haftung aller sieben.",
+       "In der Gründungsakte steht ein Satz, den das Kollektiv bis heute zitiert: „Wir bauen keine Firma, die Erz verkauft. Wir bauen eine, die dort arbeiten kann, wo niemand hinwill.“"],
+    kv:[["Startkapital","40 Mio Cr, geliehen"],["Gründende","7"],["Ort","Callisto-Orbit"],["Erste Anlage","Werft K-12"]] },
+  "2149":{ who:"Bohrtrupp Alpha", tag:"Förderbericht 2149-QF4",
+    p:["Achthundert Tonnen Nickel-Eisen aus einem Körper, den niemand sonst angesehen hatte. Der Erlös deckte die Schulden auf den Credit genau — und keinen darüber.",
+       "Die Bilanz des Jahres weist einen Gewinn von null aus. Zwei der sieben Gründenden stiegen danach aus."],
+    kv:[["Körper","2149-QF4"],["Ausbeute","800 t"],["Erlös","40,0 Mio Cr"],["Gewinn","0"]] },
+  "2158":{ who:"Erstbesatzung VESPER-01", tag:"Flugprotokoll V-01",
+    p:["Der erste Ionenfrachter erreichte die Marsbahn mit voller Ladung und ohne eine einzige Abschaltung. Zweihundertelf Tage Dauerschub.",
+       "Die Konkurrenz brauchte für dieselbe Strecke drei Umlaufmanöver und ein Startfenster, das sich alle sechsundzwanzig Monate öffnet. AETHERIUM brauchte nur Geduld."],
+    kv:[["Laufzeit","211 Tage"],["Abschaltungen","0"],["Nutzlast","3.100 t"],["Spez. Impuls","9.240 s"]] },
+  "2166":{ who:"ANCHOR-I, Erstbesatzung", tag:"Inbetriebnahme HALCYON",
+    p:["Siebenundvierzig Komma drei Astronomische Einheiten. Erstmals lebten Menschen dauerhaft jenseits der Neptunbahn — einhundertvierzig zu Beginn, heute dreihundertvierzig.",
+       "Die Signallaufzeit zur Erde beträgt sechs Stunden einunddreißig Minuten. Jede Entscheidung, die dort draußen getroffen wird, ist getroffen, bevor jemand im inneren Ring davon weiß."],
+    kv:[["Entfernung","47,3 AE"],["Erstbesatzung","140"],["Signallauf","6 h 31 min"],["Schwerkraft","0,38 g"]] },
+  "2174":{ who:"Rig KESTREL · 22 Personen", tag:"Untersuchungsbericht 2174-11",
+    p:["Die Verankerung riss während eines Routineschnitts. Elf Tage Drift, in denen die Besatzung den Reaktor auf Notlast fuhr und die Wasserwand als Reaktionsmasse rationierte.",
+       "TETHER-C wurde zum zweiten Mal überhaupt eingesetzt und holte das Rig bei zwei Komma eins Kilonewton Zug ein. Alle zweiundzwanzig überlebten.",
+       "Der Untersuchungsbericht empfahl, KESTREL aufzugeben. Ilse Varga entschied dagegen — gegen den Rat sämtlicher Aktuare. Der Standort läuft bis heute."],
+    kv:[["Driftdauer","11 Tage"],["Drift","0,4 m/s"],["Besatzung","22"],["Verluste","0"],["Entscheidung","I. Varga"]] },
+  "2187":{ who:"Division 01", tag:"Zyklusbericht 2187-Q3",
+    p:["OBSIDIAN ging nach acht Monaten Aufbau in Betrieb und ist bereits der ertragreichste Standort im Portfolio. Eintausendachthundertzweiundvierzig Kilotonnen pro Zyklus über alle vier Körper.",
+       "Einunddreißig Prozent des Helium-3 im gesamten Sonnensystem laufen inzwischen über AETHERIUM-Frachter. Das Konsortium der Äußeren Bahnen prüft, ob das noch Wettbewerb ist."],
+    kv:[["Standorte","4"],["Förderung","1.842 kt/Zyklus"],["Marktanteil He-3","31 %"],["Frachter","19"]] }
+};
+$$(".ev .box").forEach(box=>{
+  const yr=$(".yr", box).textContent.trim();
+  const a=ARCHIVE[yr]; if(!a) return;
+  const title=$(".h3", box).textContent.trim();
+  const btn=document.createElement("button");
+  btn.type="button"; btn.className="tl-more";
+  btn.innerHTML="Archiv öffnen <span class='a2'>→</span>";
+  btn.setAttribute("aria-label", yr+" — "+title+" im Archiv");
+  box.appendChild(btn);
+  btn.addEventListener("click", ()=> Dlg.open("Chronik / "+yr,
+    '<div class="dlg-cols"><div>'+
+      '<h3>'+title+'</h3>'+
+      '<div class="mini" style="margin-top:10px">'+a.tag+'</div>'+
+      a.p.map(x=>'<p>'+x+'</p>').join("")+
+    '</div><div>'+
+      '<div class="label">Beteiligt</div>'+
+      '<p style="margin-top:8px">'+a.who+'</p>'+
+      '<div class="dlg-kv">'+ a.kv.map(r=>'<div><span class="mini">'+r[0]+'</span><span class="mini val">'+r[1]+'</span></div>').join("") +'</div>'+
+    '</div></div>'));
+});
+
+/* ---------- crew dossiers ---------- */
+const DOSSIER=[
+  { path:[0,3,1,0], since:2169, quote:"Ein Rig, das driftet, ist noch kein verlorenes Rig. Ein Kommando, das aufgibt, ist ein verlorenes Kommando.",
+    career:[["2169","Bohrtechnik, HALCYON"],["2174","Schichtführung, KESTREL"],["2179","Leitung Division 01"],["2183","Direktorin des Kollektivs"]],
+    p:["Achtzehn Jahre draußen, davon sechs am Stück ohne Heimaturlaub — ein Rekord, den sie selbst für einen Fehler hält.",
+       "2174 gab sie den Befehl, KESTREL nicht aufzugeben. Die Aktuare hatten den Standort bereits abgeschrieben, die Bergung war teurer als der Körper. Sie setzte sich durch, und der Standort fördert heute mit elf Personen und neunundneunzig Komma neun Prozent Verfügbarkeit."] },
+  { path:[1,1,2,1], since:2171, quote:"Drei Köpfe sind an derselben Stelle zerbrochen. Beim vierten habe ich aufgehört, den Stein zu beschuldigen.",
+    career:[["2171","Werkstoffprüfung, VESPERA"],["2174","Entwurf KRYO-9"],["2180","Leitung Bohrtechnik"],["2185","Leitung Aufschluss"]],
+    p:["Entwarf den KRYO-9-Kopf, nachdem drei Vorgängermodelle auf VESPERA zerbrochen waren — dem härtesten Körper im Portfolio.",
+       "Der Durchbruch war nicht ein härterer Werkstoff, sondern ein kälterer: bei zweiundzwanzig Kelvin bricht Regolith spröde statt zu schleifen. Schläft angeblich in der Bohrhalle, was er bestreitet."] },
+  { path:[0,2,2,2], since:2166, quote:"Im Vakuum fällt nichts nach unten. Es hat elf Jahre gedauert, bis jemand das als Chance gelesen hat.",
+    career:[["2166","Metallurgie, HALCYON"],["2172","Versuchsanlage LEVITAS"],["2177","Chefmetallurgin"],["2184","Verfahrensleitung"]],
+    p:["Setzte die elektromagnetische Schwebeschmelze gegen erheblichen internen Widerstand durch — drei Jahre lang produzierte die Versuchsanlage nichts als Ausschuss.",
+       "Der Reinheitsgrad 6N9 trägt im internen Protokoll ihren Namen. Sie besteht darauf, dass das ein Fehler in der Protokollführung ist."] },
+  { path:[3,0,2,3], since:2173, quote:"Ich korrigiere keine Bahnen. Ich lege sie so, dass sie keine Korrektur brauchen.",
+    career:[["2173","Navigation, VESPER-04"],["2178","Bahnplanung Flotte"],["2182","Stellv. Flottenkommando"],["2186","Flottenkommando"]],
+    p:["Neunzehn Frachter, vierzehn Monate Laufzeit pro Flug, null Verluste. Plant Transferbahnen vier Jahre im Voraus und korrigiert sie praktisch nie.",
+       "Die Kurskorrekturen, die im Protokoll auftauchen, gehen fast ausnahmslos auf Fremdkörper zurück — nicht auf Planungsfehler."] },
+];
+const SITE_XY=[[62,34],[150,20],[220,62],[104,80]];
+function miniMap(path){
+  const pts=path.map(i=>SITE_XY[i]);
+  let d="M"+pts[0][0]+" "+pts[0][1];
+  for(let i=1;i<pts.length;i++) d+=" L"+pts[i][0]+" "+pts[i][1];
+  let len=0;
+  for(let i=1;i<pts.length;i++) len+=Math.hypot(pts[i][0]-pts[i-1][0], pts[i][1]-pts[i-1][1]);
+  const used=new Set(path);
+  return '<div class="mini-map"><svg viewBox="0 0 280 110" aria-hidden="true">'+
+    '<path class="mm-p" d="'+d+'" style="--l2:'+len.toFixed(0)+'"/>'+
+    SITE_XY.map((q,i)=>'<circle class="mm-n'+(used.has(i)?" was":"")+'" cx="'+q[0]+'" cy="'+q[1]+'" r="4"/>'+
+      '<text x="'+(q[0]+8)+'" y="'+(q[1]+3)+'">'+SITES[i].id+'</text>').join("")+
+    '</svg></div>';
+}
+$$(".mem").forEach((m,i)=>{
+  const d=DOSSIER[i]; if(!d) return;
+  const c=CREW[i];
+  m.setAttribute("role","button"); m.setAttribute("tabindex","0");
+  m.setAttribute("aria-label", c[0]+" — Personalakte");
+  const open=()=> Dlg.open("Kommando / Personalakte",
+    '<div class="dlg-cols"><div>'+
+      '<h3>'+c[0]+'</h3>'+
+      '<div class="mini" style="margin-top:9px">'+c[1]+' · im Dienst seit '+d.since+'</div>'+
+      d.p.map(x=>'<p>'+x+'</p>').join("")+
+      '<blockquote class="quote">„'+d.quote+'“<cite>'+c[0]+'</cite></blockquote>'+
+    '</div><div>'+
+      '<div class="label">Laufbahn</div>'+
+      '<div class="dlg-kv" style="margin-top:10px">'+
+        d.career.map(r=>'<div><span class="mini val" style="color:var(--cy)">'+r[0]+'</span><span class="mini">'+r[1]+'</span></div>').join("")+
+      '</div>'+
+      '<div class="label" style="margin-top:20px">Standortverlauf</div>'+
+      miniMap(d.path)+
+    '</div></div>');
+  m.addEventListener("click", open);
+  m.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+  registerCmd({ ic:"☺", title:c[0], sub:"Kommando · "+c[1], run:()=>{ jump("crew"); setTimeout(open, 600); } });
+});
 
 /* ============================================================
    MAIN RAF LOOP
