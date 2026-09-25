@@ -1703,6 +1703,269 @@ section{
 @media (max-width: 800px){
   .pathfinder__result-grid{ grid-template-columns: minmax(0,1fr); }
 }
+
+/* =====================================================================
+   20. STAGE 4 — EMERGENCY MODE, COMMAND PALETTE, TERMINAL, SOUND, KONAMI
+===================================================================== */
+
+/* --- Emergency palette tokens ---------------------------------------- */
+:root{
+  --em-red:       #FF2A2A;
+  --em-red-dim:   rgba(255,42,42,0.35);
+  --em-scanline:  rgba(255,42,42,0.07);
+}
+:root[data-theme="light"]{
+  --em-red:       #C81E1E;
+  --em-red-dim:   rgba(200,30,30,0.28);
+  --em-scanline:  rgba(200,30,30,0.06);
+}
+/* Pervasive shift: chrome that already reads var(--cyan)/var(--ok) turns red
+   the instant the flag is set, with no per-component overrides needed. */
+html[data-emergency="true"]{
+  --cyan:      var(--em-red);
+  --cyan-dim:  var(--em-red-dim);
+  --ok:        var(--em-red);
+}
+html[data-emergency="true"] .grain{
+  opacity: .16;
+  animation-duration: 3s;
+}
+@media (prefers-reduced-motion: reduce){
+  html[data-emergency="true"] .grain{ animation: none; opacity:.16; }
+}
+
+.siren-band{
+  position: fixed; top:0; left:0; right:0; height:3px;
+  z-index: 9996; pointer-events:none;
+  background: linear-gradient(90deg, transparent, var(--em-red) 50%, transparent);
+  opacity:0; transform: scaleX(.2);
+  transition: opacity .4s var(--ease-out);
+}
+html[data-emergency="true"] .siren-band{
+  opacity:1;
+  animation: siren-sweep 2.2s ease-in-out infinite;
+}
+@keyframes siren-sweep{
+  0%,100%{ transform: scaleX(.25) translateX(-30%); opacity:.45; }
+  50%{ transform: scaleX(1) translateX(0%); opacity:1; }
+}
+@media (prefers-reduced-motion: reduce){
+  html[data-emergency="true"] .siren-band{ animation:none; opacity:.9; transform: scaleX(1) translateX(0); }
+}
+
+.scanline-overlay{
+  position: fixed; inset:0;
+  z-index: 9995; pointer-events:none;
+  opacity:0;
+  background: repeating-linear-gradient(0deg, var(--em-scanline) 0px, var(--em-scanline) 1px, transparent 2px, transparent 4px);
+  transition: opacity .4s var(--ease-out);
+}
+html[data-emergency="true"] .scanline-overlay{
+  opacity:1;
+  animation: scan-drift 7s linear infinite;
+}
+@keyframes scan-drift{ from{ background-position:0 0; } to{ background-position:0 480px; } }
+@media (prefers-reduced-motion: reduce){
+  html[data-emergency="true"] .scanline-overlay{ animation:none; }
+}
+
+/* --- Header chrome toggles (emergency + sound) ------------------------ */
+.chrome-toggle{
+  width: 40px; height: 26px;
+  border-radius: 3px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg-elevated);
+  color: var(--ink-dim);
+  cursor: pointer;
+  display:flex; align-items:center; justify-content:center;
+  font-size: 12px;
+  line-height:1;
+  transition: color .3s, border-color .3s, background .3s;
+}
+.chrome-toggle[aria-pressed="true"]{ color: var(--cyan); border-color: var(--cyan-dim); }
+#soundToggle svg, #emergencyToggle svg{ width:15px; height:15px; }
+html[data-emergency="true"] #emergencyToggle{
+  color:#fff; background: var(--em-red); border-color: var(--em-red);
+  animation: em-btn-pulse 1.4s ease-in-out infinite;
+}
+@keyframes em-btn-pulse{ 0%,100%{ opacity:1; } 50%{ opacity:.55; } }
+@media (prefers-reduced-motion: reduce){
+  html[data-emergency="true"] #emergencyToggle{ animation:none; opacity:1; }
+}
+@media (max-width: 560px){
+  .nav__right{ gap: 8px; }
+  .theme-toggle, .chrome-toggle{ width: 32px; height: 24px; font-size: 10px; }
+  .theme-toggle{ width:40px; }
+}
+
+/* --- Bridge incident banner -------------------------------------------- */
+.bridge__incident{
+  display:none;
+  align-items:center; gap:12px;
+  margin: 0 0 28px;
+  padding: 14px 18px;
+  border: 1px solid var(--em-red);
+  color: var(--em-red);
+  font-family: ui-monospace, monospace;
+  font-size: 12.5px;
+  letter-spacing:.04em;
+  background: rgba(255,42,42,0.06);
+}
+.bridge__incident.is-shown{ display:flex; }
+.bridge__incident::before{
+  content:""; width:8px; height:8px; border-radius:50%;
+  background: var(--em-red); flex:none;
+  box-shadow: 0 0 8px var(--em-red);
+  animation: dot-blink 1s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce){ .bridge__incident::before{ animation:none; } }
+
+/* --- Command palette ---------------------------------------------------- */
+.palette-scrim{
+  position: fixed; inset:0; z-index: 10050;
+  background: rgba(3,4,8,0.72);
+  backdrop-filter: blur(4px);
+  display:none;
+  align-items:flex-start; justify-content:center;
+  padding: 12vh 20px 0;
+  opacity:0;
+  transition: opacity .2s var(--ease-out);
+}
+.palette-scrim.is-open{ display:flex; opacity:1; }
+@media (prefers-reduced-motion: reduce){ .palette-scrim{ transition:none; } }
+.palette{
+  width: min(600px, 100%);
+  background: var(--bg-elevated);
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 30px 80px rgba(0,0,0,.55);
+  max-height: 70vh;
+  display:flex; flex-direction:column;
+  transform: translateY(-10px) scale(.98);
+  transition: transform .22s var(--ease-spring);
+}
+.palette-scrim.is-open .palette{ transform: translateY(0) scale(1); }
+@media (prefers-reduced-motion: reduce){ .palette{ transition:none; } }
+.palette__input-row{
+  display:flex; align-items:center; gap:12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line);
+  flex:none;
+}
+.palette__input-row svg{ flex:none; color: var(--ink-faint); width:18px; height:18px; }
+.palette__input{
+  flex:1; min-width:0;
+  background:transparent; border:none; outline:none;
+  color: var(--ink); font-size:16px; font-family: inherit;
+}
+.palette__input::placeholder{ color: var(--ink-faint); }
+.palette__list{
+  list-style:none; margin:0; padding:8px;
+  overflow-y:auto;
+}
+.palette__item{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding: 11px 12px;
+  cursor:pointer;
+  color: var(--ink-dim);
+  font-size: 14px;
+}
+.palette__item-main{ display:flex; align-items:center; gap:10px; min-width:0; }
+.palette__item-main span.k{ color: var(--ink-faint); font-family: ui-monospace,monospace; font-size:10px; text-transform:uppercase; letter-spacing:.08em; flex:none; }
+.palette__item-main span.t{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.palette__item mark{ background:none; color: var(--cyan); font-weight:700; }
+.palette__item[aria-selected="true"]{ background: var(--bg-soft); color: var(--ink); }
+.palette__empty{ padding: 22px 14px; color: var(--ink-faint); font-size:13px; text-align:center; }
+.palette__foot{
+  flex:none; display:flex; gap:16px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--line);
+  color: var(--ink-faint);
+  font-family: ui-monospace,monospace; font-size: 10.5px;
+}
+
+/* --- Terminal ------------------------------------------------------------ */
+.terminal-scrim{
+  position: fixed; inset:0; z-index: 10060;
+  background: rgba(2,3,6,0.78);
+  display:none; align-items:center; justify-content:center;
+  padding: 6vh 20px;
+  opacity:0;
+  transition: opacity .2s var(--ease-out);
+}
+.terminal-scrim.is-open{ display:flex; opacity:1; }
+@media (prefers-reduced-motion: reduce){ .terminal-scrim{ transition:none; } }
+.terminal{
+  width: min(760px, 100%);
+  height: min(70vh, 560px);
+  background: var(--bg-elevated);
+  border: 1px solid var(--cyan-dim);
+  box-shadow: 0 0 0 1px var(--line), 0 30px 90px rgba(0,0,0,.6);
+  display:flex; flex-direction:column;
+  font-family: ui-monospace, "SF Mono", "Cascadia Mono", monospace;
+  transform: scale(.97);
+  transition: transform .22s var(--ease-spring);
+}
+.terminal-scrim.is-open .terminal{ transform: scale(1); }
+@media (prefers-reduced-motion: reduce){ .terminal{ transition:none; } }
+.terminal__head{
+  flex:none;
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-faint);
+  font-size: 11px; letter-spacing:.1em; text-transform:uppercase;
+}
+.terminal__body{
+  flex:1; min-height:0;
+  overflow-y: auto;
+  padding: 14px 16px;
+  font-size: 13px; line-height:1.7;
+  color: var(--cyan);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.terminal__body .t-line{ color: var(--ink-dim); }
+.terminal__body .t-cmd{ color: var(--ink); }
+.terminal__body .t-cmd::before{ content:"> "; color: var(--cyan); }
+.terminal__body .t-err{ color: var(--em-red); }
+.terminal__inputrow{
+  flex:none;
+  display:flex; align-items:center; gap:8px;
+  padding: 10px 16px 14px;
+  border-top: 1px solid var(--line);
+}
+.terminal__prompt{ color: var(--cyan); flex:none; }
+.terminal__input{
+  flex:1; min-width:0;
+  background:transparent; border:none; outline:none;
+  color: var(--ink); font: inherit; font-size:13px;
+}
+
+/* --- Konami flourish ------------------------------------------------------ */
+.konami-overlay{
+  position: fixed; inset:0; z-index: 10070;
+  display:none; align-items:center; justify-content:center;
+  background: rgba(3,4,8,0.82);
+  text-align:center;
+  padding: 20px;
+}
+.konami-overlay.is-shown{ display:flex; animation: konami-in .4s var(--ease-spring); }
+@keyframes konami-in{ from{ opacity:0; transform:scale(.9); } to{ opacity:1; transform:scale(1); } }
+@media (prefers-reduced-motion: reduce){ .konami-overlay.is-shown{ animation:none; } }
+.konami-overlay__inner{
+  border: 1px solid var(--magenta);
+  background: var(--bg-elevated);
+  padding: 40px 46px;
+  max-width: 460px;
+}
+.konami-overlay__inner h3{
+  margin: 0 0 12px;
+  font-size: clamp(22px,4vw,32px);
+  background: linear-gradient(120deg, var(--cyan), var(--magenta));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.konami-overlay__inner p{ color: var(--ink-dim); font-size:14px; line-height:1.6; margin:0; }
+.konami-overlay__inner .mono{ display:block; margin-top:14px; }
 </style>
 </head>
 <body>
@@ -1758,6 +2021,12 @@ section{
     <li><a href="#contact">Rekrutierung</a></li>
   </ul>
   <div class="nav__right">
+    <button class="chrome-toggle" id="soundToggle" aria-label="Sound umschalten" aria-pressed="false" title="Sound">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M17 8a6 6 0 0 1 0 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+    </button>
+    <button class="chrome-toggle" id="emergencyToggle" aria-label="Notfall-Modus umschalten" aria-pressed="false" title="Notfall-Modus">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 2 20h20L12 3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M12 10v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="12" cy="17" r="1" fill="currentColor"/></svg>
+    </button>
     <button class="theme-toggle" id="themeToggle" aria-label="Hell-/Dunkelmodus umschalten" aria-pressed="false">
       <span class="theme-toggle__knob"></span>
     </button>
@@ -1766,6 +2035,9 @@ section{
     </button>
   </div>
 </header>
+
+<div class="siren-band" aria-hidden="true"></div>
+<div class="scanline-overlay" aria-hidden="true"></div>
 
 <nav class="mobile-overlay" id="mobileOverlay" aria-label="Mobile Navigation">
   <a href="#divisions">01 · Divisionen</a>
@@ -1932,6 +2204,8 @@ section{
       </div>
       <p style="max-width:34ch; color:var(--ink-dim); font-size:14.5px; line-height:1.6;">Live-Telemetrie eines repräsentativen Schleppers der Deep-Tug-Flotte — Reaktor, Vorräte, Kurs und Habitat in Echtzeit.</p>
     </div>
+
+    <div class="bridge__incident mono" id="bridgeIncident" role="status" aria-live="polite"></div>
 
     <div class="bridge__grid">
       <article class="tile" data-reveal="scale">
@@ -2507,6 +2781,51 @@ section{
   </div>
 </footer>
 </div><!-- /#scrollRig -->
+
+<!-- ===================================================================
+     COMMAND PALETTE (Ctrl+K / Cmd+K)
+=================================================================== -->
+<div class="palette-scrim" id="paletteScrim">
+  <div class="palette" role="dialog" aria-modal="true" aria-labelledby="paletteLabel" id="palette">
+    <h2 id="paletteLabel" class="visually-hidden">Befehlspalette</h2>
+    <div class="palette__input-row">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <input type="text" class="palette__input" id="paletteInput" placeholder="Suche Abschnitte, Standorte, Crew, Technologie, Befehle…" autocomplete="off" spellcheck="false" aria-label="Palette-Suche" aria-controls="paletteList" aria-expanded="true" role="combobox">
+    </div>
+    <ul class="palette__list" id="paletteList" role="listbox"></ul>
+    <div class="palette__foot">
+      <span>↑↓ Navigieren</span><span>↵ Auswählen</span><span>Esc Schließen</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================
+     TERMINAL (`)
+=================================================================== -->
+<div class="terminal-scrim" id="terminalScrim">
+  <div class="terminal" role="dialog" aria-modal="true" aria-labelledby="terminalLabel" id="terminalDialog">
+    <div class="terminal__head">
+      <span id="terminalLabel">AETHERIUM BRÜCKENTERMINAL // BC-9</span>
+      <span>ESC schließen</span>
+    </div>
+    <div class="terminal__body" id="terminalBody" role="log" aria-live="polite" aria-label="Terminalausgabe"></div>
+    <div class="terminal__inputrow">
+      <span class="terminal__prompt mono" aria-hidden="true">brücke&gt;</span>
+      <input type="text" class="terminal__input mono" id="terminalInput" autocomplete="off" spellcheck="false" aria-label="Terminaleingabe">
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================
+     KONAMI EASTER EGG
+=================================================================== -->
+<div class="konami-overlay" id="konamiOverlay" role="status" aria-live="polite">
+  <div class="konami-overlay__inner">
+    <h3>Rogue-Übertragung abgefangen</h3>
+    <p>„…hier spricht Claim NULL-000, unregistriert, außerhalb aller Divisionskarten. Wir sahen euch vorbeiziehen. Wir werden warten.“</p>
+    <span class="mono" style="color:var(--ink-faint); font-size:11px;">SIGNAL FADING…</span>
+  </div>
+</div>
 
 <script>
 "use strict";
@@ -3178,6 +3497,7 @@ const BridgeSim = (function(){
   let correction = null;  // { t, dur } — course correction
   const reactorHistory = new Array(140).fill(reactorBase);
   const courseHistory = new Array(90).fill(0);
+  let incidentIntensity = 0; // 0..1, driven by the Emergency module's KESTREL incident timeline
 
   function clampN(v,min,max){ return Math.max(min, Math.min(max, v)); }
   function walk(prev, drift, vol, min, max){
@@ -3192,35 +3512,36 @@ const BridgeSim = (function(){
     if(spike){ spike.t += dt; spikeActive = spike.t < spike.dur; if(!spikeActive) spike = null; }
     if(correction){ correction.t += dt; corrActive = correction.t < correction.dur; if(!corrActive) correction = null; }
 
-    const reactorTarget = reactorBase + (spikeActive ? 30 * Math.sin(Math.PI * (spike.t/spike.dur)) : 0);
-    reactor = walk(reactor, (reactorTarget-reactor)*0.03, 2.4, 6, 99);
+    const reactorTarget = reactorBase + (spikeActive ? 30 * Math.sin(Math.PI * (spike.t/spike.dur)) : 0) + incidentIntensity * 34;
+    reactor = walk(reactor, (reactorTarget-reactor)*0.04, 2.4 + incidentIntensity*3, 6, 99);
     reactorHistory.push(reactor);
     if(reactorHistory.length > 160) reactorHistory.shift();
 
-    const consumeRate = spikeActive ? 0.0026 : 0.0011;
+    const consumeRate = (spikeActive ? 0.0026 : 0.0011) + incidentIntensity*0.002;
     fuel = clampN(fuel - consumeRate*dt + Math.sin(t*0.0006)*0.006, 3, 100);
 
     const newBand = radioBands.slice(1);
     let bandVal = Math.random()*0.55 + 0.08;
     if(corrActive) bandVal = Math.min(1, bandVal + 0.35 + Math.random()*0.2);
+    if(incidentIntensity > 0) bandVal = clampN(bandVal + incidentIntensity*(0.4 + Math.random()*0.4), 0, 1);
     newBand.push(bandVal);
     radioBands = newBand;
 
-    const devTarget = corrActive ? 0.85 * Math.sin(correction.t/480) : 0;
-    courseDev = walk(courseDev, (devTarget-courseDev)*0.06, 0.04, -1, 1);
+    const devTarget = (corrActive ? 0.85 * Math.sin(correction.t/480) : 0) + incidentIntensity * Math.sin(t*0.004) * 0.6;
+    courseDev = walk(courseDev, (devTarget-courseDev)*0.06, 0.04 + incidentIntensity*0.1, -1, 1);
     courseHistory.push(courseDev);
     if(courseHistory.length > 90) courseHistory.shift();
 
     const shared = (Math.random()-0.5) * 0.5;
-    life = life.map(v => walk(v, shared*0.6, 0.45, 68, 99));
+    life = life.map(v => walk(v, shared*0.6 - incidentIntensity*0.9, 0.45 + incidentIntensity*0.4, 68, 99));
 
     cargo = walk(cargo, spikeActive ? -0.006 : 0.0035, 0.14, 4, 97);
 
-    events.reactor = spikeActive ? "⚠ LASTSPITZE ERKANNT" : "";
+    events.reactor = incidentIntensity > 0.15 ? "⚠ KESTREL — REAKTORDRUCK KRITISCH" : (spikeActive ? "⚠ LASTSPITZE ERKANNT" : "");
     events.fuel = spikeActive ? "⚠ VERBRAUCH ERHÖHT" : "";
-    events.radio = corrActive ? "↳ KORREKTUR-TELEMETRIE" : "";
+    events.radio = incidentIntensity > 0.15 ? "⚠ SIGNAL GESTÖRT" : (corrActive ? "↳ KORREKTUR-TELEMETRIE" : "");
     events.course = corrActive ? "⚠ KURSKORREKTUR AKTIV" : "";
-    events.life = "";
+    events.life = incidentIntensity > 0.15 ? "⚠ STÜTZSYSTEME BELASTET" : "";
     events.cargo = spikeActive ? "↳ LASTUMVERTEILUNG" : "";
   }
 
@@ -3236,7 +3557,8 @@ const BridgeSim = (function(){
     courseHistory,
     life: () => life,
     get cargo(){ return cargo; },
-    events
+    events,
+    setIncident(v){ incidentIntensity = clampN(v, 0, 1); }
   };
 })();
 
@@ -3804,6 +4126,24 @@ function setupHiDPICanvas(canvas, wrap){
 
   // initial static draw so a snapshot is visible before Ticker's first tick
   draw();
+
+  // Exposed minimal reset interface for the command palette's "Simulator zurücksetzen".
+  window.OrbitalSim = {
+    reset(){
+      targetCamX = 0; targetCamY = 0; targetCamZoom = 1;
+      timeScaleExp = 0;
+      if(speedSlider){ speedSlider.value = "0"; }
+      if(speedVal){ speedVal.textContent = "1×"; }
+      selected = null;
+      allBodies.forEach(bb => bb._btn && bb._btn.classList.remove("is-selected"));
+      if(datasheet) datasheet.classList.remove("is-shown");
+      draw();
+    },
+    focus(id){
+      const b = allBodies.find(bb => bb.id === id);
+      if(b) selectBody(b);
+    }
+  };
 })();
 
 /* =====================================================================
@@ -4849,6 +5189,649 @@ document.querySelectorAll(".btn").forEach(btn => {
   });
 
   renderStep(0);
+})();
+
+/* =====================================================================
+   20. STAGE 4 — SOUND, EMERGENCY MODE, COMMAND PALETTE, TERMINAL, KONAMI
+===================================================================== */
+
+/* --- Fuzzy subsequence-match scorer -----------------------------------
+   Real (not stub) scoring: every query char must appear, in order, inside
+   the target text; consecutive-run and word-start matches score higher.
+   Returns -1 when the query does not fully match as a subsequence. ------ */
+function fuzzyScore(query, text){
+  query = String(query||"").toLowerCase().trim();
+  text = String(text||"").toLowerCase();
+  if(!query) return 0;
+  let qi = 0, score = 0, consecutive = 0;
+  for(let ti=0; ti<text.length && qi<query.length; ti++){
+    if(text[ti] === query[qi]){
+      score += 1 + consecutive*2;
+      consecutive++;
+      qi++;
+    } else {
+      consecutive = 0;
+    }
+  }
+  if(qi < query.length) return -1;
+  if(text.startsWith(query)) score += 15;
+  if(text.includes(" "+query)) score += 8;
+  score -= (text.length - query.length) * 0.05;
+  return score;
+}
+
+function scrollToSection(id){
+  const el = document.getElementById(id);
+  if(el) el.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+}
+
+/* --- Shared reference data for palette + terminal ---------------------- */
+const CREW = [
+  { name:"Kommandantin Vera Solheim", role:"Chief Extraction Officer", hail:"Solheim hier. Divisionsstrategie läuft nach Plan — Claim-Expansion Phase III steht." },
+  { name:"Kommandant Idris Wex", role:"Head of Refinement Ops", hail:"Wex am Apparat. Reinheitswerte im ORC-Protokoll stabil bei 99,9 Prozent." },
+  { name:"Kommandantin Nadya Cortez", role:"Director, Deep Tug Logistics", hail:"Cortez. 31 Schlepper auf Kurs, kein Ladungsverlust seit 2179." },
+  { name:"Kommandant Elias Thorn", role:"Chief Sentinel Architect", hail:"Thorn. Sentinel-Netz grün über alle Lichtstunden-Relais." }
+];
+const SITES4 = [
+  { id:"kbx-114", name:'KBX-114 „Ouroboros“', status:"Vollbetrieb", crew:64 },
+  { id:"vst-006", name:'VST-006 „Halcyon Rift“', status:"Erweiterung", crew:38 },
+  { id:"prm-221", name:'PRM-221 „Schwarzgrat“', status:"Vollbetrieb", crew:71 },
+  { id:"ndx-330", name:'NDX-330 „Stille Fracht“', status:"Sondierung", crew:12 },
+  { id:"kes-014", name:'KES-014 „Kestrel-Außenposten“', status:"Minimalbesatzung", crew:4 }
+];
+const TECH_NAMES = [
+  "Kinetic Bore Swarm — KBS-7",
+  "Fusion-Tug-Antrieb — FT-9 Halcyon",
+  "Orbital Refinery Core — ORC-IV",
+  "Sentinel-Netz — Kern-KI",
+  "Habitat-Schild — HX-Plating"
+];
+
+/* =====================================================================
+   20a. SOUND — Web Audio API only, zero audio files, lazy AudioContext
+===================================================================== */
+const Sound = (function(){
+  const btn = document.getElementById("soundToggle");
+  let enabled = Store.get("sound", false);
+  let ctx = null, masterGain = null;
+  let humOsc = null, humLfo = null, humGain = null;
+  let sirenOsc = null, sirenGain = null, sirenRunning = false;
+
+  function ensureCtx(){
+    if(ctx) return ctx;
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return null;
+      ctx = new AC();
+      masterGain = ctx.createGain();
+      masterGain.gain.value = 0.5;
+      masterGain.connect(ctx.destination);
+    }catch(e){ ctx = null; }
+    return ctx;
+  }
+
+  function startHum(){
+    if(!ctx || humOsc) return;
+    humOsc = ctx.createOscillator();
+    humOsc.type = "sine";
+    humOsc.frequency.value = 54;
+    humGain = ctx.createGain();
+    humGain.gain.value = 0.018;
+    const lfo = ctx.createOscillator();
+    lfo.type = "sine";
+    lfo.frequency.value = 0.13;
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 3.5;
+    lfo.connect(lfoGain);
+    lfoGain.connect(humOsc.frequency);
+    humOsc.connect(humGain);
+    humGain.connect(masterGain);
+    try{ humOsc.start(); lfo.start(); }catch(e){}
+    humLfo = lfo;
+  }
+  function stopHum(){
+    [humOsc, humLfo].forEach(o => { try{ o && o.stop(); }catch(e){} });
+    humOsc = null; humLfo = null;
+  }
+
+  function pluck(freq, dur, type, gainVal){
+    if(!enabled || !ctx) return;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = type || "square";
+    o.frequency.value = freq;
+    g.gain.value = 0;
+    o.connect(g); g.connect(masterGain);
+    const now = ctx.currentTime;
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.linearRampToValueAtTime(gainVal || 0.05, now + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + (dur || 0.09));
+    try{ o.start(now); o.stop(now + (dur||0.09) + 0.03); }catch(e){}
+  }
+
+  function click(){ pluck(880, 0.045, "square", 0.03); }
+  function confirmChime(){
+    pluck(660, 0.1, "sine", 0.045);
+    setTimeout(() => pluck(880, 0.16, "sine", 0.045), 70);
+  }
+
+  function sirenTick(dt, now){
+    if(sirenOsc) sirenOsc.frequency.value = 440 + Math.sin(now*0.0032)*150;
+  }
+  function sirenStart(){
+    if(!enabled || !ctx || sirenRunning) return;
+    sirenRunning = true;
+    sirenOsc = ctx.createOscillator();
+    sirenGain = ctx.createGain();
+    sirenOsc.type = "sawtooth";
+    sirenGain.gain.value = 0.022;
+    sirenOsc.connect(sirenGain); sirenGain.connect(masterGain);
+    try{ sirenOsc.start(); }catch(e){}
+    Ticker.add(sirenTick);
+  }
+  function sirenStop(){
+    sirenRunning = false;
+    Ticker.remove(sirenTick);
+    if(sirenOsc){ try{ sirenOsc.stop(); }catch(e){} sirenOsc = null; }
+  }
+
+  function applyPressed(){ btn.setAttribute("aria-pressed", enabled ? "true" : "false"); }
+  applyPressed();
+
+  btn.addEventListener("click", () => {
+    enabled = !enabled;
+    Store.set("sound", enabled);
+    applyPressed();
+    if(enabled){
+      ensureCtx();
+      if(ctx && ctx.state === "suspended") ctx.resume();
+      startHum();
+      if(typeof Emergency !== "undefined" && Emergency.isActive()) sirenStart();
+      click();
+    } else {
+      stopHum();
+      sirenStop();
+    }
+  });
+
+  return { click, confirm: confirmChime, sirenStart, sirenStop, isEnabled: () => enabled };
+})();
+
+/* =====================================================================
+   20b. EMERGENCY MODE — pervasive red-alert state + KESTREL incident
+   Incident timeline is driven entirely by Ticker (ramp -> hold -> recover
+   -> idle, ~40s total), never a separate rAF/setInterval loop, and stops
+   cleanly the instant emergency mode is toggled off.
+===================================================================== */
+const Emergency = (function(){
+  const root = document.documentElement;
+  const btn = document.getElementById("emergencyToggle");
+  const incidentEl = document.getElementById("bridgeIncident");
+  let active = false;
+  let phase = "idle"; // idle -> ramp -> hold -> recover -> resolved -> (pause) -> ramp…
+  let elapsed = 0;
+  const RAMP = 12000, HOLD = 8000, RECOVER = 18000, PAUSE = 4000;
+
+  function applyDom(){
+    if(active) root.setAttribute("data-emergency", "true");
+    else root.removeAttribute("data-emergency");
+    btn.setAttribute("aria-pressed", active ? "true" : "false");
+  }
+
+  function resetIncident(){
+    phase = "idle"; elapsed = 0;
+    incidentEl.classList.remove("is-shown");
+    incidentEl.textContent = "";
+    BridgeSim.setIncident(0);
+  }
+
+  function tick(dt){
+    if(!active) return;
+    if(phase === "idle") phase = "ramp";
+    elapsed += dt;
+    let text = "", intensity = 0;
+    if(phase === "ramp"){
+      intensity = clamp(elapsed / RAMP, 0, 1);
+      text = "INCIDENT: KESTREL — Reaktordruck kritisch";
+      if(elapsed >= RAMP){ phase = "hold"; elapsed = 0; }
+    } else if(phase === "hold"){
+      intensity = 1;
+      text = "INCIDENT: KESTREL — wird stabilisiert";
+      if(elapsed >= HOLD){ phase = "recover"; elapsed = 0; }
+    } else if(phase === "recover"){
+      intensity = clamp(1 - elapsed/RECOVER, 0, 1);
+      text = "INCIDENT: KESTREL — Normalbetrieb wird wiederhergestellt";
+      if(elapsed >= RECOVER){ phase = "resolved"; elapsed = 0; }
+    } else if(phase === "resolved"){
+      intensity = 0;
+      text = "INCIDENT: KESTREL — Normalbetrieb wiederhergestellt";
+      if(elapsed >= PAUSE){ phase = "ramp"; elapsed = 0; }
+    }
+    incidentEl.classList.add("is-shown");
+    incidentEl.textContent = text;
+    BridgeSim.setIncident(intensity);
+  }
+  Ticker.add(tick);
+
+  function set(v){
+    active = !!v;
+    applyDom();
+    Store.set("emergency", active);
+    if(active){
+      Sound.sirenStart();
+    } else {
+      resetIncident();
+      Sound.sirenStop();
+    }
+  }
+  function toggle(){ set(!active); }
+
+  btn.addEventListener("click", toggle);
+
+  // Explicit persisted-state restore on load, per spec (yes, even though a
+  // persisted alarm state across reloads is unusual UX — implemented as asked).
+  if(Store.get("emergency", false)) set(true);
+
+  return { set, toggle, isActive: () => active };
+})();
+
+/* =====================================================================
+   20c. COMMAND PALETTE — Ctrl+K / Cmd+K
+===================================================================== */
+function buildPaletteEntries(){
+  const entries = [];
+  document.querySelectorAll(".nav__links a").forEach(a => {
+    entries.push({ kind:"Abschnitt", label:a.textContent.trim(), action:() => scrollToSection(a.getAttribute("href").slice(1)) });
+  });
+  SITES4.forEach(s => entries.push({
+    kind:"Standort", label:s.name,
+    action:() => { scrollToSection("starmap"); if(window.OrbitalSim) window.OrbitalSim.focus(s.id); }
+  }));
+  CREW.forEach(c => entries.push({ kind:"Crew", label:c.name, action:() => scrollToSection("team") }));
+  TECH_NAMES.forEach(t => entries.push({ kind:"Technologie", label:t, action:() => scrollToSection("tech") }));
+  entries.push({ kind:"Befehl", label:"Theme wechseln", action:() => document.getElementById("themeToggle").click() });
+  entries.push({ kind:"Befehl", label:"Notfall-Modus umschalten", action:() => Emergency.toggle() });
+  entries.push({ kind:"Befehl", label:"Notfall-Modus aktivieren", action:() => Emergency.set(true) });
+  entries.push({ kind:"Befehl", label:"Notfall-Modus deaktivieren", action:() => Emergency.set(false) });
+  entries.push({ kind:"Befehl", label:"Simulator zurücksetzen", action:() => { if(window.OrbitalSim) window.OrbitalSim.reset(); scrollToSection("orbital"); } });
+  entries.push({ kind:"Befehl", label:"Sound umschalten", action:() => document.getElementById("soundToggle").click() });
+  entries.push({ kind:"Befehl", label:"Terminal öffnen", action:() => Terminal.open() });
+  return entries;
+}
+
+const Palette = (function(){
+  const scrim = document.getElementById("paletteScrim");
+  const input = document.getElementById("paletteInput");
+  const list = document.getElementById("paletteList");
+  let entries = [], filtered = [], activeIdx = 0, lastFocused = null;
+
+  function historyGet(){ return Store.get("paletteHistory", []); }
+  function historyPush(label){
+    const h = historyGet().filter(x => x !== label);
+    h.unshift(label);
+    Store.set("paletteHistory", h.slice(0,5));
+  }
+
+  function render(){
+    const q = input.value.trim();
+    list.innerHTML = "";
+    if(!q){
+      const hist = historyGet().map(h => entries.find(e => e.label === h)).filter(Boolean);
+      filtered = hist.length ? hist : entries.slice(0, 8);
+    } else {
+      filtered = entries
+        .map(e => ({ e, s: fuzzyScore(q, e.label) }))
+        .filter(x => x.s >= 0)
+        .sort((a,b) => b.s - a.s)
+        .slice(0, 30)
+        .map(x => x.e);
+    }
+    if(!filtered.length){
+      const li = document.createElement("li");
+      li.className = "palette__empty";
+      li.textContent = "Keine Treffer.";
+      list.appendChild(li);
+      return;
+    }
+    filtered.forEach((e,i) => {
+      const li = document.createElement("li");
+      li.className = "palette__item";
+      li.id = "pal-opt-" + i;
+      li.setAttribute("role","option");
+      li.setAttribute("aria-selected", i===0 ? "true":"false");
+      li.innerHTML = '<span class="palette__item-main"><span class="k">'+e.kind+'</span><span class="t"></span></span>';
+      li.querySelector(".t").textContent = e.label;
+      li.addEventListener("click", () => activate(i));
+      li.addEventListener("mouseenter", () => setActive(i));
+      list.appendChild(li);
+    });
+    setActive(0);
+  }
+
+  function setActive(i){
+    if(!filtered.length) return;
+    activeIdx = Math.max(0, Math.min(i, filtered.length-1));
+    [...list.children].forEach((li,idx) => li.setAttribute("aria-selected", idx===activeIdx ? "true":"false"));
+    input.setAttribute("aria-activedescendant", "pal-opt-" + activeIdx);
+    const el = list.children[activeIdx];
+    if(el && el.scrollIntoView) el.scrollIntoView({ block:"nearest" });
+  }
+
+  function activate(i){
+    const e = filtered[i];
+    if(!e) return;
+    historyPush(e.label);
+    close();
+    Sound.confirm();
+    e.action();
+  }
+
+  function onKey(e){
+    if(e.key === "Escape"){ e.preventDefault(); close(); return; }
+    if(e.key === "ArrowDown"){ e.preventDefault(); setActive(activeIdx+1); return; }
+    if(e.key === "ArrowUp"){ e.preventDefault(); setActive(activeIdx-1); return; }
+    if(e.key === "Enter"){ e.preventDefault(); activate(activeIdx); return; }
+    if(e.key === "Tab"){ e.preventDefault(); input.focus(); }
+  }
+
+  function open(){
+    entries = buildPaletteEntries();
+    lastFocused = document.activeElement;
+    scrim.classList.add("is-open");
+    input.value = "";
+    render();
+    Sound.click();
+    document.addEventListener("keydown", onKey, true);
+    setTimeout(() => input.focus(), 0);
+  }
+  function close(){
+    scrim.classList.remove("is-open");
+    document.removeEventListener("keydown", onKey, true);
+    if(lastFocused && lastFocused.focus) lastFocused.focus();
+  }
+  function isOpen(){ return scrim.classList.contains("is-open"); }
+
+  input.addEventListener("input", render);
+  scrim.addEventListener("mousedown", e => { if(e.target === scrim) close(); });
+
+  return { open, close, isOpen };
+})();
+
+/* =====================================================================
+   20d. TERMINAL — backtick (`), ~20 real working commands
+===================================================================== */
+const Terminal = (function(){
+  const scrim = document.getElementById("terminalScrim");
+  const body = document.getElementById("terminalBody");
+  const input = document.getElementById("terminalInput");
+  let lastFocused = null;
+  let cmdHistory = Store.get("terminalHistory", []);
+  let histIdx = -1;
+  const bootTime = Date.now() - Math.floor(30000000 + Math.random()*60000000);
+
+  const COMMAND_NAMES = ["help","status","sites","manifest","hail","plot","alert","theme","clear","sound",
+    "history","date","uptime","whoami","sitrep","fleet","log","scan","docs","credits","konami"];
+
+  function typeLine(text, cls){
+    return new Promise(resolve => {
+      const line = document.createElement("div");
+      line.className = "t-line" + (cls ? (" "+cls) : "");
+      body.appendChild(line);
+      body.scrollTop = body.scrollHeight;
+      if(reduceMotion || !text){
+        line.textContent = text;
+        resolve();
+        return;
+      }
+      let i = 0;
+      (function step(){
+        line.textContent = text.slice(0, i);
+        i++;
+        body.scrollTop = body.scrollHeight;
+        if(i <= text.length) setTimeout(step, 6);
+        else resolve();
+      })();
+    });
+  }
+  async function printBlock(text, cls){
+    const lines = String(text).split("\n");
+    for(const l of lines) await typeLine(l, cls);
+  }
+  function printCmd(text){
+    const line = document.createElement("div");
+    line.className = "t-cmd";
+    line.textContent = text;
+    body.appendChild(line);
+    body.scrollTop = body.scrollHeight;
+  }
+
+  function fmtUptime(){
+    const s = Math.floor((Date.now()-bootTime)/1000);
+    const d = Math.floor(s/86400), h = Math.floor((s%86400)/3600), m = Math.floor((s%3600)/60);
+    return d + "T " + h + "h " + m + "m";
+  }
+
+  async function run(raw){
+    const parts = raw.trim().split(/\s+/);
+    const cmd = (parts[0]||"").toLowerCase();
+    const arg = parts.slice(1).join(" ");
+    if(!cmd) return;
+    switch(cmd){
+      case "help":
+        await printBlock("Verfügbare Befehle:\n" + COMMAND_NAMES.map(c=>"  "+c).join("\n") + "\n\nTab vervollständigt, ↑/↓ blättert im Verlauf.");
+        break;
+      case "status":
+        await printBlock("REAKTOR " + BridgeSim.reactor.toFixed(0) + "%  TREIBSTOFF " + BridgeSim.fuel.toFixed(0) + "%  FRACHT " + BridgeSim.cargo.toFixed(0) + "%\nNOTFALL-MODUS: " + (Emergency.isActive() ? "AKTIV" : "inaktiv"));
+        break;
+      case "sites":
+        await printBlock(SITES4.map(s => s.id.toUpperCase() + "  " + s.name + "  — " + s.status + " · Besatzung " + s.crew).join("\n"));
+        break;
+      case "manifest":
+        await printBlock(CREW.map(c => c.name + " — " + c.role).join("\n"));
+        break;
+      case "hail": {
+        if(!arg){ await printBlock("Nutzung: hail <name>", "t-err"); break; }
+        const hit = CREW.map(c => ({ c, s: fuzzyScore(arg, c.name) })).filter(x => x.s >= 0).sort((a,b) => b.s-a.s)[0];
+        if(hit) await printBlock(hit.c.name + ": „" + hit.c.hail + "“");
+        else await printBlock("Kein Besatzungsmitglied gefunden.", "t-err");
+        break;
+      }
+      case "plot": {
+        if(!arg){ await printBlock("Nutzung: plot <standort>", "t-err"); break; }
+        const hit = SITES4.map(s => ({ s, sc: fuzzyScore(arg, s.name + " " + s.id) })).filter(x => x.sc >= 0).sort((a,b) => b.sc-a.sc)[0];
+        if(hit){
+          await printBlock("Kurs geplottet nach " + hit.s.name + ". Geschätzte Transferzeit: " + (4+Math.random()*8).toFixed(1) + " Jahre.");
+          if(window.OrbitalSim) window.OrbitalSim.focus(hit.s.id);
+        } else await printBlock("Ziel unbekannt.", "t-err");
+        break;
+      }
+      case "alert":
+        Emergency.toggle();
+        await printBlock("Notfall-Modus: " + (Emergency.isActive() ? "AKTIVIERT" : "DEAKTIVIERT"));
+        break;
+      case "theme":
+        document.getElementById("themeToggle").click();
+        await printBlock("Theme umgeschaltet: " + (document.documentElement.getAttribute("data-theme")==="light" ? "hell" : "dunkel"));
+        break;
+      case "clear":
+        body.innerHTML = "";
+        break;
+      case "sound":
+        document.getElementById("soundToggle").click();
+        await printBlock("Sound: " + (Sound.isEnabled() ? "AN" : "AUS"));
+        break;
+      case "history":
+        await printBlock(cmdHistory.length ? cmdHistory.slice(0,10).join("\n") : "(kein Verlauf)");
+        break;
+      case "date":
+        await printBlock("Bordkalender: 2187-Zeitrechnung · Referenztag " + new Date().toISOString().slice(0,10));
+        break;
+      case "uptime":
+        await printBlock("Terminal-Laufzeit: " + fmtUptime());
+        break;
+      case "whoami":
+        await printBlock("BC-9 Gastzugang · Freigabestufe 1 · Sitzung nicht protokolliert");
+        break;
+      case "sitrep":
+        await printBlock("SITREP: Alle Divisionen im Toleranzbereich. " + SITES4.length + " aktive Claims. " + (Emergency.isActive() ? "Zwischenfall auf KESTREL läuft." : "Keine offenen Zwischenfälle."));
+        break;
+      case "fleet":
+        await printBlock("19 Transferschlepper aktiv · Deep-Tug-Flotte 100% Einsatzbereitschaft.");
+        break;
+      case "log":
+        await printBlock('Letzter Funkeintrag: siehe Sektion „Schichtprotokoll" — 200 Einträge archiviert.');
+        break;
+      case "scan":
+        await printBlock("Scan läuft...\nKeine unbekannten Signaturen im Umkreis von 4 AE.");
+        break;
+      case "docs":
+        await printBlock("Zugriff verweigert: Freigabestufe 4 erforderlich.", "t-err");
+        break;
+      case "credits":
+        await printBlock("AETHERIUM DEEP SPACE MINING COLLECTIVE — Systemterminal v4.2 · Bordbesatzung dankt.");
+        break;
+      case "konami":
+        await printBlock("Hinweis: ↑ ↑ ↓ ↓ ← → ← → B A");
+        break;
+      default:
+        await printBlock('Unbekannter Befehl: "' + cmd + '" — Eingabe "help" für Übersicht.', "t-err");
+    }
+  }
+
+  function onKey(e){
+    if(e.key === "Escape"){ e.preventDefault(); close(); return; }
+    if(e.key === "Tab"){
+      e.preventDefault();
+      const val = input.value;
+      const parts = val.split(/\s+/);
+      if(parts.length <= 1){
+        const matches = COMMAND_NAMES.filter(c => c.startsWith(parts[0].toLowerCase()));
+        if(matches.length) input.value = matches[0] + " ";
+      } else {
+        const cmd = parts[0].toLowerCase();
+        const fragment = parts[parts.length-1].toLowerCase();
+        let pool = [];
+        if(cmd === "hail") pool = CREW.map(c => c.name.split(" ").pop());
+        if(cmd === "plot") pool = SITES4.map(s => s.id);
+        const m = pool.filter(p => p.toLowerCase().startsWith(fragment));
+        if(m.length){ parts[parts.length-1] = m[0]; input.value = parts.join(" "); }
+      }
+      return;
+    }
+    if(e.key === "ArrowUp"){
+      if(cmdHistory.length){
+        histIdx = Math.min(histIdx+1, cmdHistory.length-1);
+        input.value = cmdHistory[histIdx] || "";
+      }
+      e.preventDefault();
+      return;
+    }
+    if(e.key === "ArrowDown"){
+      histIdx = Math.max(histIdx-1, -1);
+      input.value = histIdx >= 0 ? cmdHistory[histIdx] : "";
+      e.preventDefault();
+      return;
+    }
+  }
+
+  let runQueue = Promise.resolve();
+  input.addEventListener("keydown", e => {
+    if(e.key === "Enter"){
+      const val = input.value;
+      if(!val.trim()) return;
+      printCmd(val);
+      cmdHistory.unshift(val);
+      cmdHistory = cmdHistory.slice(0, 50);
+      Store.set("terminalHistory", cmdHistory);
+      histIdx = -1;
+      input.value = "";
+      // Serialize: each command's typed-out output must finish before the next starts.
+      runQueue = runQueue.then(() => run(val));
+    }
+  });
+
+  function open(){
+    lastFocused = document.activeElement;
+    scrim.classList.add("is-open");
+    if(!body.children.length){
+      printBlock('AETHERIUM BRÜCKENTERMINAL BC-9 — bereit.\nTippe "help" für Befehlsübersicht.');
+    }
+    Sound.click();
+    document.addEventListener("keydown", onKey, true);
+    setTimeout(() => input.focus(), 0);
+  }
+  function close(){
+    scrim.classList.remove("is-open");
+    document.removeEventListener("keydown", onKey, true);
+    if(lastFocused && lastFocused.focus) lastFocused.focus();
+  }
+  function isOpen(){ return scrim.classList.contains("is-open"); }
+
+  scrim.addEventListener("mousedown", e => { if(e.target === scrim) close(); });
+
+  return { open, close, isOpen };
+})();
+
+/* --- Global Ctrl+K / Cmd+K + backtick launchers ------------------------ */
+document.addEventListener("keydown", function(e){
+  const tag = (e.target && e.target.tagName || "").toLowerCase();
+  const typing = tag === "input" || tag === "textarea" || tag === "select" || (e.target && e.target.isContentEditable);
+
+  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k"){
+    e.preventDefault();
+    if(Palette.isOpen()) Palette.close();
+    else if(!Terminal.isOpen()) Palette.open();
+    return;
+  }
+  if(e.key === "`" && !typing && !Palette.isOpen() && !Terminal.isOpen()){
+    e.preventDefault();
+    Terminal.open();
+  }
+});
+
+/* =====================================================================
+   20e. SOUND WIRING — representative hover/click set + success chimes
+===================================================================== */
+(function wireSound(){
+  document.querySelectorAll(".nav__links a, .sectionnav__dot, .btn").forEach(el => {
+    el.addEventListener("mouseenter", () => Sound.click());
+  });
+  document.querySelectorAll(".nav__links a, .btn, #themeToggle, .sectionnav__dot").forEach(el => {
+    el.addEventListener("click", () => Sound.click());
+  });
+  function watchSuccess(selector){
+    const el = document.querySelector(selector);
+    if(!el) return;
+    const mo = new MutationObserver(() => { if(el.classList.contains("is-shown")) Sound.confirm(); });
+    mo.observe(el, { attributes:true, attributeFilter:["class"] });
+  }
+  watchSuccess(".form-success");
+  watchSuccess(".pathfinder__result");
+})();
+
+/* =====================================================================
+   20f. KONAMI CODE EASTER EGG — self-clearing, works from any section
+===================================================================== */
+(function konami(){
+  const seq = ["arrowup","arrowup","arrowdown","arrowdown","arrowleft","arrowright","arrowleft","arrowright","b","a"];
+  let idx = 0;
+  const overlay = document.getElementById("konamiOverlay");
+  let hideTimer = null;
+  document.addEventListener("keydown", e => {
+    const key = e.key.toLowerCase();
+    if(key === seq[idx]) idx++;
+    else idx = (key === seq[0]) ? 1 : 0;
+    if(idx === seq.length){
+      idx = 0;
+      trigger();
+    }
+  });
+  function trigger(){
+    overlay.classList.add("is-shown");
+    Sound.confirm();
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => overlay.classList.remove("is-shown"), reduceMotion ? 3000 : 6000);
+  }
 })();
 
 </script>
