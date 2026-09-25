@@ -3371,12 +3371,19 @@ const ScrollRig = (function(){
     burger.setAttribute("aria-expanded", open ? "true" : "false");
     document.body.style.overflow = open ? "hidden" : "";
   });
-  overlay.querySelectorAll("a").forEach(a => a.addEventListener("click", () => {
+  function closeMobileMenu(){
     burger.classList.remove("is-open");
     overlay.classList.remove("is-open");
     burger.setAttribute("aria-expanded","false");
     document.body.style.overflow = "";
-  }));
+  }
+  overlay.querySelectorAll("a").forEach(a => a.addEventListener("click", closeMobileMenu));
+  document.addEventListener("keydown", e => {
+    if(e.key === "Escape" && overlay.classList.contains("is-open")){
+      closeMobileMenu();
+      burger.focus();
+    }
+  });
 
   const links = document.querySelectorAll(".nav__links a");
   const sections = [...links].map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
