@@ -372,15 +372,19 @@ section{
 .nav__brand-mark svg{ width:100%; height:100%; }
 
 .nav__links{
-  display:flex; gap: 34px;
+  display:flex; gap: clamp(8px, 1.1vw, 34px);
   list-style:none; margin:0; padding:0;
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow: hidden;
 }
 .nav__links a{
   position: relative;
   text-decoration:none;
   font-family: ui-monospace, monospace;
-  font-size: 11px;
-  letter-spacing: .14em;
+  font-size: clamp(8.5px, .62vw, 11px);
+  white-space: nowrap;
+  letter-spacing: .07em;
   text-transform: uppercase;
   color: var(--ink-dim);
   padding-bottom: 6px;
@@ -396,7 +400,8 @@ section{
 .nav__links a:hover, .nav__links a.is-active{ color: var(--ink); }
 .nav__links a:hover::after, .nav__links a.is-active::after{ right:0; }
 
-.nav__right{ display:flex; align-items:center; gap: 18px; }
+.nav__right{ display:flex; align-items:center; gap: 18px; flex: none; }
+.nav__brand{ flex: none; }
 
 .theme-toggle{
   width: 46px; height: 26px;
@@ -1524,6 +1529,180 @@ section{
 @media (max-width: 980px){
   .configurator__body{ grid-template-columns:minmax(0,1fr); }
 }
+
+/* =====================================================================
+   STAGE 3a. SCHICHTPROTOKOLL (log feed)
+===================================================================== */
+.logfeed__toolbar{
+  display:flex; flex-wrap:wrap; gap:14px 18px; align-items:center;
+  margin-bottom: 18px;
+}
+.logfeed__search{
+  flex: 1 1 240px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+  padding: 12px 14px;
+}
+.logfeed__search:focus-visible{ border-color: var(--cyan); }
+.chiprow{ display:flex; flex-wrap:wrap; gap:8px; }
+.chip{
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-dim);
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: .04em;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: border-color .2s, color .2s, background .2s;
+}
+.chip:hover{ color: var(--ink); border-color: var(--line-strong); }
+.chip[aria-pressed="true"]{ color: var(--bg); background: var(--cyan); border-color: var(--cyan); }
+.logfeed__sort{
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  padding: 10px 10px;
+}
+.logfeed__count{
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--ink-faint);
+  margin: 0 0 10px;
+}
+.logfeed__viewport{
+  position: relative;
+  height: 560px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  background: var(--bg-soft);
+}
+.logfeed__spacer{ position: relative; width:100%; }
+.logrow{
+  position: absolute; left:0; right:0; top:0;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  background: var(--bg-soft);
+}
+.logrow:hover, .logrow:focus-visible{ background: var(--bg-elevated); }
+.logrow__top{
+  display:flex; flex-wrap:wrap; align-items:baseline; gap:10px 14px;
+  font-family: ui-monospace, monospace; font-size: 11px; color: var(--ink-faint);
+}
+.logrow__urgency{
+  width:8px; height:8px; border-radius:50%; display:inline-block; flex:none;
+}
+.logrow__urgency--routine{ background: var(--ok); }
+.logrow__urgency--priority{ background: var(--amber); }
+.logrow__urgency--critical{ background: var(--magenta); box-shadow:0 0 8px var(--magenta-dim); }
+.logrow__site{ color: var(--cyan); }
+.logrow__text{ margin: 8px 0 0; font-size: 14px; line-height:1.5; color: var(--ink); }
+.logrow__text mark{ background: var(--magenta-dim); color: var(--ink); border-radius:2px; padding:0 1px; }
+.logrow__detail{ display:none; margin-top: 14px; padding-top: 12px; border-top:1px dashed var(--line); }
+.logrow.is-open .logrow__detail{ display:block; }
+.logrow__reply{
+  font-size: 13px; color: var(--ink-dim); line-height:1.5;
+  padding: 8px 0 8px 14px; border-left: 2px solid var(--line-strong); margin-top:8px;
+}
+.logrow__reply b{ color: var(--ink); font-family: ui-monospace, monospace; font-size:11px; display:block; margin-bottom:3px; }
+@media (max-width: 640px){
+  .logfeed__viewport{ height: 480px; }
+}
+
+/* =====================================================================
+   STAGE 3b. MATERIALKATALOG (element grid)
+===================================================================== */
+.matcat__toolbar{ display:flex; flex-wrap:wrap; gap:14px; align-items:center; margin-bottom:22px; }
+.matcat__grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(140px,100%), 1fr));
+  gap: 12px;
+  margin-bottom: 48px;
+}
+.elem-tile{
+  position: relative;
+  border: 1px solid var(--line);
+  background: var(--bg-elevated);
+  padding: 14px 12px;
+  cursor: pointer;
+  transition: border-color .2s, transform .2s;
+  text-align: left;
+}
+.elem-tile:hover, .elem-tile:focus-visible{ border-color: var(--cyan); transform: translateY(-3px); }
+.elem-tile__num{ font-family: ui-monospace,monospace; font-size:10px; color: var(--ink-faint); }
+.elem-tile__sym{ font-size: 34px; font-weight:800; color: var(--ink); line-height:1; margin: 8px 0 6px; }
+.elem-tile__name{ font-size:11px; color: var(--ink-dim); }
+.elem-detail{
+  border: 1px solid var(--cyan);
+  background: var(--bg-elevated);
+  padding: 22px;
+  margin-bottom: 48px;
+  display:none;
+}
+.elem-detail.is-shown{ display:block; }
+.elem-detail h4{ margin:0 0 4px; font-size:22px; }
+.elem-detail .sub{ color:var(--ink-faint); font-family:ui-monospace,monospace; font-size:11px; margin:0 0 14px; }
+.elem-detail p{ color: var(--ink-dim); font-size:14px; line-height:1.6; margin:0 0 16px; max-width:60ch; }
+.elem-detail__stats{ display:flex; flex-wrap:wrap; gap:24px; }
+.elem-detail__stats .spec__val{ color: var(--cyan); }
+.matcat__chart-head{ display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:14px; margin-bottom:18px; }
+.matcat__chart-wrap{ border:1px solid var(--line); background:var(--bg-soft); padding: 20px; }
+.matcat__legend{ display:flex; flex-wrap:wrap; gap:14px 20px; margin-top:14px; font-family:ui-monospace,monospace; font-size:11px; color:var(--ink-dim); }
+.matcat__legend span{ display:inline-flex; align-items:center; gap:6px; }
+.matcat__legend i{ width:10px; height:10px; display:inline-block; border-radius:2px; }
+
+/* =====================================================================
+   STAGE 3c. KARRIERE-PFADFINDER (questionnaire)
+===================================================================== */
+.pathfinder__progress{ display:flex; gap:8px; margin-bottom: 36px; }
+.pathfinder__progress span{ flex:1; height:3px; background: var(--line); }
+.pathfinder__progress span.is-done{ background: var(--cyan); }
+.pathfinder__progress span.is-current{ background: var(--magenta); }
+.pathfinder__stage{
+  border: 1px solid var(--line);
+  background: var(--bg-elevated);
+  padding: 40px clamp(20px,4vw,52px);
+  min-height: 320px;
+  transition: opacity .35s var(--ease-out), transform .35s var(--ease-out);
+}
+.pathfinder__stage.is-anim-out{ opacity:0; transform: translateX(-24px); }
+.pathfinder__stage h3{ margin:0 0 22px; font-size: clamp(20px,2.6vw,30px); }
+.pf-options{ display:grid; grid-template-columns: repeat(auto-fit, minmax(min(220px,100%),1fr)); gap:12px; }
+.pf-option{
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-dim);
+  text-align:left;
+  padding: 16px 18px;
+  cursor:pointer;
+  font-size: 14px;
+  transition: border-color .2s, color .2s, background .2s;
+}
+.pf-option:hover{ border-color: var(--line-strong); color: var(--ink); }
+.pf-option[aria-checked="true"]{ border-color: var(--cyan); color: var(--ink); background: var(--cyan-dim); }
+.pathfinder__nav{ display:flex; justify-content:space-between; margin-top:28px; }
+.pf-btn{
+  background: transparent; border:1px solid var(--line-strong); color: var(--ink);
+  font-family: ui-monospace,monospace; font-size:12px; letter-spacing:.06em; text-transform:uppercase;
+  padding: 12px 22px; cursor:pointer; transition: border-color .2s, background .2s;
+}
+.pf-btn:hover:not(:disabled){ border-color: var(--cyan); }
+.pf-btn:disabled{ opacity:.35; cursor:not-allowed; }
+.pf-btn--primary{ background: var(--cyan); color: var(--bg); border-color: var(--cyan); }
+.pathfinder__result{ display:none; }
+.pathfinder__result.is-shown{ display:block; }
+.pathfinder__result-grid{ display:grid; grid-template-columns: minmax(0,1fr) minmax(0,320px); gap: 32px; align-items:start; }
+.pathfinder__badgewrap{ text-align:center; }
+.pathfinder__badgewrap canvas{ width:100%; max-width:340px; border:1px solid var(--line); }
+@media (max-width: 800px){
+  .pathfinder__result-grid{ grid-template-columns: minmax(0,1fr); }
+}
 </style>
 </head>
 <body>
@@ -1571,8 +1750,11 @@ section{
     <li><a href="#orbital">Orbital-Sim</a></li>
     <li><a href="#configurator">Konfigurator</a></li>
     <li><a href="#tech">Technologie</a></li>
+    <li><a href="#logfeed">Protokoll</a></li>
+    <li><a href="#matcat">Materialkatalog</a></li>
     <li><a href="#timeline">Historie</a></li>
     <li><a href="#team">Kommando</a></li>
+    <li><a href="#pathfinder">Pfadfinder</a></li>
     <li><a href="#contact">Rekrutierung</a></li>
   </ul>
   <div class="nav__right">
@@ -1592,9 +1774,12 @@ section{
   <a href="#orbital">04 · Orbital-Sim</a>
   <a href="#configurator">05 · Konfigurator</a>
   <a href="#tech">06 · Technologie</a>
-  <a href="#timeline">07 · Historie</a>
-  <a href="#team">08 · Kommando</a>
-  <a href="#contact">09 · Rekrutierung</a>
+  <a href="#logfeed">07 · Protokoll</a>
+  <a href="#matcat">08 · Materialkatalog</a>
+  <a href="#timeline">09 · Historie</a>
+  <a href="#team">10 · Kommando</a>
+  <a href="#pathfinder">11 · Pfadfinder</a>
+  <a href="#contact">12 · Rekrutierung</a>
 </nav>
 
 <nav class="sectionnav" id="sectionNav" role="navigation" aria-label="Sektionen"></nav>
@@ -1996,13 +2181,74 @@ section{
 </div>
 
 <!-- ===================================================================
+     5b. SCHICHTPROTOKOLL (radio log feed)
+=================================================================== -->
+<section id="logfeed" aria-label="Schichtprotokoll">
+  <div class="wrap">
+    <div class="section-head" data-reveal>
+      <div>
+        <span class="section-num mono">07 / SCHICHTPROTOKOLL</span>
+        <h2>Jede Meldung <br>bleibt im Netz.</h2>
+      </div>
+      <p style="max-width:34ch; color:var(--ink-dim); font-size:14.5px; line-height:1.6;">Funkverkehr aus dem Kernnetz und allen vier Claims — durchsuchbar, gefiltert, unauslöschlich.</p>
+    </div>
+
+    <div class="logfeed__toolbar">
+      <input type="search" class="logfeed__search" id="logSearch" placeholder="Protokoll durchsuchen…" aria-label="Schichtprotokoll durchsuchen">
+      <select class="logfeed__sort" id="logSort" aria-label="Sortierung">
+        <option value="new">Neueste zuerst</option>
+        <option value="old">Älteste zuerst</option>
+        <option value="urgency">Nach Dringlichkeit</option>
+      </select>
+    </div>
+    <div class="chiprow" id="logSiteChips" role="group" aria-label="Nach Standort filtern"></div>
+    <div class="chiprow" id="logUrgChips" role="group" aria-label="Nach Dringlichkeit filtern" style="margin-top:8px;margin-bottom:14px;"></div>
+    <p class="logfeed__count" id="logCount" aria-live="polite"></p>
+    <div class="logfeed__viewport" id="logViewport" role="feed" aria-label="Meldungsliste" tabindex="0">
+      <div class="logfeed__spacer" id="logSpacer"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================
+     5c. MATERIALKATALOG (element grid + production chart)
+=================================================================== -->
+<section id="matcat" aria-label="Materialkatalog">
+  <div class="wrap">
+    <div class="section-head" data-reveal>
+      <div>
+        <span class="section-num mono">08 / MATERIALKATALOG</span>
+        <h2>Der Tresor <br>des Sonnensystems.</h2>
+      </div>
+      <p style="max-width:34ch; color:var(--ink-dim); font-size:14.5px; line-height:1.6;">Seltene Erden und strategische Metalle, in Reinheitsgraden, die die Erde nicht mehr liefern kann.</p>
+    </div>
+
+    <div class="matcat__toolbar">
+      <span class="label" style="margin-bottom:0">Sortieren nach</span>
+      <div class="chiprow" id="matSortChips" role="group" aria-label="Sortierung"></div>
+    </div>
+    <div class="matcat__grid" id="matGrid"></div>
+    <div class="elem-detail" id="matDetail" aria-live="polite"></div>
+
+    <div class="matcat__chart-head">
+      <h3 style="margin:0;font-size:20px;">Förderverlauf 2141–2187</h3>
+      <div class="chiprow" id="matMetricChips" role="group" aria-label="Metrik wählen"></div>
+    </div>
+    <div class="matcat__chart-wrap">
+      <svg id="matChart" viewBox="0 0 800 320" width="100%" style="overflow:visible" role="img" aria-label="Gestapeltes Flächendiagramm der Förderentwicklung"></svg>
+      <div class="matcat__legend" id="matLegend"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================
      6. TIMELINE
 =================================================================== -->
 <section id="timeline" class="timeline" aria-label="Firmenhistorie">
   <div class="wrap">
     <div class="section-head" data-reveal>
       <div>
-        <span class="section-num mono">07 / HISTORIE</span>
+        <span class="section-num mono">09 / HISTORIE</span>
         <h2>46 Jahre <br>jenseits der Bahn.</h2>
       </div>
     </div>
@@ -2065,7 +2311,7 @@ section{
   <div class="wrap">
     <div class="section-head" data-reveal>
       <div>
-        <span class="section-num mono">08 / KOMMANDO</span>
+        <span class="section-num mono">10 / KOMMANDO</span>
         <h2>Die Personen, <br>die entscheiden.</h2>
       </div>
       <p style="max-width:34ch; color:var(--ink-dim); font-size:14.5px; line-height:1.6;">Sechs Kommandanten, ein Konsens: Effizienz duldet keinen Aufschub.</p>
@@ -2120,13 +2366,51 @@ section{
 </section>
 
 <!-- ===================================================================
+     7b. KARRIERE-PFADFINDER
+=================================================================== -->
+<section id="pathfinder" aria-label="Karriere-Pfadfinder">
+  <div class="wrap">
+    <div class="section-head" data-reveal>
+      <div>
+        <span class="section-num mono">11 / KARRIERE-PFADFINDER</span>
+        <h2>Finde deine <br>Rotation.</h2>
+      </div>
+      <p style="max-width:34ch; color:var(--ink-dim); font-size:14.5px; line-height:1.6;">Vier Fragen. Eine Zuweisung. Keine falschen Antworten — nur unpassende Standorte.</p>
+    </div>
+
+    <div class="pathfinder__progress" id="pfProgress" aria-hidden="true"></div>
+
+    <div id="pfStages"></div>
+
+    <div class="pathfinder__result" id="pfResult" aria-live="polite">
+      <div class="pathfinder__result-grid">
+        <div>
+          <h3 id="pfResultTitle" style="font-size:26px;margin:0 0 10px;"></h3>
+          <p id="pfResultBlurb" style="color:var(--ink-dim);font-size:14.5px;line-height:1.65;max-width:52ch;"></p>
+          <div class="spec-grid" style="max-width:420px;margin-top:20px;">
+            <div class="spec"><div class="spec__label">Position</div><div class="spec__val" id="pfResPos" style="font-size:15px;"></div></div>
+            <div class="spec"><div class="spec__label">Standort</div><div class="spec__val" id="pfResSite" style="font-size:15px;"></div></div>
+            <div class="spec"><div class="spec__label">Abreisefenster</div><div class="spec__val" id="pfResWindow" style="font-size:15px;"></div></div>
+          </div>
+          <button type="button" class="pf-btn" id="pfRestart" style="margin-top:24px;">Neu starten</button>
+        </div>
+        <div class="pathfinder__badgewrap">
+          <canvas id="pfBadge" width="640" height="400" aria-label="Dienstausweis"></canvas>
+          <a id="pfDownload" class="pf-btn pf-btn--primary" style="display:inline-block;margin-top:14px;text-decoration:none;" download="aetherium-dienstausweis.png">Ausweis herunterladen</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================
      8. CONTACT / RECRUITMENT
 =================================================================== -->
 <section id="contact" class="contact" aria-label="Kontakt und Rekrutierung">
   <div class="wrap">
     <div class="section-head" data-reveal>
       <div>
-        <span class="section-num mono">09 / REKRUTIERUNG</span>
+        <span class="section-num mono">12 / REKRUTIERUNG</span>
         <h2>Der Gürtel wartet <br>nicht auf Zauderer.</h2>
       </div>
     </div>
@@ -2467,8 +2751,11 @@ const ScrollRig = (function(){
     { id: "orbital", label: "Orbital-Sim" },
     { id: "configurator", label: "Konfigurator" },
     { id: "tech", label: "Technologie" },
+    { id: "logfeed", label: "Protokoll" },
+    { id: "matcat", label: "Materialkatalog" },
     { id: "timeline", label: "Historie" },
     { id: "team", label: "Kommando" },
+    { id: "pathfinder", label: "Pfadfinder" },
     { id: "contact", label: "Rekrutierung" }
   ].map(s => ({ ...s, el: document.getElementById(s.id) }))
    .filter(s => s.el);
@@ -3827,6 +4114,743 @@ document.querySelectorAll(".btn").forEach(btn => {
   }
   document.addEventListener("scroll", onScroll, { passive:true });
 })();
+
+/* =====================================================================
+   21. SCHICHTPROTOKOLL — procedurally generated, filterable, virtualized,
+       FLIP-animated radio log feed.
+===================================================================== */
+(function logFeed(){
+  const viewport = document.getElementById("logViewport");
+  const spacer = document.getElementById("logSpacer");
+  const searchEl = document.getElementById("logSearch");
+  const sortEl = document.getElementById("logSort");
+  const siteChipsEl = document.getElementById("logSiteChips");
+  const urgChipsEl = document.getElementById("logUrgChips");
+  const countEl = document.getElementById("logCount");
+  if(!viewport || !spacer) return;
+
+  /* --- seeded PRNG (mulberry32) for stable, repeatable generated content --- */
+  function mulberry32(seed){
+    let a = seed;
+    return function(){
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const rand = mulberry32(918273645);
+  function pick(arr){ return arr[Math.floor(rand()*arr.length)]; }
+  function pickInt(min,max){ return min + Math.floor(rand()*(max-min+1)); }
+
+  const SITES = [
+    { id:"kbx-114", name:"KBX-114 „Ouroboros“" },
+    { id:"vst-006", name:"VST-006 „Halcyon Rift“" },
+    { id:"prm-221", name:"PRM-221 „Schwarzgrat“" },
+    { id:"ndx-330", name:"NDX-330 „Stille Fracht“" },
+    { id:"hq", name:"AETHERIUM-Kernnetz" }
+  ];
+  const RANKS = ["Kommandant/in","Techniker/in","Pilot/in","Systemarchitekt/in","Sondierungsoffizier/in","Schichtleiter/in"];
+  const FIRST = ["Vera","Idris","Nadya","Elias","Ravi","Soren","Mika","Talia","Bram","Yuki","Petra","Conrad","Ines","Oskar","Lena","Faisal"];
+  const LAST = ["Solheim","Wex","Cortez","Thorn","Mbeki","Lindqvist","Okafor","Reyes","Kessler","Varga","Duarte","Straka","Novak","Ilic","Farro"];
+  const URGENCIES = [
+    { id:"routine", label:"Routine" },
+    { id:"priority", label:"Priorität" },
+    { id:"critical", label:"Kritisch" }
+  ];
+  const TEMPLATES = {
+    routine: [
+      "Schichtwechsel auf {site} abgeschlossen. Alle Systeme im Sollbereich.",
+      "Regolith-Fördermenge auf {site} liegt {n} % über Plan.",
+      "Routinewartung an Bohrschwarm-Sektor {n} auf {site} durchgeführt.",
+      "Statusmeldung {site}: Besatzung vollzählig, keine Vorkommnisse.",
+      "Frachtschlepper von {site} planmäßig zur Auslieferung ausgelaufen.",
+      "Sentinel-Knoten auf {site} melden nominale Latenz von {n} ms.",
+      "Vorratslage {site}: Ausreichend für {n} weitere Zyklen."
+    ],
+    priority: [
+      "Druckabfall in Habitatsektor {n} auf {site} — Techniker-Team unterwegs.",
+      "Claim-Grenze bei {site} durch Fremdscan sondiert. Überwachung erhöht.",
+      "Fusion-Tug-Antrieb FT-9 auf {site} zeigt Effizienzabfall von {n} %.",
+      "Kommunikationsverzögerung zu {site} auf {n} Lichtminuten gestiegen.",
+      "Besatzungsmitglied auf {site} meldet Ausrüstungsdefekt — Ersatzteil angefordert.",
+      "Strahlungswerte auf {site} kurzzeitig auf Stufe {n} gestiegen, wird beobachtet."
+    ],
+    critical: [
+      "NOTFALL {site}: Hüllenbruch in Sektor {n} — sofortige Evakuierung eingeleitet.",
+      "Totalausfall Orbital Refinery Core auf {site}. Produktionsstopp.",
+      "Kollisionswarnung: Trümmerfeld nähert sich {site} in {n} Stunden.",
+      "Besatzungsmitglied auf {site} vermisst seit Schichtbeginn — Suchtrupp aktiv.",
+      "Fusion-Antrieb auf {site} überhitzt — Notabschaltung durchgeführt."
+    ]
+  };
+  const REPLY_TEMPLATES = [
+    "Verstanden, {site}. Wir bestätigen Empfang und stellen Ressourcen bereit.",
+    "Eskaliert an Kommandobrücke. Rückmeldung folgt in Kürze.",
+    "Techniker-Team {n} auf dem Weg zu {site}, ETA {n} Minuten.",
+    "Lage stabil, Beobachtung wird fortgesetzt.",
+    "Zusatzmodul angefordert, Versand über nächsten Schlepper.",
+    "Protokoll abgeschlossen. Keine weiteren Maßnahmen nötig."
+  ];
+
+  const total = 200;
+  const entries = [];
+  for(let i=0;i<total;i++){
+    const site = pick(SITES);
+    const urg = i < 6 ? "critical" : (rand() < 0.18 ? "critical" : rand() < 0.42 ? "priority" : "routine");
+    const rank = pick(RANKS);
+    const name = pick(FIRST) + " " + pick(LAST);
+    const tpl = pick(TEMPLATES[urg]);
+    const text = tpl.replace("{site}", site.name).replace(/\{n\}/g, () => String(pickInt(2,97)));
+    // plausible descending-ish date across a recent operational window
+    const daysAgo = Math.floor((i / total) * 640) + pickInt(0,3);
+    const date = new Date(2187, 2, 14);
+    date.setDate(date.getDate() - daysAgo);
+    date.setHours(pickInt(0,23), pickInt(0,59), 0, 0);
+    const replyCount = urg === "critical" ? pickInt(2,3) : urg === "priority" ? pickInt(1,2) : pickInt(0,1);
+    const replies = [];
+    for(let r=0;r<replyCount;r++){
+      const rname = pick(FIRST) + " " + pick(LAST);
+      const rtxt = pick(REPLY_TEMPLATES).replace("{site}", site.name).replace(/\{n\}/g, () => String(pickInt(2,45)));
+      replies.push({ name: rname, text: rtxt });
+    }
+    entries.push({
+      id: "log-" + i,
+      ts: date.getTime(),
+      site: site.id, siteName: site.name,
+      rank, name, urgency: urg, text, replies
+    });
+  }
+
+  /* --- filter / sort / search state --- */
+  const state = { search: "", site: "alle", urgency: "alle", sort: "new" };
+  let filtered = entries.slice();
+  const rowHeights = new Map(); // id -> px
+  const ROW_H = 92;
+  let expandedId = null;
+
+  function applyFilter(){
+    const q = state.search.trim().toLowerCase();
+    filtered = entries.filter(e => {
+      if(state.site !== "alle" && e.site !== state.site) return false;
+      if(state.urgency !== "alle" && e.urgency !== state.urgency) return false;
+      if(q && !e.text.toLowerCase().includes(q) && !e.siteName.toLowerCase().includes(q) && !e.name.toLowerCase().includes(q)) return false;
+      return true;
+    });
+    if(state.sort === "new") filtered.sort((a,b)=>b.ts-a.ts);
+    else if(state.sort === "old") filtered.sort((a,b)=>a.ts-b.ts);
+    else if(state.sort === "urgency"){
+      const rank = { critical:0, priority:1, routine:2 };
+      filtered.sort((a,b)=> rank[a.urgency]-rank[b.urgency] || b.ts-a.ts);
+    }
+  }
+
+  function heightOf(e){
+    if(e.id === expandedId){
+      return rowHeights.get(e.id) || (ROW_H + 60 + e.replies.length*54);
+    }
+    return ROW_H;
+  }
+
+  let positions = []; // { id, top, h }
+  function computePositions(){
+    let top = 0;
+    positions = filtered.map(e => {
+      const h = heightOf(e);
+      const p = { id: e.id, top, h, entry: e };
+      top += h;
+      return p;
+    });
+    spacer.style.height = top + "px";
+  }
+
+  function fmtDate(ts){
+    const d = new Date(ts);
+    const pad = n => String(n).padStart(2,"0");
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  function highlight(text){
+    const q = state.search.trim();
+    if(!q) return escapeHtml(text);
+    const idx = text.toLowerCase().indexOf(q.toLowerCase());
+    if(idx === -1) return escapeHtml(text);
+    return escapeHtml(text.slice(0,idx)) + "<mark>" + escapeHtml(text.slice(idx, idx+q.length)) + "</mark>" + escapeHtml(text.slice(idx+q.length));
+  }
+  function escapeHtml(s){
+    return s.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+  }
+
+  const pool = new Map(); // id -> element currently in DOM
+  const BUFFER = 200;
+
+  function buildRow(p){
+    const e = p.entry;
+    const row = document.createElement("div");
+    row.className = "logrow";
+    row.setAttribute("role","article");
+    row.setAttribute("tabindex","0");
+    row.dataset.id = e.id;
+    const urgLabel = URGENCIES.find(u=>u.id===e.urgency).label;
+    row.innerHTML = `
+      <div class="logrow__top">
+        <span class="logrow__urgency logrow__urgency--${e.urgency}" aria-hidden="true"></span>
+        <span>${urgLabel}</span>
+        <span class="logrow__site">${e.siteName}</span>
+        <span>${e.rank} ${escapeHtml(e.name)}</span>
+        <span>${fmtDate(e.ts)}</span>
+      </div>
+      <p class="logrow__text">${highlight(e.text)}</p>
+      <div class="logrow__detail"></div>
+    `;
+    row.addEventListener("click", () => toggleExpand(e.id));
+    row.addEventListener("keydown", ev => {
+      if(ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); toggleExpand(e.id); }
+    });
+    return row;
+  }
+
+  function fillDetail(row, e){
+    if(e.id !== expandedId) { row.classList.remove("is-open"); return; }
+    row.classList.add("is-open");
+    const det = row.querySelector(".logrow__detail");
+    if(e.replies.length){
+      det.innerHTML = e.replies.map(r => `<div class="logrow__reply"><b>${escapeHtml(r.name)}</b>${escapeHtml(r.text)}</div>`).join("");
+    } else {
+      det.innerHTML = `<div class="logrow__reply" style="color:var(--ink-faint)">Keine weiteren Antworten protokolliert.</div>`;
+    }
+  }
+
+  function toggleExpand(id){
+    const wasOpen = expandedId === id;
+    expandedId = wasOpen ? null : id;
+    render(true);
+    const row = pool.get(id);
+    if(row && !wasOpen){
+      const heading = row.querySelector(".logrow__text");
+      if(heading) heading.focus?.();
+    }
+  }
+
+  function render(doFlip){
+    const first = doFlip && !reduceMotion ? new Map() : null;
+    if(first){
+      pool.forEach((el, id) => { first.set(id, el.getBoundingClientRect()); });
+    }
+    computePositions();
+    const scrollTop = viewport.scrollTop;
+    const vh = viewport.clientHeight || 560;
+    const lo = scrollTop - BUFFER, hi = scrollTop + vh + BUFFER;
+    const visible = positions.filter(p => p.top + p.h >= lo && p.top <= hi);
+    const visibleIds = new Set(visible.map(p=>p.id));
+
+    // remove rows no longer visible
+    pool.forEach((el, id) => {
+      if(!visibleIds.has(id)){ el.remove(); pool.delete(id); }
+    });
+    // add/update visible rows
+    visible.forEach(p => {
+      let el = pool.get(p.id);
+      if(!el){
+        el = buildRow(p);
+        pool.set(p.id, el);
+        viewport.appendChild(el);
+      } else {
+        const textEl = el.querySelector(".logrow__text");
+        if(textEl) textEl.innerHTML = highlight(p.entry.text);
+      }
+      el.style.top = p.top + "px";
+      el.style.height = p.h + "px";
+      fillDetail(el, p.entry);
+    });
+
+    if(first){
+      pool.forEach((el, id) => {
+        const before = first.get(id);
+        if(!before) return; // newly created row, no FLIP needed
+        const after = el.getBoundingClientRect();
+        const dx = before.left - after.left;
+        const dy = before.top - after.top;
+        if(dx || dy){
+          el.style.transition = "none";
+          el.style.transform = `translate(${dx}px,${dy}px)`;
+          requestAnimationFrame(() => {
+            el.style.transition = `transform var(--dur-fast) var(--ease-out)`;
+            el.style.transform = "";
+          });
+        }
+      });
+    }
+
+    countEl.textContent = filtered.length + " von " + entries.length + " Meldungen";
+  }
+
+  function buildChips(container, options, activeKey, onPick){
+    container.innerHTML = "";
+    options.forEach(opt => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "chip";
+      btn.textContent = opt.label;
+      btn.setAttribute("aria-pressed", String(opt.id === activeKey));
+      btn.addEventListener("click", () => onPick(opt.id));
+      container.appendChild(btn);
+    });
+  }
+
+  function refreshChips(){
+    buildChips(siteChipsEl, [{id:"alle",label:"Alle Standorte"}, ...SITES.map(s=>({id:s.id,label:s.name}))], state.site, id => {
+      state.site = id; expandedId = null; applyFilter(); refreshChips(); render(true);
+    });
+    buildChips(urgChipsEl, [{id:"alle",label:"Alle Dringlichkeiten"}, ...URGENCIES], state.urgency, id => {
+      state.urgency = id; expandedId = null; applyFilter(); refreshChips(); render(true);
+    });
+  }
+
+  searchEl.addEventListener("input", () => {
+    state.search = searchEl.value;
+    expandedId = null;
+    applyFilter();
+    render(true);
+  });
+  sortEl.addEventListener("change", () => {
+    state.sort = sortEl.value;
+    applyFilter();
+    render(true);
+  });
+  viewport.addEventListener("scroll", () => render(false), { passive:true });
+
+  applyFilter();
+  refreshChips();
+  render(false);
+  window.addEventListener("resize", () => render(false));
+})();
+
+/* =====================================================================
+   22. MATERIALKATALOG — element grid, detail card, sort, morphing chart
+===================================================================== */
+(function matCat(){
+  const grid = document.getElementById("matGrid");
+  const detail = document.getElementById("matDetail");
+  const sortChips = document.getElementById("matSortChips");
+  const metricChips = document.getElementById("matMetricChips");
+  const svg = document.getElementById("matChart");
+  const legend = document.getElementById("matLegend");
+  if(!grid || !svg) return;
+
+  const ELEMENTS = [
+    { z:60, sym:"Nd", name:"Neodymium", yield:"412 t/Jahr", purity:"99.95 %", price:"84.200 Cr/t", desc:"Kernmaterial für Antriebsmagnete der Fusion-Tug-Flotte." },
+    { z:66, sym:"Dy", name:"Dysprosium", yield:"96 t/Jahr", purity:"99.91 %", price:"312.500 Cr/t", desc:"Stabilisiert Magnetfelder bei extremer Betriebshitze." },
+    { z:39, sym:"Y", name:"Yttrium", yield:"580 t/Jahr", purity:"99.88 %", price:"41.900 Cr/t", desc:"Trägt Supraleiter-Beschichtungen im Sentinel-Netz." },
+    { z:65, sym:"Tb", name:"Terbium", yield:"38 t/Jahr", purity:"99.93 %", price:"690.000 Cr/t", desc:"Selten, unverzichtbar für Präzisionsaktuatoren." },
+    { z:59, sym:"Pr", name:"Praseodymium", yield:"210 t/Jahr", purity:"99.90 %", price:"97.400 Cr/t", desc:"Legierungspartner für Habitat-Schildpanzerung." },
+    { z:71, sym:"Lu", name:"Lutetium", yield:"14 t/Jahr", purity:"99.97 %", price:"1.240.000 Cr/t", desc:"Katalysator in Orbital-Refinery-Prozessketten." },
+    { z:21, sym:"Sc", name:"Scandium", yield:"27 t/Jahr", purity:"99.94 %", price:"455.000 Cr/t", desc:"Verstärkt Leichtmetalllegierungen der Schlepperrümpfe." },
+    { z:58, sym:"Ce", name:"Cerium", yield:"1.180 t/Jahr", purity:"99.80 %", price:"18.300 Cr/t", desc:"Poliermittel und Katalysatorbasis in Massenproduktion." },
+    { z:57, sym:"La", name:"Lanthan", yield:"940 t/Jahr", purity:"99.85 %", price:"22.700 Cr/t", desc:"Batteriechemie der Habitat-Notstromsysteme." },
+    { z:63, sym:"Eu", name:"Europium", yield:"52 t/Jahr", purity:"99.96 %", price:"540.000 Cr/t", desc:"Leuchtphosphore für Warnsysteme in Vakuumumgebung." },
+    { z:64, sym:"Gd", name:"Gadolinium", yield:"71 t/Jahr", purity:"99.92 %", price:"198.000 Cr/t", desc:"Abschirmmaterial gegen Neutronenstrahlung." },
+    { z:62, sym:"Sm", name:"Samarium", yield:"88 t/Jahr", purity:"99.89 %", price:"165.000 Cr/t", desc:"Hochtemperatur-Permanentmagnete für Bohrschwärme." },
+    { z:68, sym:"Er", name:"Erbium", yield:"33 t/Jahr", purity:"99.93 %", price:"288.000 Cr/t", desc:"Signalverstärkung in Kommunikationsfasern über Lichtstunden." },
+    { z:70, sym:"Yb", name:"Ytterbium", yield:"46 t/Jahr", purity:"99.95 %", price:"221.000 Cr/t", desc:"Atomuhren-Referenz für Flottenkoordination." },
+    { z:41, sym:"Nb", name:"Niob", yield:"340 t/Jahr", purity:"99.87 %", price:"58.600 Cr/t", desc:"Supraleitende Spulen der Fusionsreaktoren." },
+    { z:73, sym:"Ta", name:"Tantal", yield:"61 t/Jahr", purity:"99.91 %", price:"310.000 Cr/t", desc:"Korrosionsfeste Ventile für Raffinerie-Kernmodule." }
+  ];
+  const numVal = s => parseFloat(String(s).replace(/[^\d.]/g,""));
+  ELEMENTS.forEach(e => { e._yield = numVal(e.yield); e._purity = numVal(e.purity); e._price = numVal(e.price); });
+
+  function renderGrid(){
+    grid.innerHTML = "";
+    ELEMENTS.forEach(e => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "elem-tile";
+      btn.innerHTML = `<div class="elem-tile__num">${e.z}</div><div class="elem-tile__sym">${e.sym}</div><div class="elem-tile__name">${e.name}</div>`;
+      btn.addEventListener("mouseenter", () => showDetail(e));
+      btn.addEventListener("focus", () => showDetail(e));
+      grid.appendChild(btn);
+    });
+  }
+  function showDetail(e){
+    detail.classList.add("is-shown");
+    detail.innerHTML = `
+      <h4>${e.name} <span class="mono" style="color:var(--cyan);font-size:16px;">${e.sym}</span></h4>
+      <p class="sub">Ordnungszahl ${e.z} · Strategisches Metall</p>
+      <p>${e.desc}</p>
+      <div class="elem-detail__stats">
+        <div class="spec"><div class="spec__label">Ertrag</div><div class="spec__val">${e.yield}</div></div>
+        <div class="spec"><div class="spec__label">Reinheit</div><div class="spec__val">${e.purity}</div></div>
+        <div class="spec"><div class="spec__label">Marktpreis</div><div class="spec__val">${e.price}</div></div>
+      </div>`;
+  }
+
+  function buildChips(container, options, activeKey, onPick){
+    container.innerHTML = "";
+    options.forEach(opt => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "chip";
+      btn.textContent = opt.label;
+      btn.setAttribute("aria-pressed", String(opt.id === activeKey));
+      btn.addEventListener("click", () => { onPick(opt.id); [...container.children].forEach(c => c.setAttribute("aria-pressed", String(c===btn))); });
+      container.appendChild(btn);
+    });
+  }
+  let sortKey = "_yield";
+  buildChips(sortChips, [
+    {id:"_yield",label:"Ertrag"}, {id:"_purity",label:"Reinheit"}, {id:"_price",label:"Marktpreis"}
+  ], sortKey, id => {
+    sortKey = id;
+    ELEMENTS.sort((a,b)=> b[sortKey]-a[sortKey]);
+    renderGrid();
+  });
+
+  renderGrid();
+  if(ELEMENTS[0]) showDetail(ELEMENTS[0]);
+
+  /* --- stacked area chart with morphing metric switch --- */
+  const CHART_EL = [
+    { sym:"Nd", color:"#00E5FF" },
+    { sym:"Y",  color:"#34FFB0" },
+    { sym:"Ce", color:"#FFB020" },
+    { sym:"Eu", color:"#FF2D95" }
+  ];
+  const YEARS = [2141,2147,2153,2159,2165,2171,2177,2183];
+  const seed = mulberry32chart(55112);
+  function mulberry32chart(seed){ let a=seed; return function(){ a|=0; a=(a+0x6D2B79F5)|0; let t=Math.imul(a^(a>>>15),1|a); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+
+  const datasets = { foerder: [], anteil: [] };
+  CHART_EL.forEach((el, i) => {
+    const base = 40 + i*30;
+    const foerder = YEARS.map((y,idx) => Math.round(base + idx*idx*2.1 + seed()*20));
+    datasets.foerder.push(foerder);
+  });
+  // Marktanteil: percentage-style values per year that sum to ~100 across the 4 elements
+  for(let yi=0; yi<YEARS.length; yi++){
+    let vals = CHART_EL.map((el,i) => 10 + i*4 + seed()*14 + yi*1.2);
+    const sum = vals.reduce((a,b)=>a+b,0);
+    vals = vals.map(v => Math.round((v/sum)*100));
+    CHART_EL.forEach((el,i) => {
+      if(!datasets.anteil[i]) datasets.anteil[i] = [];
+      datasets.anteil[i].push(vals[i]);
+    });
+  }
+
+  const W = 800, H = 320, PAD_L = 36, PAD_B = 26, PAD_T = 10;
+  const plotW = W - PAD_L - 10, plotH = H - PAD_T - PAD_B;
+  function xFor(i){ return PAD_L + (i/(YEARS.length-1)) * plotW; }
+
+  function stackedBands(metric){
+    const data = datasets[metric];
+    const maxTotal = Math.max(...YEARS.map((y,idx) => data.reduce((s,arr)=>s+arr[idx],0)));
+    const scale = plotH / (maxTotal * 1.05);
+    const bands = [];
+    let cumBottom = YEARS.map(()=>0);
+    for(let i=0;i<CHART_EL.length;i++){
+      const top = YEARS.map((y,idx) => cumBottom[idx] + data[i][idx]);
+      bands.push({ bottom: cumBottom.slice(), top: top.slice() });
+      cumBottom = top;
+    }
+    return bands.map(b => ({
+      bottom: b.bottom.map(v => H - PAD_B - v*scale),
+      top: b.top.map(v => H - PAD_B - v*scale)
+    }));
+  }
+
+  function pathFromBand(band){
+    let d = "M " + xFor(0) + " " + band.top[0];
+    for(let i=1;i<YEARS.length;i++) d += " L " + xFor(i) + " " + band.top[i];
+    for(let i=YEARS.length-1;i>=0;i--) d += " L " + xFor(i) + " " + band.bottom[i];
+    d += " Z";
+    return d;
+  }
+
+  let currentMetric = "foerder";
+  let currentBands = stackedBands(currentMetric);
+  const paths = CHART_EL.map((el,i) => {
+    const p = document.createElementNS("http://www.w3.org/2000/svg","path");
+    p.setAttribute("fill", el.color);
+    p.setAttribute("opacity", "0.72");
+    p.setAttribute("stroke", el.color);
+    p.setAttribute("stroke-width","1");
+    p.setAttribute("d", pathFromBand(currentBands[i]));
+    svg.appendChild(p);
+    return p;
+  });
+  legend.innerHTML = CHART_EL.map(el => `<span><i style="background:${el.color}"></i>${el.sym}</span>`).join("");
+
+  let animHandle = null;
+  function setMetric(metric){
+    if(metric === currentMetric) return;
+    const fromBands = currentBands;
+    const toBands = stackedBands(metric);
+    currentMetric = metric;
+    if(reduceMotion){
+      currentBands = toBands;
+      paths.forEach((p,i) => p.setAttribute("d", pathFromBand(toBands[i])));
+      return;
+    }
+    if(animHandle) Ticker.remove(animHandle);
+    const dur = 600;
+    const t0 = performance.now();
+    animHandle = function(dt, now){
+      const t = clamp((now - t0)/dur, 0, 1);
+      const e = 1 - Math.pow(1-t, 3);
+      paths.forEach((p,i) => {
+        const fb = fromBands[i], tb = toBands[i];
+        const band = {
+          top: fb.top.map((v,idx) => lerp(v, tb.top[idx], e)),
+          bottom: fb.bottom.map((v,idx) => lerp(v, tb.bottom[idx], e))
+        };
+        p.setAttribute("d", pathFromBand(band));
+      });
+      if(t >= 1){
+        currentBands = toBands;
+        Ticker.remove(animHandle);
+        animHandle = null;
+      }
+    };
+    Ticker.add(animHandle);
+  }
+
+  buildChips(metricChips, [
+    {id:"foerder", label:"Fördermenge"}, {id:"anteil", label:"Marktanteil"}
+  ], "foerder", setMetric);
+})();
+
+/* =====================================================================
+   23. KARRIERE-PFADFINDER — branching questionnaire, canvas badge, Store
+===================================================================== */
+(function pathfinder(){
+  const stagesEl = document.getElementById("pfStages");
+  const progressEl = document.getElementById("pfProgress");
+  const resultEl = document.getElementById("pfResult");
+  const restartBtn = document.getElementById("pfRestart");
+  if(!stagesEl) return;
+
+  const STEPS = [
+    { key:"qual", title:"Qualifikation", options:[
+      {id:"extraction", label:"Regolith-Extraktion"},
+      {id:"refine", label:"Isotopische Raffination"},
+      {id:"logistics", label:"Deep-Tug-Logistik"},
+      {id:"systems", label:"Systemarchitektur"}
+    ]},
+    { key:"resilience", title:"Belastbarkeit", options:[
+      {id:"low", label:"Kurze, intensive Einsätze"},
+      {id:"mid", label:"Ausgewogene Rotation"},
+      {id:"high", label:"Dauerbetrieb unter Extrembedingungen"}
+    ]},
+    { key:"rotation", title:"Rotationsdauer", options:[
+      {id:"short", label:"3 Monate"},
+      {id:"mid", label:"9 Monate"},
+      {id:"long", label:"18+ Monate"}
+    ]},
+    { key:"risk", title:"Risikobereitschaft", options:[
+      {id:"low", label:"Etablierte Standorte bevorzugt"},
+      {id:"mid", label:"Moderates Risiko akzeptabel"},
+      {id:"high", label:"Frontclaims, ungesichertes Terrain"}
+    ]}
+  ];
+
+  const SITE = {
+    kbx: "KBX-114 „Ouroboros“", vst: "VST-006 „Halcyon Rift“",
+    prm: "PRM-221 „Schwarzgrat“", ndx: "NDX-330 „Stille Fracht“"
+  };
+  function decide(a){
+    // small lookup / decision function over the four answers
+    let position = "Regolith-Extraktionstechniker/in";
+    let site = SITE.kbx;
+    let window_ = "Nächster Schlepper (14 Tage)";
+    if(a.qual === "systems"){
+      position = "Systemarchitekt/in, Sentinel-Netz";
+      site = SITE.prm;
+    } else if(a.qual === "refine"){
+      position = "Isotopische/r Raffinationsingenieur/in";
+      site = a.risk === "high" ? SITE.ndx : SITE.vst;
+    } else if(a.qual === "logistics"){
+      position = "Deep-Tug-Logistikoffizier/in";
+      site = SITE.vst;
+    } else {
+      position = "Regolith-Extraktionstechniker/in";
+      site = a.risk === "high" ? SITE.ndx : SITE.kbx;
+    }
+    if(a.resilience === "high" && a.risk === "high"){
+      site = SITE.ndx;
+      position = position.replace(/in$/,"in (Frontclaim-Einsatz)").replace(/e$/,"e (Frontclaim-Einsatz)");
+    }
+    if(a.rotation === "long") window_ = "Langzeit-Rotation, Abflug in 6 Wochen";
+    else if(a.rotation === "short") window_ = "Kurzrotation, Abflug in 5 Tagen";
+    else window_ = "Standardrotation, Abflug in 14 Tagen";
+
+    const blurb = `Basierend auf deiner Qualifikation und Risikoprofil empfiehlt das Sentinel-Netz eine Zuweisung als ${position} auf ${site}. Die Kombination aus Belastbarkeit und gewählter Rotationsdauer wurde in die Abreiseplanung eingerechnet.`;
+    return { position, site, window: window_, blurb };
+  }
+
+  let stepIdx = 0;
+  let answers = {};
+  const restored = Store.get("pathfinder", null);
+  if(restored && typeof restored === "object"){
+    stepIdx = restored.stepIdx || 0;
+    answers = restored.answers || {};
+  }
+
+  function persist(){
+    Store.set("pathfinder", { stepIdx, answers });
+  }
+
+  function renderProgress(){
+    progressEl.innerHTML = "";
+    STEPS.forEach((s,i) => {
+      const span = document.createElement("span");
+      if(i < stepIdx) span.className = "is-done";
+      else if(i === stepIdx) span.className = "is-current";
+      progressEl.appendChild(span);
+    });
+  }
+
+  function renderStep(animateDir){
+    if(stepIdx >= STEPS.length){ showResult(); return; }
+    resultEl.classList.remove("is-shown");
+    stagesEl.style.display = "";
+    const step = STEPS[stepIdx];
+    const wrap = document.createElement("div");
+    wrap.className = "pathfinder__stage";
+    const h = document.createElement("h3");
+    h.textContent = (stepIdx+1) + " / " + STEPS.length + " — " + step.title;
+    h.tabIndex = -1;
+    wrap.appendChild(h);
+
+    const group = document.createElement("div");
+    group.className = "pf-options";
+    group.setAttribute("role","radiogroup");
+    group.setAttribute("aria-label", step.title);
+    step.options.forEach(opt => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "pf-option";
+      btn.setAttribute("role","radio");
+      btn.setAttribute("aria-checked", String(answers[step.key] === opt.id));
+      btn.textContent = opt.label;
+      btn.addEventListener("click", () => {
+        answers[step.key] = opt.id;
+        persist();
+        [...group.children].forEach(c => c.setAttribute("aria-checked","false"));
+        btn.setAttribute("aria-checked","true");
+        nextBtn.disabled = false;
+      });
+      group.appendChild(btn);
+    });
+    wrap.appendChild(group);
+
+    const navRow = document.createElement("div");
+    navRow.className = "pathfinder__nav";
+    const backBtn = document.createElement("button");
+    backBtn.type = "button"; backBtn.className = "pf-btn"; backBtn.textContent = "Zurück";
+    backBtn.disabled = stepIdx === 0;
+    backBtn.addEventListener("click", () => { stepIdx = Math.max(0, stepIdx-1); persist(); rerender(-1); });
+    const nextBtn = document.createElement("button");
+    nextBtn.type = "button"; nextBtn.className = "pf-btn pf-btn--primary"; nextBtn.textContent = stepIdx === STEPS.length-1 ? "Ergebnis anzeigen" : "Weiter";
+    nextBtn.disabled = !answers[step.key];
+    nextBtn.addEventListener("click", () => { stepIdx += 1; persist(); rerender(1); });
+    navRow.appendChild(backBtn); navRow.appendChild(nextBtn);
+    wrap.appendChild(navRow);
+
+    stagesEl.innerHTML = "";
+    stagesEl.appendChild(wrap);
+    renderProgress();
+
+    if(!reduceMotion && animateDir){
+      wrap.style.opacity = "0";
+      wrap.style.transform = `translateX(${animateDir*24}px)`;
+      requestAnimationFrame(() => {
+        wrap.style.opacity = "1";
+        wrap.style.transform = "translateX(0)";
+      });
+    }
+    h.focus();
+  }
+  function rerender(dir){ renderStep(dir); }
+
+  function showResult(){
+    stagesEl.innerHTML = "";
+    progressEl.querySelectorAll("span").forEach(s => { s.className = "is-done"; });
+    resultEl.classList.add("is-shown");
+    const rec = decide(answers);
+    document.getElementById("pfResultTitle").textContent = "Deine Empfehlung";
+    document.getElementById("pfResultBlurb").textContent = rec.blurb;
+    document.getElementById("pfResPos").textContent = rec.position;
+    document.getElementById("pfResSite").textContent = rec.site;
+    document.getElementById("pfResWindow").textContent = rec.window;
+    drawBadge(rec);
+    resultEl.querySelector("h3").focus?.();
+    persist();
+  }
+
+  function drawBadge(rec){
+    const canvas = document.getElementById("pfBadge");
+    const ctx = canvas.getContext("2d");
+    const w = canvas.width, h = canvas.height;
+    ctx.fillStyle = "#0B0D14";
+    ctx.fillRect(0,0,w,h);
+    // border
+    ctx.strokeStyle = "#00E5FF";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(8,8,w-16,h-16);
+    // header
+    ctx.fillStyle = "#00E5FF";
+    ctx.font = "700 26px monospace";
+    ctx.fillText("AETHERIUM", 32, 56);
+    ctx.fillStyle = "#9AA0AE";
+    ctx.font = "12px monospace";
+    ctx.fillText("DEEP SPACE MINING COLLECTIVE · DIENSTAUSWEIS", 32, 76);
+    ctx.strokeStyle = "rgba(255,255,255,0.18)";
+    ctx.beginPath(); ctx.moveTo(32,92); ctx.lineTo(w-32,92); ctx.stroke();
+
+    ctx.fillStyle = "#EDEFF4";
+    ctx.font = "700 22px monospace";
+    ctx.fillText("AETHERIUM REKRUT", 32, 130);
+    ctx.fillStyle = "#FF2D95";
+    ctx.font = "13px monospace";
+    ctx.fillText(rec.position, 32, 154);
+    ctx.fillStyle = "#9AA0AE";
+    ctx.font = "12px monospace";
+    ctx.fillText("Standort: " + rec.site, 32, 176);
+    ctx.fillText("Fenster: " + rec.window, 32, 196);
+    const idNum = "AX-" + Math.floor(100000 + (answers.qual?7:3)*1000 + Math.random()*89999);
+    ctx.fillText("ID " + idNum, 32, 216);
+
+    // decorative QR-like grid
+    const gx = w-150, gy = h-150, cell = 8, n = 15;
+    let seed = 42;
+    function rnd(){ seed = (seed*1103515245+12345) & 0x7fffffff; return (seed/0x7fffffff); }
+    ctx.fillStyle = "#00E5FF";
+    for(let i=0;i<n;i++){
+      for(let j=0;j<n;j++){
+        if(rnd() > 0.55) ctx.fillRect(gx+i*cell, gy+j*cell, cell-1, cell-1);
+      }
+    }
+    ctx.strokeStyle = "#FF2D95";
+    ctx.strokeRect(gx-4,gy-4,n*cell+8,n*cell+8);
+
+    ctx.fillStyle = "#5B6072";
+    ctx.font = "10px monospace";
+    ctx.fillText("Gültig ab Abreisedatum · Nicht übertragbar", 32, h-24);
+
+    const link = document.getElementById("pfDownload");
+    try{
+      link.href = canvas.toDataURL("image/png");
+    }catch(e){ /* canvas tainted fallback: leave href unset */ }
+  }
+
+  restartBtn.addEventListener("click", () => {
+    stepIdx = 0; answers = {};
+    persist();
+    renderStep(0);
+  });
+
+  renderStep(0);
+})();
+
 </script>
 
 </body>
