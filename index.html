@@ -921,6 +921,47 @@ footer .wrap{ position:relative; z-index:1; }
 }
 
 /* ============================================================
+   39 — ORBITAL SIMULATOR
+   ============================================================ */
+#orbit{ border-bottom:1px solid var(--line); }
+.orb-wrap{ display:grid; grid-template-columns:1fr 310px; gap:1px; background:var(--line); border:1px solid var(--line); }
+@media (max-width:1040px){ .orb-wrap{ grid-template-columns:1fr; } }
+.orb-stage{ position:relative; background:var(--bg); min-width:0;
+  min-height:clamp(380px, 54vh, 660px); }
+@media (max-width:1040px){ .orb-stage{ min-height:clamp(360px,58vh,560px); } }
+@media (max-width:660px){ .orb-stage{ min-height:clamp(320px,52vh,440px); } }
+#orbCv{ position:absolute; inset:0; width:100%; height:100%; cursor:grab; touch-action:none; }
+#orbCv.drag{ cursor:grabbing; }
+#orbCv:focus-visible{ outline:2px solid var(--cy); outline-offset:-2px; }
+.orb-hud{
+  position:absolute; left:14px; top:14px; display:flex; flex-direction:column; gap:5px;
+  pointer-events:none;
+}
+.orb-hud .v{ font-family:var(--mono); font-size:.62rem; letter-spacing:.14em; color:var(--fg-faint); }
+.orb-hud .v b{ color:var(--cy); font-weight:400; }
+.orb-tools{ position:absolute; right:14px; top:14px; display:flex; flex-direction:column; gap:6px; align-items:flex-end; }
+.orb-side{ background:var(--bg); padding:18px; display:flex; flex-direction:column; gap:16px; min-width:0; }
+.orb-list{ display:flex; flex-direction:column; gap:1px; max-height:260px; overflow-y:auto; margin-inline:-6px; }
+.orb-list button{
+  display:flex; align-items:center; gap:10px; padding:7px 6px; cursor:pointer; text-align:left;
+  font-family:var(--mono); font-size:.64rem; letter-spacing:.1em; color:var(--fg-dim);
+  border-left:2px solid transparent; transition:color .25s, background-color .25s, border-color .25s;
+}
+.orb-list button:hover{ color:var(--fg); background:var(--bg-3); }
+.orb-list button.on{ color:var(--cy); border-left-color:var(--cy); background:var(--bg-3); }
+.orb-list .sw{ width:8px; height:8px; border-radius:50%; flex:none; }
+.orb-list .ds{ margin-left:auto; color:var(--fg-faint); }
+.orb-card{ border-top:1px solid var(--line); padding-top:14px; }
+.orb-card h4{ font-size:1.05rem; letter-spacing:-.01em; margin-bottom:3px; }
+.orb-card .kv{ display:flex; justify-content:space-between; gap:10px; padding-block:4px; border-bottom:1px solid var(--line); }
+.orb-card .kv .mini:first-child{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.orb-card .kv .val{ flex:none; color:var(--fg); }
+.orb-card .kv:last-child{ border-bottom:none; }
+.orb-ctrl{ display:flex; flex-direction:column; gap:9px; padding-top:14px; border-top:1px solid var(--line); }
+.orb-ctrl .hd{ display:flex; justify-content:space-between; gap:10px; }
+.orb-toggles{ display:flex; gap:6px; flex-wrap:wrap; }
+
+/* ============================================================
    19 — REDUCED MOTION
    ============================================================ */
 @media (prefers-reduced-motion:reduce){
@@ -1305,6 +1346,61 @@ footer .wrap{ position:relative; z-index:1; }
 
         <div class="rings" id="prings"></div>
         <div style="display:grid;gap:16px" id="pbars"></div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ========= ORBIT ========= -->
+<section id="orbit" class="sec-pad">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="label" data-rv="up">05 — Orbital-Simulator</div>
+        <h2 class="h2" data-split style="margin-top:14px">Wo alles<br>gerade steht</h2>
+      </div>
+      <p class="lede" data-rv="up" data-d="200" style="max-width:40ch">
+        Keplerbahnen in Echtzeit. Ziehen zum Schwenken, Mausrad zum Zoomen,
+        Klick auf einen Körper dockt die Kamera an. Der Zeitraffer reicht von
+        Echtzeit bis fünfzig Millionen-fach — anders bewegt sich da draußen nichts.
+      </p>
+    </div>
+
+    <div class="orb-wrap" data-rv="scale">
+      <div class="orb-stage">
+        <canvas id="orbCv" tabindex="0" role="application"
+                aria-label="Orbitalkarte. Pfeiltasten schwenken, Plus und Minus zoomen, Tabulator zur Körperliste."></canvas>
+        <div class="orb-hud">
+          <div class="v">T+ <b id="orbDay">0</b> Tage</div>
+          <div class="v">Maßstab <b id="orbScale">—</b></div>
+          <div class="v">Zeitraffer <b id="orbRateV">1×</b></div>
+        </div>
+        <div class="orb-tools">
+          <button class="chip" id="orbPlay" aria-pressed="true">Pause</button>
+          <button class="chip" id="orbHome">Zurücksetzen</button>
+        </div>
+      </div>
+
+      <aside class="orb-side">
+        <div class="label">Körper</div>
+        <div class="orb-list" id="orbList" role="listbox" aria-label="Himmelskörper"></div>
+
+        <div class="orb-card" id="orbCard">
+          <div class="label" id="orbKind">Auswahl</div>
+          <h4 id="orbName">Sonne</h4>
+          <div id="orbKV"></div>
+        </div>
+
+        <div class="orb-ctrl">
+          <div class="hd"><span class="mini">Zeitraffer</span><span class="mini val" id="orbRate2">1×</span></div>
+          <input class="sw-range" id="orbRate" type="range" min="0" max="100" value="74" aria-label="Zeitraffer">
+          <div class="orb-toggles">
+            <button class="chip on" data-orbt="orbits">Bahnen</button>
+            <button class="chip on" data-orbt="names">Namen</button>
+            <button class="chip" data-orbt="soi">Einflussbereiche</button>
+            <button class="chip on" data-orbt="ships">Frachter</button>
+          </div>
+        </div>
       </aside>
     </div>
   </div>
@@ -3147,6 +3243,370 @@ TERM_CMDS.bridge = { d:"Momentaufnahme der Brücke", run(){ tLines([
   ["  Lebenserhaltung .......... "+Math.round((Sim.o2+(1-Sim.co2)+Sim.h2o+Sim.pwr)/4*100)+" %","out"],
   ["  Laderaum ................. "+de(Sim.cargo*100,1)+" %","out"]
 ]); jump("bridge"); }};
+
+/* ============================================================
+   40 — ORBITAL SIMULATOR
+   ============================================================ */
+const Orb = (function(){
+  const cv=$("#orbCv"), stage=$(".orb-stage");
+  const DAY_PER_YEAR=365.25;
+
+  /* --- bodies: a in AU, e, period from Kepler's third law --- */
+  function period(a){ return Math.pow(a,1.5)*DAY_PER_YEAR; }
+  function body(o){
+    o.P = o.P || period(o.a);
+    o.b = o.a*Math.sqrt(1-o.e*o.e);
+    o.M0 = o.M0==null ? Math.random()*6.2832 : o.M0;
+    o.w  = o.w==null ? Math.random()*6.2832 : o.w;
+    o.trail=[];
+    return o;
+  }
+  const BODIES=[
+    body({id:"sun",     n:"Sonne",    kind:"Stern",   a:0,      e:0,    r:9,   c:"#FFD166", fixed:true}),
+    body({id:"merkur",  n:"Merkur",   kind:"Planet",  a:0.387,  e:.206, r:2,   c:"#9AA0B5", w:1.3, M0:.4}),
+    body({id:"venus",   n:"Venus",    kind:"Planet",  a:0.723,  e:.007, r:2.8, c:"#D9B48F", w:2.2, M0:3.1}),
+    body({id:"erde",    n:"Erde",     kind:"Planet",  a:1.000,  e:.017, r:3,   c:"#5AA9E6", w:1.8, M0:1.1}),
+    body({id:"mars",    n:"Mars",     kind:"Planet",  a:1.524,  e:.093, r:2.4, c:"#C1573F", w:5.0, M0:4.6}),
+    body({id:"jupiter", n:"Jupiter",  kind:"Planet",  a:5.203,  e:.048, r:6,   c:"#C9A227", w:.25, M0:2.2}),
+    body({id:"saturn",  n:"Saturn",   kind:"Planet",  a:9.537,  e:.054, r:5.2, c:"#D6C08A", w:1.6, M0:5.4}),
+    body({id:"uranus",  n:"Uranus",   kind:"Planet",  a:19.19,  e:.047, r:4,   c:"#7FD4D4", w:3.0, M0:.9}),
+    body({id:"neptun",  n:"Neptun",   kind:"Planet",  a:30.07,  e:.009, r:4,   c:"#4C6FE0", w:.7,  M0:3.8}),
+    body({id:"halcyon", n:"HALCYON",  kind:"Standort",a:47.3,   e:.12,  r:3.4, c:"#00E5FF", w:.55, M0:1.4, site:0, soi:2.6}),
+    body({id:"vespera", n:"VESPERA",  kind:"Standort",a:41.8,   e:.24,  r:2.8, c:"#00E5FF", w:2.7, M0:4.2, site:1, soi:1.8}),
+    body({id:"obsidian",n:"OBSIDIAN", kind:"Standort",a:52.6,   e:.08,  r:3.8, c:"#00E5FF", w:4.4, M0:2.7, site:2, soi:3.1}),
+    body({id:"kestrel", n:"KESTREL",  kind:"Standort",a:38.4,   e:.31,  r:2.4, c:"#00E5FF", w:5.9, M0:5.8, site:3, soi:1.3})
+  ];
+  /* nineteen freighters on Hohmann-ish transfer ellipses */
+  const SHIPS=[];
+  for(let i=0;i<19;i++){
+    const dest=BODIES[9 + (i%4)];
+    const rp=1.15 + (i%5)*0.07;
+    const ra=dest.a;
+    const A=(rp+ra)/2, E=(ra-rp)/(ra+rp);
+    SHIPS.push(body({
+      id:"v"+(i+1), n:"VESPER-"+String(i+1).padStart(2,"0"), kind:"Frachter",
+      a:A, e:E, r:1.6, c:"#FF2D95", w:dest.w + (i%7-3)*0.11,
+      M0:(i/19)*6.2832, dest:dest.n, ship:true
+    }));
+  }
+  const ALL=BODIES.concat(SHIPS);
+  const byId={}; ALL.forEach(b=> byId[b.id]=b);
+
+  /* --- Kepler --- */
+  function solveE(M,e){
+    M = M % 6.283185307; if(M<0) M+=6.283185307;
+    let E = e<.8 ? M : Math.PI;
+    for(let i=0;i<6;i++){
+      const f = E - e*Math.sin(E) - M;
+      const fp = 1 - e*Math.cos(E);
+      E -= f/fp;
+    }
+    return E;
+  }
+  function posOf(b, days){
+    if(b.fixed) return [0,0];
+    const M = b.M0 + 6.283185307*days/b.P;
+    const E = solveE(M, b.e);
+    const x0 = b.a*(Math.cos(E)-b.e);
+    const y0 = b.b*Math.sin(E);
+    const cw=Math.cos(b.w), sw=Math.sin(b.w);
+    return [ x0*cw - y0*sw, x0*sw + y0*cw ];
+  }
+
+  /* --- camera --- */
+  const cam = Object.assign({ x:0, y:0, s:9, follow:null }, Store.get("orbCam",{}));
+  let days = 0, playing=true, rateIdx=Store.get('orbRate',74), sel=null, W=0, H=0;
+  const TOG = Object.assign({orbits:true,names:true,soi:false,ships:true}, Store.get("orbTog",{}));
+
+  function rateFromSlider(v){
+    /* real time (1x) up to 5e7x, logarithmic — the outer bodies need it */
+    return Math.pow(10, (v/100)*7.7);
+  }
+  function fmtRate(r){
+    if(r<1000)    return Math.round(r)+"×";
+    if(r<1e6)     return (r/1000).toFixed(r<1e4?1:0).replace(".",",")+"k×";
+    return (r/1e6).toFixed(1).replace(".",",")+" Mio×";
+  }
+  function fmtPace(r){
+    const d=r/86400;
+    if(d<1/24) return (d*24*60).toFixed(1).replace(".",",")+" min/s";
+    if(d<1)    return (d*24).toFixed(1).replace(".",",")+" h/s";
+    return d.toFixed(d<10?1:0).replace(".",",")+" Tage/s";
+  }
+
+  /* --- interaction --- */
+  let dragging=false, lastX=0, lastY=0, moved=0;
+  cv.addEventListener("pointerdown", e=>{
+    dragging=true; moved=0; lastX=e.clientX; lastY=e.clientY;
+    cv.classList.add("drag"); cv.setPointerCapture(e.pointerId);
+  });
+  cv.addEventListener("pointermove", e=>{
+    if(!dragging) return;
+    const dx=e.clientX-lastX, dy=e.clientY-lastY;
+    moved += Math.abs(dx)+Math.abs(dy);
+    lastX=e.clientX; lastY=e.clientY;
+    cam.x -= dx/cam.s; cam.y -= dy/cam.s; cam.follow=null;
+  });
+  cv.addEventListener("pointerup", e=>{
+    dragging=false; cv.classList.remove("drag");
+    if(moved<5) pick(e);
+    save();
+  });
+  cv.addEventListener("pointercancel", ()=>{ dragging=false; cv.classList.remove("drag"); });
+  cv.addEventListener("wheel", e=>{
+    e.preventDefault();
+    const r=cv.getBoundingClientRect();
+    const mxp=e.clientX-r.left-W/2, myp=e.clientY-r.top-H/2;
+    const wx=cam.x+mxp/cam.s, wy=cam.y+myp/cam.s;
+    const f=Math.pow(1.0016, -e.deltaY);
+    cam.s = clamp(cam.s*f, 0.55, 420);
+    cam.x = wx - mxp/cam.s; cam.y = wy - myp/cam.s;
+    cam.follow=null; save();
+  }, {passive:false});
+
+  cv.addEventListener("keydown", e=>{
+    const step=40/cam.s;
+    if(e.key==="ArrowLeft"){ cam.x-=step; cam.follow=null; }
+    else if(e.key==="ArrowRight"){ cam.x+=step; cam.follow=null; }
+    else if(e.key==="ArrowUp"){ cam.y-=step; cam.follow=null; }
+    else if(e.key==="ArrowDown"){ cam.y+=step; cam.follow=null; }
+    else if(e.key==="+"||e.key==="="){ cam.s=clamp(cam.s*1.25,.55,420); }
+    else if(e.key==="-"||e.key==="_"){ cam.s=clamp(cam.s/1.25,.55,420); }
+    else if(e.key.toLowerCase()==="p"){ togglePlay(); }
+    else return;
+    e.preventDefault(); save();
+  });
+
+  function pick(e){
+    const r=cv.getBoundingClientRect();
+    const px=e.clientX-r.left, py=e.clientY-r.top;
+    let best=null, bd=1e9;
+    ALL.forEach(b=>{
+      if(b.ship && !TOG.ships) return;
+      const p=posOf(b,days);
+      const sx=(p[0]-cam.x)*cam.s+W/2, sy=(p[1]-cam.y)*cam.s+H/2;
+      const d=Math.hypot(sx-px, sy-py);
+      if(d<bd && d<20){ bd=d; best=b; }
+    });
+    if(best) select(best.id, true);
+  }
+
+  /* --- side panel --- */
+  const listEl=$("#orbList"), kvEl=$("#orbKV");
+  function buildList(){
+    listEl.innerHTML="";
+    ALL.forEach(b=>{
+      if(b.ship && !TOG.ships) return;
+      const btn=document.createElement("button");
+      btn.type="button"; btn.dataset.id=b.id; btn.setAttribute("role","option");
+      btn.setAttribute("aria-selected", String(sel===b.id));
+      btn.innerHTML='<span class="sw" style="background:'+b.c+'"></span><span>'+b.n+'</span>'+
+                    '<span class="ds">'+(b.fixed?"—":b.a.toFixed(1)+" AE")+'</span>';
+      btn.addEventListener("click", ()=> select(b.id, true));
+      listEl.appendChild(btn);
+    });
+  }
+  function select(id, dock){
+    sel=id;
+    const b=byId[id];
+    $$("#orbList button").forEach(x=>{
+      const on = x.dataset.id===id;
+      x.classList.toggle("on", on);
+      x.setAttribute("aria-selected", String(on));
+    });
+    $("#orbKind").textContent=b.kind;
+    $("#orbName").textContent=b.n;
+    const rows=[];
+    if(b.fixed){
+      rows.push(["Klasse","G2V"],["Masse","1,0 M☉"],["Entfernung","0 AE"]);
+    }else{
+      rows.push(["Große Halbachse", b.a.toFixed(3)+" AE"]);
+      rows.push(["Exzentrizität", b.e.toFixed(3).replace(".",",")]);
+      rows.push(["Umlaufzeit", b.P>DAY_PER_YEAR*2
+        ? (b.P/DAY_PER_YEAR).toFixed(1).replace(".",",")+" Jahre"
+        : Math.round(b.P)+" Tage"]);
+      const p=posOf(b,days);
+      rows.push(["Abstand Sonne", Math.hypot(p[0],p[1]).toFixed(2).replace(".",",")+" AE"]);
+      if(b.dest) rows.push(["Ziel", b.dest]);
+      if(b.site!=null) rows.push(["Förderung", SITES[b.site].rings[0][1]+" kt/Zyklus"]);
+      if(b.site!=null) rows.push(["Besatzung", SITES[b.site].rings[1][1]]);
+    }
+    kvEl.innerHTML = rows.map(r=>'<div class="kv"><span class="mini">'+r[0]+'</span><span class="mini val">'+r[1]+'</span></div>').join("");
+    if(dock && !b.fixed){ cam.follow=id; Audio_.click(); }
+    else if(dock){ cam.follow=null; cam.x=0; cam.y=0; }
+    save();
+  }
+
+  /* --- controls --- */
+  const rateEl=$("#orbRate");
+  function syncRate(){
+    const r=rateFromSlider(rateIdx);
+    $("#orbRateV").textContent=fmtRate(r);
+    $("#orbRate2").textContent=fmtRate(r)+" · "+fmtPace(r);
+  }
+  rateEl.addEventListener("input", ()=>{ rateIdx=+rateEl.value; syncRate(); Store.set("orbRate", rateIdx); });
+  function togglePlay(){
+    playing=!playing;
+    const b=$("#orbPlay");
+    b.textContent = playing?"Pause":"Weiter";
+    b.setAttribute("aria-pressed", String(playing));
+  }
+  $("#orbPlay").addEventListener("click", togglePlay);
+  $("#orbHome").addEventListener("click", ()=>{
+    cam.x=0; cam.y=0; cam.s=9; cam.follow=null; sel=null;
+    $$("#orbList button").forEach(x=>x.classList.remove("on"));
+    select("sun"); save();
+  });
+  $$("[data-orbt]").forEach(btn=>{
+    const k=btn.dataset.orbt;
+    btn.classList.toggle("on", !!TOG[k]);
+    btn.addEventListener("click", ()=>{
+      TOG[k]=!TOG[k]; btn.classList.toggle("on", TOG[k]);
+      Store.set("orbTog", TOG);
+      if(k==="ships") buildList();
+    });
+  });
+  function save(){ Store.set("orbCam",{x:cam.x,y:cam.y,s:cam.s,follow:cam.follow}); }
+
+  /* --- draw --- */
+  let last=performance.now();
+  function draw(t){
+    const dt=Math.min((t-last)/1000,.1); last=t;
+    if(!inView(stage, 260)) return;
+    const f=fitCanvas(cv); if(!f) return;
+    const ctx=f.ctx; W=f.w; H=f.h;
+
+    if(playing && !reduced) days += dt * rateFromSlider(rateIdx) / 86400;
+
+    ctx.clearRect(0,0,W,H);
+    const line=css("--line"), faint=css("--fg-faint"), fg=css("--fg"), cyc=css("--cy");
+
+    if(cam.follow && byId[cam.follow]){
+      const p=posOf(byId[cam.follow],days);
+      cam.x=lerp(cam.x,p[0],.12); cam.y=lerp(cam.y,p[1],.12);
+    }
+    const toX=(x)=> (x-cam.x)*cam.s + W/2;
+    const toY=(y)=> (y-cam.y)*cam.s + H/2;
+
+    /* faint reference rings every 10 AU */
+    ctx.strokeStyle=line; ctx.lineWidth=1;
+    for(let au=10; au<=70; au+=10){
+      ctx.beginPath(); ctx.arc(toX(0),toY(0), au*cam.s, 0, 6.2832); ctx.stroke();
+    }
+
+    /* orbits */
+    if(TOG.orbits){
+      ALL.forEach(b=>{
+        if(b.fixed) return;
+        if(b.ship && !TOG.ships) return;
+        const rpx=b.a*cam.s;
+        if(rpx<6 || rpx>9000) return;
+        ctx.save();
+        ctx.translate(toX(0),toY(0));
+        ctx.rotate(b.w);
+        ctx.beginPath();
+        ctx.ellipse(-b.a*b.e*cam.s, 0, b.a*cam.s, b.b*cam.s, 0, 0, 6.2832);
+        ctx.strokeStyle = b.ship ? b.c : (b.site!=null ? cyc : faint);
+        ctx.globalAlpha = b.ship ? .13 : (b.site!=null ? .3 : .22);
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.restore();
+      });
+      ctx.globalAlpha=1;
+    }
+
+    /* spheres of influence */
+    if(TOG.soi){
+      ALL.forEach(b=>{
+        if(b.soi==null) return;
+        const p=posOf(b,days);
+        ctx.beginPath(); ctx.arc(toX(p[0]),toY(p[1]), Math.max(b.soi*cam.s,8), 0, 6.2832);
+        ctx.strokeStyle=cyc; ctx.globalAlpha=.25; ctx.setLineDash([2,4]); ctx.lineWidth=1; ctx.stroke();
+        ctx.setLineDash([]); ctx.globalAlpha=1;
+      });
+    }
+
+    /* trails + bodies */
+    ALL.forEach(b=>{
+      if(b.ship && !TOG.ships) return;
+      const p=posOf(b,days);
+      if(!b.fixed && !reduced){
+        b.trail.push(p);
+        if(b.trail.length>70) b.trail.shift();
+      }
+      if(b.trail.length>2){
+        ctx.beginPath();
+        for(let i=0;i<b.trail.length;i++){
+          const q=b.trail[i];
+          i?ctx.lineTo(toX(q[0]),toY(q[1])):ctx.moveTo(toX(q[0]),toY(q[1]));
+        }
+        ctx.strokeStyle=b.c; ctx.globalAlpha=.32; ctx.lineWidth=1.3; ctx.stroke(); ctx.globalAlpha=1;
+      }
+
+      const sx=toX(p[0]), sy=toY(p[1]);
+      if(sx<-80||sx>W+80||sy<-80||sy>H+80) return;
+      const isSel = sel===b.id;
+
+      if(b.fixed){
+        const g=ctx.createRadialGradient(sx,sy,0,sx,sy,26);
+        g.addColorStop(0,b.c); g.addColorStop(.35,"rgba(255,209,102,.45)"); g.addColorStop(1,"transparent");
+        ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,sy,26,0,6.2832); ctx.fill();
+      }
+      ctx.beginPath(); ctx.arc(sx,sy, b.r, 0, 6.2832);
+      ctx.fillStyle=b.c; ctx.fill();
+
+      if(isSel){
+        ctx.beginPath(); ctx.arc(sx,sy, b.r+7+Math.sin(t/260)*1.6, 0, 6.2832);
+        ctx.strokeStyle=cyc; ctx.lineWidth=1.2; ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(sx-b.r-13,sy); ctx.lineTo(sx-b.r-6,sy);
+        ctx.moveTo(sx+b.r+6,sy);  ctx.lineTo(sx+b.r+13,sy);
+        ctx.stroke();
+      }
+      if(TOG.names && (!b.ship || cam.s>14 || isSel)){
+        ctx.fillStyle = isSel ? fg : faint;
+        ctx.font='500 9px ui-monospace, monospace';
+        ctx.textAlign="left"; ctx.textBaseline="middle";
+        ctx.fillText(b.n, sx+b.r+6, sy-.5);
+      }
+    });
+
+    /* HUD numbers */
+    $("#orbDay").textContent = Math.floor(days).toLocaleString("de-DE");
+    $("#orbScale").textContent = (100/cam.s).toFixed(2).replace(".",",")+" AE / 100 px";
+  }
+
+  onTick(draw);
+  buildList(); syncRate(); select("erde");
+  rateEl.value = rateIdx;
+
+  return {
+    focus(name){
+      const b=ALL.find(x=> x.n.toLowerCase()===name.toLowerCase()) ||
+              ALL.find(x=> x.n.toLowerCase().indexOf(name.toLowerCase())===0);
+      if(b){ select(b.id, true); return b; }
+      return null;
+    },
+    list(){ return ALL; },
+    get days(){ return days; },
+    step(d){ days += d; }
+  };
+})();
+
+registerCmd({ ic:"◎", title:"Orbital-Simulator", sub:"Sektion", run:()=>jump("orbit") });
+TERM_CMDS.orbit = { d:"<körper> — Kamera andocken", run(a){
+  if(!a.length){
+    const rows=[["KÖRPER IM SIMULATOR","ok"]];
+    Orb.list().forEach(b=> rows.push(["  "+b.n.padEnd(12)+b.kind.padEnd(10)+(b.fixed?"—":b.a.toFixed(2)+" AE"),"out"]));
+    return tLines(rows);
+  }
+  const b=Orb.focus(a.join(" "));
+  if(!b) return tOut("Kein Körper: "+a.join(" "), "err");
+  tLines([["Kamera angedockt an "+b.n,"ok"],
+          ["  Große Halbachse .......... "+(b.fixed?"—":b.a.toFixed(3)+" AE"),"out"],
+          ["  Umlaufzeit ............... "+(b.fixed?"—":(b.P/365.25).toFixed(1)+" Jahre"),"out"]]);
+  ovClose(); jump("orbit");
+}};
 
 /* ============================================================
    MAIN RAF LOOP
