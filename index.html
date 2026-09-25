@@ -962,6 +962,58 @@ footer .wrap{ position:relative; z-index:1; }
 .orb-toggles{ display:flex; gap:6px; flex-wrap:wrap; }
 
 /* ============================================================
+   41 — FREIGHTER CONFIGURATOR
+   ============================================================ */
+#build{ background:var(--bg-2); border-block:1px solid var(--line); }
+.bd-grid{ display:grid; grid-template-columns:1.5fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); }
+@media (max-width:1040px){ .bd-grid{ grid-template-columns:1fr; } }
+.bd-stage{ background:var(--bg); padding:clamp(16px,2vw,26px); display:flex; flex-direction:column; justify-content:center; gap:14px; min-width:0; }
+#ship{ width:100%; height:auto; display:block; }
+#ship .hull{ fill:var(--bg-3); stroke:var(--line-2); stroke-width:1.2; }
+#ship .mod{ cursor:pointer; }
+#ship .mod .skin{ fill:var(--bg-3); stroke:var(--line-2); stroke-width:1.2; transition:fill .35s, stroke .35s; }
+#ship .mod .det{ stroke:var(--fg-faint); stroke-width:.8; fill:none; transition:stroke .35s; }
+#ship .mod:hover .skin{ fill:var(--bg); stroke:var(--fg-dim); }
+#ship .mod.on .skin{ fill:var(--cy-soft); stroke:var(--cy); }
+#ship .mod.on .det{ stroke:var(--cy); }
+#ship .hot{ fill:var(--bg); stroke:var(--fg-faint); stroke-width:1.2; transition:stroke .3s, fill .3s; }
+#ship .mod.on .hot{ fill:var(--cy); stroke:var(--cy); }
+#ship .pulse2{ fill:none; stroke:var(--cy); opacity:0; transform-box:fill-box; transform-origin:center; }
+#ship .mod.on .pulse2{ animation:nodePulse 2.4s ease-out infinite; opacity:.6; }
+#ship .lead{ stroke:var(--cy); stroke-width:1; fill:none; stroke-dasharray:var(--l,120); stroke-dashoffset:var(--l,120); transition:stroke-dashoffset .7s var(--ease); }
+#ship .ann.on .lead{ stroke-dashoffset:0; }
+#ship .cap2{ fill:var(--fg-faint); font-family:var(--mono); font-size:5.4px; letter-spacing:.2em; text-transform:uppercase; opacity:0; transition:opacity .4s .25s; }
+#ship .ann.on .cap2{ opacity:1; fill:var(--cy); }
+#ship .flame{ opacity:var(--fl,.35); transition:opacity .5s; }
+#ship .grid2{ stroke:var(--line); stroke-width:.4; }
+#ship .tank{ transition:height .6s var(--ease), y .6s var(--ease); }
+
+.bd-side{ background:var(--bg); padding:clamp(18px,2vw,26px); display:flex; flex-direction:column; gap:18px; min-width:0; }
+.bd-read{ display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); }
+.bd-read .r{ background:var(--bg); padding:13px 14px; }
+.bd-read .r .n{ font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:700; font-size:clamp(1.05rem,1.7vw,1.45rem); letter-spacing:-.03em; }
+.bd-read .r .n small{ font-size:.46em; color:var(--fg-faint); font-weight:400; margin-left:4px; letter-spacing:.1em; }
+.bd-read .r.bad .n{ color:var(--mg); }
+.bd-read .r.good .n{ color:var(--cy); }
+.bd-split{ display:flex; flex-direction:column; gap:8px; }
+.bd-split .ends{ display:flex; justify-content:space-between; }
+.bd-bar{ height:20px; display:flex; border:1px solid var(--line-2); overflow:hidden; }
+.bd-bar i{ display:block; height:100%; transition:width .35s var(--ease); }
+.bd-bar .f{ background:var(--cy); opacity:.55; }
+.bd-bar .c{ background:var(--mg); opacity:.55; }
+.bd-warn{
+  display:none; align-items:flex-start; gap:11px; padding:13px 15px;
+  border:1px solid var(--mg); border-left-width:2px; background:var(--mg-soft);
+}
+.bd-warn.on{ display:flex; animation:pop .5s var(--spring); }
+.bd-warn p{ font-size:.82rem; line-height:1.55; color:var(--fg); }
+.bd-mod{ border-top:1px solid var(--line); padding-top:15px; }
+.bd-mod p{ color:var(--fg-dim); font-size:.86rem; line-height:1.6; margin-top:9px; }
+.bd-mod .specs{ display:grid; gap:0; margin-top:13px; }
+.bd-mod .specs div{ display:flex; justify-content:space-between; gap:10px; padding-block:5px; border-bottom:1px solid var(--line); }
+.bd-mod .specs div:last-child{ border-bottom:none; }
+
+/* ============================================================
    19 — REDUCED MOTION
    ============================================================ */
 @media (prefers-reduced-motion:reduce){
@@ -1422,6 +1474,77 @@ footer .wrap{ position:relative; z-index:1; }
       <article class="tcard" data-cur="grow"><div><div class="label">Bergung</div><div class="big mg">TETHER-C</div></div><p>Elektrodynamische Fangleine, 14 km, Zugkraft 2,1 kN. Holt havarierte Rigs ein, ohne einen Tropfen Treibstoff zu verbrennen.</p><div class="label">14 km · 2,1 kN</div></article>
     </div>
     <div class="hbar"><i id="hbar"></i></div>
+  </div>
+</section>
+
+<!-- ========= BUILD ========= -->
+<section id="build" class="sec-pad">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="label" data-rv="up">07 — Frachter-Konfigurator</div>
+        <h2 class="h2" data-split style="margin-top:14px">Bauen Sie<br>eine VESPER</h2>
+      </div>
+      <p class="lede" data-rv="up" data-d="200" style="max-width:40ch">
+        Modul anwählen für Details. Der Regler verteilt zwölftausend Tonnen
+        zwischen Treibstoff und Fracht — jede Verschiebung rechnet Delta-v und
+        Laufzeit über die Raketengrundgleichung neu.
+      </p>
+    </div>
+
+    <div class="bd-grid" data-rv="scale">
+      <div class="bd-stage">
+        <svg id="ship" viewBox="0 0 640 260" role="group" aria-label="Schnittbild eines VESPER-Frachters">
+          <defs>
+            <linearGradient id="flameG" x1="1" y1="0" x2="0" y2="0">
+              <stop offset="0" stop-color="var(--cy)" stop-opacity=".85"/>
+              <stop offset="1" stop-color="var(--cy)" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <g id="shipGrid"></g>
+          <!-- spine -->
+          <rect class="hull" x="96" y="124" width="470" height="12" rx="1"/>
+          <g id="shipModules"></g>
+          <g id="shipAnn" pointer-events="none"></g>
+        </svg>
+        <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <span class="mini">VESPER-Klasse · Schnittbild · Maßstab 1:400</span>
+          <span class="mini val" id="bdTag">Konfiguration NOMINAL</span>
+        </div>
+      </div>
+
+      <aside class="bd-side">
+        <div class="sw-tabs" id="bdDest" role="group" aria-label="Zielstandort"></div>
+
+        <div class="bd-read" id="bdRead">
+          <div class="r"><div class="mini">Startmasse</div><div class="n"><span class="val" id="bdM0">0</span><small>t</small></div></div>
+          <div class="r"><div class="mini">Delta-v</div><div class="n"><span class="val" id="bdDv">0</span><small>km/s</small></div></div>
+          <div class="r"><div class="mini">Laufzeit</div><div class="n"><span class="val" id="bdT">0</span><small>Tage</small></div></div>
+          <div class="r"><div class="mini">Nutzlast</div><div class="n"><span class="val" id="bdPay">0</span><small>t</small></div></div>
+        </div>
+
+        <div class="bd-split">
+          <div class="ends"><span class="mini">Treibstoff <b class="val" id="bdFuelT">0 t</b></span><span class="mini">Fracht <b class="val" id="bdCargoT">0 t</b></span></div>
+          <div class="bd-bar"><i class="f" id="bdBarF"></i><i class="c" id="bdBarC"></i></div>
+          <input class="sw-range" id="bdSplit" type="range" min="6" max="46" value="22" aria-label="Verteilung Treibstoff gegen Fracht">
+          <div class="ends"><span class="mini">Reserve <b class="val" id="bdRes">—</b></span><span class="mini">Bedarf <b class="val" id="bdNeed">—</b></span></div>
+        </div>
+
+        <div class="bd-warn" id="bdWarn" role="alert">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--mg)" stroke-width="1.8" style="flex:none;margin-top:1px" aria-hidden="true">
+            <path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17h.01"/>
+          </svg>
+          <p id="bdWarnTx">—</p>
+        </div>
+
+        <div class="bd-mod" id="bdMod">
+          <div class="label" id="bdModK">Modul</div>
+          <h3 class="h3" id="bdModN" style="margin-top:7px">—</h3>
+          <p id="bdModD">Modul im Schnittbild anwählen.</p>
+          <div class="specs" id="bdModS"></div>
+        </div>
+      </aside>
+    </div>
   </div>
 </section>
 
@@ -3606,6 +3729,249 @@ TERM_CMDS.orbit = { d:"<körper> — Kamera andocken", run(a){
           ["  Große Halbachse .......... "+(b.fixed?"—":b.a.toFixed(3)+" AE"),"out"],
           ["  Umlaufzeit ............... "+(b.fixed?"—":(b.P/365.25).toFixed(1)+" Jahre"),"out"]]);
   ovClose(); jump("orbit");
+}};
+
+/* ============================================================
+   42 — FREIGHTER CONFIGURATOR
+   ============================================================ */
+const Build = (function(){
+  const G0=9.80665, ISP=9800;      /* gridded ion engine, VESPER cluster */
+  const STRUCT=2400;               /* dry structure, tonnes */
+  const BUDGET=12000;              /* propellant + cargo, tonnes */
+  const THRUST=6900;               /* newtons, whole cluster */
+
+  const DEST=[
+    { id:"HALCYON",  need:18.4 }, { id:"VESPERA", need:17.1 },
+    { id:"OBSIDIAN", need:19.6 }, { id:"KESTREL", need:16.2 }
+  ];
+
+  const MODULES=[
+    { id:"drive", n:"Antrieb", k:"Sektion 01", cap:"Ionencluster",
+      d:"Achtzehn Gitterionen-Triebwerke in zwei Ringen. Xenon wird ionisiert, durch ein Gitter auf 40 km/s beschleunigt und hinter dem Schiff wieder neutralisiert — sonst lädt sich der Rumpf auf und zieht seinen eigenen Strahl zurück.",
+      s:[["Triebwerke","18 × 383 N"],["Spez. Impuls","9.800 s"],["Schub gesamt","6,9 kN"],["Dauerbetrieb","400+ Tage"]] },
+    { id:"tank", n:"Tanks", k:"Sektion 02", cap:"Xenon",
+      d:"Vier kryogene Ringtanks um die Achse. Xenon liegt bei 165 Kelvin flüssig vor; die Abwärme des Reaktors hält es exakt an der Grenze, an der es sich am dichtesten lagern lässt.",
+      s:[["Tanks","4 Ringe"],["Lagertemperatur","165 K"],["Fülldruck","58 bar"],["Verlustrate","0,004 %/Tag"]] },
+    { id:"reactor", n:"Reaktor", k:"Sektion 03", cap:"RTG-4",
+      d:"Ein Spaltreaktor mit 4,2 Megawatt thermisch, gekoppelt an zwei Stirlingkreise. Die Radiatorflächen sind größer als der ganze Laderaum — im Vakuum ist Wärme loszuwerden schwerer, als sie zu erzeugen.",
+      s:[["Leistung","4,2 MW thermisch"],["Elektrisch","1,6 MW"],["Radiatorfläche","880 m²"],["Brennstoffwechsel","alle 9 Jahre"]] },
+    { id:"hab", n:"Habitat", k:"Sektion 04", cap:"Torus",
+      d:"Rotierender Torus für zweiundzwanzig Personen bei 0,38 g. Die Wasserwand nach außen dient zugleich als Strahlenschutz und als Vorrat — sie wird über die Fahrt langsam dünner.",
+      s:[["Besatzung","22"],["Rotation","2,1 U/min"],["Schwerkraft","0,38 g"],["Wasserwand","1,1 m"]] },
+    { id:"cargo", n:"Laderaum", k:"Sektion 05", cap:"Fracht",
+      d:"Sechs Containerreihen am offenen Spant. Im Vakuum braucht Fracht keine Hülle, nur eine Halterung und einen Sonnenschutz — das spart die Masse, die am Ende als Delta-v zurückkommt.",
+      s:[["Containerplätze","96"],["Sonnenschutz","6 Lagen"],["Beladezeit","182 h"],["Greifarme","4"]] },
+    { id:"tether", n:"Tether", k:"Sektion 06", cap:"Bergung",
+      d:"Elektrodynamische Fangleine, vierzehn Kilometer, aufgerollt im Bugspant. Sie holt havarierte Rigs ein, ohne einen Tropfen Treibstoff zu verbrennen — 2174 hat sie KESTREL gerettet.",
+      s:[["Länge","14 km"],["Zugkraft","2,1 kN"],["Leitermasse","31 t"],["Einsätze","3"]] }
+  ];
+
+  const svg_=$("#ship"), modsG=$("#shipModules"), annG=$("#shipAnn"), gridG=$("#shipGrid");
+  let split=Store.get("bdSplit2",22)/100;   /* share of budget that is propellant */
+  let dest=Store.get("bdDest",0), curMod=null;
+
+  /* ---------- draw the cutaway ---------- */
+  for(let x=0;x<=640;x+=32) gridG.appendChild(mk("line",{x1:x,y1:0,x2:x,y2:260,class:"grid2"}));
+  for(let y=0;y<=260;y+=32) gridG.appendChild(mk("line",{x1:0,y1:y,x2:640,y2:y,class:"grid2"}));
+
+  function mk(t,a){ const e=document.createElementNS("http://www.w3.org/2000/svg",t); for(const k in a) e.setAttribute(k,a[k]); return e; }
+  function grp(id, label, body, hot, lead, cap, hit){
+    const g=mk("g",{class:"mod", id:"mod-"+id, tabindex:"0", role:"button", "aria-label":label});
+    /* an invisible target, so thin details and the hotspot are all clickable */
+    g.appendChild(mk("rect",{x:hit[0], y:hit[1], width:hit[2], height:hit[3],
+                             fill:"transparent", "pointer-events":"all"}));
+    body.forEach(n=>g.appendChild(n));
+    g.appendChild(mk("circle",{cx:hot[0],cy:hot[1],r:7,class:"pulse2"}));
+    g.appendChild(mk("circle",{cx:hot[0],cy:hot[1],r:3.2,class:"hot"}));
+    const ann=mk("g",{class:"ann", id:"ann-"+id});
+    const path="M"+hot[0]+" "+hot[1]+" L"+lead[0]+" "+lead[1]+" L"+lead[2]+" "+lead[1];
+    const ln=mk("path",{d:path,class:"lead"});
+    ln.style.setProperty("--l", Math.abs(lead[1]-hot[1])+Math.abs(lead[2]-lead[0])+Math.abs(lead[0]-hot[0])+20);
+    ann.appendChild(ln);
+    const tx=mk("text",{x:lead[2]+(lead[2]>lead[0]?4:-4), y:lead[1]+2, class:"cap2",
+                        "text-anchor":lead[2]>lead[0]?"start":"end"});
+    tx.textContent=cap;
+    ann.appendChild(tx);
+    annG.appendChild(ann);
+    g.addEventListener("click", ()=> pickMod(id));
+    g.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); pickMod(id); } });
+    modsG.appendChild(g);
+    return g;
+  }
+
+  /* engine cluster */
+  (function(){
+    const b=[ mk("path",{d:"M44 108 L96 114 L96 146 L44 152 Z", class:"skin"}) ];
+    for(let i=0;i<5;i++){
+      b.push(mk("circle",{cx:52,cy:114+i*8,r:3.1,class:"det"}));
+      b.push(mk("circle",{cx:64,cy:116+i*7,r:2.4,class:"det"}));
+    }
+    b.push(mk("path",{d:"M10 118 L44 108 L44 152 L10 142 Z", class:"flame", fill:"url(#flameG)"}));
+    grp("drive","Antrieb", b, [58,130], [58,72,118], "Antrieb", [8,66,94,96]);
+  })();
+
+  /* tanks */
+  (function(){
+    const b=[];
+    for(let i=0;i<4;i++){
+      const x=104+i*38;
+      b.push(mk("rect",{x:x,y:98,width:30,height:64,rx:4,class:"skin"}));
+      const fill=mk("rect",{x:x+4,y:0,width:22,height:0,rx:2,class:"tank","data-tank":"1",fill:"var(--cy)","fill-opacity":".3"});
+      b.push(fill);
+      b.push(mk("line",{x1:x+4,y1:130,x2:x+26,y2:130,class:"det"}));
+    }
+    grp("tank","Tanks", b, [180,96], [180,54,254], "Xenon-Tanks", [102,50,120,116]);
+  })();
+
+  /* reactor */
+  (function(){
+    const b=[
+      mk("rect",{x:262,y:106,width:52,height:48,rx:3,class:"skin"}),
+      mk("circle",{cx:288,cy:130,r:13,class:"det"}),
+      mk("circle",{cx:288,cy:130,r:6,class:"det"}),
+      mk("path",{d:"M262 106 L236 76 M314 106 L340 76 M262 154 L236 184 M314 154 L340 184",class:"det"}),
+      mk("path",{d:"M214 70 L358 70 M214 190 L358 190",class:"det"})
+    ];
+    grp("reactor","Reaktor", b, [288,130], [288,214,392], "Reaktor RTG-4", [236,66,104,152]);
+  })();
+
+  /* habitat torus */
+  (function(){
+    const b=[
+      mk("ellipse",{cx:374,cy:130,rx:15,ry:44,class:"skin"}),
+      mk("ellipse",{cx:374,cy:130,rx:7,ry:26,class:"det"}),
+      mk("path",{d:"M359 106 L389 106 M359 154 L389 154",class:"det"})
+    ];
+    grp("hab","Habitat", b, [374,88], [374,46,300], "Habitat-Torus", [356,42,40,134]);
+  })();
+
+  /* cargo spine */
+  (function(){
+    const b=[ mk("rect",{x:398,y:96,width:150,height:68,rx:2,class:"skin"}) ];
+    for(let r=0;r<3;r++) for(let c=0;c<6;c++){
+      b.push(mk("rect",{x:404+c*24,y:102+r*21,width:19,height:16,rx:1,class:"det","data-box":r*6+c}));
+    }
+    grp("cargo","Laderaum", b, [473,166], [473,214,560], "Laderaum", [398,92,152,126]);
+  })();
+
+  /* tether / nose */
+  (function(){
+    const b=[
+      mk("path",{d:"M548 108 L596 122 L596 138 L548 152 Z",class:"skin"}),
+      mk("circle",{cx:570,cy:130,r:8,class:"det"}),
+      mk("path",{d:"M596 130 L628 130",class:"det"})
+    ];
+    grp("tether","Tether", b, [570,106], [570,60,504], "Tether-C", [546,56,86,100]);
+  })();
+
+  const boxes=$$('[data-box]', modsG);
+  const tanks=$$('[data-tank]', modsG);
+
+  /* ---------- destination tabs ---------- */
+  const destBox=$("#bdDest");
+  DEST.forEach((d,i)=>{
+    const b=document.createElement("button");
+    b.type="button"; b.textContent=d.id;
+    b.setAttribute("aria-pressed", String(i===dest));
+    b.addEventListener("click", ()=>{ dest=i; Store.set("bdDest",i); syncTabs(); recalc(); });
+    destBox.appendChild(b);
+  });
+  function syncTabs(){
+    $$("#bdDest button").forEach((b,i)=>{
+      b.classList.toggle("on", i===dest);
+      b.setAttribute("aria-pressed", String(i===dest));
+    });
+  }
+  syncTabs();
+
+  /* ---------- module selection ---------- */
+  function pickMod(id){
+    curMod=id;
+    $$(".mod", modsG).forEach(g=> g.classList.toggle("on", g.id==="mod-"+id));
+    $$(".ann", annG).forEach(g=> g.classList.toggle("on", g.id==="ann-"+id));
+    const m=MODULES.find(x=>x.id===id);
+    $("#bdModK").textContent=m.k;
+    $("#bdModN").textContent=m.n;
+    $("#bdModD").textContent=m.d;
+    $("#bdModS").innerHTML=m.s.map(r=>'<div><span class="mini">'+r[0]+'</span><span class="mini val">'+r[1]+'</span></div>').join("");
+    Audio_.click();
+  }
+
+  /* ---------- the actual arithmetic ---------- */
+  const splitEl=$("#bdSplit");
+  function recalc(){
+    const fuel  = BUDGET*split;
+    const cargo = BUDGET-fuel;
+    const dry   = STRUCT + cargo;
+    const m0    = dry + fuel;
+    const dv    = ISP*G0*Math.log(m0/dry)/1000;              /* km/s */
+    const mAvg  = (m0+dry)/2 * 1000;                          /* kg   */
+    const days  = dv*1000*mAvg/THRUST/86400;
+    const need  = DEST[dest].need;
+    const res   = dv-need;
+    const ok    = res>=0;
+
+    $("#bdM0").textContent  = Math.round(m0).toLocaleString("de-DE");
+    $("#bdDv").textContent  = dv.toFixed(1).replace(".",",");
+    $("#bdT").textContent   = Math.round(days).toLocaleString("de-DE");
+    $("#bdPay").textContent = Math.round(cargo).toLocaleString("de-DE");
+    $("#bdFuelT").textContent  = Math.round(fuel).toLocaleString("de-DE")+" t";
+    $("#bdCargoT").textContent = Math.round(cargo).toLocaleString("de-DE")+" t";
+    $("#bdBarF").style.width = (split*100)+"%";
+    $("#bdBarC").style.width = ((1-split)*100)+"%";
+    $("#bdRes").textContent  = (res>=0?"+":"−")+Math.abs(res).toFixed(1).replace(".",",")+" km/s";
+    $("#bdNeed").textContent = need.toFixed(1).replace(".",",")+" km/s";
+
+    const rs=$$("#bdRead .r");
+    rs[1].classList.toggle("bad", !ok); rs[1].classList.toggle("good", ok);
+    rs[2].classList.toggle("bad", days>520);
+
+    const warn=$("#bdWarn");
+    let msg=null;
+    if(!ok) msg="Delta-v reicht nicht bis "+DEST[dest].id+". Es fehlen "+Math.abs(res).toFixed(1).replace(".",",")+
+                " km/s — der Frachter erreicht die Bahn, aber nicht den Körper. Fracht reduzieren oder Ziel wechseln.";
+    else if(days>520) msg="Die Bahn schließt erst nach "+Math.round(days)+" Tagen. Das Abflugfenster am 04.11.2187 ist damit gerissen; der nächste Termin liegt 79 Tage später.";
+    else if(cargo<1500) msg="Rechnerisch einwandfrei, wirtschaftlich sinnlos: unter 1.500 Tonnen Fracht deckt der Flug nicht einmal den Xenonpreis.";
+    warn.classList.toggle("on", !!msg);
+    if(msg) $("#bdWarnTx").textContent=msg;
+
+    $("#bdTag").textContent = !ok ? "Konfiguration UNGÜLTIG" : days>520 ? "Fenster GERISSEN" : "Konfiguration NOMINAL";
+
+    /* the drawing reacts too */
+    const shown=Math.round((cargo/BUDGET)*boxes.length/0.96);
+    boxes.forEach((b,i)=> b.style.opacity = i<shown ? "1" : "0.12");
+    tanks.forEach(t=>{
+      const h=60*split;
+      t.setAttribute("height", h.toFixed(1));
+      t.setAttribute("y", (160-h).toFixed(1));
+    });
+    svg_.style.setProperty("--fl", (0.18+split*0.7).toFixed(2));
+  }
+  splitEl.value = Math.round(split*100);
+  splitEl.addEventListener("input", ()=>{
+    split = +splitEl.value/100;
+    Store.set("bdSplit2", +splitEl.value);
+    recalc();
+  });
+
+  pickMod("drive");
+  recalc();
+
+  return { recalc, pickMod, get dv(){ return ISP*G0*Math.log((STRUCT+BUDGET)/(STRUCT+BUDGET*(1-split)))/1000; } };
+})();
+
+registerCmd({ ic:"⌁", title:"Frachter-Konfigurator", sub:"Sektion", run:()=>jump("build") });
+TERM_CMDS.build = { d:"Aktuelle Frachter-Konfiguration", run(){
+  const dv=$("#bdDv").textContent, t=$("#bdT").textContent, pay=$("#bdPay").textContent, m0=$("#bdM0").textContent;
+  tLines([
+    ["VESPER // KONFIGURATION","ok"],
+    ["  Startmasse ............... "+m0+" t","out"],
+    ["  Delta-v .................. "+dv+" km/s","out"],
+    ["  Laufzeit ................. "+t+" Tage","out"],
+    ["  Nutzlast ................. "+pay+" t","out"],
+    ["  Status ................... "+$("#bdTag").textContent, $("#bdTag").textContent.indexOf("NOMINAL")>=0?"ok":"err"]
+  ]);
+  jump("build");
 }};
 
 /* ============================================================
