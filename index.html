@@ -23,7 +23,7 @@
   --mg:        #FF2D95;
   --cy-soft:   rgba(0,229,255,.14);
   --mg-soft:   rgba(255,45,149,.14);
-  --grain:     .035;
+  --grain:     .055;
   --curtain:   #07080C;
 
   --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace;
@@ -47,7 +47,7 @@
   --mg:      #C4106B;
   --cy-soft: rgba(0,144,168,.12);
   --mg-soft: rgba(196,16,107,.12);
-  --grain:   .02;
+  --grain:   .03;
   --curtain: #F2F3F6;
 }
 
@@ -130,16 +130,26 @@ section{ position:relative; }
 /* ============================================================
    04 — GRAIN + GRID OVERLAY
    ============================================================ */
+/* No mix-blend-mode: a full-viewport blend layer is recomposited on
+   every frame and cost roughly a third of the frame budget. Plain
+   alpha over a dark surface is visually all but identical. */
 #grain{
-  position:fixed; inset:-120px; z-index:9000; pointer-events:none;
-  opacity:var(--grain); mix-blend-mode:overlay;
+  position:fixed; inset:0; z-index:9000; pointer-events:none;
+  opacity:var(--grain);
   background-image:var(--noise); background-size:180px 180px;
-  animation:grainShift .55s steps(1) infinite;
+  animation:grainShift .6s steps(1) infinite;
 }
+/* The jitter moves the tiled background inside a viewport-sized layer.
+   Translating the layer itself needed it oversized by 120px on each
+   side, and compositing that extra area cost about a quarter of the
+   frame budget. */
 @keyframes grainShift{
-  0%{transform:translate(0,0)}      20%{transform:translate(-14px,7px)}
-  40%{transform:translate(9px,-12px)} 60%{transform:translate(-7px,-9px)}
-  80%{transform:translate(12px,10px)} 100%{transform:translate(0,0)}
+  0%   { background-position:0 0 }
+  20%  { background-position:-14px 7px }
+  40%  { background-position:9px -12px }
+  60%  { background-position:-7px -9px }
+  80%  { background-position:12px 10px }
+  100% { background-position:0 0 }
 }
 #vignette{
   position:fixed; inset:0; z-index:8990; pointer-events:none;
@@ -639,7 +649,7 @@ footer .wrap{ position:relative; z-index:1; }
   --mg:        #FF9500;
   --cy-soft:   rgba(255,59,48,.16);
   --mg-soft:   rgba(255,149,0,.12);
-  --grain:     .075;
+  --grain:     .10;
   --bg:        #0B0406;
   --bg-2:      #120609;
   --bg-3:      #19080C;
@@ -1212,6 +1222,50 @@ footer .wrap{ position:relative; z-index:1; }
 .tcard:hover .more2 i{ transform:translateX(5px); }
 
 /* ============================================================
+   51 — SITE COMPARE + LINK TOOLTIP
+   ============================================================ */
+.panel-ctl{ display:flex; flex-direction:column; gap:10px; padding-block:14px; border-block:1px solid var(--line); }
+.panel-ctl .rowc{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.cmp-head{ display:grid; grid-template-columns:1fr auto auto; gap:10px; align-items:baseline; }
+.cmp-head .b2{ color:var(--cy); } .cmp-head .c2{ color:var(--mg); }
+.bar.cmp .track{ margin-bottom:3px; }
+.bar.cmp .track i.one{ background:var(--cy); }
+.bar.cmp .track i.two{ background:var(--mg); }
+#map .link{ pointer-events:stroke; cursor:crosshair; }
+#map .link:hover{ stroke:var(--cy); stroke-width:2; }
+#mapTip{
+  position:absolute; z-index:5; pointer-events:none; opacity:0;
+  padding:9px 12px; border:1px solid var(--cy); background:var(--bg-2);
+  transform:translate(-50%,-130%); transition:opacity .25s;
+  white-space:nowrap;
+}
+#mapTip.on{ opacity:1; }
+#mapTip b{ color:var(--cy); font-weight:400; }
+
+/* ============================================================
+   52 — FORM VALIDATION + TRANSMISSION
+   ============================================================ */
+.field .err2{
+  display:block; margin-top:7px; min-height:1em;
+  font-family:var(--mono); font-size:.62rem; letter-spacing:.1em; color:var(--mg);
+  opacity:0; transform:translateY(-4px); transition:opacity .3s, transform .35s var(--spring);
+}
+.field.bad .err2{ opacity:1; transform:none; }
+.field.bad input,.field.bad textarea,.field.bad select{ border-bottom-color:var(--mg); }
+.field.ok .uline{ transform:scaleX(1); background:var(--cy); opacity:.5; }
+.f-prog{ display:flex; align-items:center; gap:12px; margin-bottom:22px; }
+.f-prog .tr{ flex:1; height:2px; background:var(--line-2); overflow:hidden; }
+.f-prog .tr i{ display:block; height:100%; width:0; background:linear-gradient(90deg,var(--cy),var(--mg)); transition:width .6s var(--ease); }
+#tx{ display:none; margin-top:20px; border:1px solid var(--line); padding:16px 18px; background:var(--bg); }
+#tx.on{ display:block; animation:pop .5s var(--spring); }
+#tx .pk{ display:flex; align-items:center; gap:11px; padding-block:4px; font-family:var(--mono); font-size:.64rem; letter-spacing:.1em; }
+#tx .pk .id2{ color:var(--fg-faint); width:78px; flex:none; }
+#tx .pk .tr2{ flex:1; height:2px; background:var(--bg-3); overflow:hidden; }
+#tx .pk .tr2 i{ display:block; height:100%; width:0; background:var(--cy); transition:width .45s linear; }
+#tx .pk .st2{ width:58px; text-align:right; flex:none; color:var(--fg-faint); }
+#tx .pk.done .st2{ color:var(--cy); }
+
+/* ============================================================
    19 — REDUCED MOTION
    ============================================================ */
 @media (prefers-reduced-motion:reduce){
@@ -1597,6 +1651,7 @@ footer .wrap{ position:relative; z-index:1; }
       <div class="map-box" data-rv="scale">
         <div class="scan" aria-hidden="true"></div>
         <svg id="map" viewBox="0 0 400 320" role="group" aria-label="Interaktive Standortkarte"></svg>
+        <div id="mapTip" class="mini" role="status"></div>
       </div>
 
       <aside class="panel" data-rv="right" data-d="150" aria-live="polite">
@@ -1604,6 +1659,18 @@ footer .wrap{ position:relative; z-index:1; }
           <div class="label" id="pcode">STANDORT 00 / —</div>
           <h3 class="h3" id="ptitle" style="margin-top:10px">—</h3>
           <p id="pdesc" style="color:var(--fg-dim);font-size:.9rem;line-height:1.6;margin-top:12px">Knoten auf der Karte anwählen.</p>
+        </div>
+
+        <div class="panel-ctl">
+          <div class="rowc">
+            <button class="chip" id="cmpBtn" aria-pressed="false">Vergleichen</button>
+            <span class="mini" id="cmpWith">—</span>
+          </div>
+          <div class="rowc" style="justify-content:space-between">
+            <span class="mini">Förderzyklus</span>
+            <span class="mini val" id="cycV">Q3 / 2187</span>
+          </div>
+          <input class="sw-range" id="cyc" type="range" min="1" max="12" value="12" aria-label="Förderzyklus">
         </div>
 
         <div class="rings" id="prings"></div>
@@ -1956,13 +2023,18 @@ footer .wrap{ position:relative; z-index:1; }
       </div>
 
       <form id="form" novalidate data-rv="up" data-d="150">
+        <div class="f-prog">
+          <span class="mini">Vollständig</span>
+          <span class="tr"><i id="fProg"></i></span>
+          <span class="mini val" id="fProgV">0 / 3</span>
+        </div>
         <div class="field">
           <input id="f1" type="text" autocomplete="name" required>
-          <label for="f1">Vollständiger Name</label><i class="uline"></i>
+          <label for="f1">Vollständiger Name</label><i class="uline"></i><span class="err2" id="err-f1">Bitte den vollständigen Namen angeben</span>
         </div>
         <div class="field">
           <input id="f2" type="email" autocomplete="email" required>
-          <label for="f2">Kontaktkanal / E-Mail</label><i class="uline"></i>
+          <label for="f2">Kontaktkanal / E-Mail</label><i class="uline"></i><span class="err2" id="err-f2">Keine gültige Adresse</span>
         </div>
         <div class="field">
           <select id="f3" required>
@@ -1973,13 +2045,14 @@ footer .wrap{ position:relative; z-index:1; }
             <option>Medizin / Habitat</option>
             <option>Andere Qualifikation</option>
           </select>
-          <label for="f3">Fachgebiet</label><i class="uline"></i>
+          <label for="f3">Fachgebiet</label><i class="uline"></i><span class="err2" id="err-f3">Bitte ein Fachgebiet wählen</span>
         </div>
         <div class="field">
           <textarea id="f4" rows="3"></textarea>
-          <label for="f4">Warum draußen?</label><i class="uline"></i>
+          <label for="f4">Warum draußen?</label><i class="uline"></i><span class="err2" id="err-f4"></span>
         </div>
         <button class="btn" type="submit" data-mag data-cur="shrink"><span class="fill"></span><span id="btnTxt">Bewerbung senden</span></button>
+        <div id="tx" aria-live="polite"></div>
         <div id="sent">
           <svg width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true">
             <circle cx="16" cy="16" r="14" stroke="var(--cy)" stroke-width="2"/>
@@ -2031,6 +2104,14 @@ footer .wrap{ position:relative; z-index:1; }
 /* ============================================================
    UTIL
    ============================================================ */
+/* layout caches — declared here because measure() runs during boot,
+   before the sections that own them are reached (a `let` would be in its TDZ) */
+let secTops=null, railTops=null, spineGeo=null, techTop=null;
+const _boxes=new WeakMap();
+let _boxEpoch=0;
+function bustBoxes(){ _boxEpoch++; }
+function bustOffsets(){ secTops=null; railTops=null; spineGeo=null; techTop=null; _boxEpoch++; }
+
 const $  = (s,r)=> (r||document).querySelector(s);
 const $$ = (s,r)=> Array.from((r||document).querySelectorAll(s));
 const clamp = (v,a,b)=> v<a?a:v>b?b:v;
@@ -2072,13 +2153,14 @@ let target=0, current=0, maxScroll=0, smoothOn=false;
 function measure(){
   maxScroll = Math.max(0, rig.scrollHeight - window.innerHeight);
   document.body.style.height = smoothOn ? (rig.scrollHeight + "px") : "";
+  bustOffsets();
 }
 function enableSmooth(){
   if(coarse || reduced){ document.body.classList.remove("smooth"); smoothOn=false; measure(); return; }
   document.body.classList.add("smooth"); smoothOn=true; measure();
 }
 enableSmooth();
-window.addEventListener("resize", ()=>{ enableSmooth(); measure(); layoutTech(); moveInd(); });
+window.addEventListener("resize", ()=>{ enableSmooth(); measure(); layoutTech(); moveInd(); bustBoxes(); });
 if("ResizeObserver" in window){ new ResizeObserver(measure).observe(rig); }
 
 function scrollY(){ return smoothOn ? current : window.scrollY; }
@@ -2260,23 +2342,34 @@ function drawStars(t){
   const cy = css("--cy");
   const fg = css("--fg");
 
+  /* batched the same way as the asteroid: one path per brightness band
+     and colour, instead of one fill per star */
+  const SB=8, streak = warp>0.6;
+  const acc=new Array(SB*2);
   for(let i=0;i<stars.length;i++){
     const s2=stars[i];
     const ox = px*44*s2.z, oy = py*30*s2.z;
     const tw = .45 + Math.sin(t*s2.sp + s2.ph)*.45;
     const x=s2.x+ox, yy=s2.y+oy;
-    sctx.globalAlpha = tw*s2.z;
-    sctx.fillStyle = i%23===0 ? cy : fg;
-    if(warp>0.6){
+    const a = tw*s2.z;
+    const bi = Math.min(SB-1, (a*SB)|0);
+    const k = bi*2 + (i%23===0 ? 1 : 0);
+    let path=acc[k]; if(!path) path=acc[k]=new Path2D();
+    if(streak){
       const len=warp*s2.z*2.4;
-      sctx.strokeStyle=sctx.fillStyle;
-      sctx.lineWidth=s2.r*s2.z*1.6;
-      sctx.beginPath(); sctx.moveTo(x, yy-len); sctx.lineTo(x, yy+len); sctx.stroke();
+      path.moveTo(x, yy-len); path.lineTo(x, yy+len);
     }else{
-      sctx.beginPath();
-      sctx.arc(x, yy, s2.r*s2.z*1.5, 0, 6.2832);
-      sctx.fill();
+      const r2=s2.r*s2.z*1.5;
+      path.moveTo(x+r2, yy);
+      path.arc(x, yy, r2, 0, 6.2832);
     }
+  }
+  for(let k=0;k<acc.length;k++){
+    const path=acc[k]; if(!path) continue;
+    sctx.globalAlpha=((k>>1)+.5)/SB;
+    const col=(k&1) ? cy : fg;
+    if(streak){ sctx.strokeStyle=col; sctx.lineWidth=1.1; sctx.stroke(path); }
+    else { sctx.fillStyle=col; sctx.fill(path); }
   }
   sctx.globalAlpha=1;
 
@@ -2439,20 +2532,31 @@ function drawRock(t){
   }
   drawn.sort((p,q)=> q.z - p.z);
 
+  /* Every face used to cost its own fill and stroke — 600+ rasterizer
+     calls a frame. Luminance is quantised into a few bands instead, and
+     each band is drawn as one path. The result is indistinguishable. */
+  const BANDS=10;
+  const bands=new Array(BANDS);
   for(let i=0;i<drawn.length;i++){
     const d=drawn[i], f=d.f;
     /* terminator: ambient floor plus diffuse, squared for a harder edge */
     const lum = 0.055 + Math.pow(d.diff, 1.35)*0.85;
-    rctx.beginPath();
-    rctx.moveTo(P[f[0]].x,P[f[0]].y);
-    rctx.lineTo(P[f[1]].x,P[f[1]].y);
-    rctx.lineTo(P[f[2]].x,P[f[2]].y);
-    rctx.closePath();
+    const bi = Math.min(BANDS-1, (lum*BANDS)|0);
+    let path=bands[bi];
+    if(!path){ path=bands[bi]=new Path2D(); }
+    path.moveTo(P[f[0]].x,P[f[0]].y);
+    path.lineTo(P[f[1]].x,P[f[1]].y);
+    path.lineTo(P[f[2]].x,P[f[2]].y);
+    path.closePath();
+  }
+  rctx.lineWidth=0.75;
+  for(let bi=0;bi<BANDS;bi++){
+    const path=bands[bi]; if(!path) continue;
+    const lum=(bi+.5)/BANDS;
     rctx.fillStyle="rgba("+cRGB[0]+","+cRGB[1]+","+cRGB[2]+","+(lum*0.42).toFixed(3)+")";
-    rctx.fill();
+    rctx.fill(path);
     rctx.strokeStyle="rgba("+cRGB[0]+","+cRGB[1]+","+cRGB[2]+","+(0.12+lum*0.55).toFixed(3)+")";
-    rctx.lineWidth=0.75;
-    rctx.stroke();
+    rctx.stroke(path);
   }
 
   /* micrometeorites: a flash on the limb and a spray of ejecta */
@@ -2565,8 +2669,8 @@ function svg(tag,attrs){ const e=document.createElementNS(SVGNS,tag); for(const 
     g.appendChild(svg("circle",{cx:s.x,cy:s.y,r:5,class:"pulse","style":"animation-delay:"+(i*.7)+"s"}));
     g.appendChild(svg("circle",{cx:s.x,cy:s.y,r:5,class:"core"}));
     const tx=svg("text",{x:s.x+12,y:s.y+3}); tx.textContent=s.id; g.appendChild(tx);
-    g.addEventListener("click", ()=> select(i));
-    g.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); select(i);} });
+    g.addEventListener("click", ()=> select(i, cmpOn && i!==selA));
+    g.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); select(i, cmpOn && i!==selA);} });
     m.appendChild(g);
   });
 
@@ -2576,16 +2680,48 @@ function svg(tag,attrs){ const e=document.createElementNS(SVGNS,tag); for(const 
   mio.observe($(".map-box"));
 })();
 
-function select(i){
-  const s=SITES[i];
-  $$("#map .node").forEach((n,j)=> n.classList.toggle("sel", i===j));
-  $("#pcode").textContent = "STANDORT "+s.code+" / "+s.body;
-  $("#ptitle").textContent = s.id;
-  $("#pdesc").textContent = s.desc;
+let cmpOn=false, selA=0, selB=null, cycle=12;
 
+/* production figures swing from cycle to cycle; deterministic per site */
+function cycFactor(siteIdx, c){
+  const ramp = 0.62 + (c/12)*0.38;
+  const wob  = 1 + Math.sin(c*1.37 + siteIdx*2.1)*0.075 + Math.sin(c*0.61 + siteIdx)*0.045;
+  const dent = (c===4 && siteIdx===3) ? 0.74 : 1;   /* KESTREL's bad quarter */
+  return ramp*wob*dent;
+}
+function cycLabel(c){
+  const q=((c-1)%4)+1, yr=2185+Math.floor((c-1)/4);
+  return "Q"+q+" / "+yr;
+}
+
+function select(i, asB){
+  if(cmpOn && asB){ selB = (i===selA) ? null : i; }
+  else { selA = i; if(selB===i) selB=null; }
+  paintPanel();
+}
+
+function paintPanel(){
+  const a=SITES[selA], b=(cmpOn && selB!=null) ? SITES[selB] : null;
+  $$("#map .node").forEach((n,j)=>{
+    n.classList.toggle("sel", j===selA || (b && j===selB));
+  });
+  $("#pcode").textContent = "STANDORT "+a.code+" / "+a.body;
+  $("#ptitle").textContent = b ? a.id+" gegen "+b.id : a.id;
+  $("#pdesc").textContent = b
+    ? a.desc+" — im Vergleich mit "+b.id+", "+b.diam+" Durchmesser."
+    : a.desc;
+  $("#cmpWith").textContent = cmpOn
+    ? (b ? "Vergleich mit "+b.id : "zweiten Knoten anwählen")
+    : "—";
+
+  const fa=cycFactor(selA, cycle), fb=b?cycFactor(selB, cycle):1;
+
+  /* rings always describe the primary site */
   const rings=$("#prings"); rings.innerHTML="";
-  s.rings.forEach(r=>{
-    const pct = clamp(r[1] > 100 ? (r[1]/400)*100 : r[1], 0, 100);
+  a.rings.forEach((r,k)=>{
+    const raw = r[1]*(k===1?1:fa);                 /* crew does not swing with the cycle */
+    const val = k===1 ? Math.round(raw) : Math.round(raw);
+    const pct = clamp(r[1]>100 ? (val/400)*100 : val, 0, 100);
     const C=2*Math.PI*30;
     const d=document.createElement("div"); d.className="ring";
     d.innerHTML =
@@ -2593,7 +2729,7 @@ function select(i){
         '<circle class="bgc" cx="38" cy="38" r="30"/>'+
         '<circle class="fgc" cx="38" cy="38" r="30" stroke-dasharray="'+C+'" stroke-dashoffset="'+C+'"/>'+
       '</svg>'+
-      '<div class="rv">'+r[1]+'<span class="cy" style="font-size:.7em"> '+r[2]+'</span></div>'+
+      '<div class="rv">'+val+'<span class="cy" style="font-size:.7em"> '+r[2]+'</span></div>'+
       '<div class="rl">'+r[0]+'</div>';
     rings.appendChild(d);
     requestAnimationFrame(()=>{ requestAnimationFrame(()=>{
@@ -2602,13 +2738,69 @@ function select(i){
   });
 
   const bars=$("#pbars"); bars.innerHTML="";
-  s.bars.forEach((b,k)=>{
+  if(b){
+    const head=document.createElement("div");
+    head.className="cmp-head";
+    head.innerHTML='<span class="mini">Kennzahl</span><span class="mini b2">'+a.id+'</span><span class="mini c2">'+b.id+'</span>';
+    bars.appendChild(head);
+  }
+  a.bars.forEach((bar,k)=>{
+    const va=clamp(Math.round(bar[1]*fa),0,100);
+    const vb=b ? clamp(Math.round((b.bars[k]?b.bars[k][1]:0)*fb),0,100) : null;
     const d=document.createElement("div"); d.className="bar";
-    d.innerHTML='<div class="row"><span>'+b[0]+'</span><b>'+b[1]+' %</b></div><div class="track"><i></i></div>';
+    if(vb!=null) d.classList.add("cmp");
+    d.innerHTML =
+      '<div class="row"><span>'+bar[0]+'</span><b>'+
+        (vb!=null ? '<span class="cy">'+va+' %</span> · <span class="mg">'+vb+' %</span>' : va+' %')+
+      '</b></div>'+
+      '<div class="track"><i class="one"></i></div>'+
+      (vb!=null ? '<div class="track"><i class="two"></i></div>' : '');
     bars.appendChild(d);
-    setTimeout(()=>{ d.querySelector("i").style.width=b[1]+"%"; }, 90+k*110);
+    setTimeout(()=>{
+      $(".one",d).style.width=va+"%";
+      const two=$(".two",d); if(two) two.style.width=vb+"%";
+    }, 80+k*100);
   });
 }
+
+/* compare toggle + cycle slider */
+(function(){
+  const btn=$("#cmpBtn"), cyc=$("#cyc");
+  btn.addEventListener("click", ()=>{
+    cmpOn=!cmpOn;
+    btn.classList.toggle("on", cmpOn);
+    btn.setAttribute("aria-pressed", String(cmpOn));
+    if(!cmpOn) selB=null;
+    paintPanel();
+    toast("Karte", cmpOn ? "Vergleich aktiv — zweiten Knoten wählen" : "Vergleich beendet", 2800);
+  });
+  cyc.addEventListener("input", ()=>{
+    cycle=+cyc.value;
+    $("#cycV").textContent=cycLabel(cycle);
+    paintPanel();
+  });
+})();
+
+/* link tooltips: distance and signal delay */
+(function(){
+  const tip=$("#mapTip"), box=$(".map-box");
+  $$("#map .link").forEach((l,i)=>{
+    const p1=[+l.getAttribute("x1"), +l.getAttribute("y1")];
+    const p2=[+l.getAttribute("x2"), +l.getAttribute("y2")];
+    const px2=Math.hypot(p2[0]-p1[0], p2[1]-p1[1]);
+    const au=(px2/400*38).toFixed(1).replace(".",",");
+    const mins=Math.round(px2/400*38*499/60*10)/10;
+    l.addEventListener("mousemove", e=>{
+      const r=box.getBoundingClientRect();
+      tip.style.left=(e.clientX-r.left)+"px";
+      tip.style.top=(e.clientY-r.top)+"px";
+      tip.innerHTML="Strecke <b>"+au+" AE</b> · Signallauf <b>"+
+        (mins>60 ? (mins/60).toFixed(1).replace(".",",")+" h" : mins.toFixed(1).replace(".",",")+" min")+"</b>";
+      tip.classList.add("on");
+    });
+    l.addEventListener("mouseleave", ()=> tip.classList.remove("on"));
+  });
+})();
 
 /* auto-select first site when the section comes into view */
 (function(){
@@ -2665,29 +2857,114 @@ function portrait(i){
 /* ============================================================
    FORM
    ============================================================ */
+/* ---------- live validation ---------- */
+const RULES = {
+  f1: v => v.trim().length>1 || "Bitte den vollständigen Namen angeben",
+  f2: v => /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(v.trim()) || "Keine gültige Adresse",
+  f3: v => !!v || "Bitte ein Fachgebiet wählen",
+  f4: () => true
+};
+const REQUIRED = ["f1","f2","f3"];
+
+function validate(id, live){
+  const inp=$("#"+id), f=inp.closest(".field");
+  const res = RULES[id](inp.value);
+  const ok = res===true;
+  f.classList.toggle("filled", !!inp.value);
+  /* while typing, only ever relax an error — never nag mid-word */
+  if(ok){ f.classList.remove("bad"); f.classList.toggle("ok", !!inp.value); }
+  else if(!live){ f.classList.add("bad"); f.classList.remove("ok"); $("#err-"+id).textContent=res; }
+  return ok;
+}
+function progress(){
+  const n = REQUIRED.filter(id=> RULES[id]($("#"+id).value)===true).length;
+  $("#fProg").style.width = (n/REQUIRED.length*100)+"%";
+  $("#fProgV").textContent = n+" / "+REQUIRED.length;
+  return n;
+}
 $$(".field input,.field textarea,.field select").forEach(inp=>{
   const f=inp.closest(".field");
-  const sync=()=> f.classList.toggle("filled", !!inp.value);
-  inp.addEventListener("input",sync); inp.addEventListener("change",sync); inp.addEventListener("blur",sync);
+  const id=inp.id;
+  const sync=(live)=>{
+    f.classList.toggle("filled", !!inp.value);
+    if(RULES[id]) validate(id, live);
+    progress();
+  };
+  inp.addEventListener("input", ()=>sync(true));
+  inp.addEventListener("change", ()=>sync(false));
+  inp.addEventListener("blur", ()=>{ if(inp.value || f.classList.contains("bad")) sync(false); else { f.classList.remove("ok"); progress(); } });
 });
+progress();
+
+/* ---------- transmission ---------- */
+const PACKETS=[
+  ["HEADER",   "Kennung und Freigabe"],
+  ["PROFIL",   "Name, Kanal, Fachgebiet"],
+  ["MOTIV",    "Freitext"],
+  ["SIGNATUR", "Prüfsumme"],
+  ["RELAIS-1", "ANCHOR-I"],
+  ["RELAIS-2", "Neptunbahn"],
+  ["RELAIS-3", "Innerer Ring"],
+  ["QUITTUNG", "Empfang bestätigt"]
+];
+let txRunning=false;
+function transmit(done){
+  const box=$("#tx");
+  txRunning=true;
+  box.classList.add("on");
+  box.innerHTML = '<div class="label" style="margin-bottom:10px">Übertragung · Kanal 07</div>'+
+    PACKETS.map((p,i)=>'<div class="pk" id="pk'+i+'"><span class="id2">'+p[0]+'</span>'+
+      '<span class="tr2"><i></i></span><span class="st2">wartet</span></div>').join("");
+  let i=0;
+  (function next(){
+    if(i>=PACKETS.length){
+      txRunning=false;
+      done();
+      return;
+    }
+    const row=$("#pk"+i), bar=$("i", row), st=$(".st2", row);
+    st.textContent="sendet";
+    requestAnimationFrame(()=>{ bar.style.width="100%"; });
+    Audio_.type();
+    const wait = reduced ? 30 : 230 + Math.random()*180;
+    setTimeout(()=>{
+      row.classList.add("done");
+      st.textContent="ok";
+      i++; next();
+    }, wait);
+  })();
+}
+
 $("#form").addEventListener("submit", e=>{
   e.preventDefault();
-  const n=$("#f1").value.trim(), m=$("#f2").value.trim();
-  const ok = n.length>1 && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m);
+  if(txRunning) return;
+
+  const bad = REQUIRED.filter(id=> !validate(id, false));
   const box=$("#sent"), txt=$("#sentTxt");
   box.classList.remove("on"); void box.offsetWidth;
-  if(!ok){
-    txt.textContent = "Kanal unvollständig — Name und Adresse prüfen";
+
+  if(bad.length){
+    $("#"+bad[0]).focus();
+    txt.textContent = "Übertragung abgelehnt — "+bad.length+" Feld"+(bad.length>1?"er":"")+" unvollständig";
     box.style.color="var(--mg)";
-  }else{
+    box.classList.add("on");
+    Audio_.err();
+    return;
+  }
+
+  $("#btnTxt").textContent="Sendet…";
+  transmit(()=>{
     txt.textContent = "Übertragen — Antwort in 6 h 31 min";
     box.style.color="var(--cy)";
+    box.classList.add("on");
     $("#btnTxt").textContent="Gesendet";
+    Audio_.ok();
+    toast("Rekrutierung","Bewerbung übertragen · 8 Pakete", 4200);
     $("#form").reset();
-    $$(".field").forEach(f=>f.classList.remove("filled"));
-    setTimeout(()=>{ $("#btnTxt").textContent="Bewerbung senden"; }, 4000);
-  }
-  box.classList.add("on");
+    $$(".field").forEach(f=> f.classList.remove("filled","ok","bad"));
+    progress();
+    setTimeout(()=>{ $("#btnTxt").textContent="Bewerbung senden"; $("#tx").classList.remove("on"); }, 6000);
+  });
 });
 
 /* ============================================================
@@ -2701,9 +2978,10 @@ function moveInd(el){
   ind.style.width=a.offsetWidth+"px";
   ind.style.transform="translateX("+a.offsetLeft+"px)";
 }
+let linkHover=false;
 links.forEach(a=>{
-  a.addEventListener("mouseenter",()=>moveInd(a));
-  a.addEventListener("mouseleave",()=>moveInd());
+  a.addEventListener("mouseenter",()=>{ linkHover=true; moveInd(a); });
+  a.addEventListener("mouseleave",()=>{ linkHover=false; moveInd(); });
 });
 
 const burger=$("#burger"), menu=$("#menu");
@@ -2735,26 +3013,27 @@ $$('a[href^="#"]').forEach(a=>{
   });
 });
 
-/* active section */
+/* active section — offsets are cached and rebuilt only when layout can have moved */
 const secs = ["divisions","sites","tech","story","crew","join"].map(id=>document.getElementById(id)).filter(Boolean);
+function topOf(el){ return el.getBoundingClientRect().top + scrollY(); }
 function updateActive(){
+  if(!secTops) secTops = secs.map(topOf);
   const y=scrollY()+innerHeight*.35;
   let cur=null;
-  secs.forEach(s=>{
-    const top = s.getBoundingClientRect().top + scrollY();
-    if(y>=top) cur=s.id;
-  });
+  for(let i=0;i<secs.length;i++) if(y>=secTops[i]) cur=secs[i].id;
   links.forEach(a=> a.classList.toggle("on", a.getAttribute("href")==="#"+cur));
-  if(!document.querySelector("#links a:hover")) moveInd();
+  if(!linkHover) moveInd();
 }
 
 /* ============================================================
    HORIZONTAL TECH TRACK
    ============================================================ */
 const techSec=$("#tech"), track=$("#techTrack"), hbar=$("#hbar");
+const tcards=$$(".tcard");
 let techDist=0;
 const techPin=$("#tech .sticky");
 function layoutTech(){
+  techTop=null;
   if(reduced){ techSec.style.height=""; track.style.transform=""; techPin.style.transform=""; return; }
   techDist = Math.max(0, track.scrollWidth - innerWidth + 40);
   techSec.style.height = (innerHeight + techDist) + "px";
@@ -2764,7 +3043,8 @@ if("ResizeObserver" in window){ new ResizeObserver(layoutTech).observe(track); }
 
 function updateTech(){
   if(reduced) return;
-  const top = techSec.getBoundingClientRect().top + scrollY();
+  if(techTop===null) techTop = techSec.getBoundingClientRect().top + scrollY();
+  const top = techTop;
   /* manual pin: CSS sticky cannot work inside the transformed scroll rig */
   const pin = clamp(scrollY()-top, 0, techDist);
   techPin.style.transform = "translate3d(0,"+pin+"px,0)";
@@ -2772,7 +3052,7 @@ function updateTech(){
   const p = clamp(pin/techDist, 0, 1);
   track.style.transform = "translate3d("+(-p*techDist)+"px,0,0)";
   hbar.style.transform = "scaleX("+p+")";
-  $$(".tcard").forEach((c,i)=>{
+  tcards.forEach((c,i)=>{
     const r=c.getBoundingClientRect();
     const d = (r.left + r.width/2 - innerWidth/2) / innerWidth;
     c.style.transform = "translateY("+(d*22)+"px) rotate("+(d*1.6)+"deg) scale("+(1-Math.min(Math.abs(d),.6)*.07)+")";
@@ -2784,8 +3064,11 @@ function updateTech(){
    ============================================================ */
 const tl=$("#tl"), spine=$("#spine");
 function updateSpine(){
-  const r=tl.getBoundingClientRect();
-  const p = clamp((innerHeight*.72 - r.top) / r.height, 0, 1);
+  if(!spineGeo){
+    const r=tl.getBoundingClientRect();
+    spineGeo={ top:r.top+scrollY(), h:r.height||1 };
+  }
+  const p = clamp((innerHeight*.72 - (spineGeo.top - scrollY())) / spineGeo.h, 0, 1);
   spine.style.transform="scaleY("+p+")";
 }
 
@@ -2817,16 +3100,30 @@ function inView(el, pad){
   const r=el.getBoundingClientRect(), m=pad==null?160:pad;
   return r.bottom > -m && r.top < innerHeight+m && r.right > -m && r.left < innerWidth+m;
 }
+/* measuring every canvas every frame is a layout read per canvas;
+   the box only changes on resize, so cache it */
 function fitCanvas(cv){
-  const r=cv.getBoundingClientRect();
-  if(!r.width || !r.height) return null;
-  const w=Math.round(r.width*dpr), h=Math.round(r.height*dpr);
-  if(cv.width!==w || cv.height!==h){ cv.width=w; cv.height=h; }
-  const c=cv.getContext("2d");
-  c.setTransform(dpr,0,0,dpr,0,0);
-  return { ctx:c, w:r.width, h:r.height };
+  let e=_boxes.get(cv);
+  if(!e || e.epoch!==_boxEpoch){
+    const r=cv.getBoundingClientRect();
+    if(!r.width || !r.height) return null;
+    e={ epoch:_boxEpoch, w:r.width, h:r.height, ctx:cv.getContext("2d") };
+    _boxes.set(cv, e);
+    const w=Math.round(r.width*dpr), h=Math.round(r.height*dpr);
+    if(cv.width!==w || cv.height!==h){ cv.width=w; cv.height=h; }
+    e.ctx.setTransform(dpr,0,0,dpr,0,0);
+    return { ctx:e.ctx, w:e.w, h:e.h };
+  }
+  return { ctx:e.ctx, w:e.w, h:e.h };
 }
-function css(name){ return getComputedStyle(root).getPropertyValue(name).trim(); }
+const _cssCache=new Map();
+function css(name){
+  let v=_cssCache.get(name);
+  if(v===undefined){ v=getComputedStyle(root).getPropertyValue(name).trim(); _cssCache.set(name,v); }
+  return v;
+}
+function cssBust(){ _cssCache.clear(); }
+new MutationObserver(cssBust).observe(root,{attributes:true,attributeFilter:["data-theme","data-alert"]});
 
 /* ============================================================
    27 — PERSISTENCE
@@ -3016,15 +3313,13 @@ function jump(id){
   goTo(scrollY()+t.getBoundingClientRect().top-(id==="hero"?0:92));
 }
 const railBtns=$$("#rail button");
+const railEls=RAIL.map(r=>[r[0], document.getElementById(r[0])]).filter(r=>r[1]);
 function updateRail(){
   const y=scrollY();
   rail.classList.toggle("show", y>innerHeight*.5);
-  let cur=RAIL[0][0];
-  for(const r of RAIL){
-    const el=document.getElementById(r[0]);
-    if(!el) continue;
-    if(y + innerHeight*.35 >= el.getBoundingClientRect().top + y) cur=r[0];
-  }
+  if(!railTops) railTops = railEls.map(r=> r[1].getBoundingClientRect().top + y);
+  let cur=railEls[0][0];
+  for(let i=0;i<railEls.length;i++) if(y + innerHeight*.35 >= railTops[i]) cur=railEls[i][0];
   railBtns.forEach(b=> b.classList.toggle("on", b.dataset.id===cur));
 }
 
@@ -3046,7 +3341,14 @@ function ovOpen(el, focusEl){
   lastFocus = document.activeElement;
   openOv = el; el.classList.add("open");
   document.body.classList.add("is-locked");
-  if(focusEl) setTimeout(()=>focusEl.focus(), 40);
+  /* focus synchronously: the class is already applied, so the field is
+     visible. A deferred focus dropped the first keystrokes of anyone who
+     started typing straight away — and those keystrokes reached the
+     global shortcuts instead. */
+  if(focusEl){
+    focusEl.focus();
+    if(document.activeElement!==focusEl) requestAnimationFrame(()=>focusEl.focus());
+  }
   Audio_.click();
 }
 function ovClose(){
@@ -3724,25 +4026,40 @@ function gridLines(ctx,w,h,step){
 /* — radio: scrolling spectrogram — */
 (function(){
   const cv=tileCanvas("tRadio");
+  /* one offscreen column buffer, shifted left each frame: 48 cells per
+     frame instead of repainting the whole surface */
+  const BW=260, BH=48;
+  const buf=document.createElement("canvas");
+  buf.width=BW; buf.height=BH;
+  const bx=buf.getContext("2d");
+  let seen=0;
   onTick(function(){
+    const n=Sim.spec.length;
+    if(n>seen){
+      const cyRGB=hexish(css("--cy")), mgRGB=hexish(css("--mg"));
+      const add=Math.min(n-seen, 4);
+      for(let k=0;k<add;k++){
+        bx.globalCompositeOperation="copy";
+        bx.drawImage(buf, -1, 0);
+        bx.globalCompositeOperation="source-over";
+        bx.clearRect(BW-1,0,1,BH);
+        const col=Sim.spec[n-add+k];
+        for(let j=0;j<BH && j<col.length;j++){
+          const v=col[j];
+          if(v<.10) continue;
+          const c = v>.6 ? mgRGB : cyRGB;
+          bx.fillStyle="rgba("+c[0]+","+c[1]+","+c[2]+","+v.toFixed(3)+")";
+          bx.fillRect(BW-1, BH-1-j, 1, 1);
+        }
+      }
+      seen=n;
+    }
     if(!inView(cv)) return;
     const f=fitCanvas(cv); if(!f) return;
     const {ctx,w,h}=f;
     ctx.clearRect(0,0,w,h);
-    const cols=Sim.spec, n=cols.length; if(!n) return;
-    const show=Math.min(n, Math.max(40, Math.floor(w/2.2)));
-    const cw=w/show, start=n-show;
-    const cyRGB = hexish(css("--cy")), mgRGB = hexish(css("--mg"));
-    for(let i=0;i<show;i++){
-      const col=cols[start+i], bins=col.length, bh=h/bins;
-      for(let j=0;j<bins;j++){
-        const v=col[j];
-        if(v<.12) continue;
-        const c = v>.6 ? mgRGB : cyRGB;
-        ctx.fillStyle="rgba("+c[0]+","+c[1]+","+c[2]+","+(v*.9).toFixed(3)+")";
-        ctx.fillRect(i*cw, h-(j+1)*bh, cw+.6, bh+.6);
-      }
-    }
+    ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(buf, 0, 0, BW, BH, 0, 0, w, h);
     ctx.strokeStyle=css("--line"); ctx.lineWidth=1;
     ctx.beginPath(); ctx.moveTo(0,h*.5+.5); ctx.lineTo(w,h*.5+.5); ctx.stroke();
   });
@@ -4195,9 +4512,9 @@ const Orb = (function(){
       const p=posOf(b,days);
       if(!b.fixed && !reduced){
         b.trail.push(p);
-        if(b.trail.length>70) b.trail.shift();
+        if(b.trail.length > (b.ship?34:56)) b.trail.shift();
       }
-      if(b.trail.length>2){
+      if(b.trail.length>2 && !(b.ship && cam.s<3)){
         ctx.beginPath();
         for(let i=0;i<b.trail.length;i++){
           const q=b.trail[i];
@@ -5572,7 +5889,8 @@ $$(".mem").forEach((m,i)=>{
 /* ============================================================
    MAIN RAF LOOP
    ============================================================ */
-let running=true;
+let running=true, heroVisible=true;
+new IntersectionObserver(es=>{ heroVisible = es[0].isIntersecting; }, {rootMargin:"120px"}).observe($("#hero"));
 document.addEventListener("visibilitychange", ()=>{
   running = !document.hidden;
   if(running) requestAnimationFrame(loop);
@@ -5591,8 +5909,7 @@ function loop(t){
     dot.style.transform  = "translate3d("+mx+"px,"+my+"px,0)";
     ring.style.transform = "translate3d("+rx+"px,"+ry+"px,0)";
   }
-  drawStars(t);
-  drawRock(t);
+  if(heroVisible){ drawStars(t); drawRock(t); }
   updateChrome();
   updateTech();
   updateSpine();
