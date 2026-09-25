@@ -301,26 +301,27 @@ section{
   color: var(--ink-faint);
 }
 
-/* Reveal system: elements start hidden, JS adds .is-visible via IntersectionObserver */
-[data-reveal]{
+/* Reveal system: elements start hidden, JS adds .is-visible via IntersectionObserver.
+   [data-rv] is an alias for [data-reveal] sharing the same observer/CSS treatment. */
+[data-reveal],[data-rv]{
   opacity: 0;
   transform: translateY(36px);
   transition: opacity .9s var(--ease-out), transform .9s var(--ease-out);
   will-change: transform, opacity;
 }
-[data-reveal].is-visible{
+[data-reveal].is-visible,[data-rv].is-visible{
   opacity: 1;
   transform: translateY(0);
 }
-[data-reveal="left"]{ transform: translateX(-60px); }
-[data-reveal="left"].is-visible{ transform: translateX(0); }
-[data-reveal="right"]{ transform: translateX(60px); }
-[data-reveal="right"].is-visible{ transform: translateX(0); }
-[data-reveal="scale"]{ transform: scale(.92); }
-[data-reveal="scale"].is-visible{ transform: scale(1); }
+[data-reveal="left"],[data-rv="left"]{ transform: translateX(-60px); }
+[data-reveal="left"].is-visible,[data-rv="left"].is-visible{ transform: translateX(0); }
+[data-reveal="right"],[data-rv="right"]{ transform: translateX(60px); }
+[data-reveal="right"].is-visible,[data-rv="right"].is-visible{ transform: translateX(0); }
+[data-reveal="scale"],[data-rv="scale"]{ transform: scale(.92); }
+[data-reveal="scale"].is-visible,[data-rv="scale"].is-visible{ transform: scale(1); }
 
 @media (prefers-reduced-motion: reduce){
-  [data-reveal]{ transition-duration: .01s !important; transform:none !important; opacity:1 !important; }
+  [data-reveal],[data-rv]{ transition-duration: .01s !important; transform:none !important; opacity:1 !important; }
 }
 
 /* =====================================================================
@@ -791,13 +792,21 @@ section{
   position: relative;
 }
 .tech__sticky{
-  position: sticky;
-  top:0;
+  position: relative;
   height: 100svh;
   display:flex;
   flex-direction:column;
   justify-content:center;
   overflow:hidden;
+}
+/* JS-computed pin (replaces position:sticky, which cannot work through the
+   transformed scroll-rig ancestor). Applied/removed by the ticker's tech-pin
+   routine while the section's trigger range is active. */
+.tech__sticky.is-pinned{
+  position: fixed;
+  top:0; left:0;
+  width: 100%;
+  z-index: 60;
 }
 .tech__head{ padding: 0 var(--gutter); margin-bottom: 40px; }
 .tech__track{
@@ -1184,6 +1193,68 @@ section{
 @media (max-width: 560px){
   .footer__top{ grid-template-columns: 1fr; }
 }
+
+/* =====================================================================
+   17. SECTION NAVIGATOR (dot rail)
+===================================================================== */
+.sectionnav{
+  position: fixed;
+  top: 50%; right: 22px;
+  transform: translateY(-50%);
+  z-index: 950;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.sectionnav__dot{
+  position: relative;
+  width: 10px; height: 10px;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  cursor: pointer;
+  flex: none;
+}
+.sectionnav__dot::before{
+  content:"";
+  position:absolute; inset: 2px;
+  background: var(--ink-faint);
+  transition: background .3s var(--ease-out), transform .3s var(--ease-spring);
+}
+.sectionnav__dot:hover::before,
+.sectionnav__dot:focus-visible::before{ background: var(--cyan); }
+.sectionnav__dot.is-active{ border-color: var(--cyan); }
+.sectionnav__dot.is-active::before{
+  background: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan-dim);
+}
+.sectionnav__label{
+  position:absolute;
+  right: 22px; top: 50%;
+  transform: translateY(-50%) translateX(6px);
+  white-space:nowrap;
+  font-family: ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  padding: 6px 10px;
+  opacity: 0;
+  pointer-events:none;
+  transition: opacity .2s var(--ease-out), transform .2s var(--ease-out);
+}
+.sectionnav__dot:hover .sectionnav__label,
+.sectionnav__dot:focus-visible .sectionnav__label{
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+@media (max-width: 900px){
+  .sectionnav{ display:none; }
+}
 </style>
 </head>
 <body>
@@ -1251,6 +1322,9 @@ section{
   <a href="#contact">06 · Rekrutierung</a>
 </nav>
 
+<nav class="sectionnav" id="sectionNav" role="navigation" aria-label="Sektionen"></nav>
+
+<div id="scrollRig">
 <main id="main">
 
 <!-- ===================================================================
@@ -1687,6 +1761,7 @@ section{
     </div>
   </div>
 </footer>
+</div><!-- /#scrollRig -->
 
 <script>
 "use strict";
@@ -1696,6 +1771,112 @@ section{
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const lerp = (a,b,t) => a + (b-a)*t;
 const clamp = (v,min,max) => Math.max(min, Math.min(max, v));
+
+/* ---------------------------------------------------------------------
+   0a. CENTRAL rAF TICKER
+   Single top-level requestAnimationFrame loop. Any code that needs a
+   per-frame callback registers via Ticker.add(fn) — fn receives (dt, now)
+   in milliseconds. Pauses entirely while the tab is hidden.
+--------------------------------------------------------------------- */
+const Ticker = (function(){
+  const fns = new Set();
+  let last = null;
+  let running = false;
+  function frame(now){
+    if(!running) return;
+    const dt = last === null ? 16.7 : now - last;
+    last = now;
+    fns.forEach(fn => { try{ fn(dt, now); }catch(e){ /* isolate one bad listener */ } });
+    requestAnimationFrame(frame);
+  }
+  function start(){
+    if(running) return;
+    running = true;
+    last = null;
+    requestAnimationFrame(frame);
+  }
+  function stop(){ running = false; }
+  document.addEventListener("visibilitychange", () => {
+    if(document.hidden) stop(); else start();
+  });
+  if(!document.hidden) start();
+  return {
+    add(fn){ fns.add(fn); },
+    remove(fn){ fns.delete(fn); }
+  };
+})();
+
+/* ---------------------------------------------------------------------
+   0b. localStorage PERSISTENCE SCAFFOLD
+   Namespaced get/set JSON helper. Ready for later stages (sound,
+   emergency banner, site-selection, simulator camera, questionnaire, …)
+   to store their own "aetherium.<key>" entries alongside the theme.
+--------------------------------------------------------------------- */
+const Store = (function(){
+  const PREFIX = "aetherium.";
+  function get(key, fallback){
+    try{
+      const raw = localStorage.getItem(PREFIX + key);
+      if(raw === null) return fallback;
+      return JSON.parse(raw);
+    }catch(e){ return fallback; }
+  }
+  function set(key, value){
+    try{ localStorage.setItem(PREFIX + key, JSON.stringify(value)); }catch(e){ /* ignore */ }
+  }
+  return { get, set };
+})();
+
+/* ---------------------------------------------------------------------
+   0c. IntersectionObserver visibility-flag helper
+   Returns a plain object whose .visible property tracks whether `el`
+   is on-screen, for expensive per-frame loops (canvas draws etc.) to
+   skip work when off-screen without breaking the ticker chain.
+--------------------------------------------------------------------- */
+function observeVisible(el, opts){
+  const state = { visible: true };
+  if(!el || !("IntersectionObserver" in window)) return state;
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => { state.visible = entry.isIntersecting; });
+  }, opts || { threshold: 0 });
+  io.observe(el);
+  return state;
+}
+
+/* =====================================================================
+   0d. LERPED SMOOTH-SCROLL RIG
+   Real scroll position (native, drives the scrollbar/range as usual) is
+   tracked; a virtual value eases toward it every ticker frame; the
+   #scrollRig wrapper (holding <main> + <footer>) is translated by the
+   *delta* between virtual and real. Since native scroll has already
+   moved the content by `real`, adding translateY(virtual-real) lands the
+   content at exactly `virtual` — no double-application, no spacer/height
+   trickery needed, and the range stays exactly the natural document
+   height. Respects prefers-reduced-motion (delta pinned to 0 = no smoothing,
+   1:1 native scroll). Fixed elements (nav, cursor, progress bar, preloader,
+   mobile overlay, section rail) all live OUTSIDE #scrollRig so they are
+   never affected by this transform.
+===================================================================== */
+const ScrollRig = (function(){
+  const rig = document.getElementById("scrollRig");
+  let real = window.scrollY || 0;
+  let virtual = real;
+  if(!rig) return { real: () => real };
+
+  Ticker.add(function scrollRigTick(){
+    real = window.scrollY || document.documentElement.scrollTop || 0;
+    if(reduceMotion){
+      virtual = real;
+    } else {
+      virtual = lerp(virtual, real, 0.11);
+      if(Math.abs(virtual - real) < 0.4) virtual = real;
+    }
+    const delta = virtual - real;
+    rig.style.transform = delta === 0 ? "" : `translateY(${delta}px)`;
+  });
+
+  return { real: () => real };
+})();
 
 /* =====================================================================
    1. PRELOADER
@@ -1740,14 +1921,12 @@ const clamp = (v,min,max) => Math.max(min, Math.min(max, v));
 
   window.addEventListener("mousemove", e => { mx = e.clientX; my = e.clientY; });
 
-  function loop(){
+  Ticker.add(function cursorTick(){
     rx = lerp(rx, mx, 0.18);
     ry = lerp(ry, my, 0.18);
     dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%,-50%)`;
     ring.style.transform = `translate(${rx}px, ${ry}px) translate(-50%,-50%)`;
-    requestAnimationFrame(loop);
-  }
-  loop();
+  });
 
   const interactive = 'a, button, input, textarea, select, [data-tilt], .node, [tabindex]';
   document.addEventListener("mouseover", e => {
@@ -1812,20 +1991,65 @@ const clamp = (v,min,max) => Math.max(min, Math.min(max, v));
 })();
 
 /* =====================================================================
+   4b. SECTION NAVIGATOR (right-edge dot rail)
+===================================================================== */
+(function sectionNav(){
+  const rail = document.getElementById("sectionNav");
+  if(!rail) return;
+
+  const sectionInfo = [
+    { id: "hero", label: "Start" },
+    { id: "stats", label: "Kennzahlen" },
+    { id: "divisions", label: "Divisionen" },
+    { id: "starmap", label: "Standorte" },
+    { id: "tech", label: "Technologie" },
+    { id: "timeline", label: "Historie" },
+    { id: "team", label: "Kommando" },
+    { id: "contact", label: "Rekrutierung" }
+  ].map(s => ({ ...s, el: document.getElementById(s.id) }))
+   .filter(s => s.el);
+
+  const dots = sectionInfo.map(s => {
+    const btn = document.createElement("button");
+    btn.className = "sectionnav__dot";
+    btn.type = "button";
+    btn.setAttribute("aria-label", "Zu Abschnitt " + s.label + " springen");
+    const label = document.createElement("span");
+    label.className = "sectionnav__label";
+    label.textContent = s.label;
+    btn.appendChild(label);
+    btn.addEventListener("click", () => {
+      s.el.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+    });
+    rail.appendChild(btn);
+    return btn;
+  });
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting){
+        const idx = sectionInfo.findIndex(s => s.el === entry.target);
+        dots.forEach((d,i) => d.classList.toggle("is-active", i === idx));
+      }
+    });
+  }, { rootMargin: "-45% 0px -50% 0px" });
+  sectionInfo.forEach(s => io.observe(s.el));
+})();
+
+/* =====================================================================
    5. THEME TOGGLE
 ===================================================================== */
 (function theme(){
   const btn = document.getElementById("themeToggle");
   const root = document.documentElement;
-  let stored = null;
-  try{ stored = localStorage.getItem("aetherium-theme"); }catch(e){}
+  const stored = Store.get("theme", "dark");
   if(stored === "light"){ root.setAttribute("data-theme","light"); btn.setAttribute("aria-pressed","true"); }
 
   btn.addEventListener("click", () => {
     const isLight = root.getAttribute("data-theme") === "light";
     if(isLight){ root.removeAttribute("data-theme"); btn.setAttribute("aria-pressed","false"); }
     else{ root.setAttribute("data-theme","light"); btn.setAttribute("aria-pressed","true"); }
-    try{ localStorage.setItem("aetherium-theme", isLight ? "dark" : "light"); }catch(e){}
+    Store.set("theme", isLight ? "dark" : "light");
   });
 })();
 
@@ -1904,31 +2128,27 @@ function initHeroTitle(){
     tmy = e.clientY / innerHeight;
   });
 
-  let paused = false;
-  document.addEventListener("visibilitychange", () => { paused = document.hidden; });
+  const vis = observeVisible(hero, { threshold: 0 });
 
-  function draw(t){
-    if(!paused){
-      mx = lerp(mx, tmx, 0.04);
-      my = lerp(my, tmy, 0.04);
-      ctx.clearRect(0,0,w,h);
-      ctx.fillStyle = "rgba(0,0,0,0)";
-      stars.forEach(s => {
-        const px = s.x + (mx-0.5) * 60 * s.z;
-        const py = s.y + (my-0.5) * 40 * s.z;
-        const flicker = 0.55 + Math.sin(t*0.0015 + s.tw) * 0.45;
-        ctx.beginPath();
-        ctx.arc(px, py, s.r * s.z * 1.6, 0, Math.PI*2);
-        const cyanMix = s.z > 0.75;
-        ctx.fillStyle = cyanMix
-          ? `rgba(0,229,255,${0.5*flicker})`
-          : `rgba(237,239,244,${0.65*flicker*s.z})`;
-        ctx.fill();
-      });
-    }
-    requestAnimationFrame(draw);
-  }
-  requestAnimationFrame(draw);
+  Ticker.add(function starfieldTick(dt, t){
+    if(!vis.visible) return;
+    mx = lerp(mx, tmx, 0.04);
+    my = lerp(my, tmy, 0.04);
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = "rgba(0,0,0,0)";
+    stars.forEach(s => {
+      const px = s.x + (mx-0.5) * 60 * s.z;
+      const py = s.y + (my-0.5) * 40 * s.z;
+      const flicker = 0.55 + Math.sin(t*0.0015 + s.tw) * 0.45;
+      ctx.beginPath();
+      ctx.arc(px, py, s.r * s.z * 1.6, 0, Math.PI*2);
+      const cyanMix = s.z > 0.75;
+      ctx.fillStyle = cyanMix
+        ? `rgba(0,229,255,${0.5*flicker})`
+        : `rgba(237,239,244,${0.65*flicker*s.z})`;
+      ctx.fill();
+    });
+  });
 })();
 
 /* =====================================================================
@@ -1980,7 +2200,7 @@ function initHeroTitle(){
    10. INTERSECTION-OBSERVER REVEALS (staggered)
 ===================================================================== */
 (function reveals(){
-  const items = document.querySelectorAll("[data-reveal]");
+  const items = document.querySelectorAll("[data-reveal], [data-rv]");
   const io = new IntersectionObserver((entries) => {
     entries.forEach((entry, idx) => {
       if(entry.isIntersecting){
@@ -2187,21 +2407,44 @@ function initHeroTitle(){
 
 /* =====================================================================
    14. TECHNOLOGY — HORIZONTAL SCROLL-HIJACK SECTION
+   Converted from position:sticky to a JS-computed pin because the new
+   scroll-rig applies a CSS transform to an ancestor, and position:fixed
+   does not escape a transformed ancestor's containing block. While the
+   section's trigger range is active we move .tech__sticky out to
+   document.body (position:fixed there behaves normally, fixed to the
+   real viewport), then move it back into #tech before/after the range.
+   Range math uses REAL scroll (not the lerped virtual value) so the pin
+   boundary isn't doubly-smoothed/laggy.
 ===================================================================== */
 (function techScroll(){
   const section = document.getElementById("tech");
+  const sticky = document.querySelector(".tech__sticky");
   const track = document.getElementById("techTrack");
+  if(!section || !sticky || !track) return;
   const cards = track.querySelectorAll(".tech-card");
-  if(!section || !track) return;
 
-  function update(){
-    const rect = section.getBoundingClientRect();
-    const total = section.offsetHeight - window.innerHeight;
-    const progress = clamp(-rect.top / total, 0, 1);
+  let techTop = 0; // static offset of #tech within its (fixed) offsetParent — unaffected by transform
+  function measure(){
+    let el = section, top = 0;
+    // walk offsetParent chain up to (and excluding) the nearest ancestor
+    // that establishes the scroll-rig's own coordinate space (#scrollRig)
+    while(el && el.id !== "scrollRig"){
+      top += el.offsetTop || 0;
+      el = el.offsetParent;
+    }
+    techTop = top;
+  }
+  window.addEventListener("resize", measure);
+  measure();
+
+  let pinned = false;
+
+  function applyTrack(progress){
     const maxScroll = track.scrollWidth - track.parentElement.clientWidth + 96;
     track.style.transform = `translateX(${-progress * maxScroll}px)`;
+  }
 
-    // scale/rotate focus based on proximity to center
+  function updateFocus(){
     const centerX = window.innerWidth/2;
     cards.forEach(card => {
       const cr = card.getBoundingClientRect();
@@ -2210,9 +2453,27 @@ function initHeroTitle(){
       card.classList.toggle("is-focus", dist < 0.28);
     });
   }
-  document.addEventListener("scroll", update, { passive:true });
-  window.addEventListener("resize", update);
-  update();
+
+  Ticker.add(function techPinTick(){
+    const realScroll = window.scrollY || document.documentElement.scrollTop;
+    const start = techTop;
+    const end = techTop + section.offsetHeight - window.innerHeight;
+    const inRange = realScroll >= start && realScroll <= end;
+
+    if(inRange && !pinned){
+      pinned = true;
+      document.body.appendChild(sticky);
+      sticky.classList.add("is-pinned");
+    } else if(!inRange && pinned){
+      pinned = false;
+      sticky.classList.remove("is-pinned");
+      section.appendChild(sticky);
+    }
+
+    const progress = clamp((realScroll - start) / Math.max(1, end - start), 0, 1);
+    applyTrack(progress);
+    if(pinned) updateFocus();
+  });
 })();
 
 /* =====================================================================
@@ -2325,19 +2586,16 @@ document.querySelectorAll(".btn").forEach(btn => {
 ===================================================================== */
 (function footerLoop(){
   const grid = document.querySelector(".footer__grid-bg");
+  const footerEl = document.querySelector(".footer");
   if(!grid || reduceMotion) return;
-  let paused = false;
-  document.addEventListener("visibilitychange", () => { paused = document.hidden; });
-  // CSS animation already drives this; rAF loop here nudges a secondary
-  // parallax offset based on scroll for extra depth.
-  function loop(){
-    if(!paused){
-      const y = window.scrollY * 0.02;
-      grid.style.backgroundPosition = `0 ${y}px`;
-    }
-    requestAnimationFrame(loop);
-  }
-  requestAnimationFrame(loop);
+  const vis = observeVisible(footerEl || grid, { threshold: 0 });
+  // CSS animation already drives this; ticker callback here nudges a
+  // secondary parallax offset based on scroll for extra depth.
+  Ticker.add(function footerTick(){
+    if(!vis.visible) return;
+    const y = window.scrollY * 0.02;
+    grid.style.backgroundPosition = `0 ${y}px`;
+  });
 })();
 
 /* =====================================================================
