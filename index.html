@@ -1073,6 +1073,46 @@ footer .wrap{ position:relative; z-index:1; }
 }
 
 /* ============================================================
+   45 — MATERIALS CATALOGUE
+   ============================================================ */
+#materials{ background:var(--bg-2); border-block:1px solid var(--line); }
+.mt-bar{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:20px; }
+.mt-grid{
+  display:grid; grid-template-columns:repeat(7,1fr); gap:clamp(5px,.7vw,9px);
+}
+@media (max-width:1000px){ .mt-grid{ grid-template-columns:repeat(5,1fr); } }
+@media (max-width:620px){ .mt-grid{ grid-template-columns:repeat(3,1fr); } }
+.el{
+  position:relative; aspect-ratio:1; padding:9px 10px; cursor:pointer; text-align:left;
+  border:1px solid var(--line); background:var(--bg);
+  display:flex; flex-direction:column; justify-content:space-between;
+  transition:border-color .3s, background-color .3s, transform .45s var(--spring);
+  will-change:transform;
+}
+.el:hover, .el:focus-visible{ border-color:var(--cy); background:var(--bg-3); transform:translateY(-4px); z-index:2; }
+.el.on{ border-color:var(--cy); background:var(--cy-soft); }
+.el .z{ font-family:var(--mono); font-size:.56rem; color:var(--fg-faint); letter-spacing:.1em; }
+.el .sy{ font-size:clamp(1.15rem,2.2vw,1.85rem); font-weight:800; letter-spacing:-.03em; line-height:1; }
+.el .nm2{ font-family:var(--mono); font-size:.54rem; letter-spacing:.1em; color:var(--fg-dim); text-transform:uppercase;
+          overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.el .mv{ position:absolute; left:0; bottom:0; height:2px; background:var(--cy); transition:width .7s var(--ease); }
+.el.rare .sy{ color:var(--mg); }
+.mt-cols{ display:grid; grid-template-columns:1fr 340px; gap:clamp(16px,2.4vw,34px); align-items:start; margin-top:clamp(20px,3vw,34px); }
+@media (max-width:1000px){ .mt-cols{ grid-template-columns:1fr; } }
+.mt-card{ border:1px solid var(--line); background:var(--bg); padding:clamp(18px,2vw,24px); }
+.mt-card .top{ display:flex; align-items:flex-start; gap:16px; }
+.mt-card .big2{ font-size:clamp(2rem,3.6vw,3rem); font-weight:800; letter-spacing:-.04em; line-height:.9; }
+.mt-card p{ color:var(--fg-dim); font-size:.86rem; line-height:1.65; margin-top:14px; }
+.mt-card .kv2{ display:flex; justify-content:space-between; gap:10px; padding-block:6px; border-bottom:1px solid var(--line); }
+.mt-card .kv2:last-child{ border-bottom:none; }
+.mt-chart{ border:1px solid var(--line); background:var(--bg); position:relative; min-height:300px; }
+.mt-chart canvas{ position:absolute; inset:0; width:100%; height:100%; }
+.mt-legend{ display:flex; gap:14px; flex-wrap:wrap; padding:12px 16px; border-top:1px solid var(--line); position:absolute; inset:auto 0 0 0; background:var(--bg); }
+.mt-legend span{ display:flex; align-items:center; gap:6px; font-family:var(--mono); font-size:.58rem; letter-spacing:.14em; text-transform:uppercase; color:var(--fg-faint); }
+.mt-legend i{ width:9px; height:9px; flex:none; }
+.mt-chart .plot{ position:absolute; inset:0 0 44px 0; }
+
+/* ============================================================
    19 — REDUCED MOTION
    ============================================================ */
 @media (prefers-reduced-motion:reduce){
@@ -1624,6 +1664,58 @@ footer .wrap{ position:relative; z-index:1; }
       <article class="ev" data-rv="up"><div class="box"><div class="yr">2166</div><h3 class="h3">Sprung über Neptun</h3><p>ANCHOR-I wird bei HALCYON in Position gebracht. 47,3 AE. Erstmals leben Menschen dauerhaft jenseits der Neptunbahn.</p></div><div class="pin"><span></span></div></article>
       <article class="ev" data-rv="up"><div class="box"><div class="yr">2174</div><h3 class="h3">Die stille Havarie</h3><p>Rig KESTREL verliert die Verankerung und driftet elf Tage. TETHER-C holt sie ein. Alle 22 an Bord überleben. Seitdem null Verluste.</p></div><div class="pin"><span></span></div></article>
       <article class="ev" data-rv="up"><div class="box"><div class="yr">2187</div><h3 class="h3">Vierter Standort</h3><p>OBSIDIAN geht in Betrieb. 1.842 Kilotonnen pro Zyklus. Aetherium liefert 31 % des Helium-3 im gesamten Sonnensystem.</p></div><div class="pin"><span></span></div></article>
+    </div>
+  </div>
+</section>
+
+<!-- ========= MATERIALS ========= -->
+<section id="materials" class="sec-pad">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="label" data-rv="up">08 — Materialkatalog</div>
+        <h2 class="h2" data-split style="margin-top:14px">Was wir<br>herausholen</h2>
+      </div>
+      <p class="lede" data-rv="up" data-d="200" style="max-width:40ch">
+        Vierzehn Elemente, sortierbar nach dem, was zählt. Die Fläche darunter
+        zeigt sechsundvierzig Jahre Förderung — und wechselt die Kennzahl,
+        ohne neu zu zeichnen.
+      </p>
+    </div>
+
+    <div data-rv="up">
+      <div class="mt-bar">
+        <span class="mini">Sortieren nach</span>
+        <div class="sw-tabs" id="mtSort" role="group" aria-label="Sortierung">
+          <button type="button" class="on" data-k="yield">Ertrag</button>
+          <button type="button" data-k="purity">Reinheit</button>
+          <button type="button" data-k="price">Marktpreis</button>
+          <button type="button" data-k="z">Ordnungszahl</button>
+        </div>
+      </div>
+
+      <div class="mt-grid" id="mtGrid" role="list"></div>
+
+      <div class="mt-cols">
+        <div class="mt-chart">
+          <div class="plot"><canvas id="mtCv"></canvas></div>
+          <div class="mt-legend" id="mtLeg"></div>
+        </div>
+        <div class="mt-card" id="mtCard">
+          <div class="top">
+            <div>
+              <div class="label" id="mtZ">Z 60</div>
+              <div class="big2" id="mtSy">Nd</div>
+            </div>
+            <div style="flex:1;min-width:0">
+              <h3 class="h3" id="mtNm">Neodym</h3>
+              <div class="mini" id="mtGrp" style="margin-top:5px">Lanthanoid</div>
+            </div>
+          </div>
+          <p id="mtDesc">—</p>
+          <div style="margin-top:16px" id="mtKV"></div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -4361,6 +4453,259 @@ TERM_CMDS.log = { d:"<suchbegriff> — Protokoll durchsuchen", run(a){
     ["  Treffer .................. "+n+" von "+Log.entries().length, n?"out":"err"]
   ]);
   ovClose(); jump("log");
+}};
+
+/* ============================================================
+   46 — MATERIALS CATALOGUE
+   ============================================================ */
+const Mat = (function(){
+  const EL=[
+    {sy:"Nd", z:60, n:"Neodym",    grp:"Lanthanoid",  yield:412, purity:99.99994, price:1840, rho:7.01, rare:true,
+     d:"Der Grund, aus dem AETHERIUM überhaupt so weit draußen bohrt. Neodym-Eisen-Bor hält die stärksten Dauermagnete, die gebaut werden können — und jedes Ionengitter braucht sie."},
+    {sy:"Ir", z:77, n:"Iridium",   grp:"Übergangsmetall", yield:208, purity:99.997, price:6250, rho:22.56, rare:true,
+     d:"Dichtestes stabiles Element nach Osmium und praktisch unangreifbar. Aus Iridium bestehen die Tiegel, in denen alles andere geschmolzen wird — nur eben nicht hier, wo frei geschwebt wird."},
+    {sy:"He", z:2,  n:"Helium-3",  grp:"Edelgas",     yield:186, purity:99.9992, price:9400, rho:0.0001, rare:true,
+     d:"Im Regolith eingelagert, über Jahrmilliarden vom Sonnenwind eingetragen. Einunddreißig Prozent des Vorrats im gesamten Sonnensystem laufen über AETHERIUM-Frachter."},
+    {sy:"Pt", z:78, n:"Platin",    grp:"Übergangsmetall", yield:164, purity:99.995, price:4100, rho:21.45, rare:false,
+     d:"Katalysator in jedem Lebenserhaltungskreis. Ohne Platin bindet niemand das Kohlendioxid, das zweiundzwanzig Menschen über vierzehn Monate ausatmen."},
+    {sy:"Os", z:76, n:"Osmium",    grp:"Übergangsmetall", yield:97,  purity:99.991, price:5600, rho:22.59, rare:true,
+     d:"Das dichteste bekannte Element. In den Lagern der Habitat-Rotation, wo Masse auf engstem Raum gebraucht wird und Platz teurer ist als Gewicht."},
+    {sy:"Ru", z:44, n:"Ruthenium", grp:"Übergangsmetall", yield:142, purity:99.988, price:2980, rho:12.45, rare:false,
+     d:"Härtet Platinlegierungen und trägt die Kontakte, die im Vakuum nicht verschweißen dürfen. Unscheinbar, bis eines fehlt."},
+    {sy:"Dy", z:66, n:"Dysprosium",grp:"Lanthanoid",  yield:88,  purity:99.992, price:3350, rho:8.55, rare:true,
+     d:"Hält Neodym-Magnete bei Temperatur zusammen. Ohne Dysprosium verliert ein Ionengitter bei 180 Grad seine Feldstärke — und damit das Schiff seinen Schub."},
+    {sy:"Y",  z:39, n:"Yttrium",   grp:"Übergangsmetall", yield:121, purity:99.986, price:980,  rho:4.47, rare:false,
+     d:"Stabilisiert die Keramik der Radiatorflächen. Achthundertachtzig Quadratmeter pro Frachter, jedes Jahr ein Stück davon ersetzt."},
+    {sy:"Sc", z:21, n:"Scandium",  grp:"Übergangsmetall", yield:34,  purity:99.981, price:7800, rho:2.99, rare:true,
+     d:"Leichter als Aluminium, fester als Titan, seltener als beides. Der ganze Habitat-Torus ist aus einer Scandium-Aluminium-Legierung gebaut."},
+    {sy:"Co", z:27, n:"Kobalt",    grp:"Übergangsmetall", yield:390, purity:99.97,  price:410,  rho:8.90, rare:false,
+     d:"Der Arbeitsstoff. Samarium-Kobalt hält auch dort, wo Neodym längst aufgibt — in den Magnetlagern direkt neben dem Reaktor."},
+    {sy:"Ni", z:28, n:"Nickel",    grp:"Übergangsmetall", yield:1240,purity:99.94,  price:62,   rho:8.91, rare:false,
+     d:"Das, wovon es am meisten gibt. Der halbe Körper VESPERA besteht aus einer Nickel-Eisen-Matrix, die so hart ist, dass vier Bohrköpfe pro Loch nötig sind."},
+    {sy:"Fe", z:26, n:"Eisen",     grp:"Übergangsmetall", yield:1680,purity:99.91,  price:18,   rho:7.87, rare:false,
+     d:"Kaum ein Ertrag, aber es fällt ohnehin an. Was nicht verkauft wird, wandert direkt in die Spanten des nächsten Frachters — Stahl, der nie eine Schwerkraft gesehen hat."},
+    {sy:"W",  z:74, n:"Wolfram",   grp:"Übergangsmetall", yield:246, purity:99.978, price:340,  rho:19.25, rare:false,
+     d:"Höchster Schmelzpunkt aller Metalle. Die Düsenhälse der Lageregelung und die Abschirmung zwischen Reaktor und Habitat."},
+    {sy:"Re", z:75, n:"Rhenium",   grp:"Übergangsmetall", yield:19,  purity:99.984, price:11200,rho:21.02, rare:true,
+     d:"Das seltenste Element im Katalog und das teuerste. Neunzehn Kilotonnen pro Zyklus, jede einzelne davon in den Brennkammern der Lageregelung verbaut."}
+  ];
+
+  const grid=$("#mtGrid");
+  let sortK=Store.get("mtSort","yield"), cur=0;
+
+  /* ---------- tiles ---------- */
+  EL.forEach((e,i)=>{
+    const b=document.createElement("button");
+    b.type="button"; b.className="el"+(e.rare?" rare":"");
+    b.dataset.i=i; b.setAttribute("role","listitem");
+    b.setAttribute("aria-label", e.n+", Ordnungszahl "+e.z);
+    b.innerHTML='<span class="z">'+e.z+'</span>'+
+                '<span class="sy">'+e.sy+'</span>'+
+                '<span class="nm2">'+e.n+'</span>'+
+                '<i class="mv"></i>';
+    b.addEventListener("click", ()=> show(i));
+    b.addEventListener("mouseenter", ()=> show(i, true));
+    b.addEventListener("focus", ()=> show(i, true));
+    grid.appendChild(b);
+  });
+  const tiles=$$(".el", grid);
+
+  function metric(e){
+    return sortK==="yield"  ? e.yield
+         : sortK==="purity" ? (e.purity-99.9)*10
+         : sortK==="price"  ? e.price
+         : e.z;
+  }
+  function bars(){
+    const vals=EL.map(metric), max=Math.max.apply(null,vals);
+    tiles.forEach(t=>{
+      const v=metric(EL[+t.dataset.i]);
+      $(".mv",t).style.width=(v/max*100)+"%";
+    });
+  }
+
+  /* ---------- FLIP sort (small set, so measuring is cheap) ---------- */
+  function sortTiles(){
+    const first=new Map();
+    tiles.forEach(t=> first.set(t, t.getBoundingClientRect()));
+
+    const order=EL.map((e,i)=>i).sort((a,b)=>{
+      const d=metric(EL[b])-metric(EL[a]);
+      return sortK==="z" ? EL[a].z-EL[b].z : d;
+    });
+    order.forEach(i=> grid.appendChild(tiles[i]));
+
+    if(reduced) return bars();
+    tiles.forEach(t=>{
+      const a=first.get(t), b=t.getBoundingClientRect();
+      const dx=a.left-b.left, dy=a.top-b.top;
+      if(!dx && !dy) return;
+      t.style.transition="none";
+      t.style.transform="translate("+dx+"px,"+dy+"px)";
+      requestAnimationFrame(()=>{
+        t.style.transition="";
+        t.style.transform="";
+      });
+    });
+    bars();
+  }
+  $$("#mtSort button").forEach(b=> b.addEventListener("click", ()=>{
+    sortK=b.dataset.k; Store.set("mtSort", sortK);
+    $$("#mtSort button").forEach(x=> x.classList.toggle("on", x===b));
+    sortTiles();
+  }));
+  $$("#mtSort button").forEach(b=> b.classList.toggle("on", b.dataset.k===sortK));
+
+  /* ---------- detail card ---------- */
+  function show(i, soft){
+    cur=i; const e=EL[i];
+    tiles.forEach(t=> t.classList.toggle("on", +t.dataset.i===i));
+    $("#mtZ").textContent="Z "+e.z;
+    $("#mtSy").textContent=e.sy;
+    $("#mtNm").textContent=e.n;
+    $("#mtGrp").textContent=e.grp;
+    $("#mtDesc").textContent=e.d;
+    $("#mtKV").innerHTML=[
+      ["Ertrag / Zyklus", e.yield.toLocaleString("de-DE")+" kt"],
+      ["Reinheit", e.purity.toFixed(5).replace(".",",")+" %"],
+      ["Marktpreis", e.price.toLocaleString("de-DE")+" Cr/kg"],
+      ["Dichte", String(e.rho).replace(".",",")+" g/cm³"],
+      ["Einstufung", e.rare?"strategisch":"regulär"]
+    ].map(r=>'<div class="kv2"><span class="mini">'+r[0]+'</span><span class="mini val">'+r[1]+'</span></div>').join("");
+    if(!soft) Audio_.click();
+  }
+
+  /* ---------- stacked area chart ---------- */
+  const Y0=2141, Y1=2187, N=Y1-Y0+1;
+  const SER=[0,1,2,4,10,11];               /* Nd, Ir, He, Os, Ni, Fe */
+  const COL=["#00E5FF","#FF2D95","#FFD166","#7FD4D4","#9AA0B5","#5AA9E6"];
+  let sd=7717;
+  const rn=()=> (sd=(sd*1103515245+12345)%2147483648)/2147483648;
+
+  /* one series per element and per metric — generated once, deterministically */
+  const DATA={};
+  ["yield","purity","price"].forEach(k=>{
+    DATA[k]=SER.map((ei,si)=>{
+      const e=EL[ei], arr=[];
+      let v = k==="yield" ? e.yield*0.04 : k==="price" ? e.price*0.05 : 20;
+      for(let y=0;y<N;y++){
+        const ramp = k==="purity" ? (y/N)*(e.purity-99.9)*60 + 12
+                   : v*(0.6+Math.pow(y/N,1.7)*3.4);
+        const wob = 1 + (rn()-.5)*0.14 + Math.sin(y*0.5+si)*0.05;
+        /* the 2174 incident dents every curve */
+        const dent = (y===33||y===34) ? 0.78 : 1;
+        arr.push(Math.max(0, ramp*wob*dent));
+      }
+      return arr;
+    });
+  });
+
+  const cv=$("#mtCv"), plot=$(".plot");
+  let live = DATA.yield.map(a=>a.slice());
+  let targetK="yield";
+  $$("#mtSort button").forEach(b=> b.addEventListener("click", ()=>{
+    targetK = b.dataset.k==="z" ? "yield" : b.dataset.k;
+  }));
+
+  $("#mtLeg").innerHTML = SER.map((ei,i)=>
+    '<span><i style="background:'+COL[i]+'"></i>'+EL[ei].n+'</span>').join("");
+
+  onTick(function(t){
+    /* morph toward the selected metric rather than redrawing a new chart */
+    const tgt=DATA[targetK];
+    let moving=false;
+    for(let i=0;i<live.length;i++){
+      for(let y=0;y<N;y++){
+        const d=tgt[i][y]-live[i][y];
+        if(Math.abs(d)>0.01){ live[i][y]+=d*(reduced?1:0.075); moving=true; }
+        else live[i][y]=tgt[i][y];
+      }
+    }
+    if(!inView(cv)) return;
+    const f=fitCanvas(cv); if(!f) return;
+    const {ctx,w,h}=f;
+    ctx.clearRect(0,0,w,h);
+
+    const padL=42, padR=12, padT=16, padB=22;
+    const pw=w-padL-padR, ph=h-padT-padB;
+
+    /* stack + maximum */
+    const stack=[]; let max=0;
+    for(let y=0;y<N;y++){
+      let acc=0; const col=[];
+      for(let i=0;i<live.length;i++){ acc+=live[i][y]; col.push(acc); }
+      stack.push(col); if(acc>max) max=acc;
+    }
+    max = max||1;
+
+    ctx.strokeStyle=css("--line"); ctx.lineWidth=1;
+    ctx.fillStyle=css("--fg-faint");
+    ctx.font='500 8px ui-monospace, monospace';
+    ctx.textBaseline="middle";
+    for(let g=0; g<=4; g++){
+      const yy=padT+ph-(g/4)*ph;
+      ctx.beginPath(); ctx.moveTo(padL,yy+.5); ctx.lineTo(w-padR,yy+.5); ctx.stroke();
+      ctx.textAlign="right";
+      ctx.fillText(Math.round(max*g/4).toLocaleString("de-DE"), padL-6, yy);
+    }
+    ctx.textAlign="center";
+    [0, 15, 31, 46].forEach(y=>{
+      const xx=padL+(y/(N-1))*pw;
+      ctx.fillText(String(Y0+y), xx, h-padB/2);
+    });
+
+    const X=y=> padL+(y/(N-1))*pw;
+    const Y=v=> padT+ph-(v/max)*ph;
+
+    for(let i=live.length-1;i>=0;i--){
+      ctx.beginPath();
+      ctx.moveTo(X(0), Y(stack[0][i]));
+      for(let y=1;y<N;y++) ctx.lineTo(X(y), Y(stack[y][i]));
+      const below = i>0;
+      if(below){ for(let y=N-1;y>=0;y--) ctx.lineTo(X(y), Y(stack[y][i-1])); }
+      else { ctx.lineTo(X(N-1), Y(0)); ctx.lineTo(X(0), Y(0)); }
+      ctx.closePath();
+      ctx.fillStyle=COL[i]; ctx.globalAlpha=.30; ctx.fill();
+      ctx.globalAlpha=.9; ctx.strokeStyle=COL[i]; ctx.lineWidth=1.2;
+      ctx.beginPath();
+      ctx.moveTo(X(0), Y(stack[0][i]));
+      for(let y=1;y<N;y++) ctx.lineTo(X(y), Y(stack[y][i]));
+      ctx.stroke(); ctx.globalAlpha=1;
+    }
+
+    /* the 2174 incident */
+    const xd=X(33);
+    ctx.setLineDash([2,4]); ctx.strokeStyle=css("--fg-faint"); ctx.globalAlpha=.6;
+    ctx.beginPath(); ctx.moveTo(xd,padT); ctx.lineTo(xd,padT+ph); ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha=1;
+    ctx.textAlign="left"; ctx.fillStyle=css("--fg-faint");
+    ctx.fillText("2174", xd+4, padT+8);
+  });
+
+  sortTiles(); show(0, true);
+  return { show, elements:EL };
+})();
+
+registerCmd({ ic:"⬡", title:"Materialkatalog", sub:"Sektion", run:()=>jump("materials") });
+Mat.elements.forEach((e,i)=> registerCmd({ ic:e.sy, title:e.n, sub:"Element · Z "+e.z,
+  run:()=>{ jump("materials"); setTimeout(()=>Mat.show(i), 700); } }));
+TERM_CMDS.material = { d:"<symbol> — Element im Katalog", run(a){
+  const q=(a[0]||"").toLowerCase();
+  const i=Mat.elements.findIndex(e=> e.sy.toLowerCase()===q || e.n.toLowerCase().indexOf(q)===0);
+  if(!q||i<0){
+    const rows=[["MATERIALKATALOG","ok"]];
+    Mat.elements.forEach(e=> rows.push(["  "+e.sy.padEnd(4)+e.n.padEnd(14)+String(e.yield).padStart(5)+" kt   "+String(e.price).padStart(6)+" Cr/kg","out"]));
+    return tLines(rows);
+  }
+  const e=Mat.elements[i];
+  tLines([
+    [e.n+" ("+e.sy+", Z "+e.z+")","ok"],
+    ["  Ertrag / Zyklus .......... "+e.yield+" kt","out"],
+    ["  Reinheit ................. "+e.purity.toFixed(5).replace(".",",")+" %","out"],
+    ["  Marktpreis ............... "+e.price.toLocaleString("de-DE")+" Cr/kg","out"],
+    ["  Einstufung ............... "+(e.rare?"strategisch":"regulär"), e.rare?"err":"out"]
+  ]);
+  Mat.show(i); ovClose(); jump("materials");
 }};
 
 /* ============================================================
