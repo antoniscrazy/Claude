@@ -102,6 +102,9 @@ body{
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  max-width: 100%;
+  flex-wrap: wrap;
+  overflow-wrap: break-word;
 }
 .label::before{
   content:"";
@@ -5460,7 +5463,7 @@ document.querySelectorAll(".btn").forEach(btn => {
         wrap.style.transform = "translateX(0)";
       });
     }
-    h.focus();
+    h.focus({ preventScroll: true });
   }
   function rerender(dir){ renderStep(dir); }
 
