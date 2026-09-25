@@ -1113,6 +1113,54 @@ footer .wrap{ position:relative; z-index:1; }
 .mt-chart .plot{ position:absolute; inset:0 0 44px 0; }
 
 /* ============================================================
+   47 — CAREER PATHFINDER
+   ============================================================ */
+#path{ border-bottom:1px solid var(--line); }
+.pf-grid{ display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); }
+@media (max-width:980px){ .pf-grid{ grid-template-columns:1fr; } }
+.pf-q{ background:var(--bg); padding:clamp(22px,3vw,40px); min-height:clamp(380px,48vh,520px); display:flex; flex-direction:column; }
+.pf-tree{ background:var(--bg); position:relative; min-height:clamp(300px,40vh,520px); }
+.pf-tree svg{ position:absolute; inset:0; width:100%; height:100%; }
+.pf-prog{ display:flex; gap:4px; margin-bottom:22px; }
+.pf-prog i{ flex:1; height:2px; background:var(--line-2); transition:background-color .5s var(--ease); }
+.pf-prog i.done{ background:var(--cy); box-shadow:0 0 8px var(--cy); }
+.pf-step{ flex:1; display:flex; flex-direction:column; }
+.pf-step h3{ font-size:clamp(1.3rem,2.4vw,2rem); font-weight:800; letter-spacing:-.025em; line-height:1.1; }
+.pf-step .sub2{ color:var(--fg-dim); font-size:.88rem; line-height:1.6; margin-top:10px; max-width:48ch; }
+.pf-opts{ display:grid; gap:8px; margin-top:26px; }
+.pf-opt{
+  display:flex; align-items:center; gap:14px; cursor:pointer; text-align:left;
+  padding:15px 17px; border:1px solid var(--line-2); background:var(--bg-2);
+  transition:border-color .3s, background-color .3s, transform .45s var(--spring);
+}
+.pf-opt:hover{ border-color:var(--cy); background:var(--bg-3); transform:translateX(5px); }
+.pf-opt .k2{ font-family:var(--mono); font-size:.62rem; color:var(--cy); flex:none; letter-spacing:.14em; }
+.pf-opt .t2{ flex:1; min-width:0; }
+.pf-opt .t2 b{ display:block; font-size:.96rem; font-weight:600; }
+.pf-opt .t2 span{ display:block; color:var(--fg-faint); font-size:.78rem; margin-top:3px; }
+.pf-opt .ar{ color:var(--fg-faint); transition:transform .4s var(--spring), color .3s; flex:none; }
+.pf-opt:hover .ar{ transform:translateX(5px); color:var(--cy); }
+.pf-anim-in{ animation:pfIn .55s var(--spring); }
+@keyframes pfIn{ from{ opacity:0; transform:translateX(26px) } }
+.pf-nav{ display:flex; gap:10px; margin-top:22px; }
+.pf-res{ display:none; }
+.pf-res.on{ display:flex; flex-direction:column; flex:1; animation:pfIn .6s var(--spring); }
+.pf-res .badge{
+  display:inline-flex; align-items:center; gap:9px; align-self:flex-start;
+  border:1px solid var(--cy); color:var(--cy); padding:6px 13px;
+  font-family:var(--mono); font-size:.6rem; letter-spacing:.2em; text-transform:uppercase;
+}
+.pf-res .rk{ display:flex; justify-content:space-between; gap:12px; padding-block:9px; border-bottom:1px solid var(--line); }
+#idCard{ width:100%; height:auto; border:1px solid var(--line-2); margin-top:20px; display:block; }
+.pf-tree .nd{ fill:var(--bg-3); stroke:var(--line-2); stroke-width:1.2; transition:fill .5s, stroke .5s; }
+.pf-tree .nd.act{ fill:var(--cy); stroke:var(--cy); }
+.pf-tree .nd.pastNode{ fill:var(--bg); stroke:var(--cy); }
+.pf-tree .ed{ stroke:var(--line); stroke-width:1; fill:none; transition:stroke .5s, stroke-width .5s; }
+.pf-tree .ed.act{ stroke:var(--cy); stroke-width:1.6; }
+.pf-tree text{ fill:var(--fg-faint); font-family:var(--mono); font-size:6.5px; letter-spacing:.14em; text-transform:uppercase; transition:fill .4s; }
+.pf-tree text.act{ fill:var(--cy); }
+
+/* ============================================================
    19 — REDUCED MOTION
    ============================================================ */
 @media (prefers-reduced-motion:reduce){
@@ -1774,6 +1822,54 @@ footer .wrap{ position:relative; z-index:1; }
       <p class="lede" data-rv="up" data-d="200" style="max-width:38ch">Vier Namen, die jedes Besatzungsmitglied kennt — und die Signallaufzeit nicht als Ausrede gelten lassen.</p>
     </div>
     <div class="crew" id="crewGrid"></div>
+  </div>
+</section>
+
+<!-- ========= PATHFINDER ========= -->
+<section id="path" class="sec-pad">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="label" data-rv="up">11 — Pfadfinder</div>
+        <h2 class="h2" data-split style="margin-top:14px">Wohin mit<br>Ihnen?</h2>
+      </div>
+      <p class="lede" data-rv="up" data-d="200" style="max-width:40ch">
+        Vier Fragen. Am Ende steht eine Position, ein Standort und ein Abflugfenster —
+        und ein Ausweis, den Sie mitnehmen können.
+      </p>
+    </div>
+
+    <div class="pf-grid" data-rv="scale">
+      <div class="pf-q">
+        <div class="pf-prog" id="pfProg" role="progressbar" aria-valuemin="0" aria-valuemax="4" aria-valuenow="0" aria-label="Fortschritt"></div>
+
+        <div class="pf-step" id="pfStep" aria-live="polite"></div>
+
+        <div class="pf-res" id="pfRes" aria-live="polite">
+          <span class="badge">Eignung festgestellt</span>
+          <h3 class="h3" id="pfRole" style="margin-top:16px">—</h3>
+          <p class="mini" id="pfWhy" style="margin-top:8px;text-transform:none;letter-spacing:0;line-height:1.6;color:var(--fg-dim)">—</p>
+          <div style="margin-top:18px" id="pfKV"></div>
+          <label class="lg-search" style="margin-top:18px">
+            <span class="mini" style="flex:none">Name</span>
+            <input id="pfName" type="text" placeholder="für den Ausweis" autocomplete="name" aria-label="Name für den Dienstausweis">
+          </label>
+          <canvas id="idCard" width="1000" height="620" role="img" aria-label="Generierter Dienstausweis"></canvas>
+          <div class="pf-nav">
+            <button class="btn" id="pfDl" data-mag><span class="fill"></span><span>Ausweis laden</span></button>
+            <button class="btn ghost" id="pfAgain" data-mag><span class="fill"></span><span>Nochmal</span></button>
+          </div>
+        </div>
+
+        <div class="pf-nav" id="pfBackWrap">
+          <button class="btn ghost" id="pfBack" data-mag><span class="fill"></span><span>Zurück</span></button>
+        </div>
+      </div>
+
+      <div class="pf-tree">
+        <svg id="pfTree" viewBox="0 0 400 420" role="img" aria-label="Entscheidungsbaum mit dem bisher gewählten Pfad"></svg>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -4706,6 +4802,314 @@ TERM_CMDS.material = { d:"<symbol> — Element im Katalog", run(a){
     ["  Einstufung ............... "+(e.rare?"strategisch":"regulär"), e.rare?"err":"out"]
   ]);
   Mat.show(i); ovClose(); jump("materials");
+}};
+
+/* ============================================================
+   48 — CAREER PATHFINDER
+   ============================================================ */
+const Path = (function(){
+  const STEPS=[
+    { q:"Was können Sie?", s:"Wir suchen keine Allrounder. Wir suchen Leute, die eine Sache so gut können, dass man sie vier Jahre lang damit allein lassen kann.",
+      o:[["A","Bohrtechnik","Fräsköpfe, Gestängeführung, Kryotechnik","drill","Bohren"],
+         ["B","Metallurgie","Schwebeschmelze, Analyse, Reinheitsprüfung","metal","Schmelze"],
+         ["C","Navigation","Bahnmechanik, Pulsar-Fix, Flottenführung","nav","Navigation"],
+         ["D","Medizin","Strahlenschutz, Rotationsmedizin, Notfall","med","Medizin"]] },
+    { q:"Wie lange halten Sie das aus?", s:"Eine Rotation ist keine Dienstreise. Wer nach zwei Jahren zurück will, bekommt zwei Jahre — aber nie den Posten, der zählt.",
+      o:[["A","Zwei Jahre","Kurze Rotation, innerer Ring","short","2 Jahre"],
+         ["B","Vier Jahre","Standardrotation, voll bezahlt","std","4 Jahre"],
+         ["C","Sechs Jahre oder mehr","Lange Rotation, Führungslaufbahn","long","6+ Jahre"]] },
+    { q:"Was ist Ihnen lieber?", s:"Draußen gibt es drei Arten, den Tag zu verbringen. Keine davon ist die bequemste.",
+      o:[["A","Menschen um sich","Habitat-Torus, Schichtbetrieb, 180 Leute","people","Habitat"],
+         ["B","Ruhe und Maschinen","Automatisierter Standort, elf Personen","alone","Allein"],
+         ["C","Ständig unterwegs","Frachterdienst, vierzehn Monate pro Flug","ship","Flotte"]] },
+    { q:"Wie halten Sie es mit dem Risiko?", s:"2174 ist ein Rig elf Tage lang gedriftet. Zweiundzwanzig Menschen haben das überlebt, weil niemand die Nerven verloren hat.",
+      o:[["A","Lieber alles zweimal prüfen","Bewährte Standorte, feste Abläufe","low","Vorsichtig"],
+         ["B","Kalkuliert","Neue Körper, bekannte Verfahren","mid","Kalkuliert"],
+         ["C","Ich will den Erstaufschluss","Unerschlossen, kein Handbuch","high","Erstaufschluss"]] }
+  ];
+
+  const ROLES={
+    drill: ["Bohrtechnikerin / Bohrtechniker","Division 01 — Aufschluss"],
+    metal: ["Metallurgin / Metallurge","Division 02 — Veredelung"],
+    nav:   ["Navigatorin / Navigator","Division 03 — Transport"],
+    med:   ["Ärztin / Arzt","Habitat & Lebenserhaltung"]
+  };
+
+  const stepEl=$("#pfStep"), progEl=$("#pfProg"), resEl=$("#pfRes"), tree=$("#pfTree");
+  const backWrap=$("#pfBackWrap");
+  let idx=0, answers=Store.get("pfAns",[]).slice(0,4);
+
+  /* ---------- progress ---------- */
+  STEPS.forEach(()=> progEl.appendChild(document.createElement("i")));
+  function syncProg(){
+    $$("#pfProg i").forEach((b,i)=> b.classList.toggle("done", i<answers.length));
+    progEl.setAttribute("aria-valuenow", answers.length);
+  }
+
+  /* ---------- decision tree drawing ---------- */
+  const NS="http://www.w3.org/2000/svg";
+  function el(t,a){ const e=document.createElementNS(NS,t); for(const k in a) e.setAttribute(k,a[k]); return e; }
+  function drawTree(){
+    tree.innerHTML="";
+    const rows=STEPS.length+1;
+    const yOf=r=> 42 + r*(336/(rows-1));
+
+    /* edges first */
+    for(let r=0;r<STEPS.length;r++){
+      const n=STEPS[r].o.length;
+      const nextN = r+1<STEPS.length ? STEPS[r+1].o.length : 1;
+      for(let i=0;i<n;i++){
+        for(let j=0;j<nextN;j++){
+          const x1=xOf(i,n), x2=xOf(j,nextN);
+          const e=el("path",{ d:"M"+x1+" "+yOf(r)+" C"+x1+" "+(yOf(r)+40)+" "+x2+" "+(yOf(r+1)-40)+" "+x2+" "+yOf(r+1), class:"ed" });
+          const act = answers[r]===i && (r+1>=STEPS.length ? true : answers[r+1]===j);
+          if(act) e.classList.add("act");
+          tree.appendChild(e);
+        }
+      }
+    }
+    /* nodes */
+    for(let r=0;r<STEPS.length;r++){
+      const n=STEPS[r].o.length;
+      for(let i=0;i<n;i++){
+        const c=el("circle",{ cx:xOf(i,n), cy:yOf(r), r:answers[r]===i?6:4, class:"nd" });
+        if(answers[r]===i) c.classList.add(r<answers.length-1?"pastNode":"act");
+        tree.appendChild(c);
+        const showLabel = answers[r]===i || (r===answers.length && answers.length<STEPS.length);
+        if(showLabel){
+          const t=el("text",{ x:xOf(i,n), y:yOf(r)-11, "text-anchor":"middle" });
+          t.textContent=STEPS[r].o[i][4];
+          if(answers[r]===i) t.classList.add("act");
+          tree.appendChild(t);
+        }
+      }
+      const lbl=el("text",{ x:10, y:yOf(r)+3 });
+      lbl.textContent=String(r+1).padStart(2,"0");
+      tree.appendChild(lbl);
+    }
+    /* result node */
+    const done=answers.length===STEPS.length;
+    const c=el("circle",{ cx:200, cy:yOf(STEPS.length), r:done?9:5, class:"nd" });
+    if(done) c.classList.add("act");
+    tree.appendChild(c);
+    const t=el("text",{ x:200, y:yOf(STEPS.length)+22, "text-anchor":"middle" });
+    t.textContent = done ? "Zuweisung" : "offen";
+    if(done) t.classList.add("act");
+    tree.appendChild(t);
+
+    function xOf(i,n){ return 46 + (n===1?154:(i/(n-1))*308); }
+  }
+
+  /* ---------- steps ---------- */
+  function renderStep(){
+    const done = answers.length===STEPS.length;
+    resEl.classList.toggle("on", done);
+    stepEl.style.display = done ? "none" : "flex";
+    backWrap.style.display = (!done && idx>0) ? "flex" : "none";
+    syncProg(); drawTree();
+    if(done){ result(); return; }
+
+    idx=answers.length;
+    const st=STEPS[idx];
+    stepEl.innerHTML =
+      '<div class="pf-anim-in">'+
+        '<div class="label">Frage '+(idx+1)+' von '+STEPS.length+'</div>'+
+        '<h3 style="margin-top:12px">'+st.q+'</h3>'+
+        '<p class="sub2">'+st.s+'</p>'+
+        '<div class="pf-opts">'+
+          st.o.map((o,i)=>
+            '<button type="button" class="pf-opt" data-i="'+i+'">'+
+              '<span class="k2">'+o[0]+'</span>'+
+              '<span class="t2"><b>'+o[1]+'</b><span>'+o[2]+'</span></span>'+
+              '<span class="ar">→</span>'+
+            '</button>').join("")+
+        '</div>'+
+      '</div>';
+    $$(".pf-opt", stepEl).forEach(b=> b.addEventListener("click", ()=>{
+      answers.push(+b.dataset.i);
+      Store.set("pfAns", answers);
+      Audio_.click();
+      renderStep();
+    }));
+  }
+  $("#pfBack").addEventListener("click", ()=>{
+    answers.pop(); Store.set("pfAns", answers); renderStep();
+  });
+  $("#pfAgain").addEventListener("click", ()=>{
+    answers=[]; Store.set("pfAns", answers); renderStep();
+  });
+
+  /* ---------- the verdict ---------- */
+  let last=null;
+  function result(){
+    const [qual, dur, env, risk] = answers.map((a,i)=> STEPS[i].o[a][3]);
+    const role=ROLES[qual];
+
+    /* site follows environment first, then appetite for risk */
+    let site, why;
+    if(env==="alone"){ site="KESTREL"; why="Elf Personen, sonst nur Maschinen. Wer Ruhe sucht, findet sie dort — und sonst nichts."; }
+    else if(env==="ship"){ site="VESPER-Flotte"; why="Vierzehn Monate pro Flug, zweiundzwanzig Menschen an Bord, kein Fenster."; }
+    else if(risk==="high"){ site="OBSIDIAN"; why="Seit acht Monaten in Betrieb, ertragreichster Standort, halbes Handbuch."; }
+    else if(risk==="low"){ site="HALCYON"; why="Der älteste Standort. Alles ist dreimal durchgelaufen, bevor es Vorschrift wurde."; }
+    else { site="VESPERA"; why="Der härteste Körper im Portfolio. Vier Bohrköpfe pro Loch, und keiner beschwert sich."; }
+
+    const years = dur==="short" ? 2 : dur==="long" ? 6 : 4;
+    const clear = dur==="long" ? 4 : risk==="high" ? 3 : 2;
+    const win   = env==="ship" ? "04.11.2187" : site==="OBSIDIAN" ? "22.01.2188" : "04.11.2187";
+    const pay   = (48 + years*9 + clear*6 + (risk==="high"?14:0)).toLocaleString("de-DE");
+
+    $("#pfRole").textContent = role[0];
+    $("#pfWhy").textContent  = why;
+    $("#pfKV").innerHTML=[
+      ["Division", role[1]],
+      ["Standort", site],
+      ["Rotation", years+" Jahre"],
+      ["Freigabestufe", "Stufe "+clear],
+      ["Abflugfenster", win],
+      ["Grundvergütung", pay+" kCr / Jahr"]
+    ].map(r=>'<div class="rk"><span class="mini">'+r[0]+'</span><span class="mini val">'+r[1]+'</span></div>').join("");
+
+    last={ role:role[0], div:role[1], site, years, clear, win, pay };
+    drawCard();
+    if(last && !result._done){ result._done=true; toast("Pfadfinder","Zuweisung erstellt · "+site, 4200); Audio_.ok(); }
+  }
+
+  /* ---------- the ID card, drawn on canvas ---------- */
+  const card=$("#idCard"), nameEl=$("#pfName");
+  nameEl.value = Store.get("pfName","");
+  nameEl.addEventListener("input", ()=>{ Store.set("pfName", nameEl.value); drawCard(); });
+
+  function drawCard(){
+    if(!last) return;
+    const ctx=card.getContext("2d"), W=card.width, H=card.height;
+    const dark = root.getAttribute("data-theme")!=="light";
+    const bg   = dark? "#0C0E15" : "#F2F3F6";
+    const fg   = dark? "#EAECF2" : "#0B0D14";
+    const dim  = dark? "#8A90A3" : "#4E546A";
+    const cy   = css("--cy") || "#00E5FF";
+    const mg   = css("--mg") || "#FF2D95";
+
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+    /* hairline grid */
+    ctx.strokeStyle = dark? "rgba(255,255,255,.05)" : "rgba(0,0,0,.05)";
+    ctx.lineWidth=1;
+    for(let x=0;x<W;x+=40){ ctx.beginPath(); ctx.moveTo(x+.5,0); ctx.lineTo(x+.5,H); ctx.stroke(); }
+    for(let y=0;y<H;y+=40){ ctx.beginPath(); ctx.moveTo(0,y+.5); ctx.lineTo(W,y+.5); ctx.stroke(); }
+
+    /* accent edge */
+    const g=ctx.createLinearGradient(0,0,W,0);
+    g.addColorStop(0,cy); g.addColorStop(1,mg);
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,7);
+
+    ctx.strokeStyle = dark? "rgba(255,255,255,.16)" : "rgba(0,0,0,.18)";
+    ctx.strokeRect(.5,.5,W-1,H-1);
+
+    /* header */
+    ctx.fillStyle=fg;
+    ctx.font='800 40px "Helvetica Neue", Arial, sans-serif';
+    ctx.textBaseline="alphabetic"; ctx.textAlign="left";
+    ctx.fillText("AETHERIUM", 46, 84);
+    ctx.fillStyle=dim;
+    ctx.font='500 15px ui-monospace, monospace';
+    ctx.fillText("D E E P   S P A C E   M I N I N G   C O L L E C T I V E", 46, 112);
+
+    ctx.textAlign="right"; ctx.fillStyle=cy;
+    ctx.font='700 16px ui-monospace, monospace';
+    ctx.fillText("DIENSTAUSWEIS", W-46, 84);
+    ctx.fillStyle=dim; ctx.font='500 14px ui-monospace, monospace';
+    ctx.fillText("REG. AE-0041 · 2187", W-46, 110);
+
+    ctx.strokeStyle=dark?"rgba(255,255,255,.12)":"rgba(0,0,0,.14)";
+    ctx.beginPath(); ctx.moveTo(46,140); ctx.lineTo(W-46,140); ctx.stroke();
+
+    /* generated portrait block */
+    const px=46, py=172, pw=210, ph=270;
+    ctx.fillStyle = dark? "#11141D" : "#DFE2E9";
+    ctx.fillRect(px,py,pw,ph);
+    let sd = 99;
+    const nm=(nameEl.value||"").trim();
+    for(let i=0;i<nm.length;i++) sd += nm.charCodeAt(i)*(i+7);
+    const rr=()=> (sd=(sd*1103515245+12345)%2147483648)/2147483648;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(px,py,pw,ph); ctx.clip();
+    for(let i=0;i<34;i++){
+      const yy=py+8+i*8, amp=8+rr()*40;
+      ctx.beginPath();
+      ctx.moveTo(px, yy);
+      ctx.quadraticCurveTo(px+pw*.4, yy-amp/3, px+pw*.72, yy);
+      ctx.quadraticCurveTo(px+pw*.92, yy+amp/4, px+pw, yy);
+      ctx.strokeStyle = i%4===0 ? mg : cy;
+      ctx.globalAlpha = .2+rr()*.55; ctx.lineWidth=.6+rr()*1.4; ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+    ctx.beginPath(); ctx.arc(px+pw/2, py+ph*.42, 60, 0, 6.2832);
+    ctx.strokeStyle=dim; ctx.globalAlpha=.5; ctx.lineWidth=1; ctx.stroke(); ctx.globalAlpha=1;
+    ctx.restore();
+    ctx.strokeStyle=dark?"rgba(255,255,255,.16)":"rgba(0,0,0,.18)";
+    ctx.strokeRect(px+.5,py+.5,pw-1,ph-1);
+
+    /* fields */
+    const fx=px+pw+40;
+    let fy=py+6;
+    function field(k,v,accent){
+      ctx.textAlign="left";
+      ctx.fillStyle=dim; ctx.font='500 13px ui-monospace, monospace';
+      ctx.fillText(k.toUpperCase(), fx, fy);
+      ctx.fillStyle = accent? cy : fg;
+      ctx.font = accent? '700 27px "Helvetica Neue", Arial, sans-serif' : '600 22px "Helvetica Neue", Arial, sans-serif';
+      ctx.fillText(v, fx, fy+30);
+      ctx.strokeStyle=dark?"rgba(255,255,255,.09)":"rgba(0,0,0,.09)";
+      ctx.beginPath(); ctx.moveTo(fx, fy+46); ctx.lineTo(W-46, fy+46); ctx.stroke();
+      fy+=66;
+    }
+    field("Name", nm || "— unausgefüllt —", true);
+    field("Position", last.role);
+    field("Standort", last.site);
+    field("Rotation / Freigabe", last.years+" Jahre · Stufe "+last.clear);
+
+    ctx.fillStyle=dim; ctx.font='500 13px ui-monospace, monospace';
+    ctx.fillText("ABFLUGFENSTER", fx, fy+4);
+    ctx.fillStyle=mg; ctx.font='700 22px ui-monospace, monospace';
+    ctx.fillText(last.win, fx, fy+32);
+
+    /* barcode from the answers, so it actually encodes something */
+    const code = answers.join("")+last.clear+last.years;
+    let bx=fx; const by=H-64;
+    for(let i=0;i<46;i++){
+      const on=((code.charCodeAt(i%code.length)+i*7)%3)!==0;
+      const bw = on? 4 : 2;
+      if(on){ ctx.fillStyle=fg; ctx.fillRect(bx, by, bw, 30); }
+      bx += bw+2;
+    }
+    ctx.fillStyle=dim; ctx.font='500 12px ui-monospace, monospace';
+    ctx.fillText("AE-"+code+"-"+String(answers.length)+"Q", fx, H-22);
+
+    ctx.textAlign="right"; ctx.fillStyle=dim;
+    ctx.fillText("Gültig bis 2193 · Fiktion", W-46, H-22);
+  }
+
+  $("#pfDl").addEventListener("click", ()=>{
+    if(!last) return;
+    try{
+      const a=document.createElement("a");
+      a.download = "aetherium-dienstausweis.png";
+      a.href = card.toDataURL("image/png");
+      document.body.appendChild(a); a.click(); a.remove();
+      toast("Ausweis","Als PNG gespeichert");
+    }catch(e){ toast("Ausweis","Download vom Browser blockiert"); }
+  });
+
+  document.addEventListener("ae:alert", drawCard);
+  new MutationObserver(()=> drawCard()).observe(root, {attributes:true, attributeFilter:["data-theme","data-alert"]});
+
+  renderStep();
+  return { reset(){ answers=[]; Store.set("pfAns",[]); renderStep(); }, get answers(){ return answers.slice(); } };
+})();
+
+registerCmd({ ic:"◇", title:"Karriere-Pfadfinder", sub:"Sektion", run:()=>jump("path") });
+TERM_CMDS.path = { d:"Pfadfinder zurücksetzen", run(){
+  Path.reset(); tOut("Pfadfinder zurückgesetzt.","ok"); ovClose(); jump("path");
 }};
 
 /* ============================================================
