@@ -632,6 +632,236 @@ footer .wrap{ position:relative; z-index:1; }
 .f-bot{ display:flex; justify-content:space-between; gap:18px; flex-wrap:wrap; padding-block:22px; border-top:1px solid var(--line); }
 
 /* ============================================================
+   20 — EMERGENCY MODE
+   ============================================================ */
+:root[data-alert="1"]{
+  --cy:        #FF3B30;
+  --mg:        #FF9500;
+  --cy-soft:   rgba(255,59,48,.16);
+  --mg-soft:   rgba(255,149,0,.12);
+  --grain:     .075;
+  --bg:        #0B0406;
+  --bg-2:      #120609;
+  --bg-3:      #19080C;
+  --line:      rgba(255,90,80,.16);
+  --line-2:    rgba(255,90,80,.3);
+}
+:root[data-alert="1"][data-theme="light"]{
+  --bg:#FAF0EF; --bg-2:#F4E4E3; --bg-3:#EDD7D6;
+  --line:rgba(140,20,12,.16); --line-2:rgba(140,20,12,.3);
+  --cy:#C1121F; --mg:#B45309;
+}
+#scan{
+  position:fixed; inset:0; z-index:8995; pointer-events:none; opacity:0;
+  background:repeating-linear-gradient(180deg, rgba(255,60,50,.09) 0 1px, transparent 1px 4px);
+  transition:opacity .7s var(--ease);
+}
+:root[data-alert="1"] #scan{ opacity:1; animation:scanRoll 9s linear infinite; }
+@keyframes scanRoll{ to{ background-position:0 400px; } }
+#siren{
+  position:fixed; top:0; left:0; right:0; z-index:9150;
+  background:var(--cy); color:#fff; overflow:hidden;
+  transform:translateY(-100%); transition:transform .6s var(--spring);
+}
+:root[data-alert="1"] #siren{ transform:none; }
+#siren .run{ display:flex; width:max-content; animation:mqm 18s linear infinite; padding-block:7px; }
+#siren .run span{
+  font-family:var(--mono); font-size:.66rem; letter-spacing:.3em; text-transform:uppercase;
+  padding-inline:22px; white-space:nowrap; display:inline-flex; gap:22px; align-items:center;
+}
+#siren .run span::after{ content:"▲"; font-size:.5rem; }
+:root[data-alert="1"] header{ top:30px; }
+:root[data-alert="1"] #prog{ top:30px; }
+
+/* ============================================================
+   21 — HEADER TOOLS
+   ============================================================ */
+.tool{
+  width:34px; height:34px; display:grid; place-items:center; cursor:pointer; flex:none;
+  border:1px solid transparent; border-radius:3px; color:var(--fg-dim);
+  transition:color .3s, border-color .3s, background-color .3s, transform .45s var(--spring);
+}
+.tool:hover{ color:var(--fg); border-color:var(--line-2); transform:translateY(-2px); }
+.tool.on{ color:var(--cy); border-color:var(--cy); }
+.tool svg{ width:17px; height:17px; }
+.tool .wv{ transform-origin:50% 50%; opacity:0; transition:opacity .3s; }
+.tool.on .wv{ opacity:1; animation:wv 1.6s ease-in-out infinite; }
+@keyframes wv{ 0%,100%{ opacity:.25 } 50%{ opacity:1 } }
+.kbd{
+  font-family:var(--mono); font-size:.58rem; letter-spacing:.08em;
+  border:1px solid var(--line-2); border-radius:3px; padding:2px 6px; color:var(--fg-faint);
+  white-space:nowrap;
+}
+.tool-k{
+  display:flex; align-items:center; gap:7px; cursor:pointer; padding:6px 10px;
+  border:1px solid var(--line); border-radius:3px; color:var(--fg-faint);
+  font-family:var(--mono); font-size:.6rem; letter-spacing:.16em; text-transform:uppercase;
+  transition:color .3s, border-color .3s;
+}
+.tool-k:hover{ color:var(--fg); border-color:var(--line-2); }
+@media (max-width:1180px){ .tool-k{ display:none; } }
+
+/* ============================================================
+   25b — PROBE (easter egg)
+   ============================================================ */
+#probe{ position:fixed; inset:0; z-index:9300; pointer-events:none; display:none; }
+#probe.on{ display:block; }
+#probeCv{ width:100%; height:100%; }
+#probeTag{
+  position:absolute; left:50%; top:22%; transform:translate(-50%,-50%);
+  text-align:center; opacity:0;
+}
+#probe.on #probeTag{ animation:tagIn 1s var(--spring) .6s forwards; }
+@keyframes tagIn{ to{ opacity:1; } }
+#probeTag .t{
+  font-size:clamp(1.4rem,4vw,2.8rem); font-weight:800; text-transform:uppercase;
+  letter-spacing:-.03em; color:var(--cy); text-shadow:0 0 34px var(--cy);
+}
+
+/* ============================================================
+   22 — SECTION RAIL
+   ============================================================ */
+#rail{
+  position:fixed; right:18px; top:50%; transform:translateY(-50%);
+  z-index:9060; display:flex; flex-direction:column; gap:3px; align-items:flex-end;
+  opacity:0; pointer-events:none; transition:opacity .6s var(--ease);
+}
+#rail.show{ opacity:1; pointer-events:auto; }
+#rail button{
+  display:flex; align-items:center; gap:10px; cursor:pointer; padding:5px 0; background:none;
+}
+#rail .tick{ width:20px; height:1px; background:var(--line-2); transition:width .45s var(--spring), background-color .35s; }
+#rail .nm{
+  font-family:var(--mono); font-size:.56rem; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--fg-faint); opacity:0; transform:translateX(8px);
+  transition:opacity .35s, transform .45s var(--spring), color .3s;
+  white-space:nowrap;
+}
+#rail button:hover .nm{ opacity:1; transform:none; color:var(--fg); }
+#rail button:hover .tick{ width:34px; background:var(--fg); }
+#rail button.on .tick{ width:34px; background:var(--cy); box-shadow:0 0 10px var(--cy); }
+#rail button.on .nm{ opacity:1; transform:none; color:var(--cy); }
+@media (max-width:1240px){ #rail{ display:none; } }
+
+/* ============================================================
+   23 — OVERLAY SHELL (palette / terminal / modal)
+   ============================================================ */
+.ov{
+  position:fixed; inset:0; z-index:9400; display:none;
+  background:color-mix(in srgb, var(--bg) 70%, transparent);
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+}
+.ov.open{ display:block; animation:ovIn .3s var(--ease); }
+@keyframes ovIn{ from{ opacity:0 } }
+.ov-card{
+  position:absolute; left:50%; transform:translateX(-50%);
+  width:min(760px, calc(100vw - 32px));
+  background:var(--bg-2); border:1px solid var(--line-2);
+  box-shadow:0 40px 120px rgba(0,0,0,.6);
+  animation:cardIn .45s var(--spring);
+}
+@keyframes cardIn{ from{ opacity:0; transform:translateX(-50%) translateY(-18px) scale(.97) } }
+
+/* — palette — */
+#pal .ov-card{ top:12vh; }
+#palIn{
+  width:100%; padding:20px 22px; border-bottom:1px solid var(--line);
+  font-size:1.02rem; background:transparent;
+}
+#palIn::placeholder{ color:var(--fg-faint); }
+#palList{ max-height:min(52vh,460px); overflow-y:auto; padding:8px 0; }
+.pal-grp{ padding:12px 22px 6px; }
+.pal-i{
+  display:flex; align-items:center; gap:14px; padding:11px 22px; cursor:pointer;
+  border-left:2px solid transparent; transition:background-color .2s, border-color .2s;
+}
+.pal-i.cur{ background:var(--bg-3); border-left-color:var(--cy); }
+.pal-i .ic{ width:20px; color:var(--cy); font-family:var(--mono); font-size:.7rem; flex:none; text-align:center; }
+.pal-i .tt{ flex:1; font-size:.92rem; }
+.pal-i .tt em{ font-style:normal; color:var(--cy); }
+.pal-i .sub{ font-family:var(--mono); font-size:.6rem; letter-spacing:.14em; color:var(--fg-faint); text-transform:uppercase; }
+.pal-foot{ display:flex; gap:16px; padding:12px 22px; border-top:1px solid var(--line); flex-wrap:wrap; }
+.pal-empty{ padding:36px 22px; text-align:center; }
+
+/* — terminal — */
+#term .ov-card{ top:8vh; width:min(900px, calc(100vw - 32px)); background:var(--bg); }
+#termBody{
+  height:min(62vh,540px); overflow-y:auto; padding:20px 22px;
+  font-family:var(--mono); font-size:.8rem; line-height:1.75;
+}
+#termBody .ln{ white-space:pre-wrap; word-break:break-word; }
+#termBody .cmd{ color:var(--fg); }
+#termBody .cmd b{ color:var(--mg); font-weight:400; }
+#termBody .out{ color:var(--fg-dim); }
+#termBody .ok{ color:var(--cy); }
+#termBody .err{ color:var(--mg); }
+.term-bar{
+  display:flex; align-items:center; gap:10px; padding:11px 22px; border-bottom:1px solid var(--line);
+}
+.term-bar .dots{ display:flex; gap:6px; }
+.term-bar .dots i{ width:9px; height:9px; border-radius:50%; background:var(--line-2); }
+.term-bar .dots i:first-child{ background:var(--mg); }
+.term-bar .dots i:nth-child(2){ background:var(--cy); }
+.term-in{ display:flex; align-items:center; gap:10px; padding:14px 22px; border-top:1px solid var(--line); }
+.term-in span{ font-family:var(--mono); color:var(--cy); font-size:.8rem; }
+#termIn{ flex:1; font-family:var(--mono); font-size:.8rem; }
+#termGhost{ position:absolute; pointer-events:none; color:var(--fg-faint); font-family:var(--mono); font-size:.8rem; }
+
+/* ============================================================
+   24 — TOASTS
+   ============================================================ */
+#toasts{
+  position:fixed; left:50%; bottom:26px; transform:translateX(-50%);
+  z-index:9600; display:flex; flex-direction:column; gap:8px; align-items:center;
+  pointer-events:none; width:min(520px, calc(100vw - 32px));
+}
+.toast{
+  display:flex; align-items:center; gap:13px; width:100%;
+  padding:13px 17px; background:var(--bg-3); border:1px solid var(--line-2);
+  border-left:2px solid var(--cy);
+  font-family:var(--mono); font-size:.68rem; letter-spacing:.12em; text-transform:uppercase;
+  animation:tIn .5s var(--spring);
+  box-shadow:0 18px 50px rgba(0,0,0,.45);
+}
+.toast.out{ animation:tOut .4s var(--ease) forwards; }
+.toast b{ color:var(--cy); font-weight:400; }
+@keyframes tIn{ from{ opacity:0; transform:translateY(18px) scale(.96) } }
+@keyframes tOut{ to{ opacity:0; transform:translateY(10px) scale(.97) } }
+
+/* ============================================================
+   25 — SHARED WIDGETS
+   ============================================================ */
+.sw-tabs{ display:flex; gap:2px; flex-wrap:wrap; }
+.sw-tabs button{
+  cursor:pointer; padding:9px 15px; border:1px solid var(--line);
+  font-family:var(--mono); font-size:.62rem; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--fg-faint); background:var(--bg-2);
+  transition:color .3s, border-color .3s, background-color .3s, transform .4s var(--spring);
+}
+.sw-tabs button:hover{ color:var(--fg); border-color:var(--line-2); transform:translateY(-2px); }
+.sw-tabs button.on{ color:var(--bg); background:var(--fg); border-color:var(--fg); }
+.sw-range{ -webkit-appearance:none; appearance:none; width:100%; height:22px; background:transparent; cursor:pointer; }
+.sw-range::-webkit-slider-runnable-track{ height:2px; background:var(--line-2); }
+.sw-range::-moz-range-track{ height:2px; background:var(--line-2); }
+.sw-range::-webkit-slider-thumb{
+  -webkit-appearance:none; width:14px; height:14px; border-radius:50%;
+  background:var(--cy); margin-top:-6px; box-shadow:0 0 12px var(--cy);
+  transition:transform .3s var(--spring);
+}
+.sw-range::-moz-range-thumb{ width:14px; height:14px; border:none; border-radius:50%; background:var(--cy); box-shadow:0 0 12px var(--cy); }
+.sw-range:hover::-webkit-slider-thumb{ transform:scale(1.25); }
+.chip{
+  cursor:pointer; padding:7px 13px; border:1px solid var(--line); border-radius:100px;
+  font-family:var(--mono); font-size:.6rem; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--fg-faint); background:transparent;
+  transition:color .3s, border-color .3s, background-color .3s;
+}
+.chip:hover{ color:var(--fg); border-color:var(--line-2); }
+.chip.on{ color:var(--bg); background:var(--cy); border-color:var(--cy); }
+.mini{ font-family:var(--mono); font-size:.62rem; letter-spacing:.14em; color:var(--fg-faint); text-transform:uppercase; }
+.val{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
+
+/* ============================================================
    19 — REDUCED MOTION
    ============================================================ */
 @media (prefers-reduced-motion:reduce){
@@ -640,7 +870,8 @@ footer .wrap{ position:relative; z-index:1; }
     transition-duration:.001ms !important; scroll-behavior:auto !important;
   }
   [data-rv],.ch{ opacity:1 !important; transform:none !important; clip-path:none !important; }
-  #grain,#vignette,.map-box .scan{ display:none; }
+  #grain,#vignette,.map-box .scan,#scan{ display:none; }
+  #siren .run{ animation:none; }
   #tech{ height:auto !important; }
   #tech .sticky{ position:static; height:auto; padding-block:60px; transform:none !important; }
   #techTrack{ flex-wrap:wrap; transform:none !important; }
@@ -670,6 +901,53 @@ footer .wrap{ position:relative; z-index:1; }
 <div id="cur-ring" aria-hidden="true"></div>
 <div id="prog" aria-hidden="true"><i></i></div>
 
+<div id="scan" aria-hidden="true"></div>
+<div id="siren" role="status" aria-live="assertive" aria-label="Alarmzustand">
+  <div class="run" id="sirenRun"></div>
+</div>
+<div id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+<div id="probe" aria-hidden="true">
+  <canvas id="probeCv"></canvas>
+  <div id="probeTag">
+    <div class="label">Unbekannte Kennung akzeptiert</div>
+    <div class="t">Sonde SEEKER-0</div>
+    <div class="label" style="margin-top:8px">Kurs auf ERIS-PRIME · 68,4 AE</div>
+  </div>
+</div>
+
+<nav id="rail" aria-label="Sektionen"></nav>
+
+<!-- Command palette -->
+<div class="ov" id="pal" role="dialog" aria-modal="true" aria-label="Befehlspalette">
+  <div class="ov-card">
+    <input id="palIn" type="text" placeholder="Suchen: Sektion, Standort, Crew, Technologie, Befehl…"
+           autocomplete="off" spellcheck="false" aria-controls="palList" aria-expanded="true" role="combobox">
+    <div id="palList" role="listbox" aria-label="Treffer"></div>
+    <div class="pal-foot">
+      <span class="kbd">↑ ↓</span><span class="mini">Navigieren</span>
+      <span class="kbd">⏎</span><span class="mini">Öffnen</span>
+      <span class="kbd">Esc</span><span class="mini">Schließen</span>
+    </div>
+  </div>
+</div>
+
+<!-- Terminal -->
+<div class="ov" id="term" role="dialog" aria-modal="true" aria-label="Bordterminal">
+  <div class="ov-card">
+    <div class="term-bar">
+      <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
+      <span class="mini">aetherium // bordterminal · kanal 07</span>
+    </div>
+    <div id="termBody" tabindex="0" aria-live="polite"></div>
+    <div class="term-in">
+      <span aria-hidden="true">&gt;</span>
+      <input id="termIn" type="text" autocomplete="off" spellcheck="false" aria-label="Befehl eingeben">
+      <span class="kbd">Tab</span>
+    </div>
+  </div>
+</div>
+
 <!-- ========= HEADER ========= -->
 <header id="hdr">
   <div class="wrap">
@@ -692,6 +970,24 @@ footer .wrap{ position:relative; z-index:1; }
         <i id="ind"></i>
       </div>
       <div class="nav-right">
+        <button class="tool-k" id="openPal" aria-label="Befehlspalette öffnen">Suchen <span class="kbd">⌘K</span></button>
+        <button class="tool" id="sndBtn" aria-pressed="false" aria-label="Ton an- oder ausschalten" title="Ton (S)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+            <path d="M4 9v6h4l5 4V5L8 9H4z"/>
+            <path class="wv" d="M16.5 8.5a5 5 0 0 1 0 7"/>
+            <path class="wv" d="M19 6a8.5 8.5 0 0 1 0 12" style="animation-delay:.25s"/>
+          </svg>
+        </button>
+        <button class="tool" id="termBtn" aria-label="Bordterminal öffnen" title="Terminal (`)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="16"/><path d="M7 9l3 3-3 3M13 15h4"/>
+          </svg>
+        </button>
+        <button class="tool" id="alertBtn" aria-pressed="false" aria-label="Notfall-Modus umschalten" title="Notfall-Modus">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+            <path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17h.01"/>
+          </svg>
+        </button>
         <div class="tgl" id="tgl" role="switch" aria-checked="true" aria-label="Farbschema umschalten" tabindex="0" data-cur="grow"><i></i></div>
         <div class="burger" id="burger" role="button" aria-label="Menü" aria-expanded="false" tabindex="0"><span></span><span></span></div>
       </div>
@@ -1619,6 +1915,656 @@ function updateChrome(){
 }
 
 /* ============================================================
+   26 — TICK REGISTRY  (one rAF drives everything)
+   ============================================================ */
+const TICKS=[];
+function onTick(fn){ TICKS.push(fn); return fn; }
+function runTicks(t){
+  for(let i=0;i<TICKS.length;i++){
+    try{ TICKS[i](t); }
+    catch(err){ /* a broken widget must never stop the frame */ }
+  }
+}
+/* Only paint what the viewer can actually see. */
+function inView(el, pad){
+  if(!el) return false;
+  const r=el.getBoundingClientRect(), m=pad==null?160:pad;
+  return r.bottom > -m && r.top < innerHeight+m && r.right > -m && r.left < innerWidth+m;
+}
+function fitCanvas(cv){
+  const r=cv.getBoundingClientRect();
+  if(!r.width || !r.height) return null;
+  const w=Math.round(r.width*dpr), h=Math.round(r.height*dpr);
+  if(cv.width!==w || cv.height!==h){ cv.width=w; cv.height=h; }
+  const c=cv.getContext("2d");
+  c.setTransform(dpr,0,0,dpr,0,0);
+  return { ctx:c, w:r.width, h:r.height };
+}
+function css(name){ return getComputedStyle(root).getPropertyValue(name).trim(); }
+
+/* ============================================================
+   27 — PERSISTENCE
+   ============================================================ */
+const Store = {
+  get(k,d){ try{ const v=localStorage.getItem("ae-"+k); return v==null?d:JSON.parse(v); }catch(e){ return d; } },
+  set(k,v){ try{ localStorage.setItem("ae-"+k, JSON.stringify(v)); }catch(e){} }
+};
+
+/* ============================================================
+   28 — TOASTS
+   ============================================================ */
+const toastBox=$("#toasts");
+function toast(label, text, ms){
+  const el=document.createElement("div");
+  el.className="toast";
+  el.innerHTML='<b>'+label+'</b><span>'+text+'</span>';
+  toastBox.appendChild(el);
+  const life = ms||3600;
+  setTimeout(()=>{ el.classList.add("out"); setTimeout(()=>el.remove(),450); }, life);
+  while(toastBox.children.length>4) toastBox.firstChild.remove();
+}
+
+/* ============================================================
+   29 — AUDIO  (fully synthesised, no files, off by default)
+   ============================================================ */
+const Audio_ = (function(){
+  let ctx=null, master=null, hum=null, humGain=null, on=Store.get("sound",false);
+  function boot(){
+    if(ctx) return true;
+    const AC = window.AudioContext||window.webkitAudioContext;
+    if(!AC) return false;
+    ctx=new AC();
+    master=ctx.createGain(); master.gain.value=0.0; master.connect(ctx.destination);
+    return true;
+  }
+  function ramp(g,v,t){ g.gain.cancelScheduledValues(ctx.currentTime); g.gain.setTargetAtTime(v, ctx.currentTime, t||.05); }
+  function startHum(){
+    if(!ctx || hum) return;
+    hum=ctx.createOscillator(); hum.type="sawtooth"; hum.frequency.value=41.2;
+    const lp=ctx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=150; lp.Q.value=4;
+    const lfo=ctx.createOscillator(); lfo.frequency.value=.13;
+    const lfoG=ctx.createGain(); lfoG.gain.value=7;
+    lfo.connect(lfoG); lfoG.connect(hum.frequency);
+    humGain=ctx.createGain(); humGain.gain.value=.05;
+    hum.connect(lp); lp.connect(humGain); humGain.connect(master);
+    hum.start(); lfo.start();
+  }
+  function blip(freq, dur, type, vol){
+    if(!on||!ctx) return;
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type=type||"sine"; o.frequency.value=freq;
+    g.gain.setValueAtTime(0, ctx.currentTime);
+    g.gain.linearRampToValueAtTime(vol==null?.16:vol, ctx.currentTime+.006);
+    g.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime+(dur||.09));
+    o.connect(g); g.connect(master); o.start(); o.stop(ctx.currentTime+(dur||.09)+.02);
+  }
+  function noise(dur, vol){
+    if(!on||!ctx) return;
+    const n=Math.floor(ctx.sampleRate*dur), buf=ctx.createBuffer(1,n,ctx.sampleRate), d=buf.getChannelData(0);
+    for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*(1-i/n);
+    const src=ctx.createBufferSource(); src.buffer=buf;
+    const bp=ctx.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=1800; bp.Q.value=1.2;
+    const g=ctx.createGain(); g.gain.value=vol==null?.09:vol;
+    src.connect(bp); bp.connect(g); g.connect(master); src.start();
+  }
+  const API={
+    get enabled(){ return on; },
+    toggle(v){
+      on = v==null ? !on : !!v;
+      Store.set("sound", on);
+      if(on){ if(boot()){ if(ctx.state==="suspended") ctx.resume(); startHum(); ramp(master,.5,.4); API.ok(); } }
+      else if(ctx){ ramp(master,0,.25); }
+      return on;
+    },
+    /* call on the first user gesture so autoplay policy is satisfied */
+    warm(){ if(on && boot()){ if(ctx.state==="suspended") ctx.resume(); startHum(); ramp(master,.5,.4); } },
+    hover(){ blip(2100,.035,"sine",.04); },
+    click(){ blip(760,.06,"triangle",.11); blip(1180,.05,"sine",.05); },
+    ok(){ blip(660,.1,"sine",.12); setTimeout(()=>blip(990,.14,"sine",.1),80); },
+    err(){ blip(200,.2,"square",.1); },
+    type(){ blip(1400+Math.random()*500,.02,"square",.025); },
+    sweep(){ noise(.5,.07); },
+    alarm(state){
+      if(!ctx||!on) return;
+      if(state){
+        if(API._al) return;
+        const o=ctx.createOscillator(), g=ctx.createGain(), l=ctx.createOscillator(), lg=ctx.createGain();
+        o.type="sawtooth"; o.frequency.value=440;
+        l.frequency.value=.55; lg.gain.value=170; l.connect(lg); lg.connect(o.frequency);
+        g.gain.value=.05; o.connect(g); g.connect(master); o.start(); l.start();
+        API._al={o,l,g};
+      }else if(API._al){
+        try{ API._al.o.stop(); API._al.l.stop(); }catch(e){}
+        API._al=null;
+      }
+    }
+  };
+  return API;
+})();
+
+const sndBtn=$("#sndBtn");
+function syncSnd(){
+  sndBtn.classList.toggle("on", Audio_.enabled);
+  sndBtn.setAttribute("aria-pressed", String(Audio_.enabled));
+}
+syncSnd();
+sndBtn.addEventListener("click", ()=>{
+  const v=Audio_.toggle(); syncSnd();
+  toast("Audio", v ? "Bordton aktiv" : "Bordton stumm");
+});
+addEventListener("pointerdown", function warm(){ Audio_.warm(); removeEventListener("pointerdown", warm); }, {once:true});
+if(!coarse){
+  addEventListener("mouseover", e=>{
+    const t=e.target;
+    if(t.closest && t.closest("a,button,.chip,.mem,.card,.tcard,#map .node,.pal-i")) Audio_.hover();
+  }, {passive:true});
+}
+addEventListener("click", e=>{ if(e.target.closest && e.target.closest("a,button,.chip")) Audio_.click(); }, {passive:true});
+
+/* ============================================================
+   30 — EMERGENCY MODE
+   ============================================================ */
+const SIREN_TEXT=[
+  "Alarmstufe Rot","Zwischenfall KESTREL · Sektor Λ-9","Verankerung verloren",
+  "TETHER-C wird ausgefahren","Alle Divisionen auf Station","Signallauf 6 h 31 min"
+];
+$("#sirenRun").innerHTML = (SIREN_TEXT.map(t=>"<span>"+t+"</span>").join("")).repeat(2);
+
+const Alert = (function(){
+  let on=false, seq=null, step=0;
+  const btn=$("#alertBtn");
+  const SCRIPT=[
+    [0,   "KESTREL", "Verankerung verloren — Drift 0,4 m/s"],
+    [6,   "FLOTTE",  "VESPER-14 auf Abfangkurs umgeleitet"],
+    [13,  "TETHER",  "Fangleine ausgefahren · 14 km"],
+    [21,  "KESTREL", "Kontakt hergestellt — Zug 2,1 kN"],
+    [30,  "KESTREL", "Drift gestoppt · Lage stabilisiert"],
+    [38,  "KOMMANDO","Zwischenfall beendet — keine Verluste"]
+  ];
+  function set(v, quiet){
+    on = !!v;
+    root.setAttribute("data-alert", on?"1":"0");
+    btn.classList.toggle("on", on);
+    btn.setAttribute("aria-pressed", String(on));
+    Store.set("alert", on);
+    Audio_.alarm(on);
+    if(seq){ seq.forEach(clearTimeout); seq=null; }
+    if(on){
+      if(!quiet) Audio_.err();
+      step=0;
+      seq = SCRIPT.map(row=> setTimeout(()=>{
+        toast(row[1], row[2], 5200);
+        if(row===SCRIPT[SCRIPT.length-1]) setTimeout(()=>set(false), 6000);
+      }, row[0]*1000));
+      if(!quiet) toast("ALARM", "Notfall-Protokoll aktiv", 4200);
+    }else{
+      if(!quiet) toast("Entwarnung", "Normalbetrieb wiederhergestellt");
+    }
+    document.dispatchEvent(new CustomEvent("ae:alert",{detail:{on}}));
+  }
+  btn.addEventListener("click", ()=> set(!on));
+  if(Store.get("alert",false)) set(true, true);
+  return { set, get on(){ return on; }, toggle(){ set(!on); } };
+})();
+
+/* ============================================================
+   31 — SECTION RAIL
+   ============================================================ */
+const RAIL=[["hero","Start"],["divisions","Divisionen"],["bridge","Brücke"],["sites","Standorte"],
+            ["orbit","Orbit"],["tech","Technologie"],["build","Frachter"],["materials","Material"],
+            ["story","Chronik"],["log","Protokoll"],["crew","Kommando"],["path","Pfadfinder"],["join","Rekrutierung"]];
+const rail=$("#rail");
+RAIL.forEach(r=>{
+  const b=document.createElement("button");
+  b.type="button"; b.dataset.id=r[0];
+  b.setAttribute("aria-label","Zu "+r[1]);
+  b.innerHTML='<span class="nm">'+r[1]+'</span><span class="tick"></span>';
+  b.addEventListener("click", ()=> jump(r[0]));
+  rail.appendChild(b);
+});
+function jump(id){
+  const t=document.getElementById(id);
+  if(!t) return;
+  toggleMenu(false);
+  goTo(scrollY()+t.getBoundingClientRect().top-(id==="hero"?0:92));
+}
+const railBtns=$$("#rail button");
+function updateRail(){
+  const y=scrollY();
+  rail.classList.toggle("show", y>innerHeight*.5);
+  let cur=RAIL[0][0];
+  for(const r of RAIL){
+    const el=document.getElementById(r[0]);
+    if(!el) continue;
+    if(y + innerHeight*.35 >= el.getBoundingClientRect().top + y) cur=r[0];
+  }
+  railBtns.forEach(b=> b.classList.toggle("on", b.dataset.id===cur));
+}
+
+/* ============================================================
+   32 — OVERLAY SHELL + FOCUS TRAP
+   ============================================================ */
+let openOv=null, lastFocus=null;
+function trap(e){
+  if(!openOv || e.key!=="Tab") return;
+  const f=$$('a[href],button:not([disabled]),input,select,textarea,[tabindex]:not([tabindex="-1"])', openOv)
+          .filter(el=> el.offsetParent!==null);
+  if(!f.length) return;
+  const first=f[0], last=f[f.length-1];
+  if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+  else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+}
+function ovOpen(el, focusEl){
+  if(openOv && openOv!==el) ovClose();
+  lastFocus = document.activeElement;
+  openOv = el; el.classList.add("open");
+  document.body.classList.add("is-locked");
+  if(focusEl) setTimeout(()=>focusEl.focus(), 40);
+  Audio_.click();
+}
+function ovClose(){
+  if(!openOv) return;
+  openOv.classList.remove("open"); openOv=null;
+  document.body.classList.remove("is-locked");
+  if(lastFocus && lastFocus.focus) lastFocus.focus();
+}
+addEventListener("keydown", trap);
+$$(".ov").forEach(o=> o.addEventListener("mousedown", e=>{ if(e.target===o) ovClose(); }));
+
+/* ============================================================
+   33 — COMMAND PALETTE
+   ============================================================ */
+const palEl=$("#pal"), palIn=$("#palIn"), palList=$("#palList");
+const CMDS=[];
+function registerCmd(c){ CMDS.push(c); }
+
+RAIL.forEach(r=> registerCmd({ ic:"§", title:r[1], sub:"Sektion", run:()=>jump(r[0]) }));
+SITES.forEach((s,i)=> registerCmd({ ic:"◆", title:s.id, sub:"Standort · "+s.body,
+  run:()=>{ jump("sites"); setTimeout(()=>select(i), 700); } }));
+registerCmd({ ic:"◐", title:"Farbschema umschalten", sub:"Befehl",
+  run:()=> setTheme(root.getAttribute("data-theme")==="dark"?"light":"dark") });
+registerCmd({ ic:"♪", title:"Bordton umschalten", sub:"Befehl",
+  run:()=>{ Audio_.toggle(); syncSnd(); } });
+registerCmd({ ic:"▲", title:"Notfall-Modus umschalten", sub:"Befehl", run:()=> Alert.toggle() });
+registerCmd({ ic:">", title:"Bordterminal öffnen", sub:"Befehl", run:()=> openTerm() });
+
+/* subsequence fuzzy match with highlight */
+function fuzzy(q, text){
+  if(!q) return { score:0, html:text };
+  const t=text.toLowerCase(), s=q.toLowerCase();
+  let ti=0, out="", score=0, streak=0;
+  for(let i=0;i<s.length;i++){
+    const idx=t.indexOf(s[i], ti);
+    if(idx<0) return null;
+    out += text.slice(ti, idx) + "<em>" + text[idx] + "</em>";
+    streak = idx===ti ? streak+1 : 0;
+    score += 10 + streak*6 - Math.min(idx-ti, 12);
+    ti = idx+1;
+  }
+  out += text.slice(ti);
+  if(t.startsWith(s)) score += 30;
+  return { score, html:out };
+}
+let palHits=[], palCur=0;
+function palRender(){
+  const q=palIn.value.trim();
+  palHits = CMDS.map(c=>{
+    const m = fuzzy(q, c.title) || fuzzy(q, c.sub);
+    if(!m) return null;
+    return { c, score:m.score, html: fuzzy(q,c.title) ? fuzzy(q,c.title).html : c.title };
+  }).filter(Boolean).sort((a,b)=> b.score-a.score).slice(0,40);
+
+  if(!palHits.length){
+    palList.innerHTML='<div class="pal-empty mini">Kein Treffer für „'+(q||"")+'"</div>';
+    return;
+  }
+  palCur = clamp(palCur, 0, palHits.length-1);
+  palList.innerHTML = palHits.map((h,i)=>
+    '<div class="pal-i'+(i===palCur?' cur':'')+'" role="option" aria-selected="'+(i===palCur)+'" data-i="'+i+'">'+
+      '<span class="ic">'+h.c.ic+'</span><span class="tt">'+h.html+'</span><span class="sub">'+h.c.sub+'</span>'+
+    '</div>').join("");
+  $$(".pal-i", palList).forEach(el=>{
+    el.addEventListener("mouseenter", ()=>{ palCur=+el.dataset.i; markCur(); });
+    el.addEventListener("click", ()=> palRun(+el.dataset.i));
+  });
+}
+function markCur(){
+  $$(".pal-i", palList).forEach((el,i)=>{
+    el.classList.toggle("cur", i===palCur);
+    el.setAttribute("aria-selected", String(i===palCur));
+  });
+  const el=palList.children[palCur];
+  if(el && el.scrollIntoView) el.scrollIntoView({block:"nearest"});
+}
+function palRun(i){
+  const h=palHits[i]; if(!h) return;
+  ovClose(); Audio_.ok();
+  setTimeout(()=>h.c.run(), 60);
+}
+function openPal(){ palIn.value=""; palCur=0; palRender(); ovOpen(palEl, palIn); }
+$("#openPal").addEventListener("click", openPal);
+palIn.addEventListener("input", ()=>{ palCur=0; palRender(); });
+palIn.addEventListener("keydown", e=>{
+  if(e.key==="ArrowDown"){ e.preventDefault(); palCur=(palCur+1)%Math.max(palHits.length,1); markCur(); Audio_.type(); }
+  else if(e.key==="ArrowUp"){ e.preventDefault(); palCur=(palCur-1+palHits.length)%Math.max(palHits.length,1); markCur(); Audio_.type(); }
+  else if(e.key==="Enter"){ e.preventDefault(); palRun(palCur); }
+});
+
+/* ============================================================
+   34 — BOARD TERMINAL
+   ============================================================ */
+const termEl=$("#term"), termBody=$("#termBody"), termIn=$("#termIn");
+let termHist=Store.get("termHist",[]), histIdx=-1;
+
+/* Output is queued so two commands can never interleave their typing. */
+const tQueue=[]; let tBusy=false, tSkip=false;
+
+function tPush(job){ tQueue.push(job); if(!tBusy) tPump(); }
+function tPump(){
+  if(!tQueue.length){ tBusy=false; return; }
+  tBusy=true;
+  const job=tQueue.shift();
+  const d=document.createElement("div");
+  d.className="ln "+(job.cls||"out");
+  termBody.appendChild(d);
+
+  if(job.html!=null){ d.innerHTML=job.html; settle(); return; }
+  if(reduced || tSkip || !job.type){ d.textContent=job.text; settle(); return; }
+
+  let i=0;
+  (function step(){
+    if(tSkip){ d.textContent=job.text; return settle(); }
+    d.textContent=job.text.slice(0, ++i);
+    termBody.scrollTop=termBody.scrollHeight;
+    if(i%4===0) Audio_.type();
+    if(i<job.text.length) setTimeout(step, 7);
+    else settle();
+  })();
+
+  function settle(){
+    termBody.scrollTop=termBody.scrollHeight;
+    setTimeout(tPump, reduced||tSkip ? 0 : 22);
+  }
+}
+function tFlush(){
+  /* finish everything immediately — used when a new command arrives */
+  tSkip=true;
+  while(tQueue.length){
+    const job=tQueue.shift();
+    const d=document.createElement("div");
+    d.className="ln "+(job.cls||"out");
+    if(job.html!=null) d.innerHTML=job.html; else d.textContent=job.text;
+    termBody.appendChild(d);
+  }
+  setTimeout(()=>{ tSkip=false; }, 0);
+  termBody.scrollTop=termBody.scrollHeight;
+}
+function tOut(text, cls){ tPush({text, cls, type:false}); }
+function tLines(arr){ arr.forEach(row=> tPush({text:row[0], cls:row[1], type:true})); }
+
+const TERM_CMDS = {
+  help:{ d:"Diese Übersicht", run(){
+    const rows=[["Verfügbare Befehle:","ok"]];
+    Object.keys(TERM_CMDS).sort().forEach(k=> rows.push(["  "+k.padEnd(12)+TERM_CMDS[k].d,"out"]));
+    tLines(rows);
+  }},
+  status:{ d:"Gesamtstatus des Kollektivs", run(){ tLines([
+    ["AETHERIUM // LAGEBERICHT","ok"],
+    ["  Standorte aktiv .......... 4 / 4","out"],
+    ["  Frachter in Fahrt ........ 19","out"],
+    ["  Förderung / Zyklus ....... 1.842 kt","out"],
+    ["  Rückkehrquote ............ 99,4 %","out"],
+    ["  Alarmzustand ............. "+(Alert.on?"ROT":"grün"), Alert.on?"err":"ok"]
+  ]); }},
+  sites:{ d:"Alle Standorte auflisten", run(){
+    const rows=[["STANDORTE","ok"]];
+    SITES.forEach(s=> rows.push(["  "+s.code+"  "+s.id.padEnd(10)+s.diam.padStart(8)+"   "+s.body,"out"]));
+    rows.push(["  → site <name> für Details","out"]);
+    tLines(rows);
+  }},
+  site:{ d:"<name> — Standort im Detail", run(a){
+    const q=(a[0]||"").toUpperCase();
+    const i=SITES.findIndex(s=> s.id.indexOf(q)===0);
+    if(i<0) return tOut("Unbekannter Standort: "+(a[0]||"—"), "err");
+    const s=SITES[i];
+    const rows=[[s.id+" // "+s.body,"ok"],["  Durchmesser "+s.diam,"out"]];
+    s.bars.forEach(b=> rows.push(["  "+b[0].padEnd(22)+String(b[1]).padStart(3)+" %  "+"█".repeat(Math.round(b[1]/5)),"out"]));
+    s.rings.forEach(r=> rows.push(["  "+r[0].padEnd(22)+String(r[1]).padStart(3)+" "+r[2],"out"]));
+    tLines(rows);
+    jump("sites"); setTimeout(()=>select(i), 600);
+  }},
+  crew:{ d:"Kommandobesatzung auflisten", run(){
+    const rows=[["KOMMANDO","ok"]];
+    CREW.forEach(c=> rows.push(["  "+c[0].padEnd(16)+c[1],"out"]));
+    rows.push(["  → hail <name> für Funkkontakt","out"]);
+    tLines(rows);
+  }},
+  hail:{ d:"<name> — Besatzungsmitglied rufen", run(a){
+    const q=(a.join(" ")||"").toLowerCase();
+    const c=CREW.find(x=> x[0].toLowerCase().indexOf(q)>=0);
+    if(!q || !c) return tOut("Kein Funkkontakt zu: "+(a.join(" ")||"—"), "err");
+    tLines([
+      ["Rufe "+c[0]+" … Signallauf 6 h 31 min","out"],
+      ["« "+c[0]+" · "+c[1]+" »","ok"],
+      ["  "+c[2],"out"]
+    ]);
+  }},
+  tech:{ d:"Technologien auflisten", run(){
+    const rows=[["TECHNOLOGIE","ok"]];
+    $$(".tcard").forEach(c=>{
+      const n=$(".big",c), l=$(".label",c), f=$$(".label",c);
+      rows.push(["  "+n.textContent.padEnd(14)+(f[f.length-1]?f[f.length-1].textContent:""),"out"]);
+    });
+    tLines(rows); jump("tech");
+  }},
+  manifest:{ d:"Frachtmanifest des nächsten Abflugs", run(){ tLines([
+    ["MANIFEST // VESPER-14 · Abflug 04.11.2187","ok"],
+    ["  Neodym (6N9) ............. 3.180 t","out"],
+    ["  Iridium .................. 1.044 t","out"],
+    ["  Helium-3 ................. 212 t","out"],
+    ["  Ersatzköpfe KRYO-9 ....... 48 Stück","out"],
+    ["  Besatzung ................ 22","out"],
+    ["  Laufzeit ................. 14 Monate","out"]
+  ]); }},
+  plot:{ d:"<ziel> — Transferbahn berechnen", run(a){
+    const q=(a[0]||"").toUpperCase();
+    const s=SITES.find(x=> x.id.indexOf(q)===0);
+    if(!s) return tOut("Kein Ziel: "+(a[0]||"—")+" · bekannte Ziele: "+SITES.map(x=>x.id).join(", "), "err");
+    const dv=(4.8+Math.random()*2.4).toFixed(2), days=Math.round(380+Math.random()*90);
+    tLines([
+      ["Berechne Transferbahn → "+s.id,"out"],
+      ["  Pulsar-Fix ............... 11 Quellen, ±320 m","out"],
+      ["  Delta-v .................. "+dv+" km/s","out"],
+      ["  Laufzeit ................. "+days+" Tage","out"],
+      ["  Fenster .................. offen","ok"]
+    ]);
+  }},
+  alert:{ d:"Notfall-Protokoll umschalten", run(){ Alert.toggle(); tOut("Alarmzustand: "+(Alert.on?"ROT":"grün"), Alert.on?"err":"ok"); }},
+  theme:{ d:"Farbschema umschalten", run(){
+    const t=root.getAttribute("data-theme")==="dark"?"light":"dark";
+    setTheme(t); tOut("Farbschema: "+t, "ok");
+  }},
+  sound:{ d:"Bordton umschalten", run(){ const v=Audio_.toggle(); syncSnd(); tOut("Bordton: "+(v?"an":"aus"),"ok"); }},
+  goto:{ d:"<sektion> — dorthin springen", run(a){
+    const q=(a[0]||"").toLowerCase();
+    const r=RAIL.find(x=> x[0].indexOf(q)===0 || x[1].toLowerCase().indexOf(q)===0);
+    if(!q||!r) return tOut("Unbekannte Sektion. Bekannt: "+RAIL.map(x=>x[0]).join(", "), "err");
+    tOut("→ "+r[1], "ok"); ovClose(); jump(r[0]);
+  }},
+  time:{ d:"Systemzeit und Signallaufzeit", run(){
+    const d=new Date();
+    tLines([["Systemzeit ....... "+d.toLocaleTimeString("de-DE"),"out"],
+            ["Bordzeit ......... 2187-09-25 (Zyklus Q3)","out"],
+            ["Signallauf Erde .. 6 h 31 min","out"]]);
+  }},
+  whoami:{ d:"Angemeldete Kennung", run(){ tLines([
+    ["Kennung .......... GAST-0041","out"],
+    ["Freigabe ......... Stufe 2 (lesend)","out"],
+    ["Standort ......... Innerer Ring","out"]]); }},
+  clear:{ d:"Terminal leeren", run(){ tQueue.length=0; termBody.innerHTML=""; }},
+  version:{ d:"Softwarestand", run(){ tOut("AETHERIUM Bordterminal 4.2.1 · Kernel 2187.09","ok"); }}
+};
+
+function termRun(raw){
+  const line=raw.trim();
+  if(!line) return;
+  tFlush();
+  tPush({ html:"<b>&gt;</b> "+line.replace(/&/g,"&amp;").replace(/</g,"&lt;"), cls:"cmd" });
+  termHist = termHist.filter(x=>x!==line); termHist.push(line);
+  if(termHist.length>40) termHist.shift();
+  Store.set("termHist", termHist); histIdx=-1;
+  const parts=line.split(/\s+/), cmd=parts[0].toLowerCase(), args=parts.slice(1);
+  const c=TERM_CMDS[cmd];
+  if(!c){ tOut('Unbekannter Befehl: '+cmd+" — „help\" für die Übersicht", "err"); Audio_.err(); }
+  else { c.run(args); }
+  termBody.scrollTop=termBody.scrollHeight;
+}
+function openTerm(){
+  ovOpen(termEl, termIn);
+  if(!termBody.children.length){
+    tLines([
+      ["AETHERIUM // Bordterminal 4.2.1","ok"],
+      ["Kanal 07 offen · Freigabe Stufe 2 · Signallauf 6 h 31 min","out"],
+      ['„help" zeigt alle Befehle.',"out"]
+    ]);
+  }
+}
+$("#termBtn").addEventListener("click", openTerm);
+termIn.addEventListener("keydown", e=>{
+  if(e.key==="Enter"){ termRun(termIn.value); termIn.value=""; }
+  else if(e.key==="Tab"){
+    e.preventDefault();
+    const v=termIn.value.toLowerCase();
+    const hit=Object.keys(TERM_CMDS).filter(k=> k.indexOf(v)===0);
+    if(hit.length===1){ termIn.value=hit[0]+" "; Audio_.type(); }
+    else if(hit.length>1){ tOut(hit.join("  "), "out"); }
+  }
+  else if(e.key==="ArrowUp"){
+    e.preventDefault();
+    if(!termHist.length) return;
+    histIdx = histIdx<0 ? termHist.length-1 : Math.max(0, histIdx-1);
+    termIn.value = termHist[histIdx];
+  }
+  else if(e.key==="ArrowDown"){
+    e.preventDefault();
+    if(histIdx<0) return;
+    histIdx++;
+    if(histIdx>=termHist.length){ histIdx=-1; termIn.value=""; }
+    else termIn.value=termHist[histIdx];
+  }
+});
+
+/* ============================================================
+   35 — GLOBAL KEYBOARD
+   ============================================================ */
+function typing(){
+  const a=document.activeElement;
+  return a && (a.tagName==="INPUT" || a.tagName==="TEXTAREA" || a.tagName==="SELECT" || a.isContentEditable);
+}
+addEventListener("keydown", e=>{
+  if(e.key==="Escape"){ if(openOv){ ovClose(); return; } toggleMenu(false); return; }
+  if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==="k"){ e.preventDefault(); openPal(); return; }
+  if(typing()) return;
+  if(e.key==="`" || e.key==="^"){ e.preventDefault(); openTerm(); }
+  else if(e.key.toLowerCase()==="s"){ Audio_.toggle(); syncSnd(); }
+  else if(e.key.toLowerCase()==="t"){ setTheme(root.getAttribute("data-theme")==="dark"?"light":"dark"); }
+  else if(e.key==="/"){ e.preventDefault(); openPal(); }
+});
+
+/* Konami */
+(function(){
+  const CODE=["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","b","a"];
+  let i=0;
+  addEventListener("keydown", e=>{
+    if(typing()) return;
+    const k = e.key.length===1 ? e.key.toLowerCase() : e.key;
+    i = (k===CODE[i]) ? i+1 : (k===CODE[0] ? 1 : 0);
+    if(i===CODE.length){ i=0; launchProbe(); }
+  });
+})();
+
+/* ============================================================
+   35b — EASTER EGG: probe launch (Konami)
+   ============================================================ */
+let probeFound = Store.get("probe", false);
+const probeEl=$("#probe"), probeCv=$("#probeCv");
+let probeT0=0, probeParts=[];
+
+function launchProbe(){
+  if(probeEl.classList.contains("on")) return;
+  probeEl.classList.add("on");
+  probeT0=performance.now(); probeParts=[];
+  Audio_.sweep(); Audio_.ok();
+  toast("SEEKER-0", "Sonde gestartet · Kurs ERIS-PRIME", 6000);
+  if(!probeFound){
+    probeFound=true; Store.set("probe", true);
+    registerCmd({ ic:"✦", title:"ERIS-PRIME", sub:"Standort · geheim · 68,4 AE",
+      run:()=> toast("ERIS-PRIME", "Nicht kartiert. Kein Zugriff auf dieser Freigabestufe.", 5200) });
+    TERM_CMDS.seeker = { d:"Status der Sonde SEEKER-0", run(){ tLines([
+      ["SEEKER-0 // Ferntelemetrie","ok"],
+      ["  Entfernung ............... 68,4 AE","out"],
+      ["  Signallauf ............... 9 h 28 min","out"],
+      ["  Ziel ..................... ERIS-PRIME (nicht kartiert)","out"],
+      ["  Auftraggeber ............. — geschwärzt —","err"]
+    ]); }};
+  }
+  setTimeout(()=> probeEl.classList.remove("on"), reduced ? 1600 : 7600);
+}
+
+onTick(function(t){
+  if(!probeEl.classList.contains("on")) return;
+  const f=fitCanvas(probeCv); if(!f) return;
+  const {ctx,w,h}=f;
+  ctx.clearRect(0,0,w,h);
+  const el=(t-probeT0)/1000;
+  const cyc=css("--cy"), mgc=css("--mg");
+
+  /* flight path: bottom-left to upper-right, easing out */
+  const p=clamp(el/5.2,0,1), e=1-Math.pow(1-p,2.4);
+  const x = -60 + e*(w+140);
+  const y = h*1.02 - e*h*0.78 - Math.sin(e*Math.PI)*h*0.1;
+
+  if(!reduced && p<1 && el>0){
+    for(let i=0;i<3;i++){
+      probeParts.push({ x, y, vx:-(1.6+Math.random()*2.6), vy:(Math.random()-.3)*1.7,
+                        life:1, r:Math.random()*2.1+.5 });
+    }
+  }
+  for(let i=probeParts.length-1;i>=0;i--){
+    const q=probeParts[i];
+    q.x+=q.vx; q.y+=q.vy; q.life-=.014;
+    if(q.life<=0){ probeParts.splice(i,1); continue; }
+    ctx.globalAlpha=q.life*.7;
+    ctx.fillStyle = q.life>.6 ? cyc : mgc;
+    ctx.beginPath(); ctx.arc(q.x,q.y,q.r*q.life,0,6.2832); ctx.fill();
+  }
+  if(p<1){
+    ctx.globalAlpha=1;
+    ctx.save(); ctx.translate(x,y); ctx.rotate(-0.62);
+    ctx.strokeStyle=cyc; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(-11,0); ctx.lineTo(11,0); ctx.moveTo(4,-5); ctx.lineTo(11,0); ctx.lineTo(4,5); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-6,-7); ctx.lineTo(-6,7); ctx.stroke();
+    ctx.restore();
+    ctx.globalAlpha=.5; ctx.strokeStyle=cyc; ctx.lineWidth=.8;
+    ctx.beginPath(); ctx.arc(x,y,16+Math.sin(el*9)*3,0,6.2832); ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+});
+
+/* restore the unlocked entries on a later visit */
+if(probeFound){
+  registerCmd({ ic:"✦", title:"ERIS-PRIME", sub:"Standort · geheim · 68,4 AE",
+    run:()=> toast("ERIS-PRIME", "Nicht kartiert. Kein Zugriff auf dieser Freigabestufe.", 5200) });
+  TERM_CMDS.seeker = { d:"Status der Sonde SEEKER-0", run(){ tLines([
+    ["SEEKER-0 // Ferntelemetrie","ok"],
+    ["  Entfernung ............... 68,4 AE","out"],
+    ["  Signallauf ............... 9 h 28 min","out"],
+    ["  Ziel ..................... ERIS-PRIME (nicht kartiert)","out"],
+    ["  Auftraggeber ............. — geschwärzt —","err"]
+  ]); }};
+}
+
+/* ============================================================
    MAIN RAF LOOP
    ============================================================ */
 let running=true;
@@ -1646,6 +2592,8 @@ function loop(t){
   updateTech();
   updateSpine();
   updateActive();
+  updateRail();
+  runTicks(t);
   requestAnimationFrame(loop);
 }
 
