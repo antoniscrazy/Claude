@@ -2066,6 +2066,100 @@ html[data-emergency="true"] #emergencyToggle{
 }
 .konami-overlay__inner p{ color: var(--ink-dim); font-size:14px; line-height:1.6; margin:0; }
 .konami-overlay__inner .mono{ display:block; margin-top:14px; }
+
+/* --- Shared detail modal (stage 5c) --------------------------------------
+   Single reusable dialog used by tech-card / timeline-entry / crew-card
+   detail views. Follows the same scrim + transform-in pattern as
+   .palette-scrim / .terminal-scrim above. */
+.modal-scrim{
+  position: fixed; inset:0; z-index: 10075;
+  background: rgba(3,4,8,0.78);
+  backdrop-filter: blur(4px);
+  display:none; align-items:center; justify-content:center;
+  padding: 5vh 20px;
+  opacity:0;
+  transition: opacity .2s var(--ease-out);
+}
+.modal-scrim.is-open{ display:flex; opacity:1; }
+@media (prefers-reduced-motion: reduce){ .modal-scrim{ transition:none; } }
+.modal{
+  width: min(760px, 100%);
+  max-height: 88vh;
+  background: var(--bg-elevated);
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 30px 90px rgba(0,0,0,.6);
+  display:flex; flex-direction:column;
+  transform: translateY(14px) scale(.98);
+  transition: transform .25s var(--ease-spring);
+  outline:none;
+}
+.modal-scrim.is-open .modal{ transform: translateY(0) scale(1); }
+@media (prefers-reduced-motion: reduce){ .modal{ transition:none; } }
+.modal__head{
+  flex:none;
+  display:flex; align-items:flex-start; justify-content:space-between; gap:16px;
+  padding: 22px 26px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.modal__head h3{ margin:0; font-size: clamp(19px,2.6vw,26px); }
+.modal__kicker{ display:block; margin-bottom:8px; }
+.modal__close{
+  flex:none; width:34px; height:34px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg-soft);
+  color: var(--ink-dim);
+  cursor:pointer;
+  font-size: 18px; line-height:1;
+  display:flex; align-items:center; justify-content:center;
+  transition: color .2s, border-color .2s;
+}
+.modal__close:hover{ color: var(--ink); border-color: var(--cyan); }
+.modal__body{
+  overflow-y: auto;
+  padding: 22px 26px 28px;
+}
+.modal__body p{ color: var(--ink-dim); line-height:1.7; font-size:14.5px; margin:0 0 14px; }
+.modal__body h4{ margin: 22px 0 10px; font-size: 14px; letter-spacing:.04em; color: var(--ink-faint); text-transform:uppercase; font-family: ui-monospace,monospace; }
+
+.modal-cutaway{
+  width:100%; aspect-ratio: 16/9;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  margin-bottom: 20px;
+}
+.modal-cutaway svg{ width:100%; height:100%; }
+.modal-cutaway .xpart{
+  transform: translate(0,0);
+  transition: transform var(--dur-slow) var(--ease-spring);
+}
+.modal-cutaway.is-exploded .xpart{ transform: translate(var(--dx), var(--dy)); }
+@media (prefers-reduced-motion: reduce){ .modal-cutaway .xpart{ transition:none; } }
+
+.modal-spectable{ width:100%; border-collapse:collapse; font-family: ui-monospace,monospace; font-size:12.5px; }
+.modal-spectable td{ padding:8px 4px; border-top:1px solid var(--line); color: var(--ink-dim); }
+.modal-spectable td:last-child{ color: var(--ink); text-align:right; font-weight:600; }
+
+.modal-chart-wrap{ margin-top:6px; }
+.modal-chart-svg{ width:100%; height:90px; display:block; }
+
+.modal-people{ list-style:none; margin:12px 0 0; padding:0; }
+.modal-people li{ padding:9px 0; border-top:1px solid var(--line); font-size:13px; color: var(--ink-dim); }
+.modal-people li b{ color: var(--ink); }
+.modal-people li span{ display:block; font-family:ui-monospace,monospace; font-size:10.5px; color: var(--ink-faint); margin-top:2px; letter-spacing:.04em; }
+
+.modal-minimap{ width:100%; max-width:340px; margin: 4px auto 0; }
+.modal-minimap svg{ width:100%; height:auto; }
+.modal-minimap text{ font-family: ui-monospace,monospace; font-size:8px; fill: var(--ink-faint); text-transform:uppercase; letter-spacing:.05em; }
+
+.modal-quote{
+  border-left: 2px solid var(--cyan);
+  padding: 2px 0 2px 16px;
+  margin: 20px 0 0;
+  font-style: italic;
+  color: var(--ink);
+  font-size: 15px;
+  line-height:1.6;
+}
 </style>
 </head>
 <body>
@@ -2927,6 +3021,20 @@ html[data-emergency="true"] #emergencyToggle{
       <span class="terminal__prompt mono" aria-hidden="true">brücke&gt;</span>
       <input type="text" class="terminal__input mono" id="terminalInput" autocomplete="off" spellcheck="false" aria-label="Terminaleingabe">
     </div>
+  </div>
+</div>
+
+<!-- ===================================================================
+     SHARED DETAIL MODAL (stage 5c) — used by tech-card / timeline-entry /
+     crew-card detail views. See Modal module in <script>.
+=================================================================== -->
+<div class="modal-scrim" id="modalScrim">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" id="modalDialog" tabindex="-1">
+    <div class="modal__head">
+      <h3 id="modalTitle"></h3>
+      <button type="button" class="modal__close" id="modalClose" aria-label="Schließen">✕</button>
+    </div>
+    <div class="modal__body" id="modalBody"></div>
   </div>
 </div>
 
@@ -6108,6 +6216,341 @@ const Emergency = (function(){
 })();
 
 /* =====================================================================
+   20bb. SHARED DETAIL MODAL — used by tech-card / timeline-entry /
+   crew-card detail views. Same proven pattern as Palette/Terminal below:
+   scrim + transform-in panel, Escape-to-close, backdrop-click-to-close,
+   focus moved in on open (only ever from an explicit user-triggered
+   open() call — never during init/restore), focus restored on close.
+===================================================================== */
+const Modal = (function(){
+  const scrim = document.getElementById("modalScrim");
+  const dialog = document.getElementById("modalDialog");
+  const titleEl = document.getElementById("modalTitle");
+  const bodyEl = document.getElementById("modalBody");
+  const closeBtn = document.getElementById("modalClose");
+  let lastFocused = null;
+  let onCloseCb = null;
+
+  function focusables(){
+    return [...dialog.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+      .filter(el => el.getClientRects().length > 0);
+  }
+
+  function onKey(e){
+    if(e.key === "Escape"){ e.preventDefault(); close(); return; }
+    if(e.key === "Tab"){
+      const items = focusables();
+      if(!items.length){ e.preventDefault(); dialog.focus(); return; }
+      const first = items[0], last = items[items.length-1];
+      if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+      else if(!items.includes(document.activeElement)){ e.preventDefault(); first.focus(); }
+    }
+  }
+
+  function open(opts){
+    lastFocused = document.activeElement;
+    onCloseCb = (opts && opts.onClose) || null;
+    titleEl.textContent = (opts && opts.title) || "";
+    bodyEl.innerHTML = "";
+    if(opts && typeof opts.build === "function") opts.build(bodyEl);
+    scrim.classList.add("is-open");
+    document.addEventListener("keydown", onKey, true);
+    // Focus-into-dialog only ever runs from this explicit click/Enter/Space
+    // triggered open() — never during page init/restore.
+    setTimeout(() => {
+      const items = focusables();
+      (items[0] || dialog).focus();
+    }, 0);
+  }
+  function close(){
+    if(!scrim.classList.contains("is-open")) return;
+    scrim.classList.remove("is-open");
+    document.removeEventListener("keydown", onKey, true);
+    const cb = onCloseCb; onCloseCb = null;
+    if(cb) cb();
+    if(lastFocused && lastFocused.focus) lastFocused.focus();
+    lastFocused = null;
+  }
+  function isOpen(){ return scrim.classList.contains("is-open"); }
+
+  scrim.addEventListener("mousedown", e => { if(e.target === scrim) close(); });
+  closeBtn.addEventListener("click", close);
+
+  return { open, close, isOpen };
+})();
+
+/* --- helper: small inline bar-chart svg, used by timeline modal -------- */
+function modalBarChart(values){
+  const w = 300, h = 90, pad = 4;
+  const max = Math.max(...values, 1);
+  const bw = (w - pad*2) / values.length;
+  const bars = values.map((v,i) => {
+    const bh = Math.max(2, (v/max) * (h-16));
+    const x = pad + i*bw + 3;
+    const y = h - bh - 2;
+    const op = (0.4 + 0.6*(i/(values.length-1||1))).toFixed(2);
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw-6).toFixed(1)}" height="${bh.toFixed(1)}" fill="var(--cyan)" opacity="${op}"></rect>`;
+  }).join("");
+  return `<svg class="modal-chart-svg" viewBox="0 0 ${w} ${h}" role="img" aria-label="Kennzahlenverlauf">${bars}<line x1="0" y1="${h-1}" x2="${w}" y2="${h-1}" stroke="var(--line)"></line></svg>`;
+}
+
+/* --- tech-card detail: cutaway schematic + exploded parts + spec table - */
+const TECH_PARTS = [
+  // 01 Kinetic Bore Swarm — hub + 4 orbiting drones
+  [
+    { dx:0, dy:0,   label:"KERNMODUL",  svg:'<circle cx="200" cy="110" r="26" fill="none" stroke="var(--cyan)" stroke-width="1.4"/>', lx:200, ly:150 },
+    { dx:-34, dy:-24, label:"DROHNE",   svg:'<circle cx="120" cy="60" r="9" fill="none" stroke="var(--ink-dim)" stroke-width="1.2"/>', lx:120, ly:44 },
+    { dx:34, dy:-24,  label:"DROHNE",   svg:'<circle cx="280" cy="60" r="9" fill="none" stroke="var(--ink-dim)" stroke-width="1.2"/>', lx:280, ly:44 },
+    { dx:-34, dy:24,  label:"DROHNE",   svg:'<circle cx="120" cy="160" r="9" fill="none" stroke="var(--ink-dim)" stroke-width="1.2"/>', lx:120, ly:184 },
+    { dx:34, dy:24,   label:"DROHNE",   svg:'<circle cx="280" cy="160" r="9" fill="none" stroke="var(--ink-dim)" stroke-width="1.2"/>', lx:280, ly:184 }
+  ],
+  // 02 Fusion-Tug — tank, manifold, chamber, nozzle
+  [
+    { dx:-44, dy:0, label:"TANK D-He³", svg:'<rect x="40" y="90" width="90" height="40" fill="none" stroke="var(--ink-dim)" stroke-width="1.2"/>', lx:85, ly:150 },
+    { dx:-16, dy:0, label:"LEITUNG",    svg:'<rect x="130" y="105" width="30" height="10" fill="none" stroke="var(--ink-faint)" stroke-width="1"/>', lx:145, ly:96 },
+    { dx:0, dy:0,   label:"BRENNKAMMER",svg:'<rect x="160" y="80" width="80" height="60" fill="none" stroke="var(--magenta)" stroke-width="1.4"/>', lx:200, ly:166 },
+    { dx:44, dy:0,  label:"DÜSE",       svg:'<polygon points="240,90 340,60 340,160 240,130" fill="none" stroke="var(--cyan)" stroke-width="1.2"/>', lx:300, ly:44 }
+  ],
+  // 03 Orbital Refinery Core — core + 3 modules
+  [
+    { dx:0, dy:0,   label:"KERNREAKTOR", svg:'<circle cx="200" cy="110" r="24" fill="none" stroke="var(--cyan)" stroke-width="1.4"/>', lx:200, ly:150 },
+    { dx:-22, dy:-34, label:"MODUL A",   svg:'<rect x="60" y="40" width="90" height="40" fill="none" stroke="var(--ink-dim)" stroke-width="1.2"/>', lx:105, ly:32 },
+    { dx:22, dy:-34,  label:"MODUL B",   svg:'<rect x="250" y="40" width="90" height="40" fill="none" stroke="var(--ink-dim)" stroke-width="1.2"/>', lx:295, ly:32 },
+    { dx:0, dy:34,    label:"AUSGABE",   svg:'<rect x="150" y="150" width="100" height="40" fill="none" stroke="var(--ink-faint)" stroke-width="1.2"/>', lx:200, ly:206 }
+  ],
+  // 04 Sentinel-Netz — core node + 4 satellite nodes
+  [
+    { dx:0, dy:0,   label:"KERNKNOTEN", svg:'<circle cx="200" cy="110" r="14" fill="none" stroke="var(--cyan)" stroke-width="1.4"/>', lx:200, ly:140 },
+    { dx:-30, dy:-28, label:"KNOTEN",   svg:'<circle cx="100" cy="60" r="7" fill="none" stroke="var(--ink-dim)" stroke-width="1.1"/>', lx:100, ly:44 },
+    { dx:30, dy:-28,  label:"KNOTEN",   svg:'<circle cx="300" cy="60" r="7" fill="none" stroke="var(--ink-dim)" stroke-width="1.1"/>', lx:300, ly:44 },
+    { dx:-30, dy:28,  label:"KNOTEN",   svg:'<circle cx="100" cy="160" r="7" fill="none" stroke="var(--ink-dim)" stroke-width="1.1"/>', lx:100, ly:184 },
+    { dx:30, dy:28,   label:"KNOTEN",   svg:'<circle cx="300" cy="160" r="7" fill="none" stroke="var(--ink-dim)" stroke-width="1.1"/>', lx:300, ly:184 }
+  ],
+  // 05 Habitat-Schild — 4 stacked layers
+  [
+    { dx:0, dy:-34, label:"AUSSENSCHICHT",  svg:'<rect x="100" y="40" width="200" height="20" fill="none" stroke="var(--cyan)" stroke-width="1.2"/>', lx:310, ly:52 },
+    { dx:0, dy:-10, label:"DÄMPFSCHICHT",   svg:'<rect x="100" y="80" width="200" height="20" fill="none" stroke="var(--ink-dim)" stroke-width="1.2"/>', lx:310, ly:92 },
+    { dx:0, dy:10,  label:"TRÄGERSCHICHT",  svg:'<rect x="100" y="120" width="200" height="20" fill="none" stroke="var(--ink-dim)" stroke-width="1.2"/>', lx:310, ly:132 },
+    { dx:0, dy:34,  label:"RUMPFPLATTE",    svg:'<rect x="100" y="160" width="200" height="20" fill="none" stroke="var(--magenta)" stroke-width="1.2"/>', lx:310, ly:172 }
+  ]
+];
+const TECH_SPECS = [
+  [["Durchsatz","1.140 t/h"],["Autonomiegrad","Stufe 5"],["Einsatzdauer","9.400 h MTBF"],["Masse / Drohne","340 kg"],["Hersteller","AETHERIUM Robotics Div."],["Stückpreis","128.000 Credits"],["Zertifizierung","ISO-D7 Deep Field"],["Serviceintervall","4.200 h"]],
+  [["Schub","2,4 MN"],["Spez. Impuls","48.000 s"],["Lebensdauer","34 Jahre"],["Masse","18,4 t"],["Hersteller","Halcyon Drive Works"],["Stückpreis","41,2 Mio. Credits"],["Zertifizierung","ISO-K12 Fusion Safety"],["Wartungszyklus","6 Jahre"]],
+  [["Kapazität","820 t/Tag"],["Massereduktion","91 %"],["Module","12 parallel"],["Masse (Plattform)","640 t"],["Hersteller","Orbital Refinery Consortium"],["Stückpreis","210 Mio. Credits"],["Zertifizierung","ISO-R4 Raffinerie"],["Lebensdauer","40 Jahre"]],
+  [["Knoten","1.900+"],["Entscheidungszyklus","40 ms"],["Redundanz","Dreifach"],["Masse / Knoten","12 kg"],["Hersteller","AETHERIUM Systems"],["Stückpreis","9.400 Credits / Knoten"],["Zertifizierung","ISO-C9 Cyber-Resilienz"],["Betriebsdauer","15 Jahre MTBF"]],
+  [["Abschirmung","99,98 %"],["Gewicht","−38 % ggü. Vorgänger"],["Zertifiziert","ISO-K9 Deep Space"],["Masse / Panel","2,1 t"],["Hersteller","Aegis Composite Works"],["Stückpreis","640.000 Credits / Panel"],["Serviceleben","25 Jahre"],["Wartungsintervall","3 Jahre"]]
+];
+
+function techCutawaySVG(idx){
+  const parts = TECH_PARTS[idx];
+  const gs = parts.map(p => `<g class="xpart" style="--dx:${p.dx}px;--dy:${p.dy}px">${p.svg}<text x="${p.lx}" y="${p.ly}" text-anchor="middle" font-family="ui-monospace,monospace" font-size="9" fill="var(--ink-faint)">${p.label}</text></g>`).join("");
+  return `<svg viewBox="0 0 400 220" role="img" aria-label="Technische Schnittzeichnung"><rect x="1" y="1" width="398" height="218" fill="none" stroke="var(--line)"/>${gs}</svg>`;
+}
+
+function openTechModal(idx, title){
+  Modal.open({
+    title: title,
+    build(container){
+      const cut = document.createElement("div");
+      cut.className = "modal-cutaway";
+      cut.innerHTML = techCutawaySVG(idx);
+      container.appendChild(cut);
+
+      const h4 = document.createElement("h4");
+      h4.textContent = "Technisches Datenblatt";
+      container.appendChild(h4);
+
+      const table = document.createElement("table");
+      table.className = "modal-spectable";
+      table.innerHTML = TECH_SPECS[idx].map(([k,v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
+      container.appendChild(table);
+
+      if(reduceMotion){
+        cut.classList.add("is-exploded");
+      } else {
+        requestAnimationFrame(() => requestAnimationFrame(() => cut.classList.add("is-exploded")));
+      }
+    }
+  });
+}
+
+(function wireTechCards(){
+  const cards = document.querySelectorAll("#techTrack .tech-card");
+  cards.forEach((card, i) => {
+    card.setAttribute("tabindex", "0");
+    card.setAttribute("role", "button");
+    card.setAttribute("aria-haspopup", "dialog");
+    const h3 = card.querySelector("h3");
+    const title = h3 ? h3.textContent.trim() : TECH_NAMES[i];
+    card.addEventListener("click", () => openTechModal(i, title));
+    card.addEventListener("keydown", e => {
+      if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openTechModal(i, title); }
+    });
+  });
+})();
+
+/* --- timeline-entry detail: archive passage + people + sparkline ------- */
+const TIMELINE_DETAIL = [
+  {
+    text: "Die Gründungsakte von AETHERIUM wird im Erdorbit unterzeichnet, getragen von drei Orbitalwerften, die einzeln zu klein waren, um die Marsbahn zu verlassen, und gemeinsam entschlossen genug, es dennoch zu versuchen. Die ersten Jahre bestehen aus Machbarkeitsstudien, requirierten Frachtern und einer Belegschaft, die noch nichts vom Kuipergürtel weiß außer seiner Entfernung.",
+    people: [ ["Gründungsdirektorin Petra Yun","Konsortialsprecherin, verhandelte den Zusammenschluss der drei Werften."], ["Techniker Bram Oyelaran","Baute den ersten requirierten Frachter zum Sondierungsschiff um."] ],
+    metricLabel: "Gründungskapital (Mio. Credits)",
+    metric: [12,15,14,19,24]
+  },
+  {
+    text: "Nach fünfzehn Jahren Sondierungsflügen erreicht „Prospector I“ den Kuipergürtel und sichert den ersten kommerziellen Abbau-Claim der Firmengeschichte — ein winziges, metallreiches Fragment, das später zu KBX-114 wird. Die Meldung erreicht das Kernnetz mit sechs Stunden Verzögerung; gefeiert wird trotzdem sofort.",
+    people: [ ["Kommandantin Vera Solheim","Damals Schürf-Kadettin an Bord der „Prospector I“."], ["Navigatorin Iris Kell","Plottete die Kursänderung, die den Claim erst erreichbar machte."] ],
+    metricLabel: "Aktive Claims",
+    metric: [1,1,2,3,4]
+  },
+  {
+    text: "Die Inbetriebnahme von ORC-I markiert den Bruch mit der alten Logistik: Rohgestein muss fortan nicht mehr zur Erde transportiert werden, sondern wird direkt im Orbit veredelt. Die Durchsatzzahlen der ersten Betriebswoche werden intern noch immer als Referenzwert zitiert.",
+    people: [ ["Kommandant Idris Wex","Leitender Ingenieur des ORC-Prototyps."], ["Ingenieurin Sula Marn","Verantwortete die Inbetriebnahme-Sequenz von ORC-I."] ],
+    metricLabel: "Raffinierte Tonnen / Tag",
+    metric: [40,120,260,410,560]
+  },
+  {
+    text: "Der FT-Serie-Antrieb verkürzt Transportzeiten zwischen Kuipergürtel und Mars-Orbitalwerften um über 60 Prozent und macht Schwerlastrouten wirtschaftlich, die zuvor als reines Prestigeprojekt galten. Die Deep-Tug-Flotte wächst binnen zwei Jahren auf das Zehnfache.",
+    people: [ ["Kommandantin Nadya Cortez","Pilotierte die erste kommerzielle FT-Route Kuiper–Mars."], ["Chefpilot Dorin Vass","Trainierte die erste Generation von Schleppercrews auf FT-Antriebe."] ],
+    metricLabel: "Transportzeit (Tage, Kuiper–Mars)",
+    metric: [340,310,260,190,130]
+  },
+  {
+    text: "Das verteilte Sentinel-Kontrollsystem übernimmt die Koordination der gesamten Flotte. Reaktionszeiten auf lokale Störungen fallen von Minuten auf unter eine Sekunde — eine Zahl, die intern zunächst niemand glauben wollte, bis die Telemetrie es drei Schichten in Folge bestätigte.",
+    people: [ ["Kommandant Elias Thorn","Architekt des Sentinel-Kontrollnetzes."], ["Systemanalytikerin Priya Okafor","Verantwortete die Lasttests vor der Netzaktivierung."] ],
+    metricLabel: "Reaktionszeit auf Störungen (Sek.)",
+    metric: [45,22,9,3,0.8]
+  },
+  {
+    text: "AETHERIUM betreibt heute das dichteste Fördernetz jenseits der Neptunbahn, mit ungebrochenem Expansionskurs und einer vierten Claim-Generation im Aufbau. Was 2141 als Konsortialprojekt begann, ist zur größten unabhängigen Fördermacht des äußeren Sonnensystems geworden.",
+    people: [ ["Direktorin für Expansion Saeko Lindt","Verantwortet die Erschließung neuer Claim-Regionen."], ["Kommandantin Vera Solheim","Chief Extraction Officer, seit der Gründungsära an Bord."] ],
+    metricLabel: "Aktive Stationen",
+    metric: [60,95,124,151,168,184]
+  }
+];
+
+function openTimelineModal(idx, title){
+  const d = TIMELINE_DETAIL[idx];
+  Modal.open({
+    title: title,
+    build(container){
+      const p1 = document.createElement("p"); p1.textContent = d.text;
+      container.appendChild(p1);
+
+      const h4a = document.createElement("h4"); h4a.textContent = "Beteiligte Personen";
+      container.appendChild(h4a);
+      const ul = document.createElement("ul"); ul.className = "modal-people";
+      ul.innerHTML = d.people.map(([n,r]) => `<li><b>${n}</b><span>${r}</span></li>`).join("");
+      container.appendChild(ul);
+
+      const h4b = document.createElement("h4"); h4b.textContent = d.metricLabel;
+      container.appendChild(h4b);
+      const chartWrap = document.createElement("div"); chartWrap.className = "modal-chart-wrap";
+      chartWrap.innerHTML = modalBarChart(d.metric);
+      container.appendChild(chartWrap);
+    }
+  });
+}
+
+(function wireTimelineItems(){
+  const items = document.querySelectorAll("#timelineWrap .timeline__item");
+  items.forEach((item, i) => {
+    item.setAttribute("tabindex", "0");
+    item.setAttribute("role", "button");
+    item.setAttribute("aria-haspopup", "dialog");
+    const h4 = item.querySelector("h4");
+    const yr = item.querySelector(".timeline__year");
+    const title = (yr ? yr.textContent.trim() + " — " : "") + (h4 ? h4.textContent.trim() : "");
+    item.addEventListener("click", () => openTimelineModal(i, title));
+    item.addEventListener("keydown", e => {
+      if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openTimelineModal(i, title); }
+    });
+  });
+})();
+
+/* --- crew-card detail: service history + site mini-map + quote --------- */
+const CREW_SITE_XY = { "kbx-114":[60,70], "vst-006":[220,40], "prm-221":[260,150], "ndx-330":[100,170], "kes-014":[180,100] };
+const CREW_DETAIL = [
+  {
+    history: [ ["2149","Eintritt als Schürf-Kadettin, Claim KBX-114"], ["2156","Teilnahme an Sondierungsflotte „Prospector I“"], ["2168","Übernahme Divisionsleitung Extraction"], ["2187","Chief Extraction Officer"] ],
+    sites: ["kbx-114","ndx-330","prm-221"],
+    quote: "Der Gürtel verzeiht keine Zögerlichkeit — und ich auch nicht."
+  },
+  {
+    history: [ ["2159","Ingenieur, ORC-Prototyp"], ["2163","Inbetriebnahme ORC-I"], ["2172","Entwicklung Reinheitsprotokoll v4"], ["2187","Head of Refinement Ops"] ],
+    sites: ["vst-006","prm-221"],
+    quote: "Reinheit ist keine Meinung. Sie ist eine Zahl hinter dem Komma."
+  },
+  {
+    history: [ ["2165","Pilotin, erste FT-Serie-Route"], ["2171","Einführung FT-Antrieb in der Schlepperflotte"], ["2179","Null Ladungsverluste seit Flottenumstellung"], ["2187","Director, Deep Tug Logistics"] ],
+    sites: ["vst-006","ndx-330","kes-014"],
+    quote: "Fracht kommt an. Punkt."
+  },
+  {
+    history: [ ["2174","Konzeption Sentinel-Prototyp"], ["2179","Aktivierung Sentinel-Kontrollnetz"], ["2183","Ausweitung auf alle vier Claims"], ["2187","Chief Sentinel Architect"] ],
+    sites: ["kbx-114","prm-221","kes-014"],
+    quote: "Sechs Lichtstunden Latenz sind kein Limit. Sie sind ein Entwurfsparameter."
+  }
+];
+
+function crewMiniMapSVG(visited){
+  const circles = Object.keys(CREW_SITE_XY).map(id => {
+    const [x,y] = CREW_SITE_XY[id];
+    const on = visited.includes(id);
+    const r = on ? 7 : 4;
+    const fill = on ? "var(--cyan)" : "var(--bg-soft)";
+    const stroke = on ? "var(--cyan)" : "var(--line-strong)";
+    const label = on ? `<text x="${x}" y="${y-12}" text-anchor="middle">${id.toUpperCase()}</text>` : "";
+    return `<circle cx="${x}" cy="${y}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="1.2"></circle>${label}`;
+  }).join("");
+  let path = "";
+  if(visited.length > 1){
+    const pts = visited.map(id => CREW_SITE_XY[id].join(",")).join(" ");
+    path = `<polyline points="${pts}" fill="none" stroke="var(--magenta)" stroke-width="1.2" stroke-dasharray="4 3"></polyline>`;
+  }
+  return `<svg viewBox="0 0 300 200" role="img" aria-label="Standortkarte der Einsatzhistorie">${path}${circles}</svg>`;
+}
+
+function openCrewModal(idx, title){
+  const d = CREW_DETAIL[idx];
+  Modal.open({
+    title: title,
+    build(container){
+      const h4a = document.createElement("h4"); h4a.textContent = "Dienstverlauf";
+      container.appendChild(h4a);
+      const ul = document.createElement("ul"); ul.className = "modal-people";
+      ul.innerHTML = d.history.map(([y,r]) => `<li><b>${y}</b><span>${r}</span></li>`).join("");
+      container.appendChild(ul);
+
+      const h4b = document.createElement("h4"); h4b.textContent = "Einsatzstandorte";
+      container.appendChild(h4b);
+      const mm = document.createElement("div"); mm.className = "modal-minimap";
+      mm.innerHTML = crewMiniMapSVG(d.sites);
+      container.appendChild(mm);
+
+      const q = document.createElement("p"); q.className = "modal-quote"; q.textContent = "„" + d.quote + "“";
+      container.appendChild(q);
+    }
+  });
+}
+
+(function wireCrewCards(){
+  const cards = document.querySelectorAll(".team-card");
+  cards.forEach((card, i) => {
+    card.setAttribute("role", "button");
+    card.setAttribute("aria-haspopup", "dialog");
+    const nameEl = card.querySelector(".team-card__name");
+    const title = nameEl ? nameEl.textContent.trim() : CREW[i] ? CREW[i].name : "";
+    card.addEventListener("click", () => openCrewModal(i, title));
+    card.addEventListener("keydown", e => {
+      if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openCrewModal(i, title); }
+    });
+  });
+})();
+
+/* =====================================================================
    20c. COMMAND PALETTE — Ctrl+K / Cmd+K
 ===================================================================== */
 function buildPaletteEntries(){
@@ -6450,12 +6893,13 @@ document.addEventListener("keydown", function(e){
   const typing = tag === "input" || tag === "textarea" || tag === "select" || (e.target && e.target.isContentEditable);
 
   if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k"){
+    if(Modal.isOpen()) return;
     e.preventDefault();
     if(Palette.isOpen()) Palette.close();
     else if(!Terminal.isOpen()) Palette.open();
     return;
   }
-  if(e.key === "`" && !typing && !Palette.isOpen() && !Terminal.isOpen()){
+  if(e.key === "`" && !typing && !Palette.isOpen() && !Terminal.isOpen() && !Modal.isOpen()){
     e.preventDefault();
     Terminal.open();
   }
