@@ -561,22 +561,21 @@ section{
   background: linear-gradient(var(--cyan), transparent);
 }
 
-/* 3D wireframe asteroid (CSS 3D) */
+/* Lit, faceted asteroid — canvas-rendered (see asteroidBody IIFE in <script>) */
 .asteroid3d{
   width:100%; height:100%;
   position:relative;
-  perspective: 900px;
+  /* Decorative but pointer-draggable: this element is small and visually
+     reads as interactive, so it owns its touch gestures rather than the
+     page scroll; every other scrollable area is untouched. */
+  touch-action: none;
 }
-.asteroid3d__core{
-  position:absolute; inset:0;
-  transform-style: preserve-3d;
-  animation: asteroid-spin 22s linear infinite;
+.asteroid3d canvas{
+  width:100%; height:100%;
+  display:block;
+  cursor: grab;
 }
-@keyframes asteroid-spin{
-  from{ transform: rotateX(15deg) rotateY(0deg); }
-  to{ transform: rotateX(15deg) rotateY(360deg); }
-}
-.asteroid3d__core svg{ width:100%; height:100%; overflow:visible; }
+.asteroid3d.is-dragging canvas{ cursor: grabbing; }
 
 /* =====================================================================
    8. STATS BAND
@@ -2074,7 +2073,7 @@ html[data-emergency="true"] #emergencyToggle{
       <p class="hero__sub">AETHERIUM ist der führende autonome Bergbaukonzern jenseits der Neptunbahn. Wir erschließen Seltene Erden dort, wo Kapital sonst nicht hinreicht — und liefern, ohne zu fragen, ob es möglich war.</p>
     </div>
     <div class="hero__asteroid" aria-hidden="true">
-      <div class="asteroid3d"><div class="asteroid3d__core" id="asteroidCore"></div></div>
+      <div class="asteroid3d" id="asteroidWrap"><canvas id="asteroidCanvas"></canvas></div>
     </div>
   </div>
   <div class="hero__scroll" aria-hidden="true">
@@ -3164,7 +3163,7 @@ function initHeroTitle(){
 }
 
 /* =====================================================================
-   8. HERO — CANVAS STARFIELD w/ PARALLAX
+   8. HERO — CANVAS STARFIELD w/ PARALLAX, CLUSTERS, NOVAE, COMET, WARP
 ===================================================================== */
 (function starfield(){
   const canvas = document.getElementById("starCanvas");
@@ -3174,6 +3173,32 @@ function initHeroTitle(){
   let stars = [];
   let mx = 0.5, my = 0.5;
   let tmx = 0.5, tmy = 0.5;
+  let seed = 1337;
+  function rand(){ seed = (seed*9301+49297)%233280; return seed/233280; }
+  function gauss(){ return (rand()+rand()+rand()+rand()-2)/2; } // ~N(0,1)-ish, bounded
+
+  // Comet: a bright point that slowly crosses the field, trailing a fading tail.
+  const comet = { active:false, x:0, y:0, vx:0, vy:0, trail:[], cooldown: 2 };
+  function launchComet(){
+    const fromLeft = rand() < 0.5;
+    comet.x = fromLeft ? -40 : w+40;
+    comet.y = h * (0.1 + rand()*0.5);
+    const speed = 55 + rand()*35; // px/s
+    comet.vx = fromLeft ? speed : -speed;
+    comet.vy = speed * (0.18 + rand()*0.2);
+    comet.trail = [];
+    comet.active = true;
+  }
+
+  // Rare novae: a handful of stars occasionally flare bright then fade.
+  let novae = []; // { idx, t, dur }
+
+  // Scroll-velocity tracking for the warp-stretch effect (reads the shared
+  // ScrollRig's real scroll value rather than adding a second listener).
+  let lastScrollY = 0;
+  let scrollVel = 0; // px/s, smoothed
+
+  let staticPainted = false;
 
   function resize(){
     dpr = Math.min(window.devicePixelRatio||1, 2);
@@ -3182,13 +3207,35 @@ function initHeroTitle(){
     canvas.style.width = w+"px"; canvas.style.height = h+"px";
     ctx.setTransform(dpr,0,0,dpr,0,0);
     const count = Math.floor((w*h)/3200);
-    stars = Array.from({length: count}, () => ({
-      x: Math.random()*w,
-      y: Math.random()*h,
-      z: Math.random()*0.8 + 0.2,
-      r: Math.random()*1.4 + 0.3,
-      tw: Math.random()*Math.PI*2
+
+    // A handful of cluster centers; most stars are biased toward them with
+    // gaussian-ish falloff, blended with a baseline of uniformly-scattered
+    // stars so the field still reads as a natural sky, not just blobs.
+    const clusterCount = 4 + Math.floor(rand()*3);
+    const clusters = Array.from({length: clusterCount}, () => ({
+      x: rand()*w, y: rand()*h, radius: Math.min(w,h) * (0.12 + rand()*0.16)
     }));
+
+    stars = Array.from({length: count}, (_, i) => {
+      let x, y;
+      if(clusters.length && rand() < 0.68){
+        const c = clusters[Math.floor(rand()*clusters.length)];
+        x = c.x + gauss()*c.radius;
+        y = c.y + gauss()*c.radius;
+      } else {
+        x = rand()*w; y = rand()*h;
+      }
+      return {
+        x: Math.min(w, Math.max(0,x)),
+        y: Math.min(h, Math.max(0,y)),
+        z: rand()*0.8 + 0.2,
+        r: rand()*1.4 + 0.3,
+        tw: rand()*Math.PI*2
+      };
+    });
+    novae = [];
+    staticPainted = false;
+    lastScrollY = window.scrollY || 0;
   }
   window.addEventListener("resize", resize);
   resize();
@@ -3200,70 +3247,376 @@ function initHeroTitle(){
 
   const vis = observeVisible(hero, { threshold: 0 });
 
-  Ticker.add(function starfieldTick(dt, t){
-    if(!vis.visible) return;
-    mx = lerp(mx, tmx, 0.04);
-    my = lerp(my, tmy, 0.04);
+  function drawFrame(t, dt, animate){
     ctx.clearRect(0,0,w,h);
-    ctx.fillStyle = "rgba(0,0,0,0)";
-    stars.forEach(s => {
+
+    // scroll-velocity → warp stretch amount (frozen under reduced motion)
+    let stretch = 0;
+    if(animate){
+      const realY = (typeof ScrollRig !== "undefined") ? ScrollRig.real() : (window.scrollY||0);
+      const dtS = Math.max(dt,1)/1000;
+      const instVel = (realY - lastScrollY) / dtS;
+      lastScrollY = realY;
+      scrollVel = lerp(scrollVel, instVel, 0.35);
+      stretch = Math.min(Math.abs(scrollVel) * 0.12, 26);
+    }
+    const dir = scrollVel < 0 ? -1 : 1;
+
+    stars.forEach((s, i) => {
       const px = s.x + (mx-0.5) * 60 * s.z;
       const py = s.y + (my-0.5) * 40 * s.z;
-      const flicker = 0.55 + Math.sin(t*0.0015 + s.tw) * 0.45;
-      ctx.beginPath();
-      ctx.arc(px, py, s.r * s.z * 1.6, 0, Math.PI*2);
+      const flicker = animate ? 0.55 + Math.sin(t*0.0015 + s.tw) * 0.45 : 1;
+      let rad = s.r * s.z * 1.6;
+      let alphaBoost = 1;
+      if(animate){
+        const nova = novae.find(n => n.idx === i);
+        if(nova){
+          const p = nova.t / nova.dur;
+          alphaBoost = 1 + Math.max(0, Math.sin(p*Math.PI)) * 4.5;
+          rad *= 1 + Math.max(0, Math.sin(p*Math.PI)) * 1.8;
+        }
+      }
       const cyanMix = s.z > 0.75;
-      ctx.fillStyle = cyanMix
-        ? `rgba(0,229,255,${0.5*flicker})`
-        : `rgba(237,239,244,${0.65*flicker*s.z})`;
-      ctx.fill();
+      const baseAlpha = (cyanMix ? 0.5 : 0.65*s.z) * flicker * alphaBoost;
+      const color = cyanMix ? `0,229,255` : `237,239,244`;
+
+      if(stretch > 1.2){
+        ctx.strokeStyle = `rgba(${color},${Math.min(baseAlpha,1)})`;
+        ctx.lineWidth = Math.max(rad, 0.6);
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(px, py - stretch*dir);
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.arc(px, py, rad, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(${color},${Math.min(baseAlpha,1)})`;
+        ctx.fill();
+      }
     });
+
+    if(animate && comet.active){
+      comet.trail.push({x:comet.x, y:comet.y, a:1});
+      if(comet.trail.length > 26) comet.trail.shift();
+      ctx.save();
+      for(let i=0;i<comet.trail.length;i++){
+        const p = comet.trail[i];
+        const a = (i/comet.trail.length) * 0.55;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 1.6 * (i/comet.trail.length), 0, Math.PI*2);
+        ctx.fillStyle = `rgba(0,229,255,${a})`;
+        ctx.fill();
+      }
+      ctx.beginPath();
+      ctx.arc(comet.x, comet.y, 2.2, 0, Math.PI*2);
+      ctx.fillStyle = "rgba(255,255,255,0.95)";
+      ctx.shadowColor = "rgba(0,229,255,0.9)";
+      ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  Ticker.add(function starfieldTick(dt, t){
+    if(!vis.visible) return;
+    if(reduceMotion){
+      if(staticPainted) return;
+      drawFrame(t, dt, false);
+      staticPainted = true;
+      return;
+    }
+    mx = lerp(mx, tmx, 0.04);
+    my = lerp(my, tmy, 0.04);
+
+    // rare novae: low-probability per-frame trigger, capped concurrency
+    if(novae.length < 2 && Math.random() < 0.006 && stars.length){
+      const idx = Math.floor(Math.random()*stars.length);
+      if(!novae.find(n=>n.idx===idx)) novae.push({ idx, t:0, dur: 1000 + Math.random()*900 });
+    }
+    novae.forEach(n => n.t += dt);
+    novae = novae.filter(n => n.t < n.dur);
+
+    // comet lifecycle
+    if(!comet.active){
+      comet.cooldown -= dt/1000;
+      if(comet.cooldown <= 0) launchComet();
+    } else {
+      comet.x += comet.vx * dt/1000;
+      comet.y += comet.vy * dt/1000;
+      if(comet.x < -60 || comet.x > w+60 || comet.y > h+60){
+        comet.active = false;
+        comet.cooldown = 6 + Math.random()*10;
+      }
+    }
+
+    drawFrame(t, dt, true);
   });
 })();
 
 /* =====================================================================
-   9. HERO — 3D WIREFRAME ASTEROID (CSS3D rings via SVG facets)
+   9. HERO — LIT FACETED ASTEROID (canvas, real per-face shading)
+   Converted from the earlier CSS3D wireframe to a canvas-rendered
+   faceted body so per-face lighting (normal · light-direction) and a
+   genuine terminator line are possible, plus micrometeorite impacts and
+   pointer-drag inertia. Driven entirely by the shared Ticker and gated
+   by the same hero visibility flag the starfield uses.
 ===================================================================== */
-(function asteroidWireframe(){
-  const core = document.getElementById("asteroidCore");
-  if(!core) return;
-  const NS = "http://www.w3.org/2000/svg";
-  const svg = document.createElementNS(NS, "svg");
-  svg.setAttribute("viewBox","-120 -120 240 240");
+(function asteroidBody(){
+  const wrap = document.getElementById("asteroidWrap");
+  const canvas = document.getElementById("asteroidCanvas");
+  const hero = document.getElementById("hero");
+  if(!wrap || !canvas || !hero) return;
+  const ctx = canvas.getContext("2d");
 
-  // Pseudo-random irregular polyhedron via layered rotated polygons (wireframe look)
-  const layers = 7;
-  let seed = 42;
-  function rand(){ seed = (seed*9301+49297)%233280; return seed/233280; }
-
-  for(let i=0;i<layers;i++){
-    const radius = 70 + rand()*20;
-    const points = 8;
-    const rot = (i/layers) * 180;
-    let d = "";
-    for(let p=0;p<=points;p++){
-      const ang = (p/points)*Math.PI*2;
-      const rr = radius * (0.75 + rand()*0.3);
-      const x = Math.cos(ang)*rr;
-      const y = Math.sin(ang)*rr*0.5;
-      d += (p===0 ? "M" : "L") + x.toFixed(1) + "," + y.toFixed(1) + " ";
+  // ---- procedural irregular faceted body (subdivided-octahedron-ish) ----
+  function buildBody(seedStart, baseR, jitter){
+    let s = seedStart;
+    function rand(){ s = (s*9301+49297)%233280; return s/233280; }
+    // Base: a simple 8-vertex "diamond" refined into a 12-vertex irregular
+    // polyhedron so it reads as a rock, not a gem — enough facets for
+    // visible per-face shading without heavy per-frame cost.
+    const verts = [];
+    const ringsN = 3, seg = 5;
+    verts.push([0, baseR*(1+ (rand()-0.5)*jitter), 0]); // top
+    for(let ri=1; ri<ringsN; ri++){
+      const phi = Math.PI * (ri/ringsN);
+      const ry = Math.cos(phi) * baseR;
+      const rr = Math.sin(phi) * baseR;
+      for(let sIdx=0; sIdx<seg; sIdx++){
+        const theta = (sIdx/seg)*Math.PI*2 + (ri%2)*0.3;
+        const jr = 1 + (rand()-0.5)*jitter;
+        verts.push([Math.cos(theta)*rr*jr, ry*jr, Math.sin(theta)*rr*jr]);
+      }
     }
-    d += "Z";
-    const path = document.createElementNS(NS,"path");
-    path.setAttribute("d", d);
-    path.setAttribute("fill","none");
-    path.setAttribute("stroke", i % 2 === 0 ? "#00E5FF" : "#FF2D95");
-    path.setAttribute("stroke-width","0.8");
-    path.setAttribute("opacity", (0.25 + (i/layers)*0.5).toFixed(2));
-    path.setAttribute("transform", `rotate(${rot})`);
-    svg.appendChild(path);
+    verts.push([0, -baseR*(1+ (rand()-0.5)*jitter), 0]); // bottom
+    const topIdx = 0, botIdx = verts.length-1;
+    const ring1Start = 1, ring2Start = 1+seg;
+    const faces = [];
+    for(let i=0;i<seg;i++){
+      faces.push([topIdx, ring1Start+i, ring1Start+((i+1)%seg)]);
+    }
+    for(let i=0;i<seg;i++){
+      faces.push([ring1Start+i, ring2Start+i, ring2Start+((i+1)%seg)]);
+      faces.push([ring1Start+i, ring2Start+((i+1)%seg), ring1Start+((i+1)%seg)]);
+    }
+    for(let i=0;i<seg;i++){
+      faces.push([botIdx, ring2Start+((i+1)%seg), ring2Start+i]);
+    }
+    return { verts, faces };
   }
-  const cross1 = document.createElementNS(NS,"circle");
-  cross1.setAttribute("cx",0); cross1.setAttribute("cy",0); cross1.setAttribute("r",90);
-  cross1.setAttribute("fill","none"); cross1.setAttribute("stroke","#EDEFF4"); cross1.setAttribute("stroke-width","0.4"); cross1.setAttribute("opacity","0.2");
-  svg.appendChild(cross1);
 
-  core.appendChild(svg);
+  const main = buildBody(42, 1, 0.45);
+  const moon = buildBody(917, 1, 0.35);
+
+  const lightDir = normalize3([0.55, -0.45, 0.7]);
+  function normalize3(v){
+    const len = Math.hypot(v[0],v[1],v[2]) || 1;
+    return [v[0]/len, v[1]/len, v[2]/len];
+  }
+  function sub3(a,b){ return [a[0]-b[0],a[1]-b[1],a[2]-b[2]]; }
+  function cross3(a,b){ return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]]; }
+  function dot3(a,b){ return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]; }
+  function rotateXY(v, ax, ay){
+    // rotate around X then Y
+    let [x,y,z] = v;
+    let cy=Math.cos(ax), sy=Math.sin(ax);
+    let y1 = y*cy - z*sy, z1 = y*sy + z*cy;
+    let cx=Math.cos(ay), sx=Math.sin(ay);
+    let x2 = x*cx + z1*sx, z2 = -x*sx + z1*cx;
+    return [x2, y1, z2];
+  }
+
+  // ---- state ----
+  let w=0, h=0, dpr=1;
+  let pitch = 0.28, yaw = 0.4;           // main body orientation
+  let yawVel = reduceMotion ? 0 : 0.22;  // idle ambient spin (rad/s)
+  let pitchVel = 0;
+  const idleYawVel = reduceMotion ? 0 : 0.22;
+  let dragging = false;
+  let lastPointer = null;
+  let recentDelta = { yaw:0, pitch:0, dt:16 };
+  let moonPhase = 0;
+
+  let impactTimer = reduceMotion ? Infinity : 1.2 + Math.random()*2;
+  let impacts = []; // { face-space point [x,y,z], t, dur, particles:[...] }
+
+  function resize(){
+    dpr = Math.min(window.devicePixelRatio||1, 2);
+    w = wrap.clientWidth || 1; h = wrap.clientHeight || 1;
+    canvas.width = w*dpr; canvas.height = h*dpr;
+    canvas.style.width = w+"px"; canvas.style.height = h+"px";
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  function projectedFaces(body, ax, ay, scale, cx, cy){
+    const rv = body.verts.map(v => rotateXY(v, ax, ay));
+    const out = body.faces.map(f => {
+      const p0=rv[f[0]], p1=rv[f[1]], p2=rv[f[2]];
+      const normal = normalize3(cross3(sub3(p1,p0), sub3(p2,p0)));
+      const avgZ = (p0[2]+p1[2]+p2[2])/3;
+      return { p0,p1,p2, normal, avgZ };
+    }).filter(f => f.normal[2] > 0.02); // backface cull (camera looks along -Z)
+    out.sort((a,b) => a.avgZ - b.avgZ);
+    return out.map(f => ({
+      pts: [f.p0,f.p1,f.p2].map(p => [cx + p[0]*scale, cy - p[1]*scale]),
+      normal: f.normal,
+      centroid: [(f.p0[0]+f.p1[0]+f.p2[0])/3, (f.p0[1]+f.p1[1]+f.p2[1])/3, (f.p0[2]+f.p1[2]+f.p2[2])/3]
+    }));
+  }
+
+  function shade(normal, tintCyan){
+    const b = Math.max(0, dot3(normal, lightDir)); // 0 (terminator/night) .. 1 (lit)
+    const ambient = 0.12;
+    const lit = Math.min(1, ambient + b*0.95);
+    const dark = [16,18,26];
+    const bright = tintCyan ? [90,220,240] : [255,150,210];
+    const r = dark[0] + (bright[0]-dark[0])*lit;
+    const g = dark[1] + (bright[1]-dark[1])*lit;
+    const bch = dark[2] + (bright[2]-dark[2])*lit;
+    return `rgb(${r|0},${g|0},${bch|0})`;
+  }
+
+  function spawnImpact(faces){
+    if(!faces.length) return;
+    const f = faces[Math.floor(Math.random()*faces.length)];
+    const particles = Array.from({length: 5+Math.floor(Math.random()*4)}, () => {
+      const ang = Math.random()*Math.PI*2;
+      const speed = 18 + Math.random()*30;
+      return { x:0, y:0, vx: Math.cos(ang)*speed, vy: Math.sin(ang)*speed, t:0 };
+    });
+    impacts.push({ x: f.pts[0][0]*0.34+f.pts[1][0]*0.33+f.pts[2][0]*0.33,
+                    y: f.pts[0][1]*0.34+f.pts[1][1]*0.33+f.pts[2][1]*0.33,
+                    t:0, dur: 380+Math.random()*260, particles });
+  }
+
+  function draw(dt, animate){
+    ctx.clearRect(0,0,w,h);
+    const cx = w/2, cy = h/2;
+    const scale = Math.min(w,h) * 0.40;
+
+    // background drifting body (smaller, dimmer, slow parallax)
+    moonPhase += animate ? dt*0.00018 : 0;
+    const moonFaces = projectedFaces(moon, 0.5, moonPhase*4, scale*0.32,
+      cx + Math.sin(moonPhase)*w*0.34, cy + Math.cos(moonPhase*0.7)*h*0.22 - h*0.12);
+    ctx.globalAlpha = 0.55;
+    moonFaces.forEach(f => {
+      ctx.beginPath();
+      ctx.moveTo(f.pts[0][0], f.pts[0][1]);
+      ctx.lineTo(f.pts[1][0], f.pts[1][1]);
+      ctx.lineTo(f.pts[2][0], f.pts[2][1]);
+      ctx.closePath();
+      ctx.fillStyle = shade(f.normal, false);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+
+    // main body
+    const faces = projectedFaces(main, pitch, yaw, scale, cx, cy);
+    faces.forEach(f => {
+      ctx.beginPath();
+      ctx.moveTo(f.pts[0][0], f.pts[0][1]);
+      ctx.lineTo(f.pts[1][0], f.pts[1][1]);
+      ctx.lineTo(f.pts[2][0], f.pts[2][1]);
+      ctx.closePath();
+      ctx.fillStyle = shade(f.normal, true);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(0,0,0,0.25)";
+      ctx.lineWidth = 0.6;
+      ctx.stroke();
+    });
+
+    // micrometeorite impacts: periodic strikes + brief ejecta burst
+    if(animate){
+      impactTimer -= dt/1000;
+      if(impactTimer <= 0 && faces.length){
+        spawnImpact(faces);
+        impactTimer = 1.4 + Math.random()*2.4;
+      }
+      impacts.forEach(im => im.t += dt);
+      impacts = impacts.filter(im => im.t < im.dur);
+    }
+    impacts.forEach(im => {
+      const p = im.t/im.dur;
+      ctx.beginPath();
+      ctx.arc(im.x, im.y, 3.5*(1-p), 0, Math.PI*2);
+      ctx.fillStyle = `rgba(255,220,150,${Math.max(0,1-p*1.3)})`;
+      ctx.fill();
+      im.particles.forEach(pt => {
+        pt.x += pt.vx * (dt/1000);
+        pt.y += pt.vy * (dt/1000);
+        ctx.beginPath();
+        ctx.arc(im.x+pt.x, im.y+pt.y, 1.1*(1-p), 0, Math.PI*2);
+        ctx.fillStyle = `rgba(255,180,120,${Math.max(0,0.9-p)})`;
+        ctx.fill();
+      });
+    });
+  }
+
+  const vis = observeVisible(hero, { threshold: 0 });
+  let staticPainted = false;
+
+  Ticker.add(function asteroidTick(dt, t){
+    if(!vis.visible) return;
+    if(reduceMotion){
+      if(staticPainted && !dragging) return;
+      draw(dt, false);
+      staticPainted = true;
+      return;
+    }
+    if(!dragging){
+      // decay fling velocity back toward the idle ambient spin rate
+      const tau = 1400; // ms
+      const k = 1 - Math.exp(-dt/tau);
+      yawVel = lerp(yawVel, idleYawVel, k);
+      pitchVel = lerp(pitchVel, 0, k);
+      yaw += yawVel * dt/1000;
+      pitch += pitchVel * dt/1000;
+    }
+    draw(dt, true);
+  });
+
+  // ---- pointer-drag interaction (Pointer Events, real inertia on release) ----
+  canvas.addEventListener("pointerdown", (e) => {
+    dragging = true;
+    wrap.classList.add("is-dragging");
+    lastPointer = { x:e.clientX, y:e.clientY, t:performance.now() };
+    recentDelta = { yaw:0, pitch:0, dt:16 };
+    try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
+  });
+  canvas.addEventListener("pointermove", (e) => {
+    if(!dragging || !lastPointer) return;
+    const now = performance.now();
+    const dx = e.clientX - lastPointer.x;
+    const dy = e.clientY - lastPointer.y;
+    const dtms = Math.max(now - lastPointer.t, 1);
+    const dYaw = dx * 0.012;
+    const dPitch = dy * 0.010;
+    yaw += dYaw;
+    pitch += dPitch;
+    recentDelta = { yaw: dYaw, pitch: dPitch, dt: dtms };
+    lastPointer = { x:e.clientX, y:e.clientY, t:now };
+    if(reduceMotion) draw(16, false);
+  });
+  function endDrag(e){
+    if(!dragging) return;
+    dragging = false;
+    wrap.classList.remove("is-dragging");
+    if(!reduceMotion){
+      // fling: convert last drag delta into angular velocity (rad/s)
+      const f = 1000/Math.max(recentDelta.dt,1);
+      yawVel = clamp(recentDelta.yaw * f, -6, 6);
+      pitchVel = clamp(recentDelta.pitch * f, -6, 6);
+    }
+    lastPointer = null;
+  }
+  canvas.addEventListener("pointerup", endDrag);
+  canvas.addEventListener("pointercancel", endDrag);
+  canvas.addEventListener("pointerleave", (e) => { if(e.pointerType !== "touch") endDrag(e); });
+
+  draw(16, false);
 })();
 
 /* =====================================================================
