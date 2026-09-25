@@ -1136,6 +1136,104 @@ section{
 }
 .field select{ cursor:pointer; }
 
+.field__err{
+  display:block;
+  max-height:0;
+  overflow:hidden;
+  opacity:0;
+  color: var(--amber);
+  font-family: ui-monospace, monospace;
+  font-size: 11.5px;
+  letter-spacing:.03em;
+  line-height:1.6;
+  transition: max-height .25s var(--ease-out), opacity .2s;
+}
+.field.has-error .field__err{
+  max-height: 40px;
+  opacity:1;
+  margin-top: 4px;
+}
+.field.has-error input, .field.has-error textarea, .field.has-error select{
+  border-bottom-color: var(--amber);
+}
+.field.has-error.is-focus::after, .field.has-error::after{
+  background: var(--amber);
+  box-shadow: 0 0 10px rgba(255,176,32,0.35);
+}
+
+.contact__progress{
+  display:flex;
+  align-items:center;
+  gap: 14px;
+  margin: -6px 0 26px;
+}
+.contact__progress-bar{
+  flex:1 1 auto;
+  display:flex;
+  gap: 4px;
+  height: 3px;
+}
+.contact__progress-seg{
+  flex:1 1 0;
+  background: var(--line-strong);
+  position:relative;
+  overflow:hidden;
+}
+.contact__progress-seg::after{
+  content:"";
+  position:absolute; inset:0;
+  background: linear-gradient(90deg,var(--cyan),var(--magenta));
+  transform: scaleX(0);
+  transform-origin:left;
+  transition: transform .35s var(--ease-out);
+}
+.contact__progress-seg.is-done::after{ transform: scaleX(1); }
+.contact__progress-label{
+  flex:none;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing:.08em;
+  color: var(--ink-faint);
+  white-space:nowrap;
+}
+
+.form-packet{
+  display:none;
+  flex-direction:column;
+  gap: 8px;
+  margin-top: 20px;
+  padding: 18px 22px;
+  border: 1px solid var(--line-strong);
+}
+.form-packet.is-shown{ display:flex; }
+.form-packet__row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing:.04em;
+  color: var(--ink-dim);
+}
+.form-packet__row.is-active{ color: var(--cyan); }
+.form-packet__row.is-done{ color: var(--ok); }
+.form-packet__bar{
+  height: 2px;
+  background: var(--line-strong);
+  overflow:hidden;
+}
+.form-packet__bar-fill{
+  height:100%;
+  width:0%;
+  background: linear-gradient(90deg,var(--cyan),var(--magenta));
+  transition: width .3s var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce){
+  .field__err{ transition:none; }
+  .contact__progress-seg::after{ transition:none; }
+  .form-packet__bar-fill{ transition:none; }
+}
+
 .btn{
   position:relative;
   display:inline-flex;
@@ -2909,16 +3007,27 @@ html[data-emergency="true"] #emergencyToggle{
       </div>
 
       <form class="contact__form" id="contactForm" data-reveal="right" novalidate>
+        <div class="contact__progress">
+          <div class="contact__progress-bar" id="formProgressBar">
+            <span class="contact__progress-seg"></span>
+            <span class="contact__progress-seg"></span>
+            <span class="contact__progress-seg"></span>
+            <span class="contact__progress-seg"></span>
+          </div>
+          <span class="contact__progress-label mono" id="formProgressLabel">0 / 4 Felder vollständig</span>
+        </div>
         <div class="field">
-          <input type="text" id="f-name" name="name" required autocomplete="name">
+          <input type="text" id="f-name" name="name" required autocomplete="name" aria-invalid="false">
           <label for="f-name">Vollständiger Name</label>
+          <small class="field__err" id="f-name-err"></small>
         </div>
         <div class="field">
-          <input type="email" id="f-email" name="email" required autocomplete="email">
+          <input type="email" id="f-email" name="email" required autocomplete="email" aria-invalid="false">
           <label for="f-email">Kontaktadresse</label>
+          <small class="field__err" id="f-email-err"></small>
         </div>
         <div class="field">
-          <select id="f-division" name="division" required>
+          <select id="f-division" name="division" required aria-invalid="false">
             <option value="" disabled selected hidden></option>
             <option value="regolith">Regolith Extraction</option>
             <option value="refinement">Isotopic Refinement</option>
@@ -2926,14 +3035,20 @@ html[data-emergency="true"] #emergencyToggle{
             <option value="sentinel">Sentinel-Netz / KI</option>
           </select>
           <label for="f-division">Gewünschte Division</label>
+          <small class="field__err" id="f-division-err"></small>
         </div>
         <div class="field">
-          <textarea id="f-msg" name="message" rows="3" required></textarea>
+          <textarea id="f-msg" name="message" rows="3" required aria-invalid="false"></textarea>
           <label for="f-msg">Qualifikation / Nachricht</label>
+          <small class="field__err" id="f-msg-err"></small>
         </div>
         <button type="submit" class="btn btn-submit" id="submitBtn" data-magnetic>
           <span>Bewerbung übermitteln</span>
         </button>
+        <div class="form-packet" id="formPacket" role="status" aria-live="polite">
+          <div class="form-packet__row"><span id="formPacketLabel">Paket 1/6 übertragen…</span></div>
+          <div class="form-packet__bar"><div class="form-packet__bar-fill" id="formPacketFill"></div></div>
+        </div>
         <div class="form-success" id="formSuccess" role="status">
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="10" stroke="currentColor" stroke-width="1.4"/><path d="M6 11 L9.5 14.5 L16 7" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
           <span>Übermittelt. Das Sentinel-Netz hat Ihre Bewerbung registriert.</span>
@@ -5170,32 +5285,152 @@ document.querySelectorAll(".btn").forEach(btn => {
 (function contactForm(){
   const form = document.getElementById("contactForm");
   if(!form) return;
-  form.querySelectorAll(".field").forEach(field => {
+
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const MSG_MIN = 10;
+
+  function validators(name, val){
+    switch(name){
+      case "name":
+        return val.trim().length > 0 ? "" : "Bitte einen Namen angeben.";
+      case "email":
+        if(!val.trim()) return "Bitte eine Kontaktadresse angeben.";
+        return EMAIL_RE.test(val.trim()) ? "" : "Adresse hat kein gültiges Format.";
+      case "division":
+        return val ? "" : "Bitte eine Division auswählen.";
+      case "message":
+        return val.trim().length >= MSG_MIN ? "" : `Mindestens ${MSG_MIN} Zeichen erforderlich.`;
+      default:
+        return "";
+    }
+  }
+
+  const fieldEls = Array.from(form.querySelectorAll(".field")).map(field => {
     const input = field.querySelector("input, textarea, select");
-    if(!input) return;
-    function sync(){
-      field.classList.toggle("is-filled", !!input.value);
+    const errEl = field.querySelector(".field__err");
+    return { field, input, errEl };
+  }).filter(f => f.input);
+
+  const progressBar = document.getElementById("formProgressBar");
+  const progressLabel = document.getElementById("formProgressLabel");
+  const progressSegs = progressBar ? Array.from(progressBar.querySelectorAll(".contact__progress-seg")) : [];
+
+  function isValid(input){
+    return validators(input.name, input.value) === "";
+  }
+
+  function showError(entry, msg){
+    const { field, input, errEl } = entry;
+    if(msg){
+      field.classList.add("has-error");
+      input.setAttribute("aria-invalid", "true");
+      if(errEl){
+        errEl.textContent = msg;
+        input.setAttribute("aria-describedby", errEl.id);
+      }
+    } else {
+      field.classList.remove("has-error");
+      input.setAttribute("aria-invalid", "false");
+      if(errEl){
+        errEl.textContent = "";
+        input.removeAttribute("aria-describedby");
+      }
+    }
+  }
+
+  function updateProgress(){
+    const validCount = fieldEls.filter(f => isValid(f.input)).length;
+    const total = fieldEls.length;
+    progressSegs.forEach((seg, i) => seg.classList.toggle("is-done", i < validCount));
+    if(progressLabel) progressLabel.textContent = `${validCount} / ${total} Felder vollständig`;
+    return validCount === total;
+  }
+
+  fieldEls.forEach(entry => {
+    const { field, input } = entry;
+    function sync(){ field.classList.toggle("is-filled", !!input.value); }
+    function revalidateLive(){
+      // Live-clear on input; only show a NEW error once the field already
+      // carries one, so we don't scold the user before they've finished typing.
+      if(field.classList.contains("has-error")){
+        showError(entry, validators(input.name, input.value));
+      }
+      updateProgress();
     }
     input.addEventListener("focus", () => field.classList.add("is-focus"));
-    input.addEventListener("blur", () => { field.classList.remove("is-focus"); sync(); });
-    input.addEventListener("input", sync);
-    input.addEventListener("change", sync);
+    input.addEventListener("blur", () => {
+      field.classList.remove("is-focus");
+      sync();
+      showError(entry, validators(input.name, input.value));
+      updateProgress();
+    });
+    input.addEventListener("input", () => { sync(); revalidateLive(); });
+    input.addEventListener("change", () => { sync(); revalidateLive(); });
     sync();
   });
+  updateProgress();
+
+  const PACKET_COUNT = 6;
+  const PACKET_STEP_MS = reduceMotion ? 120 : 320;
+
+  function runPacketSequence(onDone){
+    const packet = document.getElementById("formPacket");
+    const label = document.getElementById("formPacketLabel");
+    const fill = document.getElementById("formPacketFill");
+    if(!packet || !label || !fill){ onDone(); return; }
+    packet.classList.add("is-shown");
+    let step = 0;
+    function tick(){
+      step++;
+      label.textContent = `Paket ${step}/${PACKET_COUNT} übertragen…`;
+      fill.style.width = `${(step / PACKET_COUNT) * 100}%`;
+      if(step < PACKET_COUNT){
+        setTimeout(tick, PACKET_STEP_MS);
+      } else {
+        setTimeout(() => {
+          packet.classList.remove("is-shown");
+          fill.style.width = "0%";
+          onDone();
+        }, PACKET_STEP_MS);
+      }
+    }
+    tick();
+  }
 
   form.addEventListener("submit", e => {
     e.preventDefault();
     const btn = document.getElementById("submitBtn");
     const success = document.getElementById("formSuccess");
+
+    let firstInvalid = null;
+    fieldEls.forEach(entry => {
+      const msg = validators(entry.input.name, entry.input.value);
+      showError(entry, msg);
+      if(msg && !firstInvalid) firstInvalid = entry;
+    });
+    updateProgress();
+
+    if(firstInvalid){
+      // Explicit result of the submit click — focusing here is fine.
+      firstInvalid.input.focus();
+      return;
+    }
+
     btn.disabled = true;
     btn.querySelector("span").textContent = "Übertrage…";
-    setTimeout(() => {
+    success.classList.remove("is-shown");
+
+    runPacketSequence(() => {
       btn.querySelector("span").textContent = "Bewerbung übermitteln";
       btn.disabled = false;
       success.classList.add("is-shown");
       form.reset();
-      form.querySelectorAll(".field").forEach(f => f.classList.remove("is-filled","is-focus"));
-    }, 900);
+      fieldEls.forEach(entry => {
+        entry.field.classList.remove("is-filled", "is-focus");
+        showError(entry, "");
+      });
+      updateProgress();
+    });
   });
 })();
 
