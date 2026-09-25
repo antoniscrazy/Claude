@@ -1255,6 +1255,268 @@ section{
 @media (max-width: 900px){
   .sectionnav{ display:none; }
 }
+
+/* =====================================================================
+   18. LIVE-KOMMANDOBRÜCKE — dashboard tiles
+===================================================================== */
+.bridge{ padding-bottom: 110px; }
+.bridge__grid{
+  display:grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: var(--grid-gap);
+}
+.tile{
+  border: 1px solid var(--line);
+  background: var(--bg-elevated);
+  padding: 22px 22px 18px;
+  display:flex;
+  flex-direction:column;
+}
+.tile__head{
+  display:flex; justify-content:space-between; align-items:baseline;
+  margin-bottom: 14px;
+  gap: 10px;
+}
+.tile__label{ margin:0; }
+.tile__readout{
+  font-family: ui-monospace, monospace;
+  font-size: 20px;
+  font-weight:700;
+  font-variant-numeric: tabular-nums;
+  color: var(--cyan);
+}
+.tile__readout .unit{ font-size:11px; color: var(--ink-faint); font-weight:400; margin-left:2px; }
+.tile__canvas-wrap{
+  position:relative;
+  width:100%;
+  aspect-ratio: 16/10;
+  border: 1px solid var(--line);
+  background: var(--bg-soft);
+  overflow:hidden;
+}
+.tile__canvas-wrap canvas{ display:block; width:100%; height:100%; }
+.tile--rings .tile__canvas-wrap{ display:flex; align-items:center; justify-content:center; gap:10px; aspect-ratio:auto; padding:10px 4px; }
+.tile__ring{ text-align:center; }
+.tile__ring svg{ width:56px; height:56px; }
+.tile__ring circle{ fill:none; stroke-width:5; }
+.tile__ring .track{ stroke: var(--line); }
+.tile__ring .val{ stroke: var(--cyan); stroke-linecap:round; transform: rotate(-90deg); transform-origin:center; }
+.tile__ring-label{ margin-top:6px; font-family:ui-monospace,monospace; font-size:9px; color: var(--ink-faint); }
+.tile__event{
+  margin-top: 10px;
+  font-family: ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing:.04em;
+  color: var(--ink-faint);
+  min-height: 14px;
+}
+.tile__event.is-active{ color: var(--amber); }
+
+@media (max-width: 1180px){ .bridge__grid{ grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 640px){ .bridge__grid{ grid-template-columns: 1fr; } }
+
+/* =====================================================================
+   19. ORBITAL-SIMULATOR
+===================================================================== */
+.orbital{ padding-bottom: 110px; }
+.orbital__body{
+  display:grid;
+  grid-template-columns: 1fr 320px;
+  gap: var(--grid-gap);
+  align-items:start;
+}
+.orbital__stage{
+  position:relative;
+  border: 1px solid var(--line);
+  background: #000;
+  aspect-ratio: 16/10;
+  overflow:hidden;
+}
+.orbital__stage canvas{ display:block; width:100%; height:100%; cursor: grab; }
+.orbital__stage canvas:active{ cursor: grabbing; }
+.orbital__hint{
+  position:absolute; left:12px; bottom:10px;
+  font-family:ui-monospace,monospace; font-size:10px;
+  color: var(--ink-faint); background: rgba(0,0,0,.5);
+  padding: 4px 8px; pointer-events:none;
+}
+.orbital__gate{
+  position:absolute; inset:0; z-index:5;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+  background: rgba(0,0,0,.72);
+  text-align:center; padding: 24px;
+}
+.orbital__gate p{ color: var(--ink-dim); font-size:13px; max-width:32ch; margin:0; }
+.orbital__panel{
+  border: 1px solid var(--line);
+  background: var(--bg-elevated);
+  padding: 22px;
+  display:flex; flex-direction:column; gap:18px;
+}
+.orbital__control label{
+  display:flex; justify-content:space-between;
+  font-family: ui-monospace, monospace; font-size:11px;
+  color: var(--ink-dim); margin-bottom:8px; letter-spacing:.04em;
+}
+.orbital__control input[type="range"]{
+  width:100%; accent-color: var(--cyan);
+}
+.orbital__zoomrow{ display:flex; gap:8px; }
+.orbital__zoomrow button{
+  flex:1;
+  padding: 8px 0;
+  background: var(--bg-soft);
+  border:1px solid var(--line-strong);
+  color: var(--ink);
+  cursor:pointer;
+  font-family: ui-monospace, monospace;
+  font-size:14px;
+}
+.orbital__zoomrow button:hover{ border-color: var(--cyan); color: var(--cyan); }
+.orbital__toggles{ display:flex; flex-direction:column; gap:8px; }
+.orbital__toggle{
+  display:flex; align-items:center; gap:8px;
+  font-family: ui-monospace, monospace; font-size:11px;
+  color: var(--ink-dim); cursor:pointer; user-select:none;
+}
+.orbital__toggle input{ accent-color: var(--cyan); }
+.orbital__bodylist{
+  list-style:none; margin:0; padding:0;
+  display:flex; flex-direction:column; gap:4px;
+  max-height:180px; overflow-y:auto;
+}
+.orbital__bodylist button{
+  width:100%; text-align:left;
+  background:transparent; border:1px solid transparent;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-dim);
+  padding:8px 4px;
+  font-family: ui-monospace, monospace; font-size:11px;
+  cursor:pointer;
+  transition: color .2s, border-color .2s;
+}
+.orbital__bodylist button:hover, .orbital__bodylist button.is-selected{ color: var(--cyan); border-color: var(--cyan-dim); }
+.orbital__datasheet{
+  border-top: 1px solid var(--line);
+  padding-top:16px;
+  font-family: ui-monospace, monospace;
+  font-size:11.5px;
+  color: var(--ink-dim);
+  display:none;
+}
+.orbital__datasheet.is-shown{ display:block; }
+.orbital__datasheet h4{ margin:0 0 8px; color: var(--ink); font-family:inherit; font-size:14px; }
+.orbital__datasheet .row{ display:flex; justify-content:space-between; padding:4px 0; }
+.orbital__datasheet .row b{ color: var(--cyan); font-weight:600; }
+
+@media (max-width: 1080px){
+  .orbital__body{ grid-template-columns: 1fr; }
+}
+
+/* =====================================================================
+   20. FRACHTER-KONFIGURATOR
+===================================================================== */
+.configurator{ padding-bottom: 120px; }
+.configurator__body{
+  display:grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: var(--grid-gap);
+  align-items:start;
+}
+.configurator__svg-wrap{
+  border: 1px solid var(--line);
+  background: var(--bg-elevated);
+  padding: 20px;
+  position:relative;
+}
+.configurator__svg-wrap svg{ width:100%; height:auto; overflow:visible; }
+.hotspot{ cursor:pointer; }
+.hotspot rect, .hotspot ellipse, .hotspot path.hs-shape{
+  fill: rgba(0,229,255,0.05);
+  stroke: var(--line-strong);
+  stroke-width:1;
+  transition: fill .25s, stroke .25s;
+}
+.hotspot:hover rect, .hotspot:hover ellipse, .hotspot:hover path.hs-shape,
+.hotspot:focus-visible rect, .hotspot:focus-visible ellipse, .hotspot:focus-visible path.hs-shape{
+  stroke: var(--cyan);
+}
+.hotspot.is-selected rect, .hotspot.is-selected ellipse, .hotspot.is-selected path.hs-shape{
+  fill: rgba(0,229,255,0.16);
+  stroke: var(--cyan);
+  filter: drop-shadow(0 0 6px var(--cyan-dim));
+}
+.hotspot text{
+  fill: var(--ink-dim);
+  font-family: ui-monospace, monospace;
+  font-size: 8.5px;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  pointer-events:none;
+}
+.hotspot.is-selected text{ fill: var(--cyan); }
+.hs-line{
+  stroke: var(--cyan);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity:0;
+  transition: opacity .3s;
+  pointer-events:none;
+}
+.hs-line.is-shown{ opacity: .8; }
+.hs-callout{
+  fill: var(--cyan);
+  font-family: ui-monospace, monospace;
+  font-size: 9px;
+  opacity:0;
+  transition: opacity .3s;
+  pointer-events:none;
+}
+.hs-callout.is-shown{ opacity:1; }
+
+.configurator__panel{
+  border: 1px solid var(--line);
+  background: var(--bg-elevated);
+  padding: 26px;
+}
+.configurator__panel h3{ margin:0 0 6px; font-size:20px; }
+.configurator__panel .sub{ color: var(--ink-faint); font-family:ui-monospace,monospace; font-size:11px; margin:0 0 22px; }
+.configurator__slider{ margin-bottom: 24px; }
+.configurator__slider label{
+  display:flex; justify-content:space-between;
+  font-family: ui-monospace, monospace; font-size:11px;
+  color: var(--ink-dim); margin-bottom:10px; letter-spacing:.04em;
+}
+.configurator__slider input[type="range"]{ width:100%; accent-color: var(--cyan); }
+.spec-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 18px;
+  margin-bottom: 20px;
+}
+.spec{
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+.spec__label{ font-family: ui-monospace, monospace; font-size:10px; color: var(--ink-faint); letter-spacing:.06em; text-transform:uppercase; }
+.spec__val{ font-family: ui-monospace, monospace; font-size:19px; font-weight:700; color: var(--ink); margin-top:4px; font-variant-numeric: tabular-nums; }
+.spec__val .u{ font-size:10px; color: var(--ink-faint); font-weight:400; margin-left:3px; }
+.configurator__warning{
+  border: 1px solid var(--ok);
+  color: var(--ok);
+  font-family: ui-monospace, monospace;
+  font-size: 11.5px;
+  padding: 12px 14px;
+  transition: border-color .3s, color .3s;
+}
+.configurator__warning.is-late{
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+@media (max-width: 980px){
+  .configurator__body{ grid-template-columns:1fr; }
+}
 </style>
 </head>
 <body>
@@ -1298,6 +1560,9 @@ section{
   <ul class="nav__links">
     <li><a href="#divisions">Divisionen</a></li>
     <li><a href="#starmap">Standorte</a></li>
+    <li><a href="#bridge">Kommandobrücke</a></li>
+    <li><a href="#orbital">Orbital-Sim</a></li>
+    <li><a href="#configurator">Konfigurator</a></li>
     <li><a href="#tech">Technologie</a></li>
     <li><a href="#timeline">Historie</a></li>
     <li><a href="#team">Kommando</a></li>
@@ -1316,10 +1581,13 @@ section{
 <nav class="mobile-overlay" id="mobileOverlay" aria-label="Mobile Navigation">
   <a href="#divisions">01 · Divisionen</a>
   <a href="#starmap">02 · Standorte</a>
-  <a href="#tech">03 · Technologie</a>
-  <a href="#timeline">04 · Historie</a>
-  <a href="#team">05 · Kommando</a>
-  <a href="#contact">06 · Rekrutierung</a>
+  <a href="#bridge">03 · Kommandobrücke</a>
+  <a href="#orbital">04 · Orbital-Sim</a>
+  <a href="#configurator">05 · Konfigurator</a>
+  <a href="#tech">06 · Technologie</a>
+  <a href="#timeline">07 · Historie</a>
+  <a href="#team">08 · Kommando</a>
+  <a href="#contact">09 · Rekrutierung</a>
 </nav>
 
 <nav class="sectionnav" id="sectionNav" role="navigation" aria-label="Sektionen"></nav>
@@ -1461,12 +1729,198 @@ section{
 </section>
 
 <!-- ===================================================================
+     BRIDGE — LIVE-KOMMANDOBRÜCKE
+=================================================================== -->
+<section id="bridge" class="bridge" aria-label="Live-Kommandobrücke">
+  <div class="wrap">
+    <div class="section-head" data-reveal>
+      <div>
+        <span class="section-num mono">03 / KOMMANDOBRÜCKE</span>
+        <h2>Sechs Systeme. <br>Eine Momentaufnahme.</h2>
+      </div>
+      <p style="max-width:34ch; color:var(--ink-dim); font-size:14.5px; line-height:1.6;">Live-Telemetrie eines repräsentativen Schleppers der Deep-Tug-Flotte — Reaktor, Vorräte, Kurs und Habitat in Echtzeit.</p>
+    </div>
+
+    <div class="bridge__grid">
+      <article class="tile" data-reveal="scale">
+        <div class="tile__head">
+          <span class="label tile__label">Reaktorlast</span>
+          <span class="tile__readout" id="bReactorNum">—<span class="unit">%</span></span>
+        </div>
+        <div class="tile__canvas-wrap"><canvas id="bReactorCanvas"></canvas></div>
+        <div class="tile__event mono" id="bReactorEvent"></div>
+      </article>
+
+      <article class="tile" data-reveal="scale" style="transition-delay:.05s">
+        <div class="tile__head">
+          <span class="label tile__label">Treibstoffreserve</span>
+          <span class="tile__readout" id="bFuelNum">—<span class="unit">%</span></span>
+        </div>
+        <div class="tile__canvas-wrap"><canvas id="bFuelCanvas"></canvas></div>
+        <div class="tile__event mono" id="bFuelEvent"></div>
+      </article>
+
+      <article class="tile" data-reveal="scale" style="transition-delay:.1s">
+        <div class="tile__head">
+          <span class="label tile__label">Funkverkehr</span>
+          <span class="tile__readout" id="bRadioNum">—<span class="unit">kbps</span></span>
+        </div>
+        <div class="tile__canvas-wrap"><canvas id="bRadioCanvas"></canvas></div>
+        <div class="tile__event mono" id="bRadioEvent"></div>
+      </article>
+
+      <article class="tile" data-reveal="scale" style="transition-delay:.15s">
+        <div class="tile__head">
+          <span class="label tile__label">Kursabweichung</span>
+          <span class="tile__readout" id="bCourseNum">—<span class="unit">mrad</span></span>
+        </div>
+        <div class="tile__canvas-wrap"><canvas id="bCourseCanvas"></canvas></div>
+        <div class="tile__event mono" id="bCourseEvent"></div>
+      </article>
+
+      <article class="tile tile--rings" data-reveal="scale" style="transition-delay:.2s">
+        <div class="tile__head">
+          <span class="label tile__label">Habitat-Stützsysteme</span>
+          <span class="tile__readout" id="bLifeNum">—<span class="unit">Ø%</span></span>
+        </div>
+        <div class="tile__canvas-wrap" id="bLifeRings"></div>
+        <div class="tile__event mono" id="bLifeEvent"></div>
+      </article>
+
+      <article class="tile" data-reveal="scale" style="transition-delay:.25s">
+        <div class="tile__head">
+          <span class="label tile__label">Frachtvolumen</span>
+          <span class="tile__readout" id="bCargoNum">—<span class="unit">%</span></span>
+        </div>
+        <div class="tile__canvas-wrap"><canvas id="bCargoCanvas"></canvas></div>
+        <div class="tile__event mono" id="bCargoEvent"></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================
+     ORBITAL — ORBITAL-SIMULATOR
+=================================================================== -->
+<section id="orbital" class="orbital" aria-label="Orbital-Simulator">
+  <div class="wrap">
+    <div class="section-head" data-reveal>
+      <div>
+        <span class="section-num mono">04 / ORBITAL-SIMULATOR</span>
+        <h2>Der Gürtel, <br>in Echtzeit propagiert.</h2>
+      </div>
+      <p style="max-width:34ch; color:var(--ink-dim); font-size:14.5px; line-height:1.6;">Reale Kepler-Bahnpropagation von Sonne, inneren Planeten, Neptun, den vier AETHERIUM-Claims und aktiven Transferschleppern.</p>
+    </div>
+
+    <div class="orbital__body">
+      <div class="orbital__stage" data-reveal="left">
+        <canvas id="orbitalCanvas" tabindex="0" role="application" aria-label="Interaktive Orbitalsimulation. Pfeiltasten zum Schwenken, Plus/Minus zum Zoomen, Tab zur Körperliste."></canvas>
+        <div class="orbital__hint">Ziehen: Schwenken · Rad: Zoom · Klick: Andocken</div>
+        <div class="orbital__gate" id="orbitalGate">
+          <span class="label">Mobil-Modus</span>
+          <p>Die Live-Simulation ist auf mobilen Geräten pausiert, um Akku zu sparen. Statische Ansicht aktiv — Körper bleiben anwählbar.</p>
+          <button class="btn" type="button" id="orbitalGateBtn"><span>Simulation aktivieren</span></button>
+        </div>
+      </div>
+
+      <div class="orbital__panel" data-reveal="right">
+        <div class="orbital__control">
+          <label for="orbitalSpeed"><span>Zeitraffer</span><span id="orbitalSpeedVal" class="mono">1×</span></label>
+          <input type="range" id="orbitalSpeed" min="0" max="4" step="0.01" value="0">
+        </div>
+        <div class="orbital__zoomrow">
+          <button type="button" id="orbitalZoomOut" aria-label="Herauszoomen">−</button>
+          <button type="button" id="orbitalZoomIn" aria-label="Hineinzoomen">+</button>
+        </div>
+        <div class="orbital__toggles">
+          <label class="orbital__toggle"><input type="checkbox" id="toggleNames" checked> Namen anzeigen</label>
+          <label class="orbital__toggle"><input type="checkbox" id="toggleOrbits" checked> Bahnpfade anzeigen</label>
+          <label class="orbital__toggle"><input type="checkbox" id="toggleSoi"> Wirkungssphären anzeigen</label>
+        </div>
+        <ul class="orbital__bodylist mono" id="orbitalBodyList" aria-label="Himmelskörper und Standorte auswählen"></ul>
+        <div class="orbital__datasheet" id="orbitalDatasheet" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================
+     CONFIGURATOR — FRACHTER-KONFIGURATOR
+=================================================================== -->
+<section id="configurator" class="configurator" aria-label="Frachter-Konfigurator">
+  <div class="wrap">
+    <div class="section-head" data-reveal>
+      <div>
+        <span class="section-num mono">05 / KONFIGURATOR</span>
+        <h2>VESPER-Klasse. <br>Modular bis zur Tsiolkovsky-Grenze.</h2>
+      </div>
+      <p style="max-width:34ch; color:var(--ink-dim); font-size:14.5px; line-height:1.6;">Modul wählen für Details, Massenverteilung verschieben — Δv, Transitzeit und Nutzlast werden live aus der Raketengleichung berechnet.</p>
+    </div>
+
+    <div class="configurator__body">
+      <div class="configurator__svg-wrap" data-reveal="left">
+        <svg id="vesperSvg" viewBox="0 0 640 260" role="img" aria-label="Schnittzeichnung des VESPER-Klasse-Frachters mit fünf wählbaren Modulen">
+          <!-- hull -->
+          <path d="M40 130 C40 90 90 60 180 55 L460 55 C540 55 590 80 610 130 C590 180 540 205 460 205 L180 205 C90 200 40 170 40 130 Z"
+                fill="none" stroke="var(--line-strong)" stroke-width="1.4"></path>
+          <path d="M180 55 L180 205 M300 60 L300 200 M420 62 L420 198" stroke="var(--line)" stroke-width="1"></path>
+
+          <g class="hotspot" id="hsAntrieb" role="button" tabindex="0" aria-label="Modul Antrieb auswählen" data-module="antrieb">
+            <path class="hs-shape" d="M470 90 C540 95 585 110 608 130 C585 150 540 165 470 170 Z"></path>
+            <text x="530" y="132" text-anchor="middle">ANTRIEB</text>
+          </g>
+          <g class="hotspot" id="hsLaderaum" role="button" tabindex="0" aria-label="Modul Laderaum auswählen" data-module="laderaum">
+            <rect class="hs-shape" x="185" y="65" width="110" height="130"></rect>
+            <text x="240" y="132" text-anchor="middle">LADERAUM</text>
+          </g>
+          <g class="hotspot" id="hsHabitat" role="button" tabindex="0" aria-label="Modul Habitat auswählen" data-module="habitat">
+            <rect class="hs-shape" x="60" y="80" width="110" height="100"></rect>
+            <text x="115" y="132" text-anchor="middle">HABITAT</text>
+          </g>
+          <g class="hotspot" id="hsReaktor" role="button" tabindex="0" aria-label="Modul Reaktor auswählen" data-module="reaktor">
+            <ellipse class="hs-shape" cx="360" cy="130" rx="52" ry="66"></ellipse>
+            <text x="360" y="132" text-anchor="middle">REAKTOR</text>
+          </g>
+          <g class="hotspot" id="hsTether" role="button" tabindex="0" aria-label="Modul Tether auswählen" data-module="tether">
+            <path class="hs-shape" d="M40 128 L4 128 M4 122 L4 134" stroke="var(--line-strong)" stroke-width="2" fill="none"></path>
+            <text x="14" y="112" text-anchor="middle">TETHER</text>
+          </g>
+
+          <line class="hs-line" id="hsLine" x1="0" y1="0" x2="0" y2="0"></line>
+          <text class="hs-callout" id="hsCallout" x="0" y="0"></text>
+        </svg>
+      </div>
+
+      <div class="configurator__panel" data-reveal="right">
+        <h3 id="configModuleTitle">Modul wählen</h3>
+        <p class="sub" id="configModuleSub">Klicken oder mit Tab/Enter ein Modul der Schnittzeichnung auswählen.</p>
+
+        <div class="configurator__slider">
+          <label for="configAlloc"><span>Massenallokation (Treibstoff ↔ Fracht)</span><span id="configAllocVal" class="mono">50 / 50</span></label>
+          <input type="range" id="configAlloc" min="0" max="100" value="50" step="1"
+                 aria-valuetext="50 Prozent Treibstoff, 50 Prozent Fracht">
+        </div>
+
+        <div class="spec-grid">
+          <div class="spec"><div class="spec__label">Startmasse</div><div class="spec__val" id="specM0">—<span class="u">t</span></div></div>
+          <div class="spec"><div class="spec__label">Δv</div><div class="spec__val" id="specDv">—<span class="u">km/s</span></div></div>
+          <div class="spec"><div class="spec__label">Transitzeit</div><div class="spec__val" id="specTransit">—<span class="u">Tage</span></div></div>
+          <div class="spec"><div class="spec__label">Nutzlast</div><div class="spec__val" id="specPayload">—<span class="u">t</span></div></div>
+        </div>
+
+        <div class="configurator__warning" id="configWarning">Nächstes Transferfenster: <b id="configWindow">—</b> Tage.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================
      5. TECHNOLOGY — horizontal scroll
 =================================================================== -->
 <section id="tech" class="tech" aria-label="Technologie">
   <div class="tech__sticky">
     <div class="tech__head wrap" data-reveal>
-      <span class="section-num mono">03 / TECHNOLOGIE</span>
+      <span class="section-num mono">06 / TECHNOLOGIE</span>
       <h2 style="font-size:clamp(28px,5vw,64px); margin:14px 0 0;">Hardware, die keine <br>Ausreden kennt.</h2>
     </div>
     <div class="tech__track" id="techTrack">
@@ -1541,7 +1995,7 @@ section{
   <div class="wrap">
     <div class="section-head" data-reveal>
       <div>
-        <span class="section-num mono">04 / HISTORIE</span>
+        <span class="section-num mono">07 / HISTORIE</span>
         <h2>46 Jahre <br>jenseits der Bahn.</h2>
       </div>
     </div>
@@ -1604,7 +2058,7 @@ section{
   <div class="wrap">
     <div class="section-head" data-reveal>
       <div>
-        <span class="section-num mono">05 / KOMMANDO</span>
+        <span class="section-num mono">08 / KOMMANDO</span>
         <h2>Die Personen, <br>die entscheiden.</h2>
       </div>
       <p style="max-width:34ch; color:var(--ink-dim); font-size:14.5px; line-height:1.6;">Sechs Kommandanten, ein Konsens: Effizienz duldet keinen Aufschub.</p>
@@ -1665,7 +2119,7 @@ section{
   <div class="wrap">
     <div class="section-head" data-reveal>
       <div>
-        <span class="section-num mono">06 / REKRUTIERUNG</span>
+        <span class="section-num mono">09 / REKRUTIERUNG</span>
         <h2>Der Gürtel wartet <br>nicht auf Zauderer.</h2>
       </div>
     </div>
@@ -2002,6 +2456,9 @@ const ScrollRig = (function(){
     { id: "stats", label: "Kennzahlen" },
     { id: "divisions", label: "Divisionen" },
     { id: "starmap", label: "Standorte" },
+    { id: "bridge", label: "Kommandobrücke" },
+    { id: "orbital", label: "Orbital-Sim" },
+    { id: "configurator", label: "Konfigurator" },
     { id: "tech", label: "Technologie" },
     { id: "timeline", label: "Historie" },
     { id: "team", label: "Kommando" },
@@ -2403,6 +2860,754 @@ function initHeroTitle(){
     });
   }, { threshold: 0.3 });
   io.observe(wrap);
+})();
+
+/* =====================================================================
+   13B. LIVE-KOMMANDOBRÜCKE — shared data stream + 6 canvas tiles
+   One module-level generator advances a handful of underlying values each
+   Ticker frame (smoothed random walk / value noise) plus occasional shared
+   "events" (load spike, course correction) that visibly affect 2+ tiles at
+   once. Each tile owns its own IntersectionObserver visibility flag and
+   skips drawing when off-screen; all draws are driven by Ticker, never by
+   a private requestAnimationFrame call.
+===================================================================== */
+const BridgeSim = (function(){
+  const reactorBase = 60;
+  let reactor = reactorBase;
+  let fuel = 76;
+  let radioBands = new Array(28).fill(0.15);
+  let courseDev = 0;
+  let life = [96, 93, 90, 88]; // O2, Druck, Temperatur, Feuchtigkeit
+  let cargo = 54;
+  let t = 0;
+  let spike = null;       // { t, dur } — reactor load spike
+  let correction = null;  // { t, dur } — course correction
+  const reactorHistory = new Array(140).fill(reactorBase);
+  const courseHistory = new Array(90).fill(0);
+
+  function clampN(v,min,max){ return Math.max(min, Math.min(max, v)); }
+  function walk(prev, drift, vol, min, max){
+    return clampN(prev + (Math.random()-0.5)*vol + drift, min, max);
+  }
+
+  function tick(dt){
+    t += dt;
+    if(!spike && Math.random() < 0.0012) spike = { t: 0, dur: 2400 + Math.random()*1800 };
+    if(!correction && Math.random() < 0.0009) correction = { t: 0, dur: 2800 + Math.random()*2200 };
+    let spikeActive = false, corrActive = false;
+    if(spike){ spike.t += dt; spikeActive = spike.t < spike.dur; if(!spikeActive) spike = null; }
+    if(correction){ correction.t += dt; corrActive = correction.t < correction.dur; if(!corrActive) correction = null; }
+
+    const reactorTarget = reactorBase + (spikeActive ? 30 * Math.sin(Math.PI * (spike.t/spike.dur)) : 0);
+    reactor = walk(reactor, (reactorTarget-reactor)*0.03, 2.4, 6, 99);
+    reactorHistory.push(reactor);
+    if(reactorHistory.length > 160) reactorHistory.shift();
+
+    const consumeRate = spikeActive ? 0.0026 : 0.0011;
+    fuel = clampN(fuel - consumeRate*dt + Math.sin(t*0.0006)*0.006, 3, 100);
+
+    const newBand = radioBands.slice(1);
+    let bandVal = Math.random()*0.55 + 0.08;
+    if(corrActive) bandVal = Math.min(1, bandVal + 0.35 + Math.random()*0.2);
+    newBand.push(bandVal);
+    radioBands = newBand;
+
+    const devTarget = corrActive ? 0.85 * Math.sin(correction.t/480) : 0;
+    courseDev = walk(courseDev, (devTarget-courseDev)*0.06, 0.04, -1, 1);
+    courseHistory.push(courseDev);
+    if(courseHistory.length > 90) courseHistory.shift();
+
+    const shared = (Math.random()-0.5) * 0.5;
+    life = life.map(v => walk(v, shared*0.6, 0.45, 68, 99));
+
+    cargo = walk(cargo, spikeActive ? -0.006 : 0.0035, 0.14, 4, 97);
+
+    events.reactor = spikeActive ? "⚠ LASTSPITZE ERKANNT" : "";
+    events.fuel = spikeActive ? "⚠ VERBRAUCH ERHÖHT" : "";
+    events.radio = corrActive ? "↳ KORREKTUR-TELEMETRIE" : "";
+    events.course = corrActive ? "⚠ KURSKORREKTUR AKTIV" : "";
+    events.life = "";
+    events.cargo = spikeActive ? "↳ LASTUMVERTEILUNG" : "";
+  }
+
+  const events = { reactor:"", fuel:"", radio:"", course:"", life:"", cargo:"" };
+  Ticker.add(tick);
+
+  return {
+    get reactor(){ return reactor; },
+    reactorHistory,
+    get fuel(){ return fuel; },
+    radioBands: () => radioBands,
+    get courseDev(){ return courseDev; },
+    courseHistory,
+    life: () => life,
+    get cargo(){ return cargo; },
+    events
+  };
+})();
+
+function setupHiDPICanvas(canvas, wrap){
+  const ctx = canvas.getContext("2d");
+  let w=0, h=0, dpr=1;
+  function resize(){
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = wrap.clientWidth; h = wrap.clientHeight;
+    if(w <= 0 || h <= 0) return;
+    canvas.width = Math.round(w*dpr); canvas.height = Math.round(h*dpr);
+    canvas.style.width = w+"px"; canvas.style.height = h+"px";
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener("resize", resize);
+  resize();
+  return { ctx, size: () => ({ w, h }), resize };
+}
+
+(function bridgeDashboard(){
+  const section = document.getElementById("bridge");
+  if(!section) return;
+
+  // -- Reaktorlast: scrolling strip-chart --------------------------------
+  (function(){
+    const canvas = document.getElementById("bReactorCanvas");
+    const wrap = canvas.closest(".tile__canvas-wrap");
+    const numEl = document.getElementById("bReactorNum");
+    const evEl = document.getElementById("bReactorEvent");
+    if(!canvas) return;
+    const cv = setupHiDPICanvas(canvas, wrap);
+    const vis = observeVisible(wrap, { threshold: 0 });
+    Ticker.add(function(){
+      if(!vis.visible) return;
+      const { ctx } = cv, { w, h } = cv.size();
+      if(w<=0) return;
+      const hist = BridgeSim.reactorHistory;
+      ctx.clearRect(0,0,w,h);
+      ctx.strokeStyle = "rgba(255,255,255,0.05)";
+      ctx.beginPath(); ctx.moveTo(0,h/2); ctx.lineTo(w,h/2); ctx.stroke();
+      ctx.beginPath();
+      const n = hist.length;
+      hist.forEach((v,i) => {
+        const x = (i/(n-1)) * w;
+        const y = h - (v/100)*h;
+        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      });
+      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--cyan').trim() || "#00E5FF";
+      ctx.lineWidth = 1.5;
+      ctx.shadowColor = "rgba(0,229,255,0.6)";
+      ctx.shadowBlur = 4;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      numEl.firstChild.textContent = BridgeSim.reactor.toFixed(0);
+      evEl.textContent = BridgeSim.events.reactor;
+      evEl.classList.toggle("is-active", !!BridgeSim.events.reactor);
+    });
+  })();
+
+  // -- Treibstoffreserve: liquid-level fill with wobble -------------------
+  (function(){
+    const canvas = document.getElementById("bFuelCanvas");
+    const wrap = canvas.closest(".tile__canvas-wrap");
+    const numEl = document.getElementById("bFuelNum");
+    const evEl = document.getElementById("bFuelEvent");
+    if(!canvas) return;
+    const cv = setupHiDPICanvas(canvas, wrap);
+    const vis = observeVisible(wrap, { threshold: 0 });
+    Ticker.add(function(dt, now){
+      if(!vis.visible) return;
+      const { ctx } = cv, { w, h } = cv.size();
+      if(w<=0) return;
+      ctx.clearRect(0,0,w,h);
+      const level = BridgeSim.fuel/100;
+      const surfaceY = h - level*h;
+      ctx.beginPath();
+      ctx.moveTo(0, h);
+      ctx.lineTo(0, surfaceY);
+      const segs = 24;
+      for(let i=0;i<=segs;i++){
+        const x = (i/segs)*w;
+        const wob = Math.sin(now*0.0022 + i*0.7) * 3.5;
+        ctx.lineTo(x, surfaceY + wob);
+      }
+      ctx.lineTo(w, h);
+      ctx.closePath();
+      const grad = ctx.createLinearGradient(0,surfaceY,0,h);
+      grad.addColorStop(0, "rgba(0,229,255,0.55)");
+      grad.addColorStop(1, "rgba(255,45,149,0.25)");
+      ctx.fillStyle = grad;
+      ctx.fill();
+      numEl.firstChild.textContent = BridgeSim.fuel.toFixed(0);
+      evEl.textContent = BridgeSim.events.fuel;
+      evEl.classList.toggle("is-active", !!BridgeSim.events.fuel);
+    });
+  })();
+
+  // -- Funkverkehr: spectrogram -------------------------------------------
+  (function(){
+    const canvas = document.getElementById("bRadioCanvas");
+    const wrap = canvas.closest(".tile__canvas-wrap");
+    const numEl = document.getElementById("bRadioNum");
+    const evEl = document.getElementById("bRadioEvent");
+    if(!canvas) return;
+    const cv = setupHiDPICanvas(canvas, wrap);
+    const vis = observeVisible(wrap, { threshold: 0 });
+    let acc = 0;
+    Ticker.add(function(dt){
+      if(!vis.visible) return;
+      acc += dt;
+      const { ctx } = cv, { w, h } = cv.size();
+      if(w<=0) return;
+      ctx.clearRect(0,0,w,h);
+      const bands = BridgeSim.radioBands();
+      const colW = w / bands.length;
+      bands.forEach((v, i) => {
+        const x = i * colW;
+        const rows = 10;
+        for(let r=0;r<rows;r++){
+          const on = v > r/rows;
+          if(!on) continue;
+          const rh = h/rows;
+          const mix = r/rows;
+          ctx.fillStyle = mix < 0.5
+            ? `rgba(0,229,255,${0.25 + v*0.5})`
+            : `rgba(255,45,149,${0.2 + v*0.5})`;
+          ctx.fillRect(x, h - (r+1)*rh, Math.max(1,colW-1), rh-1);
+        }
+      });
+      numEl.firstChild.textContent = Math.round(bands[bands.length-1]*920 + 60);
+      evEl.textContent = BridgeSim.events.radio;
+      evEl.classList.toggle("is-active", !!BridgeSim.events.radio);
+    });
+  })();
+
+  // -- Kursabweichung: oscilloscope trace ----------------------------------
+  (function(){
+    const canvas = document.getElementById("bCourseCanvas");
+    const wrap = canvas.closest(".tile__canvas-wrap");
+    const numEl = document.getElementById("bCourseNum");
+    const evEl = document.getElementById("bCourseEvent");
+    if(!canvas) return;
+    const cv = setupHiDPICanvas(canvas, wrap);
+    const vis = observeVisible(wrap, { threshold: 0 });
+    Ticker.add(function(dt, now){
+      if(!vis.visible) return;
+      const { ctx } = cv, { w, h } = cv.size();
+      if(w<=0) return;
+      ctx.clearRect(0,0,w,h);
+      const midY = h/2;
+      ctx.strokeStyle = "rgba(255,255,255,0.06)";
+      ctx.beginPath(); ctx.moveTo(0,midY); ctx.lineTo(w,midY); ctx.stroke();
+      const hist = BridgeSim.courseHistory;
+      ctx.beginPath();
+      hist.forEach((v,i) => {
+        const x = (i/(hist.length-1))*w;
+        const y = midY + v * (h*0.42) + Math.sin(now*0.01 + i)*1.2;
+        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      });
+      ctx.strokeStyle = "#FF2D95";
+      ctx.lineWidth = 1.4;
+      ctx.shadowColor = "rgba(255,45,149,0.7)";
+      ctx.shadowBlur = 6;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      numEl.firstChild.textContent = (BridgeSim.courseDev*3.2).toFixed(2);
+      evEl.textContent = BridgeSim.events.course;
+      evEl.classList.toggle("is-active", !!BridgeSim.events.course);
+    });
+  })();
+
+  // -- Habitat life-support: 4 coupled rings -------------------------------
+  (function(){
+    const holder = document.getElementById("bLifeRings");
+    const numEl = document.getElementById("bLifeNum");
+    const evEl = document.getElementById("bLifeEvent");
+    if(!holder) return;
+    const labels = ["O₂","Druck","Temp.","Feuchte"];
+    const NS = "http://www.w3.org/2000/svg";
+    const circles = labels.map(label => {
+      const wrapDiv = document.createElement("div");
+      wrapDiv.className = "tile__ring";
+      const svg = document.createElementNS(NS,"svg");
+      svg.setAttribute("viewBox","0 0 56 56");
+      const track = document.createElementNS(NS,"circle");
+      track.setAttribute("class","track");
+      track.setAttribute("cx","28"); track.setAttribute("cy","28"); track.setAttribute("r","22");
+      const val = document.createElementNS(NS,"circle");
+      val.setAttribute("class","val");
+      val.setAttribute("cx","28"); val.setAttribute("cy","28"); val.setAttribute("r","22");
+      const circumference = 2*Math.PI*22;
+      val.setAttribute("stroke-dasharray", circumference);
+      svg.appendChild(track); svg.appendChild(val);
+      wrapDiv.appendChild(svg);
+      const lbl = document.createElement("div");
+      lbl.className = "tile__ring-label";
+      lbl.textContent = label;
+      wrapDiv.appendChild(lbl);
+      holder.appendChild(wrapDiv);
+      return { val, circumference };
+    });
+    const vis = observeVisible(holder, { threshold: 0 });
+    Ticker.add(function(){
+      if(!vis.visible) return;
+      const life = BridgeSim.life();
+      let sum = 0;
+      circles.forEach((c,i) => {
+        const v = life[i];
+        sum += v;
+        const offset = c.circumference - (v/100)*c.circumference;
+        c.val.style.strokeDashoffset = offset;
+      });
+      numEl.firstChild.textContent = (sum/circles.length).toFixed(0);
+      evEl.textContent = BridgeSim.events.life;
+    });
+  })();
+
+  // -- Frachtvolumen: isometric stack --------------------------------------
+  (function(){
+    const canvas = document.getElementById("bCargoCanvas");
+    const wrap = canvas.closest(".tile__canvas-wrap");
+    const numEl = document.getElementById("bCargoNum");
+    const evEl = document.getElementById("bCargoEvent");
+    if(!canvas) return;
+    const cv = setupHiDPICanvas(canvas, wrap);
+    const vis = observeVisible(wrap, { threshold: 0 });
+    function drawCube(ctx, cx, cy, s, fill1, fill2, fill3){
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - s);
+      ctx.lineTo(cx + s, cy - s*0.5);
+      ctx.lineTo(cx, cy);
+      ctx.lineTo(cx - s, cy - s*0.5);
+      ctx.closePath();
+      ctx.fillStyle = fill1; ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + s, cy - s*0.5);
+      ctx.lineTo(cx + s, cy + s*0.5);
+      ctx.lineTo(cx, cy + s);
+      ctx.closePath();
+      ctx.fillStyle = fill2; ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx - s, cy - s*0.5);
+      ctx.lineTo(cx - s, cy + s*0.5);
+      ctx.lineTo(cx, cy + s);
+      ctx.closePath();
+      ctx.fillStyle = fill3; ctx.fill();
+    }
+    Ticker.add(function(){
+      if(!vis.visible) return;
+      const { ctx } = cv, { w, h } = cv.size();
+      if(w<=0) return;
+      ctx.clearRect(0,0,w,h);
+      const pct = BridgeSim.cargo/100;
+      const cols = 5, rows = 4;
+      const totalCubes = Math.round(pct * cols * rows);
+      const s = Math.min(w/(cols*2.1), h/(rows*1.7));
+      const baseX = w/2, baseY = h - s*0.9;
+      let filled = 0;
+      for(let r=0;r<rows;r++){
+        for(let c=0;c<cols;c++){
+          const idx = r*cols + c;
+          const cx = baseX + (c - (cols-1)/2) * s*1.05;
+          const cy = baseY - r * s*0.95;
+          const on = filled < totalCubes;
+          const lit = on;
+          drawCube(ctx, cx, cy, s*0.48,
+            lit ? "rgba(0,229,255,0.85)" : "rgba(255,255,255,0.04)",
+            lit ? "rgba(0,180,220,0.65)" : "rgba(255,255,255,0.03)",
+            lit ? "rgba(255,45,149,0.45)" : "rgba(255,255,255,0.02)");
+          if(on) filled++;
+        }
+      }
+      numEl.firstChild.textContent = BridgeSim.cargo.toFixed(0);
+      evEl.textContent = BridgeSim.events.cargo;
+      evEl.classList.toggle("is-active", !!BridgeSim.events.cargo);
+    });
+  })();
+})();
+
+/* =====================================================================
+   13C. ORBITAL-SIMULATOR — real Keplerian propagation
+   Bodies get a semi-major axis (AU), eccentricity and period (days); true
+   anomaly is solved from mean anomaly via Kepler's equation M = E - e·sinE
+   (Newton-Raphson). AETHERIUM sites + freighters follow simplified
+   transfer arcs around the Kuiper-belt region beyond Neptune.
+===================================================================== */
+(function orbitalSimulator(){
+  const canvas = document.getElementById("orbitalCanvas");
+  const stage = document.getElementById("orbitalGate") ? canvas && canvas.closest(".orbital__stage") : null;
+  if(!canvas) return;
+  const stageEl = canvas.closest(".orbital__stage");
+  const gate = document.getElementById("orbitalGate");
+  const isMobile = window.matchMedia("(max-width: 760px)").matches;
+
+  const ctx = canvas.getContext("2d");
+  let w=0, h=0, dpr=1;
+  function resize(){
+    dpr = Math.min(window.devicePixelRatio||1, 2);
+    w = stageEl.clientWidth; h = stageEl.clientHeight;
+    if(w<=0||h<=0) return;
+    canvas.width = Math.round(w*dpr); canvas.height = Math.round(h*dpr);
+    canvas.style.width = w+"px"; canvas.style.height = h+"px";
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  // --- bodies -------------------------------------------------------------
+  // a = semi-major axis (AU, scaled for the Kuiper-belt AETHERIUM sites),
+  // e = eccentricity, period = days, M0 = starting mean anomaly (rad)
+  const bodies = [
+    { id:"sun", name:"Sonne", type:"Stern (G-Typ)", a:0, e:0, period:1, M0:0, color:"#FFD27A", r:9, stat:"Leuchtkraft: 1.0 L☉ · Referenzursprung des Systems" },
+    { id:"mercury", name:"Merkur", type:"Innerer Planet", a:0.39, e:0.206, period:88, M0:0.6, color:"#B7B2A9", r:2.2 },
+    { id:"venus", name:"Venus", type:"Innerer Planet", a:0.72, e:0.007, period:225, M0:2.1, color:"#E8C07D", r:3 },
+    { id:"earth", name:"Erde", type:"Innerer Planet", a:1.0, e:0.017, period:365.25, M0:4.0, color:"#5AA9E6", r:3.2 },
+    { id:"mars", name:"Mars", type:"Innerer Planet", a:1.52, e:0.093, period:687, M0:1.2, color:"#D06E4B", r:2.6 },
+    { id:"neptune", name:"Neptun", type:"Äußerer Planet", a:30.1, e:0.009, period:60190, M0:3.3, color:"#5F7FD6", r:4.4, stat:"Referenzbahn — Grenze des inneren Systems" },
+  ];
+  // AETHERIUM claims, positioned as Kuiper-belt bodies beyond Neptune
+  const sites = [
+    { id:"kbx-114", name:"KBX-114 „Ouroboros“", type:"C-Typ Metallasteroid · Claim", a:39.4, e:0.09, period:90400, M0:0.4, color:"#00E5FF", r:3.4, isSite:true, stat:"Vollbetrieb · Division I · Besatzung 64" },
+    { id:"vst-006", name:"VST-006 „Halcyon Rift“", type:"S-Typ Silikatkörper · Claim", a:41.8, e:0.14, period:99000, M0:3.9, color:"#00E5FF", r:3.2, isSite:true, stat:"Erweiterung · Division I · Besatzung 38" },
+    { id:"prm-221", name:"PRM-221 „Schwarzgrat“", type:"M-Typ Metallkern · Claim", a:44.6, e:0.05, period:109000, M0:5.5, color:"#00E5FF", r:3.6, isSite:true, stat:"Vollbetrieb · Division I · Besatzung 71" },
+    { id:"ndx-330", name:"NDX-330 „Stille Fracht“", type:"C-Typ Kohlenstoffkörper · Claim", a:37.9, e:0.11, period:85700, M0:2.2, color:"#00E5FF", r:3.0, isSite:true, stat:"Sondierung · Division I · Besatzung 12" },
+  ];
+  const allBodies = bodies.concat(sites);
+
+  // Freighters: simple Hohmann-ish transfer arcs between two random claim sites
+  const FREIGHTER_COUNT = 19;
+  const freighters = Array.from({length: FREIGHTER_COUNT}, (_, i) => {
+    const a = sites[i % sites.length];
+    const b = sites[(i+1+Math.floor(i/sites.length)) % sites.length];
+    return { id:"tug-"+i, name:"Schlepper #"+(i+1), from:a, to:b, phase: Math.random(), speed: 0.00006 + Math.random()*0.00004 };
+  });
+
+  // --- Kepler solve ---------------------------------------------------------
+  function solveEccentricAnomaly(M, e){
+    let E = M;
+    for(let i=0;i<8;i++){
+      E = E - (E - e*Math.sin(E) - M) / (1 - e*Math.cos(E));
+    }
+    return E;
+  }
+  function positionAt(body, simDays){
+    if(body.a === 0) return { x:0, y:0 };
+    const n = (2*Math.PI) / body.period;
+    const M = body.M0 + n * simDays;
+    const E = solveEccentricAnomaly(M % (2*Math.PI), body.e);
+    const x = body.a * (Math.cos(E) - body.e);
+    const y = body.a * Math.sqrt(1 - body.e*body.e) * Math.sin(E);
+    return { x, y };
+  }
+  function ellipsePath(body){
+    const pts = [];
+    for(let i=0;i<=72;i++){
+      const E = (i/72)*Math.PI*2;
+      const x = body.a * (Math.cos(E) - body.e);
+      const y = body.a * Math.sqrt(1-body.e*body.e) * Math.sin(E);
+      pts.push([x,y]);
+    }
+    return pts;
+  }
+
+  // --- camera / interaction ---------------------------------------------
+  let simDays = 0;
+  let timeScaleExp = 0; // slider 0..4 -> log scale 1..10000
+  let camX = 0, camY = 0, camZoom = 1;
+  let targetCamX = 0, targetCamY = 0, targetCamZoom = 1;
+  let dragging = false, lastPX=0, lastPY=0;
+  let selected = null;
+  const AU_PX = 6; // px per AU at zoom 1
+
+  function worldToScreen(x,y){
+    return [
+      w/2 + (x - camX) * AU_PX * camZoom,
+      h/2 + (y - camY) * AU_PX * camZoom
+    ];
+  }
+
+  const showNames = document.getElementById("toggleNames");
+  const showOrbits = document.getElementById("toggleOrbits");
+  const showSoi = document.getElementById("toggleSoi");
+  const speedSlider = document.getElementById("orbitalSpeed");
+  const speedVal = document.getElementById("orbitalSpeedVal");
+  const zoomIn = document.getElementById("orbitalZoomIn");
+  const zoomOut = document.getElementById("orbitalZoomOut");
+  const bodyList = document.getElementById("orbitalBodyList");
+  const datasheet = document.getElementById("orbitalDatasheet");
+
+  allBodies.forEach(b => {
+    const li = document.createElement("li");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = b.name;
+    btn.addEventListener("click", () => selectBody(b));
+    li.appendChild(btn);
+    bodyList.appendChild(li);
+    b._btn = btn;
+  });
+
+  function selectBody(b){
+    selected = b;
+    allBodies.forEach(bb => bb._btn.classList.toggle("is-selected", bb === b));
+    const pos = positionAt(b, simDays);
+    targetCamX = pos.x; targetCamY = pos.y;
+    targetCamZoom = b.a === 0 ? 1 : clamp(60 / Math.max(4,b.a), 0.6, 14);
+    datasheet.classList.add("is-shown");
+    datasheet.innerHTML = `<h4>${b.name}</h4>
+      <div class="row"><span>Typ</span><b>${b.type||"—"}</b></div>
+      ${b.a ? `<div class="row"><span>Große Halbachse</span><b>${b.a.toFixed(2)} AE</b></div>` : ""}
+      ${b.a ? `<div class="row"><span>Exzentrizität</span><b>${b.e.toFixed(3)}</b></div>` : ""}
+      ${b.a ? `<div class="row"><span>Umlaufzeit</span><b>${b.period.toLocaleString('de-DE')} Tage</b></div>` : ""}
+      ${b.stat ? `<div class="row" style="display:block;margin-top:6px;color:var(--ink-faint)">${b.stat}</div>` : ""}`;
+  }
+
+  speedSlider.addEventListener("input", () => {
+    timeScaleExp = parseFloat(speedSlider.value);
+    const mult = Math.round(Math.pow(10, timeScaleExp));
+    speedVal.textContent = mult.toLocaleString('de-DE') + "×";
+  });
+  zoomIn.addEventListener("click", () => { targetCamZoom = clamp(targetCamZoom*1.5, 0.3, 40); });
+  zoomOut.addEventListener("click", () => { targetCamZoom = clamp(targetCamZoom/1.5, 0.3, 40); });
+
+  canvas.addEventListener("wheel", e => {
+    e.preventDefault();
+    targetCamZoom = clamp(targetCamZoom * (e.deltaY < 0 ? 1.12 : 0.89), 0.3, 40);
+  }, { passive:false });
+
+  canvas.addEventListener("mousedown", e => { dragging = true; lastPX=e.clientX; lastPY=e.clientY; });
+  window.addEventListener("mousemove", e => {
+    if(!dragging) return;
+    const dx = (e.clientX-lastPX)/(AU_PX*camZoom);
+    const dy = (e.clientY-lastPY)/(AU_PX*camZoom);
+    targetCamX -= dx; targetCamY -= dy;
+    camX -= dx; camY -= dy;
+    lastPX = e.clientX; lastPY = e.clientY;
+  });
+  window.addEventListener("mouseup", () => { dragging = false; });
+
+  canvas.addEventListener("click", e => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    let closest = null, closestD = 18;
+    allBodies.forEach(b => {
+      const pos = positionAt(b, simDays);
+      const [sx,sy] = worldToScreen(pos.x,pos.y);
+      const d = Math.hypot(sx-mx, sy-my);
+      if(d < closestD){ closestD = d; closest = b; }
+    });
+    if(closest) selectBody(closest);
+  });
+
+  canvas.addEventListener("keydown", e => {
+    const step = 3 / camZoom;
+    if(e.key === "ArrowLeft"){ targetCamX -= step; e.preventDefault(); }
+    else if(e.key === "ArrowRight"){ targetCamX += step; e.preventDefault(); }
+    else if(e.key === "ArrowUp"){ targetCamY -= step; e.preventDefault(); }
+    else if(e.key === "ArrowDown"){ targetCamY += step; e.preventDefault(); }
+    else if(e.key === "+" || e.key === "="){ targetCamZoom = clamp(targetCamZoom*1.3, 0.3, 40); e.preventDefault(); }
+    else if(e.key === "-"){ targetCamZoom = clamp(targetCamZoom/1.3, 0.3, 40); e.preventDefault(); }
+  });
+
+  // --- mobile battery gate ---------------------------------------------
+  let liveEnabled = !isMobile;
+  if(gate){
+    if(!isMobile) gate.remove();
+    else{
+      document.getElementById("orbitalGateBtn").addEventListener("click", () => {
+        liveEnabled = true;
+        gate.remove();
+      });
+    }
+  }
+
+  const vis = observeVisible(stageEl, { threshold: 0 });
+  let lastDraw = 0;
+
+  function draw(){
+    if(w<=0) return;
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0,0,w,h);
+
+    if(showOrbits.checked){
+      allBodies.forEach(b => {
+        if(b.a === 0) return;
+        const pts = ellipsePath(b);
+        ctx.beginPath();
+        pts.forEach(([x,y],i) => {
+          const [sx,sy] = worldToScreen(x,y);
+          if(i===0) ctx.moveTo(sx,sy); else ctx.lineTo(sx,sy);
+        });
+        ctx.closePath();
+        ctx.strokeStyle = b.isSite ? "rgba(0,229,255,0.35)" : "rgba(255,255,255,0.16)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+    }
+
+    // freighter transfer arcs (approximate straight-line ease between claims)
+    freighters.forEach(f => {
+      f.phase = (f.phase + f.speed * (reduceMotion ? 0 : 1)) % 1;
+      const p0 = positionAt(f.from, simDays);
+      const p1 = positionAt(f.to, simDays);
+      const t2 = (Math.sin(f.phase*Math.PI*2)+1)/2;
+      const mx = (p0.x+p1.x)/2, my = (p0.y+p1.y)/2;
+      const bow = 4;
+      const x = (1-t2)*(1-t2)*p0.x + 2*(1-t2)*t2*(mx+bow) + t2*t2*p1.x;
+      const y = (1-t2)*(1-t2)*p0.y + 2*(1-t2)*t2*(my+bow) + t2*t2*p1.y;
+      const [sx,sy] = worldToScreen(x,y);
+      ctx.beginPath();
+      ctx.arc(sx,sy,1.6,0,Math.PI*2);
+      ctx.fillStyle = "rgba(255,178,32,0.85)";
+      ctx.fill();
+    });
+
+    allBodies.forEach(b => {
+      const pos = positionAt(b, simDays);
+      const [sx,sy] = worldToScreen(pos.x,pos.y);
+      if(showSoi.checked && b.a>0){
+        ctx.beginPath();
+        ctx.arc(sx,sy, Math.max(6,b.r*2.4), 0, Math.PI*2);
+        ctx.strokeStyle = "rgba(255,255,255,0.12)";
+        ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.arc(sx,sy, Math.max(1.6,b.r*(camZoom>3?0.7:1)), 0, Math.PI*2);
+      ctx.fillStyle = b.color;
+      if(b === selected){
+        ctx.shadowColor = b.color; ctx.shadowBlur = 12;
+      }
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      if(showNames.checked && (b.a===0 || b.a>4 || b === selected)){
+        ctx.fillStyle = "rgba(255,255,255,0.7)";
+        ctx.font = "10px ui-monospace, monospace";
+        ctx.fillText(b.name, sx+8, sy-8);
+      }
+    });
+  }
+
+  Ticker.add(function(dt){
+    if(!vis.visible) return;
+    camX = lerp(camX, targetCamX, 0.12);
+    camY = lerp(camY, targetCamY, 0.12);
+    camZoom = lerp(camZoom, targetCamZoom, 0.12);
+
+    const animating = liveEnabled && !reduceMotion;
+    if(animating){
+      const mult = Math.pow(10, timeScaleExp);
+      simDays += (dt/86400000) * 86400 * mult; // dt(ms) -> days * multiplier
+      draw();
+    } else if(dragging || Math.abs(camZoom-targetCamZoom) > 0.001 || Math.abs(camX-targetCamX) > 0.001){
+      // still allow discrete user-driven redraws (pan/zoom/select) under reduced motion / gated mobile
+      draw();
+    } else if(lastDraw === 0){
+      draw();
+      lastDraw = 1;
+    }
+  });
+
+  // initial static draw so a snapshot is visible before Ticker's first tick
+  draw();
+})();
+
+/* =====================================================================
+   13D. FRACHTER-KONFIGURATOR — Tsiolkovsky rocket equation, live
+===================================================================== */
+(function freighterConfigurator(){
+  const svg = document.getElementById("vesperSvg");
+  if(!svg) return;
+  const NS = "http://www.w3.org/2000/svg";
+  const hotspots = svg.querySelectorAll(".hotspot");
+  const line = document.getElementById("hsLine");
+  const callout = document.getElementById("hsCallout");
+  const titleEl = document.getElementById("configModuleTitle");
+  const subEl = document.getElementById("configModuleSub");
+  const alloc = document.getElementById("configAlloc");
+  const allocVal = document.getElementById("configAllocVal");
+  const specM0 = document.getElementById("specM0");
+  const specDv = document.getElementById("specDv");
+  const specTransit = document.getElementById("specTransit");
+  const specPayload = document.getElementById("specPayload");
+  const warningEl = document.getElementById("configWarning");
+  const windowEl = document.getElementById("configWindow");
+
+  const moduleInfo = {
+    antrieb:  { title:"Antrieb — FT-9 Halcyon-Derivat", sub:"Deuterium-Helium-3-Fusionstriebwerk, Isp 48.000 s.", cx:530, cy:132 },
+    laderaum: { title:"Laderaum", sub:"Modularer Frachtraum, variable Nutzlastkapazität.", cx:240, cy:132 },
+    habitat:  { title:"Habitat", sub:"Lebenserhaltung und Quartiere für die Kernbesatzung.", cx:115, cy:132 },
+    reaktor:  { title:"Reaktor", sub:"Versorgt Antrieb und Bordsysteme mit Fusionsenergie.", cx:360, cy:132 },
+    tether:   { title:"Tether", sub:"Schleppkupplung für Konzentrat-Container.", cx:14, cy:112 }
+  };
+
+  // Rocket-equation constants (thematically consistent with the FT-9 Halcyon spec sheet)
+  const ISP = 48000;       // s
+  const G0 = 9.80665;      // m/s^2
+  const DRY_STRUCTURE = 420;   // t — fixed structural/dry mass baseline
+  const TOTAL_BUDGET = 1800;   // t — mass budget split between propellant and cargo
+  const TRANSFER_WINDOW_DAYS = 96; // invented next-window figure
+  const ROUTE_DISTANCE_KM = 4.2e9; // approx Kuiper–Mars route, for transit-time estimate
+
+  function computeSpecs(allocPct){
+    const propFrac = allocPct/100; // 0 = all cargo, 100 = all propellant
+    const propMass = TOTAL_BUDGET * propFrac;
+    const cargoMass = TOTAL_BUDGET * (1-propFrac);
+    const dryMass = DRY_STRUCTURE + cargoMass; // structure + payload remains after burn
+    const wetMass = dryMass + propMass;
+    const dv = ISP * G0 * Math.log(wetMass / dryMass); // m/s
+    const dvKms = dv/1000;
+    // crude constant-acceleration transit estimate: higher dv -> shorter transit
+    const accel = dv / (60*60*24*30); // spread burn over ~30 days notionally, m/s per s
+    const transitDays = dvKms > 0.01 ? Math.sqrt((2*ROUTE_DISTANCE_KM*1000) / (dv/ (60*60*24*45))) / (60*60*24) : Infinity;
+    // Simpler, monotonic, plausible mapping: more dv -> fewer days, bounded
+    const transitDaysSimple = clamp(2.4e6 / Math.max(dv,1), 40, 900);
+    return { propMass, cargoMass, dryMass, wetMass, dvKms, transitDays: transitDaysSimple };
+  }
+
+  function render(){
+    const val = parseInt(alloc.value, 10);
+    allocVal.textContent = val + " / " + (100-val);
+    alloc.setAttribute("aria-valuetext", val + " Prozent Treibstoff, " + (100-val) + " Prozent Fracht");
+    const s = computeSpecs(val);
+    specM0.firstChild.textContent = s.wetMass.toFixed(0);
+    specDv.firstChild.textContent = s.dvKms.toFixed(2);
+    specTransit.firstChild.textContent = s.transitDays.toFixed(0);
+    specPayload.firstChild.textContent = s.cargoMass.toFixed(0);
+    windowEl.textContent = TRANSFER_WINDOW_DAYS;
+    const late = s.transitDays > TRANSFER_WINDOW_DAYS;
+    warningEl.classList.toggle("is-late", late);
+    warningEl.innerHTML = late
+      ? `⚠ Transitzeit überschreitet das nächste Transferfenster: <b id="configWindow">${TRANSFER_WINDOW_DAYS}</b> Tage.`
+      : `Nächstes Transferfenster: <b id="configWindow">${TRANSFER_WINDOW_DAYS}</b> Tage. Innerhalb der Frist.`;
+  }
+  alloc.addEventListener("input", render);
+  render();
+
+  function selectModule(key){
+    hotspots.forEach(hs => hs.classList.toggle("is-selected", hs.dataset.module === key));
+    const info = moduleInfo[key];
+    if(!info) return;
+    titleEl.textContent = info.title;
+    subEl.textContent = info.sub;
+    const calloutX = info.cx > 320 ? info.cx + 60 : info.cx - 60;
+    const calloutY = info.cy - 50;
+    line.setAttribute("x1", info.cx); line.setAttribute("y1", info.cy);
+    line.setAttribute("x2", calloutX); line.setAttribute("y2", calloutY);
+    line.classList.add("is-shown");
+    callout.setAttribute("x", calloutX);
+    callout.setAttribute("y", calloutY - 6);
+    callout.setAttribute("text-anchor", info.cx > 320 ? "start" : "end");
+    callout.textContent = info.title.split(" — ")[0].toUpperCase();
+    callout.classList.add("is-shown");
+  }
+
+  hotspots.forEach(hs => {
+    hs.addEventListener("click", () => selectModule(hs.dataset.module));
+    hs.addEventListener("keydown", e => {
+      if(e.key === "Enter" || e.key === " "){ e.preventDefault(); selectModule(hs.dataset.module); }
+    });
+  });
 })();
 
 /* =====================================================================
