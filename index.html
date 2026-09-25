@@ -862,6 +862,65 @@ footer .wrap{ position:relative; z-index:1; }
 .val{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
 
 /* ============================================================
+   36 — BRIDGE DASHBOARD
+   ============================================================ */
+#bridge{ background:var(--bg-2); border-block:1px solid var(--line); }
+.br-strip{
+  display:flex; align-items:center; gap:clamp(14px,2vw,34px); flex-wrap:wrap;
+  padding-block:16px; border-bottom:1px solid var(--line);
+}
+.br-strip .st{ display:flex; align-items:center; gap:9px; }
+.br-strip .st i{ width:6px; height:6px; border-radius:50%; background:var(--cy); flex:none; }
+.br-strip .st.warn i{ background:var(--mg); animation:ping 1.4s infinite; }
+.br-grid{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:1px;
+  background:var(--line); border:1px solid var(--line); margin-top:clamp(24px,3vw,44px);
+}
+@media (max-width:1040px){ .br-grid{ grid-template-columns:repeat(2,1fr); } }
+@media (max-width:660px){ .br-grid{ grid-template-columns:1fr; } }
+.tile{
+  background:var(--bg); padding:18px 20px 0; display:flex; flex-direction:column;
+  min-height:clamp(210px,24vh,270px); position:relative; overflow:hidden;
+  transition:background-color .4s;
+}
+.tile:hover{ background:var(--bg-3); }
+.tile .th{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+.tile .tv{
+  font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:700;
+  font-size:clamp(1.3rem,2vw,1.85rem); letter-spacing:-.03em; line-height:1;
+}
+.tile .tv small{ font-size:.44em; color:var(--fg-faint); font-weight:400; letter-spacing:.12em; margin-left:5px; }
+.tile .tc{ flex:1; position:relative; margin-top:12px; min-height:110px; }
+.tile canvas{ position:absolute; inset:0; width:100%; height:100%; }
+.tile .tf{
+  display:flex; justify-content:space-between; gap:10px;
+  padding-block:11px; margin-top:8px; border-top:1px solid var(--line);
+}
+.tile.alarm{ background:var(--cy-soft); }
+.tile.alarm .tv{ color:var(--cy); }
+.br-feed{
+  margin-top:1px; border:1px solid var(--line); border-top:none; background:var(--bg);
+  height:132px; overflow:hidden; position:relative;
+}
+.br-feed .inner{ padding:14px 20px; }
+.br-feed .row{
+  display:flex; gap:14px; align-items:baseline; padding-block:4px;
+  font-family:var(--mono); font-size:.68rem; letter-spacing:.06em;
+  animation:feedIn .45s var(--spring);
+}
+@keyframes feedIn{ from{ opacity:0; transform:translateY(-8px) } }
+.br-feed .row time{ color:var(--fg-faint); flex:none; }
+.br-feed .row b{ color:var(--cy); font-weight:400; flex:none; width:82px; }
+.br-feed .row span{ color:var(--fg-dim); }
+.br-feed .row.hi b{ color:var(--mg); }
+.br-feed .row.hi span{ color:var(--fg); }
+.br-feed::after{
+  content:""; position:absolute; inset:auto 0 0 0; height:44px;
+  background:linear-gradient(180deg,transparent,var(--bg));
+  pointer-events:none;
+}
+
+/* ============================================================
    19 — REDUCED MOTION
    ============================================================ */
 @media (prefers-reduced-motion:reduce){
@@ -1146,6 +1205,75 @@ footer .wrap{ position:relative; z-index:1; }
         </div>
       </article>
     </div>
+  </div>
+</section>
+
+<!-- ========= BRIDGE ========= -->
+<section id="bridge" class="sec-pad">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="label" data-rv="up">03 — Kommandobrücke</div>
+        <h2 class="h2" data-split style="margin-top:14px">Was gerade<br>läuft</h2>
+      </div>
+      <p class="lede" data-rv="up" data-d="200" style="max-width:40ch">
+        Telemetrie aller vier Standorte, zusammengeführt auf einem Datenstrom.
+        Was hier blinkt, ist vor sechseinhalb Stunden passiert.
+      </p>
+    </div>
+
+    <div class="br-strip" data-rv="up">
+      <div class="st"><i></i><span class="mini">Datenstrom verbunden</span></div>
+      <div class="st"><i></i><span class="mini">Kanal 07 · 4 Quellen</span></div>
+      <div class="st" id="stWarn"><i></i><span class="mini" id="stWarnTx">Alle Systeme nominal</span></div>
+      <div class="st" style="margin-left:auto"><span class="mini">Abtastrate</span><span class="val mini" id="stRate">20 Hz</span></div>
+    </div>
+
+    <div class="br-grid" data-rv="up" data-d="120">
+      <article class="tile" id="tReactor">
+        <div class="th"><span class="label">Reaktorlast</span><span class="mini">RTG-4</span></div>
+        <div class="tv"><span class="val" id="vReactor">0,0</span><small>MW</small></div>
+        <div class="tc"><canvas></canvas></div>
+        <div class="tf"><span class="mini">Kernel 2187.09</span><span class="mini val" id="fReactor">—</span></div>
+      </article>
+
+      <article class="tile" id="tFuel">
+        <div class="th"><span class="label">Treibstoff</span><span class="mini">Xenon</span></div>
+        <div class="tv"><span class="val" id="vFuel">0</span><small>%</small></div>
+        <div class="tc"><canvas></canvas></div>
+        <div class="tf"><span class="mini">Reichweite</span><span class="mini val" id="fFuel">—</span></div>
+      </article>
+
+      <article class="tile" id="tRadio">
+        <div class="th"><span class="label">Funkverkehr</span><span class="mini">Spektrum</span></div>
+        <div class="tv"><span class="val" id="vRadio">0</span><small>dB</small></div>
+        <div class="tc"><canvas></canvas></div>
+        <div class="tf"><span class="mini">Trägerfrequenz</span><span class="mini val" id="fRadio">—</span></div>
+      </article>
+
+      <article class="tile" id="tDrift">
+        <div class="th"><span class="label">Bahnabweichung</span><span class="mini">Oszilloskop</span></div>
+        <div class="tv"><span class="val" id="vDrift">0</span><small>m/s</small></div>
+        <div class="tc"><canvas></canvas></div>
+        <div class="tf"><span class="mini">Korrektur</span><span class="mini val" id="fDrift">—</span></div>
+      </article>
+
+      <article class="tile" id="tLife">
+        <div class="th"><span class="label">Lebenserhaltung</span><span class="mini">ANCHOR-I</span></div>
+        <div class="tv"><span class="val" id="vLife">0</span><small>%</small></div>
+        <div class="tc"><canvas></canvas></div>
+        <div class="tf"><span class="mini">O₂ · CO₂ · H₂O · P</span><span class="mini val" id="fLife">—</span></div>
+      </article>
+
+      <article class="tile" id="tCargo">
+        <div class="th"><span class="label">Frachtvolumen</span><span class="mini">Laderaum</span></div>
+        <div class="tv"><span class="val" id="vCargo">0</span><small>%</small></div>
+        <div class="tc"><canvas></canvas></div>
+        <div class="tf"><span class="mini">Bis Abflug</span><span class="mini val" id="fCargo">—</span></div>
+      </article>
+    </div>
+
+    <div class="br-feed" data-rv="up" data-d="200"><div class="inner" id="brFeed" aria-live="polite" aria-label="Ereignisprotokoll"></div></div>
   </div>
 </section>
 
@@ -2563,6 +2691,462 @@ if(probeFound){
     ["  Auftraggeber ............. — geschwärzt —","err"]
   ]); }};
 }
+
+/* ============================================================
+   37 — BRIDGE: shared telemetry stream
+   ============================================================ */
+const Sim = (function(){
+  /* One simulated stream feeds every tile, so an event is visibly
+     correlated across several of them at once. */
+  const S = {
+    t:0, load:.62, fuel:.742, radio:-46, drift:.06, o2:.974, co2:.28, h2o:.88, pwr:.83,
+    cargo:.63, burn:0, spike:0, chatter:0, hist:[], spec:[], events:[]
+  };
+  const SRC=["HALCYON","VESPERA","OBSIDIAN","KESTREL","VESPER-14","ANCHOR-I"];
+  const MSG=[
+    ["Schichtwechsel abgeschlossen",0],["Bohrkopf 12 auf Standzeit geprüft",0],
+    ["Frachtcontainer versiegelt",0],["Pulsar-Fix neu justiert",0],
+    ["Schwebeschmelze Charge 4418 entnommen",0],["Wasserwand nachgefüllt",0],
+    ["Lastspitze im Reaktorkreis",1],["Kurskorrektur eingeleitet",1],
+    ["Tether-Spannung geprüft",0],["Regolith-Analyse: Neodym 6,2 %",0],
+    ["Habitat-Rotation stabil bei 0,38 g",0],["Antennenausrichtung korrigiert",0],
+    ["Mikrometeoriteneinschlag Sektor 3",1],["Reinheitsprüfung bestanden: 6N9",0]
+  ];
+  let nextEvent = 3 + Math.random()*5, nextMsg = 1.5;
+  let rnd = 0.42;
+
+  function noise(sp){ rnd = (rnd*9301 + 49297) % 233280 / 233280; return (rnd-.5)*sp; }
+
+  S.step = function(dt){
+    S.t += dt;
+
+    /* schedule correlated events */
+    nextEvent -= dt;
+    if(nextEvent<=0){
+      nextEvent = (Alert.on ? 2.5 : 7) + Math.random()*(Alert.on?3:9);
+      const kind = Math.random();
+      if(kind<.4){ S.spike = 1; push("REAKTOR","Lastspitze +"+(18+Math.round(Math.random()*22))+" %",1); }
+      else if(kind<.75){ S.burn = 1; push("NAVIGATION","Kurskorrektur · Brenndauer "+(4+Math.round(Math.random()*9))+" s",1); }
+      else { S.chatter = 1; push("FUNK","Burst-Übertragung von "+SRC[(Math.random()*4)|0],0); }
+    }
+    nextMsg -= dt;
+    if(nextMsg<=0){
+      nextMsg = 4 + Math.random()*7;
+      const m = MSG[(Math.random()*MSG.length)|0];
+      push(SRC[(Math.random()*SRC.length)|0], m[0], m[1]);
+    }
+
+    /* decay of transient states */
+    S.spike   = Math.max(0, S.spike   - dt*0.55);
+    S.burn    = Math.max(0, S.burn    - dt*0.4);
+    S.chatter = Math.max(0, S.chatter - dt*0.7);
+
+    const al = Alert.on ? 1 : 0;
+
+    /* reactor: baseline + spike + breathing + noise */
+    const targetLoad = .58 + al*.24 + S.spike*.3 + Math.sin(S.t*.21)*.05;
+    S.load = lerp(S.load, targetLoad, Math.min(1,dt*2.2)) + noise(.012);
+    S.load = clamp(S.load, .05, 1.18);
+
+    /* fuel: only drops, faster while burning */
+    S.fuel -= dt * (0.00042 + S.burn*0.0075 + al*0.0006);
+    if(S.fuel < .28) S.fuel = .93;   /* resupply run */
+
+    /* radio: quiet floor with bursts */
+    const targetRadio = -62 + S.chatter*26 + al*12 + Math.sin(S.t*1.7)*2;
+    S.radio = lerp(S.radio, targetRadio, Math.min(1,dt*3)) + noise(1.6);
+
+    /* drift: grows slowly, a burn pulls it back */
+    S.drift += dt*(0.011 + al*0.05) - S.burn*dt*0.22;
+    S.drift = clamp(S.drift, 0, 1.4);
+
+    /* life support couples to reactor load */
+    S.pwr = lerp(S.pwr, clamp(S.load*.92, .1, 1), Math.min(1,dt*1.4));
+    S.o2  = lerp(S.o2,  clamp(.985 - al*.13 - S.spike*.03, 0, 1), Math.min(1,dt*.8));
+    S.co2 = lerp(S.co2, clamp(.25 + al*.34 + S.spike*.07, 0, 1), Math.min(1,dt*.8));
+    S.h2o = lerp(S.h2o, clamp(.88 - al*.09, 0, 1), Math.min(1,dt*.5));
+
+    /* cargo fills until the ship departs */
+    S.cargo += dt*0.0055;
+    if(S.cargo>=1){ S.cargo=0.12; push("LADERAUM","VESPER-14 abgelegt · Manifest geschlossen",1); }
+
+    /* rolling histories for the plots */
+    S.hist.push(S.load + Math.sin(S.t*6.1)*.011 + Math.sin(S.t*23.7)*.006 + noise(.02));
+    if(S.hist.length>600) S.hist.shift();
+    /* three narrow carriers plus a quiet floor — a spectrum, not static */
+    const col=[], carriers=[
+      6  + Math.sin(S.t*0.7)*1.3,
+      17 + Math.sin(S.t*0.43+1.9)*2.1,
+      29 + S.chatter*8 + Math.sin(S.t*1.1)*1.6
+    ];
+    for(let i=0;i<48;i++){
+      let v = 0.015 + Math.random()*0.05;
+      for(let k=0;k<carriers.length;k++){
+        const width = (k===2 ? 2.2 + S.chatter*2 : 1.5) * (1 + Math.sin(S.t*(1.3+k)+k)*0.25);
+        const gain  = (k===2 ? .25 + S.chatter*.72 : (k?.34:.46)) * (0.7 + Math.abs(Math.sin(S.t*(0.9+k*.6)+k*2))*0.5);
+        v += gain * Math.exp(-Math.pow((i-carriers[k])/width, 2));
+      }
+      if(i<2) v += .18;
+      col.push(clamp(v * (1 + al*.25), 0, 1));
+    }
+    S.spec.push(col); if(S.spec.length>260) S.spec.shift();
+  };
+
+  function push(src, text, hi){
+    S.events.unshift({ src, text, hi, at:new Date() });
+    if(S.events.length>40) S.events.pop();
+    feedDirty = true;
+  }
+  S.push = push;
+  return S;
+})();
+
+/* fixed-timestep accumulator, so the sim runs the same at any frame rate */
+let simLast = performance.now(), simAcc = 0, feedDirty = true;
+const bridgeSec = $("#bridge");
+
+onTick(function(t){
+  const raw = Math.min((t - simLast)/1000, .25);
+  simLast = t;
+  /* the stream keeps running off-screen; only drawing is culled */
+  simAcc += raw;
+  while(simAcc >= 1/20){ Sim.step(1/20); simAcc -= 1/20; }
+});
+
+/* ---------- feed ---------- */
+const feedEl=$("#brFeed");
+onTick(function(){
+  if(!feedDirty || !inView(bridgeSec, 400)) return;
+  feedDirty=false;
+  const rows = Sim.events.slice(0,6).map(e=>{
+    const h=String(e.at.getHours()).padStart(2,"0"), m=String(e.at.getMinutes()).padStart(2,"0"), sec=String(e.at.getSeconds()).padStart(2,"0");
+    return '<div class="row'+(e.hi?' hi':'')+'"><time>'+h+':'+m+':'+sec+'</time><b>'+e.src+'</b><span>'+e.text+'</span></div>';
+  });
+  feedEl.innerHTML = rows.join("");
+});
+
+/* ---------- readouts ---------- */
+const RO = {
+  vReactor:$("#vReactor"), fReactor:$("#fReactor"),
+  vFuel:$("#vFuel"), fFuel:$("#fFuel"),
+  vRadio:$("#vRadio"), fRadio:$("#fRadio"),
+  vDrift:$("#vDrift"), fDrift:$("#fDrift"),
+  vLife:$("#vLife"), fLife:$("#fLife"),
+  vCargo:$("#vCargo"), fCargo:$("#fCargo"),
+  stWarn:$("#stWarn"), stWarnTx:$("#stWarnTx")
+};
+const de = (n,d)=> n.toFixed(d==null?1:d).replace(".",",");
+let roLast=0;
+onTick(function(t){
+  if(t-roLast < 100 || !inView(bridgeSec, 400)) return;
+  roLast=t;
+  RO.vReactor.textContent = de(Sim.load*4.2, 2);
+  RO.fReactor.textContent = de(Sim.load*100,0)+" % Auslastung";
+  RO.vFuel.textContent    = de(Sim.fuel*100,1);
+  RO.fFuel.textContent    = Math.round(Sim.fuel*412)+" Tage";
+  RO.vRadio.textContent   = de(Sim.radio,1);
+  RO.fRadio.textContent   = de(8.41 + Sim.chatter*.2, 2)+" GHz";
+  RO.vDrift.textContent   = de(Sim.drift,2);
+  RO.fDrift.textContent   = Sim.burn>.05 ? "aktiv" : "bereit";
+  const life = (Sim.o2 + (1-Sim.co2) + Sim.h2o + Sim.pwr)/4;
+  RO.vLife.textContent    = de(life*100,1);
+  RO.fLife.textContent    = [Sim.o2,1-Sim.co2,Sim.h2o,Sim.pwr].map(v=>Math.round(v*100)).join(" · ");
+  RO.vCargo.textContent   = de(Sim.cargo*100,1);
+  RO.fCargo.textContent   = Math.max(0,Math.round((1-Sim.cargo)*182))+" h";
+
+  const warn = Alert.on || Sim.drift>.8 || Sim.load>1.0;
+  RO.stWarn.classList.toggle("warn", warn);
+  RO.stWarnTx.textContent = Alert.on ? "Notfall-Protokoll aktiv"
+    : Sim.drift>.8 ? "Bahnabweichung über Grenzwert"
+    : Sim.load>1.0 ? "Reaktor über Nennlast" : "Alle Systeme nominal";
+  $$(".tile").forEach(x=> x.classList.toggle("alarm", Alert.on));
+});
+
+/* ============================================================
+   38 — BRIDGE: tile renderers
+   ============================================================ */
+function tileCanvas(id){ return $("#"+id+" canvas"); }
+function gridLines(ctx,w,h,step){
+  ctx.strokeStyle=css("--line"); ctx.lineWidth=1;
+  ctx.beginPath();
+  for(let x=0;x<w;x+=step){ ctx.moveTo(x+.5,0); ctx.lineTo(x+.5,h); }
+  for(let y=0;y<h;y+=step){ ctx.moveTo(0,y+.5); ctx.lineTo(w,y+.5); }
+  ctx.stroke();
+}
+
+/* — reactor: scrolling trace — */
+(function(){
+  const cv=tileCanvas("tReactor");
+  onTick(function(){
+    if(!inView(cv)) return;
+    const f=fitCanvas(cv); if(!f) return;
+    const {ctx,w,h}=f;
+    ctx.clearRect(0,0,w,h);
+    gridLines(ctx,w,h,Math.max(18,w/10));
+    const n=Sim.hist.length; if(n<2) return;
+    const show=Math.min(n, 240), start=n-show;
+    const cy=css("--cy"), mg=css("--mg");
+
+    ctx.beginPath();
+    for(let i=0;i<show;i++){
+      const v=Sim.hist[start+i];
+      const x=i/(show-1)*w, y=h-(v/1.25)*h;
+      i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+    }
+    ctx.strokeStyle=cy; ctx.lineWidth=1.6; ctx.stroke();
+
+    ctx.lineTo(w,h); ctx.lineTo(0,h); ctx.closePath();
+    const g=ctx.createLinearGradient(0,0,0,h);
+    g.addColorStop(0, cy); g.addColorStop(1,"transparent");
+    ctx.globalAlpha=.16; ctx.fillStyle=g; ctx.fill(); ctx.globalAlpha=1;
+
+    /* nominal ceiling */
+    const yl=h-(1/1.25)*h;
+    ctx.setLineDash([3,4]); ctx.strokeStyle=mg; ctx.globalAlpha=.55;
+    ctx.beginPath(); ctx.moveTo(0,yl); ctx.lineTo(w,yl); ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha=1;
+
+    const lastY=h-(Sim.hist[n-1]/1.25)*h;
+    ctx.fillStyle=cy; ctx.beginPath(); ctx.arc(w-1,lastY,3,0,6.2832); ctx.fill();
+  });
+})();
+
+/* — fuel: liquid level with two travelling waves — */
+(function(){
+  const cv=tileCanvas("tFuel");
+  onTick(function(t){
+    if(!inView(cv)) return;
+    const f=fitCanvas(cv); if(!f) return;
+    const {ctx,w,h}=f;
+    ctx.clearRect(0,0,w,h);
+    const cy=css("--cy"), lvl=h-Sim.fuel*h, tt=t/1000;
+
+    ctx.strokeStyle=css("--line-2"); ctx.lineWidth=1;
+    ctx.strokeRect(.5,.5,w-1,h-1);
+
+    ctx.save();
+    ctx.beginPath(); ctx.rect(1,1,w-2,h-2); ctx.clip();
+    for(let k=0;k<2;k++){
+      const amp = reduced?0:(4.5-k*1.6), sp = .9+k*.55, off=k*1.9;
+      ctx.beginPath(); ctx.moveTo(0,h);
+      for(let x=0;x<=w;x+=4){
+        const y = lvl + Math.sin(x*0.024 + tt*sp + off)*amp + Math.sin(x*0.011 - tt*.6)*amp*.5;
+        ctx.lineTo(x,y);
+      }
+      ctx.lineTo(w,h); ctx.closePath();
+      ctx.globalAlpha = k? .5 : .22;
+      ctx.fillStyle = cy; ctx.fill();
+    }
+    ctx.globalAlpha=1;
+
+    /* graduations */
+    ctx.strokeStyle=css("--line"); ctx.lineWidth=1;
+    for(let i=1;i<4;i++){
+      const y=h*i/4;
+      ctx.beginPath(); ctx.moveTo(w-16,y+.5); ctx.lineTo(w-4,y+.5); ctx.stroke();
+    }
+    /* rising bubbles */
+    if(!reduced){
+      for(let i=0;i<7;i++){
+        const ph=(tt*.28 + i*.137)%1;
+        const bx=(i*83)%Math.max(w-14,1)+7;
+        const by=h-ph*(h-lvl);
+        if(by>lvl){
+          ctx.globalAlpha=(1-ph)*.45; ctx.fillStyle=cy;
+          ctx.beginPath(); ctx.arc(bx,by,1.4+((i*7)%3)*.5,0,6.2832); ctx.fill();
+        }
+      }
+      ctx.globalAlpha=1;
+    }
+    ctx.restore();
+  });
+})();
+
+/* — radio: scrolling spectrogram — */
+(function(){
+  const cv=tileCanvas("tRadio");
+  onTick(function(){
+    if(!inView(cv)) return;
+    const f=fitCanvas(cv); if(!f) return;
+    const {ctx,w,h}=f;
+    ctx.clearRect(0,0,w,h);
+    const cols=Sim.spec, n=cols.length; if(!n) return;
+    const show=Math.min(n, Math.max(40, Math.floor(w/2.2)));
+    const cw=w/show, start=n-show;
+    const cyRGB = hexish(css("--cy")), mgRGB = hexish(css("--mg"));
+    for(let i=0;i<show;i++){
+      const col=cols[start+i], bins=col.length, bh=h/bins;
+      for(let j=0;j<bins;j++){
+        const v=col[j];
+        if(v<.12) continue;
+        const c = v>.6 ? mgRGB : cyRGB;
+        ctx.fillStyle="rgba("+c[0]+","+c[1]+","+c[2]+","+(v*.9).toFixed(3)+")";
+        ctx.fillRect(i*cw, h-(j+1)*bh, cw+.6, bh+.6);
+      }
+    }
+    ctx.strokeStyle=css("--line"); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,h*.5+.5); ctx.lineTo(w,h*.5+.5); ctx.stroke();
+  });
+  function hexish(c){
+    c=c.trim();
+    if(c[0]==="#"){
+      const v=c.length===4 ? c[1]+c[1]+c[2]+c[2]+c[3]+c[3] : c.slice(1,7);
+      return [parseInt(v.slice(0,2),16), parseInt(v.slice(2,4),16), parseInt(v.slice(4,6),16)];
+    }
+    const m=c.match(/\d+/g);
+    return m? [ +m[0], +m[1], +m[2] ] : [0,229,255];
+  }
+})();
+
+/* — drift: oscilloscope — */
+(function(){
+  const cv=tileCanvas("tDrift");
+  onTick(function(t){
+    if(!inView(cv)) return;
+    const f=fitCanvas(cv); if(!f) return;
+    const {ctx,w,h}=f;
+    ctx.clearRect(0,0,w,h);
+    gridLines(ctx,w,h,Math.max(16,h/4));
+    const cy=css("--cy"), mg=css("--mg"), tt=reduced?0:t/1000;
+    const amp=(h*.30)*(0.38 + clamp(Sim.drift,0,1.2)*0.62), a=2, b=3;
+
+    ctx.beginPath();
+    for(let i=0;i<=220;i++){
+      const u=i/220*6.2832;
+      const x=w/2 + Math.sin(u*a + tt*.8)*amp*1.5;
+      const y=h/2 + Math.sin(u*b + tt*.55)*amp;
+      i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+    }
+    ctx.strokeStyle = Sim.drift>.8 ? mg : cy;
+    ctx.lineWidth=1.4; ctx.globalAlpha=.85; ctx.stroke(); ctx.globalAlpha=1;
+
+    ctx.strokeStyle=css("--line-2"); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(w/2+.5,0); ctx.lineTo(w/2+.5,h);
+    ctx.moveTo(0,h/2+.5); ctx.lineTo(w,h/2+.5); ctx.stroke();
+
+    if(Sim.burn>.05){
+      ctx.globalAlpha=Sim.burn*.5; ctx.fillStyle=mg;
+      ctx.beginPath(); ctx.arc(w/2,h/2, 14+Sim.burn*26, 0, 6.2832); ctx.fill();
+      ctx.globalAlpha=1;
+    }
+  });
+})();
+
+/* — life support: four coupled rings — */
+(function(){
+  const cv=tileCanvas("tLife");
+  const LB=["O₂","CO₂","H₂O","P"];
+  onTick(function(t){
+    if(!inView(cv)) return;
+    const f=fitCanvas(cv); if(!f) return;
+    const {ctx,w,h}=f;
+    ctx.clearRect(0,0,w,h);
+    const vals=[Sim.o2, 1-Sim.co2, Sim.h2o, Sim.pwr];
+    const cy=css("--cy"), mg=css("--mg"), line=css("--bg-3");
+    const cx=w/2, cyy=h/2, base=Math.min(w,h)*.42;
+    const tt=reduced?0:t/1000;
+
+    for(let i=0;i<4;i++){
+      const r=base - i*(base*.21);
+      const v=clamp(vals[i],0,1);
+      ctx.beginPath(); ctx.arc(cx,cyy,r,0,6.2832);
+      ctx.strokeStyle=line; ctx.lineWidth=base*.13; ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx,cyy,r, -Math.PI/2, -Math.PI/2 + v*6.2832);
+      ctx.strokeStyle = v<.6 ? mg : cy;
+      ctx.lineWidth=base*.13; ctx.lineCap="round";
+      ctx.globalAlpha=.55+i*.12; ctx.stroke(); ctx.globalAlpha=1;
+
+      /* travelling marker */
+      const ang=-Math.PI/2 + v*6.2832;
+      const mxp=cx+Math.cos(ang)*r, myp=cyy+Math.sin(ang)*r;
+      ctx.fillStyle = v<.6 ? mg : cy;
+      ctx.beginPath(); ctx.arc(mxp,myp, 2.2+Math.sin(tt*2+i)*.6, 0, 6.2832); ctx.fill();
+    }
+    ctx.lineCap="butt";
+    ctx.fillStyle=css("--fg-faint");
+    ctx.font='600 8px ui-monospace, monospace';
+    ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText(LB[0], cx, cyy);
+  });
+})();
+
+/* — cargo: isometric stack — */
+(function(){
+  const cv=tileCanvas("tCargo");
+  onTick(function(t){
+    if(!inView(cv)) return;
+    const f=fitCanvas(cv); if(!f) return;
+    const {ctx,w,h}=f;
+    ctx.clearRect(0,0,w,h);
+    const cy=css("--cy"), mg=css("--mg");
+    const COLS=4, ROWS=4, LAY=6, total=COLS*ROWS*LAY;
+    const filled=Math.round(Sim.cargo*total);
+    const uw=Math.min(w/(COLS+ROWS)*1.35, h/(LAY+3.2)*1.9, 20);
+    const uh=uw*.55, ud=uw*.62;
+    const ox=w/2, oy=h*.70 - (reduced?0:Math.sin(t/1400)*2);
+
+    /* index of a unit in fill order: layer, then row, then column */
+    const at=(l,r,c)=> l*ROWS*COLS + r*COLS + c;
+
+    /* floor outline first */
+    ctx.strokeStyle=css("--line"); ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(ox-(ROWS-1)*uw*.5-uw*.5, oy+(ROWS-1)*uh*.5);
+    ctx.lineTo(ox, oy-uh*.5);
+    ctx.lineTo(ox+(COLS-1)*uw*.5+uw*.5, oy+(COLS-1)*uh*.5);
+    ctx.lineTo(ox+((COLS-1)-(ROWS-1))*uw*.5, oy+((COLS-1)+(ROWS-1))*uh*.5+uh*.5);
+    ctx.closePath(); ctx.stroke();
+
+    /* painter's algorithm: bottom layer first, then increasing depth (c+r) */
+    for(let l=0;l<LAY;l++){
+      for(let d=0; d<=(COLS-1)+(ROWS-1); d++){
+        for(let r=Math.min(d,ROWS-1); r>=0; r--){
+          const c=d-r;
+          if(c<0 || c>COLS-1) continue;
+          const i=at(l,r,c);
+          if(i>=filled) continue;
+          const x=ox + (c-r)*uw*.5;
+          const y=oy + (c+r)*uh*.5 - l*ud;
+          drawBox(ctx,x,y,uw,uh,ud, i>=filled-2?mg:cy, .30+l*.10);
+        }
+      }
+    }
+  });
+  function drawBox(ctx,x,y,uw,uh,ud,col,alpha){
+    const hw=uw*.5, hh=uh*.5;
+    ctx.globalAlpha=alpha+.3;
+    ctx.fillStyle=col;
+    ctx.beginPath();
+    ctx.moveTo(x, y-hh); ctx.lineTo(x+hw, y); ctx.lineTo(x, y+hh); ctx.lineTo(x-hw, y);
+    ctx.closePath(); ctx.fill();
+    ctx.globalAlpha=alpha*.65;
+    ctx.beginPath();
+    ctx.moveTo(x-hw,y); ctx.lineTo(x,y+hh); ctx.lineTo(x,y+hh+ud); ctx.lineTo(x-hw,y+ud);
+    ctx.closePath(); ctx.fill();
+    ctx.globalAlpha=alpha*.45;
+    ctx.beginPath();
+    ctx.moveTo(x+hw,y); ctx.lineTo(x,y+hh); ctx.lineTo(x,y+hh+ud); ctx.lineTo(x+hw,y+ud);
+    ctx.closePath(); ctx.fill();
+    ctx.globalAlpha=.5; ctx.strokeStyle=col; ctx.lineWidth=.6;
+    ctx.beginPath();
+    ctx.moveTo(x, y-hh); ctx.lineTo(x+hw, y); ctx.lineTo(x, y+hh); ctx.lineTo(x-hw, y); ctx.closePath();
+    ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+})();
+
+/* bridge commands */
+registerCmd({ ic:"▦", title:"Kommandobrücke", sub:"Sektion", run:()=>jump("bridge") });
+TERM_CMDS.bridge = { d:"Momentaufnahme der Brücke", run(){ tLines([
+  ["BRÜCKE // MOMENTAUFNAHME","ok"],
+  ["  Reaktorlast .............. "+de(Sim.load*4.2,2)+" MW ("+Math.round(Sim.load*100)+" %)","out"],
+  ["  Treibstoff ............... "+de(Sim.fuel*100,1)+" %","out"],
+  ["  Funkpegel ................ "+de(Sim.radio,1)+" dB","out"],
+  ["  Bahnabweichung ........... "+de(Sim.drift,2)+" m/s","out"],
+  ["  Lebenserhaltung .......... "+Math.round((Sim.o2+(1-Sim.co2)+Sim.h2o+Sim.pwr)/4*100)+" %","out"],
+  ["  Laderaum ................. "+de(Sim.cargo*100,1)+" %","out"]
+]); jump("bridge"); }};
 
 /* ============================================================
    MAIN RAF LOOP
