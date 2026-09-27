@@ -24,14 +24,13 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 # Jeder Eintrag: (Instanzname, Klasse, Quelldatei | None, [Kinder])
 # Klassen: Folder, ModuleScript, Script, LocalScript oder ein Service-Name.
 
-SHARED = ["Types", "Log", "Format", "Trove", "RateLimiter", "Config", "Remotes"]
-SERVER_MODULES = [
-    "TickScheduler", "RemoteGuard", "DataService", "PlotBuilder", "PlotService",
-    "EconomyService", "RebirthService", "MonetizationService",
-    "ProgressionService", "LeaderboardService", "WorldService", "StateService",
-]
-CLIENT_MODULES = ["UIKit", "SoundController", "NotifyController",
-                  "HudController", "ShopController", "PanelController"]
+# Der Quellbaum wird AUTOMATISCH aus src/ gelesen, damit neue Module und
+# Unterordner nicht an zwei Stellen gepflegt werden muessen.
+#   Ordner              -> Folder
+#   X.server.luau       -> Script
+#   X.client.luau       -> LocalScript
+#   X.luau              -> ModuleScript
+# Innerhalb eines Ordners kommen Dateien vor Unterordnern, beides sortiert.
 
 # Service-Eigenschaften, die im Place gesetzt sein sollen.
 SERVICE_PROPS = {
@@ -73,12 +72,26 @@ def node(name, cls, src=None, children=None):
     return {"name": name, "class": cls, "src": src, "children": children or []}
 
 
+def scan(directory: pathlib.Path):
+    """Liest einen Quellordner rekursiv in Instanzknoten ein."""
+    out = []
+    for path in sorted(directory.iterdir(), key=lambda p: (p.is_dir(), p.name.lower())):
+        rel = path.relative_to(ROOT).as_posix()
+        if path.is_dir():
+            out.append(node(path.name, "Folder", None, scan(path)))
+        elif path.name.endswith(".server.luau"):
+            out.append(node(path.name[: -len(".server.luau")], "Script", rel))
+        elif path.name.endswith(".client.luau"):
+            out.append(node(path.name[: -len(".client.luau")], "LocalScript", rel))
+        elif path.suffix == ".luau":
+            out.append(node(path.stem, "ModuleScript", rel))
+    return out
+
+
 def build_tree():
-    shared = [node(m, "ModuleScript", f"src/shared/{m}.luau") for m in SHARED]
-    server = [node("Bootstrap", "Script", "src/server/Bootstrap.server.luau")]
-    server += [node(m, "ModuleScript", f"src/server/{m}.luau") for m in SERVER_MODULES]
-    client = [node("Bootstrap", "LocalScript", "src/client/Bootstrap.client.luau")]
-    client += [node(m, "ModuleScript", f"src/client/{m}.luau") for m in CLIENT_MODULES]
+    shared = scan(ROOT / "src" / "shared")
+    server = scan(ROOT / "src" / "server")
+    client = scan(ROOT / "src" / "client")
 
     return [
         node("Workspace", "Workspace"),

@@ -28,10 +28,12 @@ local Config = require(Shared.Config)
 local Format = require(Shared.Format)
 local Log = require(Shared.Log)
 local Remotes = require(Shared.Remotes)
+local Theme = require(Shared.Theme)
 local Types = require(Shared.Types)
 
 local DataService = require(script.Parent.DataService)
 local MonetizationService = require(script.Parent.MonetizationService)
+local PlotBuilder = require(script.Parent.PlotBuilder)
 local PlotService = require(script.Parent.PlotService)
 local ProgressionService = require(script.Parent.ProgressionService)
 local TickScheduler = require(script.Parent.TickScheduler)
@@ -57,6 +59,8 @@ local dropAccum: { [number]: { [string]: number } } = {}
 -- damit ein Spieler, der auf einem Pad steht, nicht 60 Meldungen pro
 -- Sekunde bekommt.
 local padCooldown: { [Player]: number } = {}
+-- Haltefortschritt je Plot und Knopf, in Sekunden.
+local holdProgress: { [number]: { [string]: number } } = {}
 
 -- ==========================================================================
 -- Multiplikatoren
@@ -190,8 +194,8 @@ local function spawnOre(state: PlotService.PlotState, id: string, dropper: Types
 	ore.Name = "Ore"
 	ore.Size = Config.ECONOMY.ORE_SIZE
 	ore.CFrame = spawnCFrame :: CFrame
-	ore.Material = Enum.Material.Neon
-	ore.Color = Config.COLORS.ACCENT
+	ore.Material = Theme.Material.neon
+	ore.Color = Theme.Color.primary
 	ore.Anchored = false
 	ore.CanCollide = true
 	ore.CastShadow = false
@@ -200,6 +204,32 @@ local function spawnOre(state: PlotService.PlotState, id: string, dropper: Types
 	-- dass sie beim Aufprall wegspringen.
 	ore.CustomPhysicalProperties = PhysicalProperties.new(0.6, 0.3, 0, 1, 1)
 	ore:SetAttribute("OreValue", dropper.value)
+	--[[
+		Trail nur fuer die beiden wertvollsten Bohrer.
+		Ein Trail kostet drei Instanzen (zwei Attachments plus Trail). Bei
+		45 Erzen mal sechs Plots waeren das ueber 800 zusaetzliche
+		Instanzen fuer einen Effekt, den man bei Dauerfeuer ohnehin kaum
+		sieht. Bei den teuersten Erzen ist er selten und faellt auf.
+	]]
+	if id == "dropper_6" or id == "dropper_7" then
+		local a0 = Instance.new("Attachment")
+		a0.Position = Vector3.new(0, 0, -Config.ECONOMY.ORE_SIZE.Z / 2)
+		a0.Parent = ore
+		local a1 = Instance.new("Attachment")
+		a1.Position = Vector3.new(0, 0, Config.ECONOMY.ORE_SIZE.Z / 2)
+		a1.Parent = ore
+		local trail = Instance.new("Trail")
+		trail.Attachment0 = a0
+		trail.Attachment1 = a1
+		trail.Lifetime = Theme.Duration.base
+		trail.LightEmission = 1
+		trail.Color = ColorSequence.new(Theme.Color.premium)
+		trail.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, Theme.Alpha.veil),
+			NumberSequenceKeypoint.new(1, 1),
+		})
+		trail.Parent = ore
+	end
 	ore:SetAttribute("ExpireAt", os.clock() + Config.ECONOMY.ORE_LIFETIME)
 	ore.Parent = state.refs.ores
 	state.oreCount += 1
@@ -340,14 +370,6 @@ end
 -- Beruehrungs-Handler (einmal pro Plot, nicht pro Besitzerwechsel)
 -- ==========================================================================
 
-local function playerFromHit(hit: BasePart): Player?
-	local character = hit.Parent
-	if character == nil then
-		return nil
-	end
-	return Players:GetPlayerFromCharacter(character)
-end
-
 local function connectPlot(state: PlotService.PlotState)
 	local refs = state.refs
 
@@ -377,6 +399,15 @@ local function connectPlot(state: PlotService.PlotState)
 			* Config.rebirthMultiplier(data.rebirths)
 			* MonetizationService.cashMultiplier(owner)
 		award(owner, payout)
+		-- Kurzer Funkenstoss statt dauerhaft laufendem Emitter: die Rate
+		-- bleibt so an die tatsaechlichen Einloesungen gekoppelt.
+		--[[
+			Bewusst KEIN Remote pro Erz: bei acht Erzen pro Sekunde und
+			sechs Plots waeren das ueber 50 Netzwerknachrichten je Sekunde
+			nur fuer einen Klickton. Der Client spielt den Ton stattdessen,
+			wenn im regulaeren Zustands-Push das Guthaben steigt.
+		]]
+		refs.collectorBurst:Emit(3)
 	end)
 
 	-- Veredler: Erzwert erhoehen.
@@ -404,33 +435,101 @@ local function connectPlot(state: PlotService.PlotState)
 			end
 			hit:SetAttribute(marker, true)
 			hit:SetAttribute("OreValue", value * factor)
-			hit.Color = Config.COLORS.CASH
+			hit.Color = Theme.Color.premium
 			hit.Size = hit.Size * 1.08
 		end)
 	end
 
-	-- Kauf-Pads.
-	for id, button in pairs(refs.buttons) do
-		button.pad.Touched:Connect(function(hit: BasePart)
-			local player = playerFromHit(hit)
-			if player == nil or player ~= state.owner then
-				return
-			end
-			local now = os.clock()
-			local until_ = padCooldown[player]
-			if until_ ~= nil and now < until_ then
-				return
-			end
-			padCooldown[player] = now + 0.5
+	-- Kauf-Pads werden NICHT ueber Touched ausgeloest, sondern ueber den
+	-- Haltevorgang in onHoldTick (siehe dort). Touched allein wuerde den
+	-- Fortschrittsring unmoeglich machen, weil das Ereignis bei einem
+	-- stillstehenden Charakter nicht erneut feuert.
+end
 
-			local ok, message = EconomyService.purchase(player, id)
-			if not ok then
-				-- Bei Misserfolg laenger sperren: der Spieler steht meist
-				-- noch mehrere Sekunden auf dem Pad.
-				padCooldown[player] = now + 2
+--[[
+	Halten statt Antippen.
+
+	Wer auf einer Trittplatte steht, fuellt in HOLD_SECONDS den Ring auf
+	dem schwebenden Panel; erst dann wird gekauft. Das verhindert
+	Fehlkaeufe beim Durchlaufen und gibt dem Kauf ein Gewicht.
+
+	Wer es eilig hat, kauft im Shop-Panel weiterhin mit einem Klick - der
+	Serverpfad ist in beiden Faellen derselbe (EconomyService.purchase mit
+	allen sieben Pruefungen).
+
+	Die Naehe wird ueber die Position des HumanoidRootPart geprueft, nicht
+	ueber Touched: das ist unabhaengig davon, ob sich der Charakter bewegt.
+	Geprueft werden nur Knoepfe, die ueberhaupt kaufbar sind - das sind in
+	der Praxis ein bis drei pro Plot, nicht 25.
+]]
+local HOLD_SECONDS = 0.45
+
+local function resetHolds(state: PlotService.PlotState)
+	local hold = holdProgress[state.index]
+	if hold == nil then
+		return
+	end
+	for id, value in pairs(hold) do
+		if value > 0 then
+			local button = state.refs.buttons[id]
+			if button ~= nil then
+				PlotService.setButtonProgress(button, 0)
 			end
-			Remotes.event("Notify"):FireClient(player, message, if ok then "success" else "error")
-		end)
+			hold[id] = 0
+		end
+	end
+end
+
+local function onHoldTick(dt: number)
+	local radius = PlotBuilder.BUTTON_RADIUS / 2 + 1
+	for _, state in ipairs(PlotService.all()) do
+		local owner = state.owner
+		if owner == nil then
+			continue
+		end
+		local data = DataService.get(owner)
+		local character = owner.Character
+		local root = if character ~= nil then character:FindFirstChild("HumanoidRootPart") else nil
+		if data == nil or root == nil or not root:IsA("BasePart") then
+			resetHolds(state)
+			continue
+		end
+
+		local hold = holdProgress[state.index]
+		if hold == nil then
+			hold = {}
+			holdProgress[state.index] = hold
+		end
+
+		for id, button in pairs(state.refs.buttons) do
+			if data.purchased[id] or not PlotService.isAvailable(data.purchased, button.def) then
+				continue
+			end
+			local delta = root.Position - button.tread.Position
+			local standing = math.abs(delta.X) <= radius
+				and math.abs(delta.Z) <= radius
+				and math.abs(delta.Y) <= radius
+
+			if not standing then
+				if (hold[id] or 0) > 0 then
+					hold[id] = 0
+					PlotService.setButtonProgress(button, 0)
+				end
+				continue
+			end
+
+			local elapsed = (hold[id] or 0) + dt
+			if elapsed < HOLD_SECONDS then
+				hold[id] = elapsed
+				PlotService.setButtonProgress(button, elapsed / HOLD_SECONDS)
+				continue
+			end
+
+			hold[id] = 0
+			PlotService.setButtonProgress(button, 0)
+			local ok, message = EconomyService.purchase(owner, id)
+			Remotes.event("Notify"):FireClient(owner, message, if ok then "success" else "error")
+		end
 	end
 end
 
@@ -504,14 +603,17 @@ function EconomyService.Start()
 	]]
 	PlotService.onAssign(function(state: PlotService.PlotState, player: Player)
 		dropAccum[state.index] = {}
+		holdProgress[state.index] = {}
 		state.trove:add(function()
 			dropAccum[state.index] = nil
+			holdProgress[state.index] = nil
 			multCache[player] = nil
 			padCooldown[player] = nil
 		end)
 	end)
 
 	TickScheduler.every("drop", Config.ECONOMY.DROP_TICK_HZ, onDropTick)
+	TickScheduler.every("hold", Config.ECONOMY.DROP_TICK_HZ, onHoldTick)
 	TickScheduler.every("sweep", Config.ECONOMY.SWEEP_TICK_HZ, onSweepTick)
 end
 

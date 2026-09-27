@@ -66,10 +66,41 @@ local function publish()
 	end)
 end
 
+--[[
+	Avatarbilder. GetUserThumbnailAsync yieldet und ist ratenbegrenzt,
+	deshalb laeuft es nach dem Zeichnen der Tafel in einem eigenen Thread
+	und nur fuer Spieler, deren Bild noch nicht bekannt ist.
+]]
+local avatarCache: { [number]: string } = {}
+
+local function loadAvatar(rank: number, userId: number)
+	local cached = avatarCache[userId]
+	if cached ~= nil then
+		WorldService.setLeaderboardAvatar(rank, cached)
+		return
+	end
+	task.spawn(function()
+		local ok, image = pcall(function(): string
+			local content = Players:GetUserThumbnailAsync(
+				userId,
+				Enum.ThumbnailType.HeadShot,
+				Enum.ThumbnailSize.Size100x100
+			)
+			return content
+		end)
+		if not ok then
+			Log.throttled("avatar", 120, 2, "Leaderboard", "Avatarbild nicht ladbar")
+			return
+		end
+		avatarCache[userId] = image
+		WorldService.setLeaderboardAvatar(rank, image)
+	end)
+end
+
 local function refresh()
 	local activeStore = store
 	if activeStore == nil then
-		WorldService.setLeaderboardRows({ "Bestenliste nicht verfuegbar" })
+		WorldService.setLeaderboardEmpty(true)
 		return
 	end
 	local ok, pages = pcall(function(): DataStorePages?
@@ -80,25 +111,41 @@ local function refresh()
 		return
 	end
 
-	local rows: { string } = {}
-	local entries = pages:GetCurrentPage()
-	for rank, entry in ipairs(entries) do
+	local entries: { WorldService.Entry } = {}
+	for rank, entry in ipairs(pages:GetCurrentPage()) do
 		local userId = tonumber(entry.key)
 		if userId == nil then
 			continue
 		end
 		local value = entry.value
 		local amount = if typeof(value) == "number" then value else 0
-		table.insert(rows, string.format("%2d.  %-20s  %s $",
-			rank, nameFor(userId), Format.abbreviate(amount)))
+		table.insert(entries, {
+			rank = rank,
+			userId = userId,
+			name = nameFor(userId),
+			amount = Format.abbreviate(amount),
+		})
 		if rank >= Config.LEADERBOARD.TOP_N then
 			break
 		end
 	end
-	if #rows == 0 then
-		rows = { "Noch keine Eintraege - sei der Erste!" }
+
+	WorldService.setLeaderboardRows(entries)
+	WorldService.setLeaderboardEmpty(#entries == 0)
+	for _, entry in ipairs(entries) do
+		loadAvatar(entry.rank, entry.userId)
 	end
-	WorldService.setLeaderboardRows(rows)
+
+	-- Der Namens-Cache waechst sonst ueber die Serverlaufzeit mit jedem
+	-- neuen Spieler in der Bestenliste.
+	local cachedNames = 0
+	for _ in pairs(nameCache) do
+		cachedNames += 1
+	end
+	if cachedNames > Config.LEADERBOARD.TOP_N * 10 then
+		table.clear(nameCache)
+		table.clear(avatarCache)
+	end
 end
 
 function LeaderboardService.Init()

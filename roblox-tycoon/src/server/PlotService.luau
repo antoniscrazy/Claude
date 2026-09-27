@@ -20,13 +20,14 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config)
 local Format = require(Shared.Format)
 local Log = require(Shared.Log)
+local Theme = require(Shared.Theme)
 local Trove = require(Shared.Trove)
 local Types = require(Shared.Types)
 
 local DataService = require(script.Parent.DataService)
 local PlotBuilder = require(script.Parent.PlotBuilder)
 
-local C = Config.COLORS
+local C = Theme.Color
 
 export type PlotState = {
 	index: number,
@@ -39,6 +40,11 @@ export type PlotState = {
 
 local PlotService = {}
 PlotService.name = "PlotService"
+
+local TweenService = game:GetService("TweenService")
+
+-- Wie tief ein gekaufter Knopf im Boden verschwindet.
+local SINK_DEPTH = 4
 
 local plots: { PlotState } = {}
 --[[
@@ -124,32 +130,32 @@ function PlotService.refresh(state: PlotState)
 	-- Claim-Pad
 	if owner ~= nil then
 		refs.claimTitle.Text = owner.DisplayName
-		refs.claimTitle.TextColor3 = C.CASH
+		refs.claimTitle.TextColor3 = C.success
 		refs.claimSub.Text = `Fabrik #{state.index}`
-		refs.claimPad.Color = C.CASH
+		refs.claimPad.Color = C.success
 	else
 		refs.claimTitle.Text = `FREI #{state.index}`
-		refs.claimTitle.TextColor3 = C.ACCENT
+		refs.claimTitle.TextColor3 = C.premium
 		refs.claimSub.Text = "Wird beim Beitritt vergeben"
-		refs.claimPad.Color = C.ACCENT
+		refs.claimPad.Color = C.premium
 	end
 
 	-- Dropper: der Startdropper steht, sobald der Plot vergeben ist.
 	for id, parts in pairs(refs.dropperBodies) do
 		local active = if id == "__base" then owner ~= nil else (purchased[id] == true)
 		for _, part in ipairs(parts) do
-			part.Transparency = if active then 0 else 1
-			part.CanCollide = active
+			part.Transparency = if active then Theme.Alpha.opaque else Theme.Alpha.hidden
+			part.CanCollide = active and part.Name ~= "Nozzle"
 		end
 	end
 
 	-- Veredler
 	for id, upgrader in pairs(refs.upgraders) do
 		local active = purchased[id] == true
-		upgrader.field.Transparency = if active then 0.5 else 1
+		upgrader.field.Transparency = if active then Theme.Alpha.veil else Theme.Alpha.hidden
 		for _, part in ipairs(upgrader.frame) do
-			part.Transparency = if active then 0 else 1
-			part.CanCollide = active
+			part.Transparency = if active then Theme.Alpha.opaque else Theme.Alpha.hidden
+			part.CanCollide = active and part.Name ~= "Lamp"
 		end
 	end
 
@@ -158,45 +164,64 @@ function PlotService.refresh(state: PlotState)
 	local roofOn = purchased.roof == true
 	for _, part in ipairs(refs.hall) do
 		local visible = if part.Name == "HallRoof" or part.Name == "Lamp" then roofOn else wallsOn
-		part.Transparency = if visible then (if part.Name == "HallRoof" then 0.2 else 0) else 1
+		part.Transparency = if visible
+			then (if part.Name == "HallRoof" then Theme.Alpha.glass else Theme.Alpha.opaque)
+			else Theme.Alpha.hidden
 		part.CanCollide = visible and part.Name ~= "Lamp"
 	end
 	for _, light in ipairs(refs.hallLights) do
 		light.Enabled = purchased.lights == true
 	end
 
-	-- VIP-Tuer: sichtbar, sobald die Lounge gekauft ist.
+	-- Bandstreifen nur sichtbar, solange der Plot vergeben ist.
+	refs.conveyorBeam.Enabled = owner ~= nil
+
+	-- VIP-Tuer
 	local vipBuilt = purchased.vip_room == true
-	refs.vipDoor.Transparency = if vipBuilt then 0.45 else 1
+	refs.vipDoor.Transparency = if vipBuilt then Theme.Alpha.veil else Theme.Alpha.hidden
 	refs.vipDoor.CanCollide = vipBuilt
 
-	-- Kaufknoepfe
+	-- Kaufknoepfe: drei klar unterscheidbare Zustaende.
+	local cash = if data ~= nil then data.cash else 0
 	for id, button in pairs(refs.buttons) do
 		local def = button.def
 		if purchased[id] then
-			button.pad.Color = C.BOUGHT
-			button.pad.Transparency = 0.55
-			button.pad.CanCollide = false
-			button.stroke.Color = C.BOUGHT
-			button.title.TextColor3 = C.BOUGHT
-			button.sub.Text = "GEKAUFT"
+			-- Gekauft: Knopf versinkt im Boden und verschwindet.
+			PlotService.sinkButton(button)
 		elseif owner ~= nil and isAvailable(purchased, def) then
-			button.pad.Color = C.BUYABLE
-			button.pad.Transparency = 0
-			button.pad.CanCollide = true
-			button.stroke.Color = C.BUYABLE
-			button.title.TextColor3 = C.BUYABLE
-			button.sub.Text = `{Format.abbreviate(def.price)} $  -  {def.desc}`
+			local affordable = cash >= def.price
+			PlotService.raiseButton(button)
+			button.ring.Color = if affordable then C.primary else C.bg3
+			button.ring.Material = if affordable then Theme.Material.neon else Theme.Material.surface
+			button.tread.Transparency = if affordable
+				then Theme.Alpha.opaque
+				else Theme.Alpha.ghost
+			button.base.Transparency = if affordable
+				then Theme.Alpha.opaque
+				else Theme.Alpha.ghost
+			button.stroke.Color = if affordable then C.primary else C.bg3
+			button.price.TextColor3 = if affordable then C.success else C.textLow
+			button.title.TextColor3 = if affordable then C.textHigh else C.textMid
+			button.price.Text = `{Format.abbreviate(def.price)} $`
+			button.card.BackgroundTransparency = if affordable
+				then Theme.Alpha.opaque
+				else Theme.Alpha.glass
+			button.billboard.Enabled = true
 		else
-			-- Gesperrt: Preis bewusst weiterhin sichtbar, damit der Spieler
-			-- ein Ziel vor Augen hat, aber ohne Kauf-Farbe.
-			button.pad.Color = C.LOCKED
-			button.pad.Transparency = 0.35
-			button.pad.CanCollide = false
-			button.stroke.Color = C.LOCKED
-			button.title.TextColor3 = C.TEXT_DIM
-			button.sub.Text = if owner == nil then "gesperrt" else "Voraussetzung fehlt"
+			-- Voraussetzung fehlt: sichtbar, aber eindeutig gesperrt.
+			PlotService.raiseButton(button)
+			button.ring.Color = C.bg3
+			button.ring.Material = Theme.Material.surface
+			button.tread.Transparency = Theme.Alpha.ghost
+			button.base.Transparency = Theme.Alpha.ghost
+			button.stroke.Color = C.bg3
+			button.title.TextColor3 = C.textLow
+			button.price.TextColor3 = C.textLow
+			button.price.Text = "Voraussetzung fehlt"
+			button.card.BackgroundTransparency = Theme.Alpha.glass
+			button.billboard.Enabled = owner ~= nil
 		end
+		button.progress.Size = UDim2.fromScale(0, 1)
 	end
 
 	-- Rebirth-Schild
@@ -212,6 +237,60 @@ function PlotService.refresh(state: PlotState)
 	refs.collectorSub.Text = if data ~= nil
 		then `{Format.abbreviate(data.totalEarned)} $ gesamt`
 		else "0 $ gesamt"
+end
+
+--[[
+	Gekaufter Knopf: versinkt im Boden statt einfach zu verschwinden.
+	Der Tween laeuft auf dem Server, weil das Teil dort erzeugt wurde;
+	Roblox repliziert die Positionsaenderung an alle Clients.
+]]
+function PlotService.sinkButton(button: PlotBuilder.ButtonRefs)
+	-- Attribut statt Transparenz als Merker: refresh() kann mehrfach
+	-- innerhalb der Animationsdauer laufen, und zwei parallele Tweens auf
+	-- demselben Teil kaempfen gegeneinander.
+	if button.base:GetAttribute("Sunk") == true then
+		return
+	end
+	button.base:SetAttribute("Sunk", true)
+	button.billboard.Enabled = false
+
+	local info = Theme.tweenInfo(Theme.Duration.slow, "exit")
+	local down = CFrame.new(0, -SINK_DEPTH, 0)
+	for _, part in ipairs({ button.base, button.tread, button.ring }) do
+		TweenService:Create(part, info, { CFrame = down * part.CFrame }):Play()
+		part.CanCollide = false
+	end
+	for _, part in ipairs(button.bevel) do
+		TweenService:Create(part, info, { Transparency = Theme.Alpha.hidden }):Play()
+	end
+	task.delay(Theme.Duration.slow, function()
+		if button.base:GetAttribute("Sunk") ~= true then
+			return   -- zwischenzeitlich wieder aufgetaucht (Rebirth)
+		end
+		button.base.Transparency = Theme.Alpha.hidden
+		button.tread.Transparency = Theme.Alpha.hidden
+		button.ring.Transparency = Theme.Alpha.hidden
+	end)
+end
+
+-- Gegenstueck: setzt einen versenkten Knopf zurueck (Rebirth, Plotwechsel).
+function PlotService.raiseButton(button: PlotBuilder.ButtonRefs)
+	button.base:SetAttribute("Sunk", nil)
+	button.base.CFrame = button.homeCFrame
+	button.tread.CFrame = button.homeCFrame * CFrame.new(0, 0.85, 0)
+	button.ring.CFrame = button.homeCFrame * CFrame.new(0, 0.7, 0)
+		* CFrame.Angles(0, 0, math.rad(90))
+	button.ring.Transparency = Theme.Alpha.opaque
+	button.base.CanCollide = true
+	button.tread.CanCollide = true
+	for _, part in ipairs(button.bevel) do
+		part.Transparency = Theme.Alpha.opaque
+	end
+end
+
+-- Fortschrittsring beim Draufstehen (0 bis 1).
+function PlotService.setButtonProgress(button: PlotBuilder.ButtonRefs, ratio: number)
+	button.progress.Size = UDim2.fromScale(math.clamp(ratio, 0, 1), 1)
 end
 
 function PlotService.refreshFor(player: Player)

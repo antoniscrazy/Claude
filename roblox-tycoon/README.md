@@ -15,7 +15,7 @@ Place-File **und** als Rojo-Projekt.
 | `TycoonGame.rbxlx` | Place-File, per Doppelklick in Roblox Studio zu öffnen |
 | `default.project.json` + `src/` | Rojo-Projekt zum Versionieren und `rojo build` |
 | `tools/` | Build, Balancing-Solver, Prüfskripte |
-| `docs/` | Architekturbaum, Balancing-Tabelle |
+| `docs/` | Architekturbaum, Balancing-Tabelle, Design-System, Abnahme |
 
 Beides kommt aus **einer** Quelle: `tools/build.py` liest dieselbe
 Baumdefinition und erzeugt daraus Rojo-Projekt, Sourcemap und `.rbxlx`.
@@ -34,6 +34,28 @@ Danach `TycoonGame.rbxlx` in Roblox Studio öffnen und auf **Play** drücken.
 Die gesamte Welt (Lobby, 6 Plots, Beleuchtung, UI) wird zur Laufzeit gebaut.
 
 Siehe `SETUP.md` für Asset-IDs, API-Services und Veröffentlichung.
+
+## Design-System
+
+`src/shared/Theme.luau` ist die **einzige** Quelle für Farbe, Abstand,
+Radius, Typografie, Bewegung, Größe, Ebene und Material.
+`tools/theme_lint.py` bricht den Build ab, wenn irgendwo sonst ein
+entsprechendes Literal auftaucht — geprüft über 50 Module, 0 Verstöße.
+
+Die Palette wird aus `tools/contrast.py` **generiert**: dort wird jede
+Kombination aus Text und Untergrund gegen WCAG 4.5:1 geprüft (45 Paare,
+schlechtester Wert 4.63:1), bevor sie in `Theme.luau` landet. Drei
+Farbfamilien: Indigo, Mint, Warm. Gold ist ausschließlich für
+Monetarisierung reserviert.
+
+Vollständige Spezifikation mit Palette, Skalen, Komponentenliste und
+ASCII-Wireframes je Bildschirm: **`docs/UI.md`**
+
+```
+src/client/UI/            Theme-Anbindung: Layers, Motion, Icon, Responsive, Preview
+src/client/UI/Components/ 14 Komponenten, alle mit Cleanup
+src/client/Screens/       HUD, Shop, Rebirth, Quests, Codes, Gems, Settings
+```
 
 ## Architektur
 
@@ -115,8 +137,13 @@ den simulierten Ertrag nicht abschneidet (Endausbau: 25,8 Erze bei Limit 45).
 3. **API-Prüfung** auf veraltete/verbotene Aufrufe, Kommentare ausgenommen
 4. **Balancing** inkl. Durchsatzgrenze
 5. **UI-Layout** auf 1920×1080, 1024×768, 667×375, 375×667
-6. **Place-Struktur**: XML valide, alle Services und Skripte vorhanden,
+6. **Design-System**: kein Literal außerhalb `Theme.luau`
+7. **Kontrast**: 45 Paare gegen WCAG 4.5:1
+8. **UI-Leaks**: jeder Motion-Scope wird freigegeben, kein Panel baut
+   beim Öffnen, kein Ein-/Ausblenden ohne Tween
+9. **Place-Struktur**: XML valide, alle Services und Skripte vorhanden,
    jedes Skript mit `--!strict` und Quelltext
 
-Was das **nicht** ersetzt: einen Play-Test in Studio. Siehe „Definition of
-Done" in `SETUP.md`.
+Was das **nicht** ersetzt: einen Play-Test in Studio und einen Blick auf
+einen echten Bildschirm. Siehe „Definition of Done" in `SETUP.md` und
+`docs/ABNAHME.md`.

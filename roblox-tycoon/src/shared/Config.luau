@@ -47,23 +47,8 @@ Config.WORLD = {
 	LOBBY_SIZE = Vector3.new(140, 2, 90),
 }
 
-Config.COLORS = {
-	ROCK = Color3.fromRGB(88, 92, 102),
-	STEEL = Color3.fromRGB(122, 128, 140),
-	DARK_STEEL = Color3.fromRGB(52, 56, 66),
-	ACCENT = Color3.fromRGB(255, 176, 48),
-	ACCENT_DARK = Color3.fromRGB(190, 120, 20),
-	CASH = Color3.fromRGB(120, 235, 150),
-	GEM = Color3.fromRGB(130, 190, 255),
-	LOCKED = Color3.fromRGB(96, 100, 112),
-	BUYABLE = Color3.fromRGB(70, 170, 255),
-	BOUGHT = Color3.fromRGB(70, 200, 120),
-	PANEL = Color3.fromRGB(22, 24, 32),
-	PANEL_LIGHT = Color3.fromRGB(34, 37, 48),
-	TEXT = Color3.fromRGB(236, 238, 245),
-	TEXT_DIM = Color3.fromRGB(158, 163, 178),
-	DANGER = Color3.fromRGB(255, 96, 96),
-}
+-- Farben stehen NICHT hier, sondern in Theme.luau. Config haelt nur
+-- Spielwerte; Design-Werte haben genau eine Quelle.
 
 -- ==========================================================================
 -- OEKONOMIE (Werte aus tools/balance_sim.py)
@@ -276,11 +261,13 @@ Config.LEADERBOARD = {
 -- ==========================================================================
 
 Config.SOUNDS = {
-	AMBIENCE = "",   -- REPLACE ME: rbxassetid://...
-	PURCHASE = "",   -- REPLACE ME
-	COLLECT  = "",   -- REPLACE ME
-	REBIRTH  = "",   -- REPLACE ME
-	ERROR    = "",   -- REPLACE ME
+	AMBIENCE = "",   -- REPLACE ME: gedaempfter Minen-Loop, nahtlos, ca. 60 s
+	CLICK    = "",   -- REPLACE ME: kurzer trockener UI-Klick, < 80 ms
+	HOVER    = "",   -- REPLACE ME: sehr leiser Tick beim Ueberfahren
+	PURCHASE = "",   -- REPLACE ME: heller Kauf-Chime, aufsteigend
+	COLLECT  = "",   -- REPLACE ME: kurzer Muenz-Tick (Tonhoehe wird variiert)
+	REBIRTH  = "",   -- REPLACE ME: tiefer Schlag mit Nachhall
+	ERROR    = "",   -- REPLACE ME: dumpfer Thud, keine Melodie
 }
 
 -- ==========================================================================
