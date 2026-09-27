@@ -1,0 +1,840 @@
+--[[
+	==========================================================
+	  ORE EMPIRE TYCOON  -  Haupt-Serverscript
+	  Baut die komplette Welt zur Laufzeit auf:
+	  Baseplate, 4 Tycoon-Grundstuecke, Dropper, Foerderband,
+	  Veredler, Sammler, Kaufknoepfe, GUI und Speicherung.
+	==========================================================
+]]
+
+local Players            = game:GetService("Players")
+local RunService         = game:GetService("RunService")
+local DataStoreService   = game:GetService("DataStoreService")
+local Debris             = game:GetService("Debris")
+
+-------------------------------------------------------------
+-- KONFIGURATION
+-------------------------------------------------------------
+
+local CONFIG = {
+	PlotCount      = 4,      -- Anzahl der Grundstuecke
+	PlotSpacing    = 140,    -- Abstand zwischen den Grundstuecken
+	StartCash      = 0,      -- Startguthaben neuer Spieler
+	ConveyorSpeed  = 22,     -- Grundgeschwindigkeit des Foerderbands
+	OreLifetime    = 45,     -- Sekunden bis ein Erz von selbst verschwindet
+	MaxOresPerPlot = 70,     -- Lag-Schutz
+	AutosaveEvery  = 60,     -- Sekunden
+}
+
+-- Dropper: Position auf dem Band, Grundwert, Takt in Sekunden
+local DROPPERS = {
+	{ Name = "Dropper 1", X = -34, Value = 2,  Rate = 2.0, Color = Color3.fromRGB(120, 200, 255), Unlocked = true  },
+	{ Name = "Dropper 2", X = -28, Value = 6,  Rate = 2.0, Color = Color3.fromRGB(130, 255, 160), Unlocked = false },
+	{ Name = "Dropper 3", X = -22, Value = 18, Rate = 2.0, Color = Color3.fromRGB(255, 190, 110), Unlocked = false },
+}
+
+-- Veredler: multiplizieren den Wert eines Erzes beim Durchfahren
+local UPGRADERS = {
+	{ Name = "Veredler 1", X = 6,  Mult = 2, Color = Color3.fromRGB(255, 120, 200) },
+	{ Name = "Veredler 2", X = 16, Mult = 3, Color = Color3.fromRGB(180, 120, 255) },
+}
+
+-- Kaufknoepfe (Reihenfolge = Anordnung auf dem Grundstueck)
+local BUTTONS = {
+	{ Id = "dropper2",  Label = "Dropper 2",        Price = 150,    Desc = "Zweiter Dropper (Wert 6)"      },
+	{ Id = "upgrader1", Label = "Veredler 1",       Price = 750,    Desc = "Erzwert x2"                    },
+	{ Id = "dropper3",  Label = "Dropper 3",        Price = 3000,   Desc = "Dritter Dropper (Wert 18)"     },
+	{ Id = "speed1",    Label = "Schnellere Dropper", Price = 7500, Desc = "Alle Dropper 2x so schnell"    },
+	{ Id = "upgrader2", Label = "Veredler 2",       Price = 20000,  Desc = "Erzwert x3"                    },
+	{ Id = "speed2",    Label = "Turbo-Dropper",    Price = 75000,  Desc = "Nochmal 2x so schnell"         },
+	{ Id = "walls",     Label = "Fabrikhalle",      Price = 150000, Desc = "Waende + Dach fuer die Fabrik" },
+	{ Id = "golden",    Label = "Goldene Fabrik",   Price = 500000, Desc = "Alle Erze zusaetzlich x5"      },
+}
+
+local BUTTON_INDEX = {}
+for i, b in ipairs(BUTTONS) do BUTTON_INDEX[b.Id] = i end
+
+-------------------------------------------------------------
+-- HILFSFUNKTIONEN
+-------------------------------------------------------------
+
+local function make(className, props, parent)
+	local inst = Instance.new(className)
+	for k, v in pairs(props or {}) do
+		inst[k] = v
+	end
+	inst.Parent = parent
+	return inst
+end
+
+local function part(props, parent)
+	local p = Instance.new("Part")
+	p.Anchored = true
+	p.TopSurface = Enum.SurfaceType.Smooth
+	p.BottomSurface = Enum.SurfaceType.Smooth
+	p.Material = Enum.Material.SmoothPlastic
+	for k, v in pairs(props or {}) do
+		p[k] = v
+	end
+	p.Parent = parent
+	return p
+end
+
+local function comma(n)
+	local s = tostring(math.floor(n))
+	local out = s:reverse():gsub("(%d%d%d)", "%1."):reverse()
+	out = out:gsub("^%.", "")
+	return out
+end
+
+local function short(n)
+	if n >= 1e12 then return string.format("%.2fT", n / 1e12) end
+	if n >= 1e9  then return string.format("%.2fB", n / 1e9)  end
+	if n >= 1e6  then return string.format("%.2fM", n / 1e6)  end
+	if n >= 1e3  then return string.format("%.2fK", n / 1e3)  end
+	return comma(n)
+end
+
+-------------------------------------------------------------
+-- WELT-GRUNDGERUEST
+-------------------------------------------------------------
+
+local Lighting = game:GetService("Lighting")
+Lighting.Ambient = Color3.fromRGB(70, 70, 80)
+Lighting.OutdoorAmbient = Color3.fromRGB(120, 120, 135)
+Lighting.Brightness = 2.5
+Lighting.ClockTime = 14.5
+Lighting.FogEnd = 2000
+if not Lighting:FindFirstChildOfClass("Atmosphere") then
+	make("Atmosphere", { Density = 0.32, Haze = 1.2, Glare = 0.1 }, Lighting)
+end
+
+local World = make("Folder", { Name = "TycoonWorld" }, workspace)
+
+-- grosse Bodenplatte
+part({
+	Name = "Baseplate",
+	Size = Vector3.new(1200, 8, 600),
+	CFrame = CFrame.new(0, -4, 0),
+	Color = Color3.fromRGB(90, 110, 80),
+	Material = Enum.Material.Grass,
+}, World)
+
+-- Lobby / Spawnbereich in der Mitte hinten
+part({
+	Name = "LobbyFloor",
+	Size = Vector3.new(80, 2, 40),
+	CFrame = CFrame.new(0, 1, 140),
+	Color = Color3.fromRGB(60, 62, 70),
+	Material = Enum.Material.Concrete,
+}, World)
+
+local spawnPad = Instance.new("SpawnLocation")
+spawnPad.Name = "LobbySpawn"
+spawnPad.Anchored = true
+spawnPad.Size = Vector3.new(14, 1, 14)
+spawnPad.CFrame = CFrame.new(0, 2.5, 140)
+spawnPad.Color = Color3.fromRGB(80, 170, 255)
+spawnPad.Material = Enum.Material.Neon
+spawnPad.Duration = 0
+spawnPad.Parent = World
+
+-- Willkommensschild ueber dem Spawn
+do
+	local signPost = part({
+		Name = "WelcomeSign",
+		Size = Vector3.new(1, 10, 1),
+		CFrame = CFrame.new(0, 7, 152),
+		Color = Color3.fromRGB(40, 40, 45),
+		Transparency = 0.2,
+	}, World)
+	local bb = make("BillboardGui", {
+		Name = "SignGui", Size = UDim2.fromScale(26, 7),
+		StudsOffsetWorldSpace = Vector3.new(0, 7, 0), AlwaysOnTop = false, MaxDistance = 400,
+	}, signPost)
+	local frame = make("Frame", {
+		Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(20, 20, 26),
+		BackgroundTransparency = 0.15, BorderSizePixel = 0,
+	}, bb)
+	make("UICorner", { CornerRadius = UDim.new(0, 12) }, frame)
+	make("UIStroke", { Color = Color3.fromRGB(80, 170, 255), Thickness = 3 }, frame)
+	make("TextLabel", {
+		Size = UDim2.fromScale(1, 0.55), Position = UDim2.fromScale(0, 0.05),
+		BackgroundTransparency = 1, Text = "ORE EMPIRE TYCOON",
+		TextColor3 = Color3.fromRGB(255, 220, 120), Font = Enum.Font.GothamBlack,
+		TextScaled = true,
+	}, frame)
+	make("TextLabel", {
+		Size = UDim2.fromScale(1, 0.35), Position = UDim2.fromScale(0, 0.6),
+		BackgroundTransparency = 1, Text = "Lauf auf ein freies Grundstueck und beanspruche es!",
+		TextColor3 = Color3.fromRGB(225, 225, 235), Font = Enum.Font.GothamMedium,
+		TextScaled = true,
+	}, frame)
+end
+
+-------------------------------------------------------------
+-- PLOT-KLASSE
+-------------------------------------------------------------
+
+local Plot = {}
+Plot.__index = Plot
+
+local AllPlots = {}
+
+local function newLabelGui(parent, title, subtitle, accent, size, offsetY)
+	local bb = make("BillboardGui", {
+		Name = "Label",
+		Size = UDim2.fromScale(size or 8, (size or 8) * 0.42),
+		StudsOffsetWorldSpace = Vector3.new(0, offsetY or 4, 0),
+		AlwaysOnTop = false,
+		MaxDistance = 220,
+	}, parent)
+	local frame = make("Frame", {
+		Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(18, 18, 24),
+		BackgroundTransparency = 0.2, BorderSizePixel = 0,
+	}, bb)
+	make("UICorner", { CornerRadius = UDim.new(0, 10) }, frame)
+	make("UIStroke", { Color = accent, Thickness = 2.5 }, frame)
+	local t = make("TextLabel", {
+		Name = "Title",
+		Size = UDim2.fromScale(0.94, 0.5), Position = UDim2.fromScale(0.03, 0.04),
+		BackgroundTransparency = 1, Text = title, TextColor3 = accent,
+		Font = Enum.Font.GothamBlack, TextScaled = true,
+	}, frame)
+	local s = make("TextLabel", {
+		Name = "Sub",
+		Size = UDim2.fromScale(0.94, 0.4), Position = UDim2.fromScale(0.03, 0.55),
+		BackgroundTransparency = 1, Text = subtitle, TextColor3 = Color3.fromRGB(230, 230, 240),
+		Font = Enum.Font.GothamMedium, TextScaled = true,
+	}, frame)
+	return t, s
+end
+
+function Plot.new(index)
+	local self = setmetatable({}, Plot)
+	self.Index   = index
+	self.Owner   = nil
+	self.Bought  = {}          -- [buttonId] = true
+	self.OreCount = 0
+	self.DropperMultiplier = 1 -- Takt-Beschleuniger
+	self.GlobalMultiplier  = 1 -- "Goldene Fabrik"
+
+	local x = (index - (CONFIG.PlotCount + 1) / 2) * CONFIG.PlotSpacing
+	self.Origin = CFrame.new(x, 2, 0)
+
+	local model = make("Model", { Name = "Plot" .. index }, World)
+	self.Model = model
+	self.Ores = make("Folder", { Name = "Ores" }, model)
+	self.Parts = make("Folder", { Name = "Build" }, model)
+
+	self:BuildStatic()
+	self:BuildDroppers()
+	self:BuildUpgraders()
+	self:BuildCollector()
+	self:BuildButtons()
+	self:BuildClaimPad()
+	self:Refresh()
+
+	return self
+end
+
+function Plot:World(cf)
+	return self.Origin * cf
+end
+
+function Plot:BuildStatic()
+	-- Boden
+	part({
+		Name = "Floor",
+		Size = Vector3.new(110, 2, 110),
+		CFrame = self:World(CFrame.new(0, 0, 0)),
+		Color = Color3.fromRGB(55, 58, 66),
+		Material = Enum.Material.Concrete,
+	}, self.Parts)
+
+	-- Rand
+	for _, d in ipairs({ Vector3.new(0, 0, -55), Vector3.new(0, 0, 55) }) do
+		part({ Name = "Kerb", Size = Vector3.new(110, 3, 2),
+			CFrame = self:World(CFrame.new(d.X, 1.5, d.Z)),
+			Color = Color3.fromRGB(240, 190, 60), Material = Enum.Material.Metal }, self.Parts)
+	end
+	for _, d in ipairs({ Vector3.new(-55, 0, 0), Vector3.new(55, 0, 0) }) do
+		part({ Name = "Kerb", Size = Vector3.new(2, 3, 110),
+			CFrame = self:World(CFrame.new(d.X, 1.5, d.Z)),
+			Color = Color3.fromRGB(240, 190, 60), Material = Enum.Material.Metal }, self.Parts)
+	end
+
+	-- Foerderband (verankert, wirkt durch AssemblyLinearVelocity als Band)
+	local belt = part({
+		Name = "Conveyor",
+		Size = Vector3.new(76, 1, 8),
+		CFrame = self:World(CFrame.new(0, 5, -22)),
+		Color = Color3.fromRGB(35, 35, 42),
+		Material = Enum.Material.DiamondPlate,
+	}, self.Parts)
+	belt.AssemblyLinearVelocity = Vector3.new(CONFIG.ConveyorSpeed, 0, 0)
+	self.Belt = belt
+
+	-- Bandstuetzen
+	for bx = -34, 34, 17 do
+		part({ Name = "Leg", Size = Vector3.new(2, 4, 8),
+			CFrame = self:World(CFrame.new(bx, 2.5, -22)),
+			Color = Color3.fromRGB(70, 72, 80), Material = Enum.Material.Metal }, self.Parts)
+	end
+
+	-- Fabrikhalle (erst nach Kauf sichtbar)
+	local hall = make("Folder", { Name = "Hall" }, self.Parts)
+	self.Hall = hall
+	local wallColor = Color3.fromRGB(80, 84, 95)
+	part({ Name = "WallBack", Size = Vector3.new(110, 26, 2),
+		CFrame = self:World(CFrame.new(0, 13, -54)), Color = wallColor,
+		Material = Enum.Material.Metal }, hall)
+	part({ Name = "WallLeft", Size = Vector3.new(2, 26, 110),
+		CFrame = self:World(CFrame.new(-54, 13, 0)), Color = wallColor,
+		Material = Enum.Material.Metal }, hall)
+	part({ Name = "WallRight", Size = Vector3.new(2, 26, 110),
+		CFrame = self:World(CFrame.new(54, 13, 0)), Color = wallColor,
+		Material = Enum.Material.Metal }, hall)
+	part({ Name = "Roof", Size = Vector3.new(110, 2, 110),
+		CFrame = self:World(CFrame.new(0, 26, 0)), Color = Color3.fromRGB(60, 63, 72),
+		Material = Enum.Material.Metal, Transparency = 0.25 }, hall)
+end
+
+-- Ein Erz erzeugen
+function Plot:DropOre(cfg)
+	if self.OreCount >= CONFIG.MaxOresPerPlot then return end
+	local ore = part({
+		Name = "Ore",
+		Size = Vector3.new(1.8, 1.8, 1.8),
+		CFrame = self:World(CFrame.new(cfg.X, 8, -22)),
+		Color = cfg.Color,
+		Material = Enum.Material.Neon,
+		Anchored = false,
+		CanCollide = true,
+	}, self.Ores)
+	ore.CustomPhysicalProperties = PhysicalProperties.new(0.7, 0.1, 0.2, 1, 1)
+	ore:SetAttribute("OreValue", cfg.Value * self.GlobalMultiplier)
+	self.OreCount += 1
+	ore.Destroying:Connect(function()
+		self.OreCount = math.max(0, self.OreCount - 1)
+	end)
+	Debris:AddItem(ore, CONFIG.OreLifetime)
+end
+
+function Plot:BuildDroppers()
+	self.Droppers = {}
+	for i, cfg in ipairs(DROPPERS) do
+		local body = part({
+			Name = cfg.Name,
+			Size = Vector3.new(5, 6, 8),
+			CFrame = self:World(CFrame.new(cfg.X, 13, -22)),
+			Color = Color3.fromRGB(45, 48, 58),
+			Material = Enum.Material.Metal,
+		}, self.Parts)
+		part({
+			Name = "Nozzle", Size = Vector3.new(2.4, 1.6, 2.4),
+			CFrame = self:World(CFrame.new(cfg.X, 9.4, -22)),
+			Color = cfg.Color, Material = Enum.Material.Neon, CanCollide = false,
+		}, self.Parts)
+		newLabelGui(body, cfg.Name, "$" .. cfg.Value, cfg.Color, 7, 5)
+
+		local entry = { Cfg = cfg, Body = body, Active = cfg.Unlocked, Accum = 0 }
+		self.Droppers[i] = entry
+	end
+end
+
+function Plot:BuildUpgraders()
+	self.Upgraders = {}
+	for i, cfg in ipairs(UPGRADERS) do
+		local arch = make("Folder", { Name = cfg.Name }, self.Parts)
+		part({ Name = "PillarL", Size = Vector3.new(1.5, 9, 1.5),
+			CFrame = self:World(CFrame.new(cfg.X, 10, -26.5)), Color = cfg.Color,
+			Material = Enum.Material.Metal }, arch)
+		part({ Name = "PillarR", Size = Vector3.new(1.5, 9, 1.5),
+			CFrame = self:World(CFrame.new(cfg.X, 10, -17.5)), Color = cfg.Color,
+			Material = Enum.Material.Metal }, arch)
+		part({ Name = "Top", Size = Vector3.new(1.5, 1.5, 10.5),
+			CFrame = self:World(CFrame.new(cfg.X, 15, -22)), Color = cfg.Color,
+			Material = Enum.Material.Metal }, arch)
+
+		local field = part({
+			Name = "Field",
+			Size = Vector3.new(1, 8, 9),
+			CFrame = self:World(CFrame.new(cfg.X, 9.5, -22)),
+			Color = cfg.Color,
+			Material = Enum.Material.ForceField,
+			Transparency = 0.45,
+			CanCollide = false,
+		}, arch)
+		newLabelGui(field, cfg.Name, "Wert x" .. cfg.Mult, cfg.Color, 8, 7)
+
+		local key = "Up" .. i
+		field.Touched:Connect(function(hit)
+			if not self.Upgraders[i].Active then return end
+			local v = hit:GetAttribute("OreValue")
+			if not v then return end
+			if hit:GetAttribute(key) then return end
+			hit:SetAttribute(key, true)
+			hit:SetAttribute("OreValue", v * cfg.Mult)
+			hit.Color = cfg.Color
+			hit.Size = hit.Size + Vector3.new(0.35, 0.35, 0.35)
+		end)
+
+		self.Upgraders[i] = { Cfg = cfg, Folder = arch, Field = field, Active = false }
+	end
+end
+
+function Plot:BuildCollector()
+	local base = part({
+		Name = "CollectorBase",
+		Size = Vector3.new(12, 8, 14),
+		CFrame = self:World(CFrame.new(44, 5, -22)),
+		Color = Color3.fromRGB(35, 38, 46),
+		Material = Enum.Material.Metal,
+	}, self.Parts)
+
+	local pad = part({
+		Name = "Collector",
+		Size = Vector3.new(4, 8, 9),
+		CFrame = self:World(CFrame.new(39, 9, -22)),
+		Color = Color3.fromRGB(90, 255, 160),
+		Material = Enum.Material.Neon,
+		Transparency = 0.35,
+		CanCollide = false,
+	}, self.Parts)
+
+	local _, sub = newLabelGui(base, "SAMMLER", "$0 gesamt", Color3.fromRGB(90, 255, 160), 10, 6)
+	self.CollectorLabel = sub
+
+	pad.Touched:Connect(function(hit)
+		local v = hit:GetAttribute("OreValue")
+		if not v then return end
+		if hit:GetAttribute("Collected") then return end
+		hit:SetAttribute("Collected", true)
+		hit:Destroy()
+		self:AddCash(v)
+	end)
+end
+
+function Plot:BuildButtons()
+	self.ButtonObjects = {}
+	local startX, step = -44, 12
+	for i, cfg in ipairs(BUTTONS) do
+		local row = math.floor((i - 1) / 4)
+		local col = (i - 1) % 4
+		local px = startX + col * step * 2.2
+		local pz = 10 + row * 16
+
+		local pad = part({
+			Name = "Buy_" .. cfg.Id,
+			Size = Vector3.new(8, 2, 8),
+			CFrame = self:World(CFrame.new(px, 2, pz)),
+			Color = Color3.fromRGB(70, 170, 255),
+			Material = Enum.Material.Neon,
+		}, self.Parts)
+
+		local title, sub = newLabelGui(pad, cfg.Label, "$" .. short(cfg.Price), Color3.fromRGB(120, 200, 255), 10, 4.5)
+
+		local debounce = false
+		pad.Touched:Connect(function(hit)
+			if debounce then return end
+			local char = hit.Parent
+			local plr = char and Players:GetPlayerFromCharacter(char)
+			if not plr or plr ~= self.Owner then return end
+			debounce = true
+			task.delay(0.6, function() debounce = false end)
+			self:TryBuy(plr, cfg.Id)
+		end)
+
+		self.ButtonObjects[cfg.Id] = { Cfg = cfg, Pad = pad, Title = title, Sub = sub }
+	end
+end
+
+function Plot:BuildClaimPad()
+	local pad = part({
+		Name = "ClaimPad",
+		Size = Vector3.new(14, 2, 14),
+		CFrame = self:World(CFrame.new(0, 2, 44)),
+		Color = Color3.fromRGB(255, 200, 60),
+		Material = Enum.Material.Neon,
+	}, self.Parts)
+	local title, sub = newLabelGui(pad, "FREIES GRUNDSTUECK #" .. self.Index, "Betreten zum Beanspruchen",
+		Color3.fromRGB(255, 200, 60), 14, 6)
+	self.ClaimTitle, self.ClaimSub, self.ClaimPad = title, sub, pad
+
+	pad.Touched:Connect(function(hit)
+		local plr = Players:GetPlayerFromCharacter(hit.Parent)
+		if not plr then return end
+		if self.Owner then return end
+		for _, p in ipairs(AllPlots) do
+			if p.Owner == plr then return end -- hat schon eins
+		end
+		self:Claim(plr)
+	end)
+end
+
+-------------------------------------------------------------
+-- PLOT-LOGIK
+-------------------------------------------------------------
+
+function Plot:Claim(plr)
+	self.Owner = plr
+	plr:SetAttribute("PlotIndex", self.Index)
+	self:LoadFor(plr)
+	self:Refresh()
+	self:Notify(plr, "Grundstueck #" .. self.Index .. " gehoert jetzt dir!")
+	-- Spieler auf das Grundstueck teleportieren
+	local char = plr.Character
+	local hrp = char and char:FindFirstChild("HumanoidRootPart")
+	if hrp then
+		hrp.CFrame = self:World(CFrame.new(0, 6, 34))
+	end
+end
+
+function Plot:Release()
+	local plr = self.Owner
+	if plr then
+		self:SaveFor(plr)
+		plr:SetAttribute("PlotIndex", nil)
+	end
+	self.Owner = nil
+	self.Bought = {}
+	self.DropperMultiplier = 1
+	self.GlobalMultiplier = 1
+	for _, ore in ipairs(self.Ores:GetChildren()) do ore:Destroy() end
+	self.OreCount = 0
+	self:Refresh()
+end
+
+function Plot:Cash()
+	if not self.Owner then return 0 end
+	local ls = self.Owner:FindFirstChild("leaderstats")
+	local c = ls and ls:FindFirstChild("Cash")
+	return c and c.Value or 0
+end
+
+function Plot:AddCash(amount)
+	local plr = self.Owner
+	if not plr then return end
+	local ls = plr:FindFirstChild("leaderstats")
+	local cash = ls and ls:FindFirstChild("Cash")
+	if not cash then return end
+	cash.Value += amount
+
+	local total = plr:GetAttribute("TotalEarned") or 0
+	plr:SetAttribute("TotalEarned", total + amount)
+	if self.CollectorLabel then
+		self.CollectorLabel.Text = "$" .. short(total + amount) .. " gesamt"
+	end
+end
+
+function Plot:TryBuy(plr, id)
+	if self.Bought[id] then return end
+	local cfg = BUTTONS[BUTTON_INDEX[id]]
+	if not cfg then return end
+	local ls = plr:FindFirstChild("leaderstats")
+	local cash = ls and ls:FindFirstChild("Cash")
+	if not cash then return end
+	if cash.Value < cfg.Price then
+		self:Notify(plr, "Zu wenig Geld: es fehlen $" .. short(cfg.Price - cash.Value))
+		return
+	end
+	cash.Value -= cfg.Price
+	self.Bought[id] = true
+	self:Refresh()
+	self:Notify(plr, cfg.Label .. " gekauft!")
+	self:SaveFor(plr)
+end
+
+-- Zustand -> Welt uebertragen
+function Plot:Refresh()
+	local owned = self.Owner ~= nil
+
+	-- Claim-Pad
+	if owned then
+		self.ClaimTitle.Text = self.Owner.DisplayName
+		self.ClaimSub.Text = "Grundstueck #" .. self.Index
+		self.ClaimPad.Color = Color3.fromRGB(90, 255, 160)
+	else
+		self.ClaimTitle.Text = "FREIES GRUNDSTUECK #" .. self.Index
+		self.ClaimSub.Text = "Betreten zum Beanspruchen"
+		self.ClaimPad.Color = Color3.fromRGB(255, 200, 60)
+	end
+
+	-- Dropper
+	self.Droppers[1].Active = owned
+	self.Droppers[2].Active = owned and self.Bought.dropper2 == true
+	self.Droppers[3].Active = owned and self.Bought.dropper3 == true
+	for _, d in ipairs(self.Droppers) do
+		d.Body.Transparency = d.Active and 0 or 0.72
+	end
+
+	-- Veredler
+	self.Upgraders[1].Active = owned and self.Bought.upgrader1 == true
+	self.Upgraders[2].Active = owned and self.Bought.upgrader2 == true
+	for _, u in ipairs(self.Upgraders) do
+		u.Field.Transparency = u.Active and 0.45 or 0.93
+		for _, p in ipairs(u.Folder:GetChildren()) do
+			if p.Name ~= "Field" then p.Transparency = u.Active and 0 or 0.75 end
+		end
+	end
+
+	-- Geschwindigkeit
+	self.DropperMultiplier = 1
+	if self.Bought.speed1 then self.DropperMultiplier *= 2 end
+	if self.Bought.speed2 then self.DropperMultiplier *= 2 end
+
+	-- Globaler Multiplikator
+	self.GlobalMultiplier = self.Bought.golden and 5 or 1
+
+	-- Halle
+	local hallOn = owned and self.Bought.walls == true
+	for _, p in ipairs(self.Hall:GetChildren()) do
+		p.Transparency = hallOn and (p.Name == "Roof" and 0.25 or 0) or 1
+		p.CanCollide = hallOn
+	end
+
+	-- Kaufknoepfe
+	for id, obj in pairs(self.ButtonObjects) do
+		if self.Bought[id] then
+			obj.Pad.Color = Color3.fromRGB(70, 200, 120)
+			obj.Pad.Transparency = 0.5
+			obj.Title.Text = obj.Cfg.Label
+			obj.Sub.Text = "GEKAUFT"
+		else
+			obj.Pad.Color = Color3.fromRGB(70, 170, 255)
+			obj.Pad.Transparency = 0
+			obj.Title.Text = obj.Cfg.Label
+			obj.Sub.Text = "$" .. short(obj.Cfg.Price) .. "  -  " .. obj.Cfg.Desc
+		end
+	end
+end
+
+function Plot:Notify(plr, text)
+	local gui = plr:FindFirstChild("PlayerGui")
+	local screen = gui and gui:FindFirstChild("TycoonHud")
+	local label = screen and screen:FindFirstChild("Toast")
+	if label then
+		label.Text = text
+		label.Visible = true
+		label:SetAttribute("Token", (label:GetAttribute("Token") or 0) + 1)
+		local token = label:GetAttribute("Token")
+		task.delay(3.5, function()
+			if label and label.Parent and label:GetAttribute("Token") == token then
+				label.Visible = false
+			end
+		end)
+	end
+end
+
+-------------------------------------------------------------
+-- SPEICHERUNG
+-------------------------------------------------------------
+
+local store
+do
+	local ok, result = pcall(function()
+		return DataStoreService:GetDataStore("OreEmpireTycoon_v1")
+	end)
+	store = ok and result or nil
+end
+
+function Plot:SaveFor(plr)
+	if not store or not plr then return end
+	local ls = plr:FindFirstChild("leaderstats")
+	local cash = ls and ls:FindFirstChild("Cash")
+	local data = {
+		cash = cash and cash.Value or 0,
+		bought = self.Bought,
+		total = plr:GetAttribute("TotalEarned") or 0,
+	}
+	task.spawn(function()
+		pcall(function()
+			store:SetAsync("plr_" .. plr.UserId, data)
+		end)
+	end)
+end
+
+function Plot:LoadFor(plr)
+	if not store then return end
+	local ok, data = pcall(function()
+		return store:GetAsync("plr_" .. plr.UserId)
+	end)
+	if ok and type(data) == "table" then
+		local ls = plr:FindFirstChild("leaderstats")
+		local cash = ls and ls:FindFirstChild("Cash")
+		if cash and type(data.cash) == "number" then cash.Value = data.cash end
+		if type(data.bought) == "table" then
+			for id in pairs(BUTTON_INDEX) do
+				self.Bought[id] = data.bought[id] == true
+			end
+		end
+		plr:SetAttribute("TotalEarned", tonumber(data.total) or 0)
+	end
+end
+
+-------------------------------------------------------------
+-- SPIELER-HUD
+-------------------------------------------------------------
+
+local function buildHud(plr)
+	local pg = plr:WaitForChild("PlayerGui")
+	if pg:FindFirstChild("TycoonHud") then return end
+
+	local screen = make("ScreenGui", {
+		Name = "TycoonHud", ResetOnSpawn = false, IgnoreGuiInset = true,
+		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+	}, pg)
+
+	local card = make("Frame", {
+		Name = "CashCard",
+		Size = UDim2.fromOffset(250, 78),
+		Position = UDim2.new(0, 18, 0, 18),
+		BackgroundColor3 = Color3.fromRGB(18, 18, 26),
+		BackgroundTransparency = 0.12, BorderSizePixel = 0,
+	}, screen)
+	make("UICorner", { CornerRadius = UDim.new(0, 14) }, card)
+	make("UIStroke", { Color = Color3.fromRGB(255, 205, 80), Thickness = 2 }, card)
+	make("TextLabel", {
+		Name = "Caption", Size = UDim2.new(1, -20, 0, 20), Position = UDim2.fromOffset(12, 8),
+		BackgroundTransparency = 1, Text = "GUTHABEN", TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = Color3.fromRGB(180, 182, 195), Font = Enum.Font.GothamMedium, TextSize = 14,
+	}, card)
+	local cashLabel = make("TextLabel", {
+		Name = "Cash", Size = UDim2.new(1, -20, 0, 38), Position = UDim2.fromOffset(12, 28),
+		BackgroundTransparency = 1, Text = "$0", TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = Color3.fromRGB(255, 220, 120), Font = Enum.Font.GothamBlack, TextSize = 30,
+	}, card)
+
+	make("TextLabel", {
+		Name = "Toast", Visible = false,
+		Size = UDim2.fromOffset(520, 48), Position = UDim2.new(0.5, -260, 0, 110),
+		BackgroundColor3 = Color3.fromRGB(18, 18, 26), BackgroundTransparency = 0.12,
+		BorderSizePixel = 0, Text = "", TextColor3 = Color3.fromRGB(235, 235, 245),
+		Font = Enum.Font.GothamBold, TextSize = 20,
+	}, screen)
+	local toast = screen.Toast
+	make("UICorner", { CornerRadius = UDim.new(0, 12) }, toast)
+	make("UIStroke", { Color = Color3.fromRGB(90, 200, 255), Thickness = 2 }, toast)
+
+	-- Hilfe-Panel
+	local help = make("Frame", {
+		Name = "Help", Size = UDim2.fromOffset(300, 132),
+		Position = UDim2.new(0, 18, 1, -150),
+		BackgroundColor3 = Color3.fromRGB(18, 18, 26), BackgroundTransparency = 0.25,
+		BorderSizePixel = 0,
+	}, screen)
+	make("UICorner", { CornerRadius = UDim.new(0, 12) }, help)
+	make("UIStroke", { Color = Color3.fromRGB(70, 74, 92), Thickness = 2 }, help)
+	make("TextLabel", {
+		Size = UDim2.new(1, -20, 1, -16), Position = UDim2.fromOffset(12, 8),
+		BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Top, TextWrapped = true,
+		Text = "SO GEHT'S\n1. Gelbes Pad betreten = Grundstueck sichern\n2. Dropper erzeugen Erze auf dem Band\n3. Der Sammler wandelt sie in Geld um\n4. Auf blaue Pads laufen = Upgrades kaufen",
+		TextColor3 = Color3.fromRGB(210, 212, 225), Font = Enum.Font.GothamMedium, TextSize = 15,
+	}, help)
+
+	local ls = plr:WaitForChild("leaderstats")
+	local cash = ls:WaitForChild("Cash")
+	local function update()
+		cashLabel.Text = "$" .. comma(cash.Value)
+	end
+	cash.Changed:Connect(update)
+	update()
+end
+
+-------------------------------------------------------------
+-- SPIELER-VERWALTUNG
+-------------------------------------------------------------
+
+local function onPlayerAdded(plr)
+	local ls = make("Folder", { Name = "leaderstats" }, plr)
+	make("IntValue", { Name = "Cash", Value = CONFIG.StartCash }, ls)
+	plr:SetAttribute("TotalEarned", 0)
+
+	task.spawn(buildHud, plr)
+
+	plr.CharacterAdded:Connect(function()
+		task.wait(0.4)
+		task.spawn(buildHud, plr)
+	end)
+end
+
+local function onPlayerRemoving(plr)
+	for _, p in ipairs(AllPlots) do
+		if p.Owner == plr then
+			p:Release()
+		end
+	end
+end
+
+Players.PlayerAdded:Connect(onPlayerAdded)
+Players.PlayerRemoving:Connect(onPlayerRemoving)
+for _, plr in ipairs(Players:GetPlayers()) do
+	task.spawn(onPlayerAdded, plr)
+end
+
+game:BindToClose(function()
+	for _, p in ipairs(AllPlots) do
+		if p.Owner then p:SaveFor(p.Owner) end
+	end
+	task.wait(1)
+end)
+
+-------------------------------------------------------------
+-- WELT AUFBAUEN + HAUPTSCHLEIFE
+-------------------------------------------------------------
+
+for i = 1, CONFIG.PlotCount do
+	AllPlots[i] = Plot.new(i)
+end
+
+-- Dropper-Takt
+task.spawn(function()
+	local last = os.clock()
+	while true do
+		task.wait(0.1)
+		local now = os.clock()
+		local dt = now - last
+		last = now
+		for _, plot in ipairs(AllPlots) do
+			if plot.Owner then
+				for _, d in ipairs(plot.Droppers) do
+					if d.Active then
+						d.Accum += dt * plot.DropperMultiplier
+						if d.Accum >= d.Cfg.Rate then
+							d.Accum = 0
+							plot:DropOre(d.Cfg)
+						end
+					end
+				end
+			end
+		end
+	end
+end)
+
+-- Foerderband: Erze zuverlaessig Richtung Sammler schieben
+RunService.Heartbeat:Connect(function()
+	for _, plot in ipairs(AllPlots) do
+		for _, ore in ipairs(plot.Ores:GetChildren()) do
+			if ore:IsA("BasePart") then
+				local v = ore.AssemblyLinearVelocity
+				ore.AssemblyLinearVelocity = Vector3.new(CONFIG.ConveyorSpeed, math.max(v.Y, -60), 0)
+				-- heruntergefallene Erze entfernen
+				if ore.Position.Y < -20 then ore:Destroy() end
+			end
+		end
+	end
+end)
+
+-- Autosave
+task.spawn(function()
+	while true do
+		task.wait(CONFIG.AutosaveEvery)
+		for _, p in ipairs(AllPlots) do
+			if p.Owner then p:SaveFor(p.Owner) end
+		end
+	end
+end)
+
+print("[Ore Empire Tycoon] Welt geladen: " .. CONFIG.PlotCount .. " Grundstuecke bereit.")
