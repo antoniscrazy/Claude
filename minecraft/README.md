@@ -1,7 +1,7 @@
 # VoxelCraft
 
 Ein Minecraft-ähnliches Voxel-Spiel, das komplett im Browser läuft – eine einzige Datei: [`index.html`](index.html)
-(Three.js wird von cdnjs geladen, alles andere ist eingebettet).
+(Three.js wird von cdnjs geladen, alles andere ist eingebettet; nur der Online-Mehrspielermodus lädt zusätzlich `supabase-js` von jsdelivr).
 
 ## Starten
 
@@ -20,6 +20,8 @@ Ein Minecraft-ähnliches Voxel-Spiel, das komplett im Browser läuft – eine ei
 | Hotbar | 1–9 / Mausrad | Slots antippen |
 | Inventar & Handwerk | E (oder Rechtsklick auf Werkbank/Ofen) | Button „Inventar“ |
 | Item fallen lassen | Q | – |
+| Chat (Mehrspieler) | T / Enter, `/` für Befehle | Button „Chat“ |
+| Spielerliste | Tab (halten) | – |
 | Ton an/aus | M | Pausenmenü |
 | Flugmodus (Kreativ) | F, runter: C | Button „Fliegen“, ▼ |
 | Debug-Anzeige | F3 | – |
@@ -28,7 +30,7 @@ Ein Minecraft-ähnliches Voxel-Spiel, das komplett im Browser läuft – eine ei
 ## Inhalt
 
 * Unendliche Welt aus Chunks (16×16×64), Perlin-Rauschen, Biome (Wiese, Wüste, Schnee), Seen, Berge, Höhlen, Lava in der Tiefe
-* ~180 Blöcke: Erze (auch als Tiefenschiefer-Variante), Holzarten, Wolle/Beton/Terrakotta/Glas in 16 Farben, Pflanzen, Fackeln,
+* ~765 Blöcke inkl. Halbstufen und Treppen fast aller Materialien: Erze (auch als Tiefenschiefer-Variante), Holzarten, Wolle/Beton/Terrakotta/Glas in 16 Farben, Pflanzen, Fackeln,
   Leuchtblöcke (Fackeln und Lava beleuchten ihre Umgebung), Kakteen (stechen), Eis, Lava (verbrennt) …
 * **Überleben:** Herzen, Hunger, Fallschaden. Blöcke fallen als **Drops** zu Boden und müssen aufgesammelt werden.
   Ohne passendes Werkzeug geht vieles nicht: Stein braucht eine Holzspitzhacke, Eisenerz eine Steinspitzhacke,
@@ -38,8 +40,36 @@ Ein Minecraft-ähnliches Voxel-Spiel, das komplett im Browser läuft – eine ei
 * **TNT** mit dem Feuerzeug (Feuerstein + Eisenbarren) anzünden – Explosionen zerstören Blöcke, verletzen Spieler und Mobs und zünden weiteres TNT.
 * **Mobs:** Schwein, Kuh, Schaf, Huhn (liefern Fleisch, Leder, Wolle …) sowie Zombie, Wüstenzombie, Skelett (schießt Pfeile),
   Spinne und Creeper (explodiert). Monster kommen nachts und in dunklen Höhlen; alle lassen sich mit Schwert, Axt … bekämpfen.
+* **Landwirtschaft:** Hacke, Ackerland, Samen (Weizen, Karotten, Kartoffeln …), Knochenmehl, Setzlinge wachsen zu Bäumen, Eimer (Wasser/Lava).
+* **Rüstung** (Leder, Eisen, Gold, Diamant) reduziert Schaden, **Bogen + Pfeile**, **Truhen/Fässer** mit Inhalt, **Betten** (setzen den Spawnpunkt),
+  fallende Blöcke (Sand, Kies), Wolken.
 * **Kreativ:** alle Blöcke und Items in Kategorien, unendlich, kein Schaden
 * Tag-Nacht-Zyklus, Sound (per WebAudio erzeugt), Speichern/Laden (localStorage), Seed-Eingabe, Sichtweite einstellbar
+
+## Mehrspieler (Supabase)
+
+Im Hauptmenü „🌍 Mehrspieler“: Namen eingeben (3–16 Zeichen), Skin wählen (9 Vorlagen aus dem Texturpaket oder eigenes 64×64-PNG hochladen;
+schmale Arme werden erkannt), Weltnamen eingeben und beitreten. Wer denselben Weltnamen benutzt, spielt in derselben Welt.
+
+* Spieler erscheinen mit ihrem Skin, Namensschild, Lauf-/Schlaganimation und Item in der Hand.
+* Blockänderungen, Drops, Truhen, TNT, Pfeile und Mobs werden live synchronisiert; Blockänderungen und Truhen werden zusätzlich in der Datenbank gespeichert,
+  ebenso Inventar und Position jedes Spielers (beim nächsten Beitritt geht es dort weiter).
+* PvP im Überlebensmodus, Chat (T), Spielerliste (Tab), Befehle: `/help`, `/players`, `/tp <Name>`, `/spawn`, `/me <Text>`, `/kill`.
+* Mobs werden vom ältesten Spieler im Raum simuliert (Host); die anderen sehen sie als Abbild. Geht der Host, übernimmt automatisch der nächste.
+* Modus „Lokal“ braucht kein Internet: Spieler in anderen Tabs desselben Browsers sehen sich (BroadcastChannel) – gut zum Ausprobieren.
+
+### Eigenes Supabase-Projekt einrichten
+
+1. Projekt auf supabase.com anlegen, den Inhalt von [`supabase/schema.sql`](supabase/schema.sql) im SQL-Editor ausführen.
+2. In `index.html` die Konstanten `SUPABASE_URL` und `SUPABASE_KEY` (der öffentliche *anon*/publishable Key) ersetzen.
+
+Sicherheitsmodell: Alle Tabellen sind per Row Level Security gesperrt; der Client greift nur über `SECURITY DEFINER`-Funktionen (`vc_*`) zu.
+Ein Spielername ist an einen zufälligen Token im Browser gebunden (in der DB nur als SHA-256-Hash), damit niemand einen fremden Namen übernehmen kann.
+Die Supabase-Hinweise „RLS enabled, no policy“ und „anon can execute SECURITY DEFINER“ sind daher gewollt.
+Grenzen: Es gibt keine Konten – jeder registrierte Spieler darf in jeder Welt Blöcke ändern, Welten kann jeder anlegen,
+und Kampf/Mobs werden clientseitig berechnet (kein Schutz vor manipulierten Clients).
+
+Hinweis: Der Speicherstand-Schlüssel ist `voxelcraft_save_v2`; alte Einzelspieler-Speicherstände früherer Versionen werden nicht mehr geladen.
 
 ## Texturen
 
