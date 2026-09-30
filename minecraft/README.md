@@ -20,17 +20,36 @@ Ein Minecraft-ähnliches Voxel-Spiel, das komplett im Browser läuft – eine ei
 | Hotbar | 1–9 / Mausrad | Slots antippen |
 | Inventar & Handwerk | E (oder Rechtsklick auf Werkbank/Ofen) | Button „Inventar“ |
 | Item fallen lassen | Q | – |
-| Chat (Mehrspieler) | T / Enter, `/` für Befehle | Button „Chat“ |
-| Spielerliste | Tab (halten) | – |
+| Chat & Befehle | T / Enter, `/` für Befehle | Button „Chat“ |
+| Spielerliste (Mehrspieler) | Tab (halten) | – |
+| Minikarte an/aus | N | Pausenmenü → Einstellungen |
+| Screenshot | F2 | Pausenmenü |
+| Fernrohr (Zoom) | Rechtsklick halten | – |
 | Ton an/aus | M | Pausenmenü |
 | Flugmodus (Kreativ) | F, runter: C | Button „Fliegen“, ▼ |
 | Debug-Anzeige | F3 | – |
 | Pause | Esc | Button „Pause“ |
 
+## Befehle (Chat: T, Enter oder `/`)
+
+Der Chat funktioniert im Einzel- **und** Mehrspielermodus. Beim Tippen von `/` erscheint eine **Vorschlagsliste** mit Symbolen und Beschreibung:
+**Tab** übernimmt den markierten Vorschlag (Shift+Tab rückwärts), **↑/↓** wählt aus (ohne Vorschläge: Verlauf), **→** übernimmt am Zeilenende,
+per Klick/Tippen geht es auch. Die Vorschläge kennen Befehle, Spielernamen, Blöcke/Items (auch deutsche Namen), Mobs, Effekte, Koordinaten (`~`) und Homes.
+
+| Gruppe | Befehle |
+| --- | --- |
+| Allgemein | `/help [befehl]`, `/pos`, `/seed`, `/time`, `/fps`, `/clearchat`, `/roll [max]`, `/save`, `/kill`, `/me`, `/achievements`, `/map`, `/screenshot` |
+| Bewegung | `/tp <spieler>` · `/tp x y z` · `/tp x z`, `/back`, `/spawn`, `/setspawn`, `/sethome [name]`, `/home [name]`, `/homes`, `/delhome <name>` |
+| Mehrspieler | `/players`, `/msg <spieler> <text>` (`/w`), `/r <text>` |
+| Cheats* | `/gamemode`, `/give <item> [anzahl]`, `/kit <paket>`, `/clear`, `/repair`, `/day`, `/night`, `/time set\|add`, `/weather <clear\|rain\|thunder>`, `/lightning`, `/heal`, `/feed`, `/fly`, `/speed`, `/god`, `/effect`, `/nv`, `/summon <mob> [n]`, `/killall`, `/setblock`, `/fill … [replace\|hollow\|outline\|keep]`, `/sphere`, `/undo`, `/explode`, `/difficulty`, `/gamerule` |
+
+\*Cheat-Befehle gibt es im Einzelspieler und in Kreativ-Welten des Mehrspielermodus (in Überlebens-Welten bleiben nur die sozialen Befehle).
+Zeit-, Wetter- und Blitzbefehle werden im Mehrspielermodus an alle Spieler übertragen. Homes und Spielregeln werden pro Welt im Browser gespeichert.
+
 ## Inhalt
 
 * Unendliche Welt aus Chunks (16×16×64), Perlin-Rauschen, Biome (Wiese, Wüste, Schnee), Seen, Berge, Höhlen, Lava in der Tiefe
-* ~765 Blöcke inkl. Halbstufen und Treppen fast aller Materialien: Erze (auch als Tiefenschiefer-Variante), Holzarten, Wolle/Beton/Terrakotta/Glas in 16 Farben, Pflanzen, Fackeln,
+* ~1900 Blöcke inkl. Halbstufen und Treppen fast aller Materialien: Erze (auch als Tiefenschiefer-Variante), Holzarten, Wolle/Beton/Terrakotta/Glas in 16 Farben, Pflanzen, Fackeln,
   Leuchtblöcke (Fackeln und Lava beleuchten ihre Umgebung), Kakteen (stechen), Eis, Lava (verbrennt) …
 * **Überleben:** Herzen, Hunger, Fallschaden. Blöcke fallen als **Drops** zu Boden und müssen aufgesammelt werden.
   Ohne passendes Werkzeug geht vieles nicht: Stein braucht eine Holzspitzhacke, Eisenerz eine Steinspitzhacke,
@@ -43,6 +62,14 @@ Ein Minecraft-ähnliches Voxel-Spiel, das komplett im Browser läuft – eine ei
 * **Landwirtschaft:** Hacke, Ackerland, Samen (Weizen, Karotten, Kartoffeln …), Knochenmehl, Setzlinge wachsen zu Bäumen, Eimer (Wasser/Lava).
 * **Rüstung** (Leder, Eisen, Gold, Diamant) reduziert Schaden, **Bogen + Pfeile**, **Truhen/Fässer** mit Inhalt, **Betten** (setzen den Spawnpunkt),
   fallende Blöcke (Sand, Kies), Wolken.
+* **Bauteile:** Zäune (12 Holzarten), Zauntore, Mauern (16 Steinarten), Glasscheiben (17 Farben), Eisengitter – sie verbinden sich automatisch mit Nachbarn;
+  Türen und Falltüren (Rechtsklick), Leitern (klettern), Laternen, Kerzen, Lagerfeuer, Schleimblock (Sprungfeder), Werkbänke zur Deko.
+* **Wetter:** Regen und Gewitter (Blitze!) mit Geräuschen, Schnee in Schneebiomen, in der Wüste bleibt es trocken.
+* **Angeln** (Angel ins Wasser werfen, bei „Es beißt!“ einholen), **Tränke** und Statuseffekte (Goldener Apfel, Kugelfisch …), Fernrohr, Uhr, Kompass, Schere.
+* **Mobs:** zusätzlich Wolf (mit Knochen zähmen, folgt dir, sitzt auf Rechtsklick, greift Monster an), Kaninchen, Schleim (teilt sich), Fledermaus
+  und **Dorfbewohner** mit Handel (8 Berufe, Smaragde). Schafe haben Wollfarben und lassen sich scheren.
+* **Bauwerke** in der Welt: Hütten mit Dorfbewohner, Brunnen, Wachtürme und Verliese mit Monsterkäfig – mit Beutetruhen.
+* **Erfolge**, **Minikarte** (N), **Einstellungen** (Sichtfeld, Empfindlichkeit, Lautstärke, Sichtweite, Wolken) und Screenshots (F2).
 * **Kreativ:** alle Blöcke und Items in Kategorien, unendlich, kein Schaden
 * Tag-Nacht-Zyklus, Sound (per WebAudio erzeugt), Speichern/Laden (localStorage), Seed-Eingabe, Sichtweite einstellbar
 
