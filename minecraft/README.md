@@ -18,6 +18,7 @@ Ein Minecraft-ähnliches Voxel-Spiel, das komplett im Browser läuft – eine ei
 | Sprinten | Strg oder W doppelt tippen | Joystick ganz nach vorn |
 | Abbauen / Angreifen | Linksklick (halten) | Finger gedrückt halten |
 | Platzieren / Essen & Trinken (gedrückt halten, ~1,3 s, mit Animation) | Rechtsklick | kurz antippen / halten |
+| Fackeln an Wänden | Rechtsklick auf die Seite eines Blocks | genauso |
 | Hotbar | 1–9 / Mausrad | Slots antippen |
 | Inventar & Handwerk | E (oder Rechtsklick auf Werkbank/Ofen) | Button „Inventar“ |
 | Item fallen lassen | Q | – |

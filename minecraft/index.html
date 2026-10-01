@@ -871,8 +871,8 @@ const LANTERN_IDS = {};
   add(k, de, allSides(t), { solid: false, opaque: false, hard: 0.1, boxes: [box(b)], aabbs: [b], emit: true, light: 9, support: 'below', tab: 'bau', flat: t, cross: { s: 0.5, lift: 0 } });
 });
 {
-  const lg = tile('campfire_log_lit'), fire = tile('campfire_fire'), b = [0, 0, 0, 1, 7 / 16, 1];
-  add('campfire', 'Lagerfeuer', [lg, lg, fire, lg, lg, lg], merge(AXE, { solid: true, opaque: false, hard: 1.5, boxes: [box(b)], aabbs: [b], emit: true, light: 14, support: 'below', tab: 'bau', flat: tile('campfire_log_lit') }));
+  const lg = tile('campfire_log_lit'), fire = tile('campfire_fire'), bark = tile('oak_log'), b = [0, 0, 0, 1, 5 / 16, 1];
+  add('campfire', 'Lagerfeuer', [bark, bark, lg, bark, bark, bark], merge(AXE, { solid: true, opaque: false, hard: 1.5, boxes: [box(b)], aabbs: [b], emit: true, light: 14, support: 'below', tab: 'bau', flat: lg, flame: { t: fire, s: 0.8, lift: 5 / 16 } }));
 }
 // --- weitere Deko-Vollblöcke und Werkbänke ---
 addNew('slime_block', 'Schleimblock', allSides('slime_block'), { opaque: false, trans: true, samecull: true, hard: 0.2, bounce: true, tab: 'bau' });
@@ -937,6 +937,11 @@ BLOCKS.forEach((b) => { if (b && b.drop === undefined) b.drop = b.id; });
 BLOCKS[STONE].drop = ID.cobble;
 BLOCKS[ID.deepslate].drop = ID.cobbled_deepslate;
 BLOCKS[WATER].drop = 0; BLOCKS[ID.lava].drop = 0; BLOCKS[ID.bedrock].drop = 0;
+// Wandfackeln: je Richtung ein eigener Block (d = Richtung von der Fackel zur Wand), droppen die normale Fackel
+[['torch', 'Fackel'], ['soul_torch', 'Seelenfackel'], ['redstone_torch', 'Redstone-Fackel']].forEach(([k, de]) => {
+  const base = BLOCKS[ID[k]]; base.wallIds = [];
+  for (let d = 0; d < 4; d++) base.wallIds.push(add(k + '_wall_' + d, de, base.tex.slice(), { solid: false, opaque: false, torch: true, emit: true, light: base.light, hard: 0.05, wallDir: d, drop: ID[k] }));
+});
 if (nextId >= 4000) throw new Error('Zu viele Blöcke');
 
 // ---------- Items (Nicht-Blöcke, IDs ab 1000) ----------
@@ -1119,7 +1124,7 @@ function drawChestTile(c, img, part) {
   const d = (sx, sy, sw, sh, dx, dy) => c.drawImage(img, sx, sy, sw, sh, dx, dy, sw, sh);
   if (part === 'front') { d(14, 14, 14, 5, 1, 1); d(14, 33, 14, 10, 1, 6); d(1, 1, 2, 4, 7, 4); }
   else if (part === 'side') { d(0, 14, 14, 5, 1, 1); d(0, 33, 14, 10, 1, 6); }
-  else if (part === 'top') d(14, 0, 14, 14, 1, 1);
+  else if (part === 'top') d(28, 0, 14, 14, 1, 1);
   else d(14, 19, 14, 14, 1, 1);
 }
 // Bett-Kacheln aus der Entity-Textur (64x64): Oberseite (gedreht), Längsseite, Kopf-/Fußende
@@ -1939,6 +1944,20 @@ function emitTorch(bd, x, y, z, t) {
   pushQuad(solidB, [X1, Y0, Z0], [X0, Y0, Z0], [X0, Y1, Z0], [X1, Y1, Z0], su0, v0, su1, sv1, L, 255, E);
   pushQuad(solidB, [X0, Y1, Z1], [X1, Y1, Z1], [X1, Y1, Z0], [X0, Y1, Z0], su0, tv0, su1, tv1, 255, 255, E);
 }
+// Wandfackel: geneigter Pfosten an der Wand (d = Richtung zur Wand)
+function emitWallTorch(bd, x, y, z, t, d) {
+  const [u0, v0, u1, v1] = tileUV(t), tw = u1 - u0, th = v1 - v0;
+  const su0 = u0 + tw * 7 / 16, su1 = u0 + tw * 9 / 16, sv1 = v0 + th * 10 / 16;
+  const tv0 = v1 - th * 8 / 16, tv1 = v1 - th * 6 / 16, E = 255, L = 240;
+  const wx = DIRS4[d][0], wz = DIRS4[d][1], A = 0.4, sa = Math.sin(A), ca = Math.cos(A), h = 1 / 16, len = 10 / 16;
+  const cx = x + 0.5 + wx * 0.36, cy = y + 0.2, cz = z + 0.5 + wz * 0.36;     // Fußpunkt an der Wand
+  const P = (a, b, tt) => [cx + (-wz) * a + wx * (b * ca + tt * sa * -1) , cy + tt * ca + b * sa, cz + wx * a + wz * (b * ca - tt * sa)];
+  const quad = (p0, p1, p2, p3, uu0, vv0, uu1, vv1) => { pushQuad(bd, p0, p1, p2, p3, uu0, vv0, uu1, vv1, L, 255, E); pushQuad(bd, p1, p0, p3, p2, uu0, vv0, uu1, vv1, L, 255, E); };
+  for (const b of [-h, h]) quad(P(-h, b, 0), P(h, b, 0), P(h, b, len), P(-h, b, len), su0, v0, su1, sv1);
+  for (const a of [-h, h]) quad(P(a, -h, 0), P(a, h, 0), P(a, h, len), P(a, -h, len), su0, v0, su1, sv1);
+  pushQuad(bd, P(-h, h, len), P(h, h, len), P(h, -h, len), P(-h, -h, len), su0, tv0, su1, tv1, 255, 255, E);
+  pushQuad(bd, P(h, h, len), P(-h, h, len), P(-h, -h, len), P(h, -h, len), su0, tv0, su1, tv1, 255, 255, E);
+}
 
 function buildChunkMesh(world, c) {
   fillPad(world, c); computeBlockLight(world, c);
@@ -1953,9 +1972,13 @@ function buildChunkMesh(world, c) {
       if (L) L.push(c.cx * CS + x + 0.5, y + 0.5, c.cz * CS + z + 0.5, B.light);
     }
     if (B.plant) { emitPlant(bd, x, y, z, B.tex[4], Math.max(0, cellSky(x + 1, y + 1, z + 1)), B.emit, Math.max(0, blAt(x + 1, y + 1, z + 1)) * 17); continue; }
-    if (B.torch) { emitTorch(bd, x, y, z, B.tex[4]); continue; }
+    if (B.torch) { if (B.wallDir !== undefined) emitWallTorch(bd, x, y, z, B.tex[4], B.wallDir); else emitTorch(bd, x, y, z, B.tex[4]); continue; }
     if (B.cross) { emitCross(bd, x, y, z, B.tex[4], Math.max(0, cellSky(x + 1, y + 1, z + 1)), B.emit, Math.max(0, blAt(x + 1, y + 1, z + 1)) * 17, B.cross.s, B.cross.lift); continue; }
-    if (B.boxes) { emitBoxes(bd, x, y, z, id, B, bi); continue; }
+    if (B.boxes) {
+      emitBoxes(bd, x, y, z, id, B, bi);
+      if (B.flame) emitCross(bd, x, y, z, B.flame.t, Math.max(0, cellSky(x + 1, y + 1, z + 1)), true, 255, B.flame.s, B.flame.lift);        // Flamme über den Scheiten
+      continue;
+    }
     const lowerLiquid = B.liquid && pad[bi + PL] !== id;
     const emit = B.emit ? 255 : 0;
     for (let f = 0; f < 6; f++) {
@@ -2805,7 +2828,7 @@ function breakBlock(hit) {
     if (BLOCKS[id].hard > 0.06) damageHeld(toolOf(inv[P.sel]) && toolOf(inv[P.sel]).type === 'sword' ? 2 : 1);
   }
   const up = world.getBlock(hit.x, hit.y + 1, hit.z);           // Pflanzen / Fackeln darüber verlieren ihren Halt
-  if (up > 0 && (BLOCKS[up].plant || BLOCKS[up].torch)) {
+  if (up > 0 && (BLOCKS[up].plant || BLOCKS[up].torch) && BLOCKS[up].wallDir === undefined) {
     world.setBlock(hit.x, hit.y + 1, hit.z, AIR);
     if (!isCreative()) lootFor(up).forEach(([i, n]) => spawnDrop(i, n, hit.x + 0.5, hit.y + 1.4, hit.z + 0.5));
   }
@@ -2853,6 +2876,10 @@ function placementFor(id) {
     if (target.ny !== 0) return null;
     const d = DIRS4.findIndex((q) => q[0] === -target.nx && q[1] === -target.nz);
     return d < 0 ? null : { x, y, z, id: LADDER_IDS[d] };
+  }
+  if (B.wallIds && target.ny === 0) {                                    // Fackeln an Wänden
+    const d = DIRS4.findIndex((q) => q[0] === -target.nx && q[1] === -target.nz);
+    if (d >= 0 && isSolidId(target.id)) return { x, y, z, id: B.wallIds[d] };
   }
   if (B.hangId !== undefined) return { x, y, z, id: target.ny < 0 ? B.hangId : B.standId };
   return { x, y, z, id };
@@ -2946,7 +2973,8 @@ function useItem(pressed) {
   const combine = nb.fam && nb.fam.kind === 'slab' && pl.id === nb.fam.full;          // Platte + Platte = Vollblock
   if (cur < 0 || (cur !== AIR && !BLOCKS[cur].liquid && !BLOCKS[cur].plant && !combine)) return;
   const pb = BLOCKS[pl.id];
-  if (pb.plant || pb.torch) {                                    // brauchen festen Untergrund
+  if (pb.wallDir !== undefined) { if (!isSolidId(world.getBlock(x + DIRS4[pb.wallDir][0], y, z + DIRS4[pb.wallDir][1]))) return; }
+  else if (pb.plant || pb.torch) {                                    // brauchen festen Untergrund
     const below = world.getBlock(x, y - 1, z), BB = below > 0 ? BLOCKS[below] : null;
     if (!BB || !BB.solid || BB.plant || BB.torch) return;
     if (pb.sapling && ![GRASS, DIRT, ID.podzol, ID.coarse_dirt, ID.moss].includes(below)) return;
@@ -3118,6 +3146,7 @@ function checkSupports(x, y, z, id) {                                // Türen, 
   for (let d = 0; d < 4; d++) {                                      // Leitern an dieser Zelle
     const nx = x - DIRS4[d][0], nz = z - DIRS4[d][1], nb = world.getBlock(nx, y, nz);
     if (nb > 0 && BLOCKS[nb].ladder === d && !isSolidId(id)) popBlock(nx, y, nz, true);
+    if (nb > 0 && BLOCKS[nb].wallDir === d && !isSolidId(id)) popBlock(nx, y, nz, true);     // Wandfackeln
   }
 }
 function onBlockChange(x, y, z, id) {
@@ -3125,7 +3154,7 @@ function onBlockChange(x, y, z, id) {
   if (id > 0 && BLOCKS[id].falling) checkFall(x, y, z);
   checkFall(x, y + 1, z);
   const up = world.getBlock(x, y + 1, z);
-  if (up > 0 && (BLOCKS[up].plant || BLOCKS[up].torch) && !(id > 0 && BLOCKS[id].solid && !BLOCKS[id].aabbs)) {
+  if (up > 0 && (BLOCKS[up].plant || BLOCKS[up].torch) && BLOCKS[up].wallDir === undefined && !(id > 0 && BLOCKS[id].solid && !BLOCKS[id].aabbs)) {
     world.setBlock(x, y + 1, z, AIR);
     if (!isCreative()) lootFor(up).forEach(([i, n]) => spawnDrop(i, n, x + 0.5, y + 1.4, z + 0.5));
   }
@@ -4722,10 +4751,9 @@ class RemotePlayer {
     if (!this.model || id === this.heldId) return;
     this.heldId = id;
     if (this.heldMesh) { this.model.armR.remove(this.heldMesh); this.heldMesh = null; }
-    if (!id) return;
-    const m = new THREE.Mesh(dropGeometry(id), dropMaterial(id)); const item = id >= ITEM_BASE;
-    m.scale.setScalar(item ? 2.4 : 1.7); m.position.set(0, -0.55, 0.25); m.rotation.y = Math.PI / 2 * (item ? 0 : 0.5);
-    this.model.armR.add(m); this.heldMesh = m;
+    if (this.heldMat) { this.heldMat.dispose(); this.heldMat = null; }
+    if (!id || !ATLAS.ready) return;
+    const h = buildHeldMesh(id); this.model.armR.add(h.g); this.heldMesh = h.g; this.heldMat = h.mat;
   }
   update(dt, light) {
     if (!this.have || !this.model) return;
@@ -4755,14 +4783,32 @@ class RemotePlayer {
     if (this.sneakK > 0.05) { M.armR.rotation.x += 0.4 * this.sneakK; M.armL.rotation.x += 0.4 * this.sneakK; }
     if (this.eating) { this.eatT += dt; M.armR.rotation.x = -1.95 + Math.sin(this.eatT * 14) * 0.1; M.headG.rotation.x += Math.sin(this.eatT * 14) * 0.05; }
     for (const m of M.mats) m.color.setScalar(light);
+    if (this.heldMat) this.heldMat.color.setScalar(light);
     for (const [am] of (this.armorParts || [])) { const t = am.material.userData.tint; am.material.color.setRGB(light * t[0], light * t[1], light * t[2]); }
     this.group.visible = true;
   }
   dispose() {
     scene.remove(this.group);
     if (this.model) { this.model.mats.forEach((m) => m.dispose()); this.model.tex.dispose(); }
-    this.tag.material.map.dispose(); this.tag.material.dispose();
+    this.tag.material.map.dispose(); this.tag.material.dispose(); if (this.heldMat) this.heldMat.dispose();
   }
+}
+
+// Gehaltenes Item in der Hand anderer Spieler (Pixel-Sprite mit Dicke bzw. kleiner Würfel, wie in der Ego-Ansicht)
+function buildHeldMesh(id) {
+  const g = new THREE.Group();
+  if (id >= ITEM_BASE || handUsesSprite(BLOCKS[id])) {
+    const I = id >= ITEM_BASE ? ITEMS[id] : null, tool = !!(I && (I.tool || I.bow || I.rod || I.shears || I.lighter || I.spyglass));
+    const mat = handMat.clone(), m = new THREE.Mesh(spriteGeo(id), mat);
+    m.rotation.y = -Math.PI / 2;                                    // Sprite-Ebene längs der Blickrichtung, Spitze zeigt nach vorn
+    if (tool) { m.position.set(0, 0.3, 0.3); g.scale.setScalar(0.7); g.position.set(0, -0.72, 0.1); }
+    else { m.position.set(0, 0.05, 0.12); g.scale.setScalar(0.5); g.position.set(0, -0.72, 0.16); }
+    g.add(m); return { g, mat };
+  }
+  const B = BLOCKS[id], mat = handBlockMat.clone(), m = new THREE.Mesh(cubeGeo(id), mat);
+  if (B.aabbs) { let y0 = 1, y1 = 0; for (const a of B.aabbs) { y0 = Math.min(y0, a[1]); y1 = Math.max(y1, a[4]); } m.scale.y = Math.max(0.2, y1 - y0); }
+  g.scale.setScalar(0.34); g.position.set(0, -0.68, 0.22); g.rotation.y = 0.6; g.add(m);
+  return { g, mat };
 }
 
 // Strahl gegen andere Spieler (Slab-Methode, wie bei Mobs)
