@@ -69,6 +69,8 @@ Zeit-, Wetter- und Blitzbefehle werden im Mehrspielermodus an alle Spieler über
 * **Mobs:** zusätzlich Wolf (mit Knochen zähmen, folgt dir, sitzt auf Rechtsklick, greift Monster an), Kaninchen, Schleim (teilt sich), Fledermaus
   und **Dorfbewohner** mit Handel (8 Berufe, Smaragde). Schafe haben Wollfarben und lassen sich scheren.
 * **Bauwerke** in der Welt: Hütten mit Dorfbewohner, Brunnen, Wachtürme und Verliese mit Monsterkäfig – mit Beutetruhen.
+* **Hand-Ansicht:** Du siehst den Gegenstand in deiner Hand (Blöcke als Würfel, Werkzeuge und Items als kleine 3D-Objekte) mit Wippen beim Laufen, Schlag-, Abbau- und Wechsel-Animation.
+* **Beleuchtung:** Fackeln, Laternen, Lava usw. leuchten fest in die Welt eingebacken – aus jeder Entfernung gleich hell, ohne „Kopflampen“-Effekt.
 * **Erfolge**, **Minikarte** (N), **Einstellungen** (Sichtfeld, Empfindlichkeit, Lautstärke, Sichtweite, Wolken) und Screenshots (F2).
 * **Kreativ:** alle Blöcke und Items in Kategorien, unendlich, kein Schaden
 * Tag-Nacht-Zyklus, Sound (per WebAudio erzeugt), Speichern/Laden (localStorage), Seed-Eingabe, Sichtweite einstellbar

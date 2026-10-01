@@ -1123,7 +1123,7 @@ ATLAS.promise = Promise.all(Object.keys(PACK).map((k) => loadImage(PACK[k]).then
   .catch((e) => { console.error('Texturen konnten nicht geladen werden', e); });
 
 // Kleines Icon für Inventar/Hotbar (isometrischer Würfel oder flaches Sprite)
-const iconCache = new Map();
+const iconCache = new Map(), iconCanvases = new Map();
 const SHAPE_ICONS = {
   fence: [[4, 4, 6, 26], [22, 4, 6, 26], [10, 9, 12, 4], [10, 18, 12, 4]],
   gate: [[2, 6, 6, 24], [24, 6, 6, 24], [8, 10, 16, 4], [8, 19, 16, 4], [13, 6, 6, 24]],
@@ -1163,7 +1163,7 @@ function getIcon(id) {
       ctx.fillStyle = 'rgba(0,0,0,0.42)'; ctx.beginPath(); ctx.moveTo(16, 16); ctx.lineTo(30, 9); ctx.lineTo(30, 23); ctx.lineTo(16, 30); ctx.fill();
     }
   }
-  const url = cv.toDataURL(); iconCache.set(id, url); return url;
+  const url = cv.toDataURL(); iconCache.set(id, url); iconCanvases.set(id, cv); return url;
 }
 
 /* =====================================================================
@@ -1471,8 +1471,9 @@ class Chunk {
     this.top = new Uint8Array(LAYER); this.maxY = 0;
     this.solid = null; this.trans = null; this.meshed = false; this.dirty = false; this.lights = [];
     this.ticky = new Set();                                  // Positionen wachsender Blöcke (Nutzpflanzen, Setzlinge)
+    this.srcMap = new Map();                                 // Lichtquellen: Index -> Helligkeit (0–15)
     this.finalize();
-    for (let i = 0; i < data.length; i++) if (TICKY[data[i]]) this.ticky.add(i);
+    for (let i = 0; i < data.length; i++) { const id = data[i]; if (TICKY[id]) this.ticky.add(i); if (LIGHTV[id]) this.srcMap.set(i, LIGHTV[id]); }
   }
   // Höchster Block (maxY) und Himmelslicht-Grenze (top) je Spalte
   finalize() {
@@ -1554,6 +1555,8 @@ class World {
     c.data[idx] = id;
     if (TICKY[old]) c.ticky.delete(idx);
     if (TICKY[id]) c.ticky.add(idx);
+    if (LIGHTV[old]) c.srcMap.delete(idx);
+    if (LIGHTV[id]) c.srcMap.set(idx, LIGHTV[id]);
     let e = this.edits.get(k); if (!e) { e = { cx, cz, m: new Map() }; this.edits.set(k, e); }
     e.m.set(idx, id);
     c.recomputeTop(lx, lz);
@@ -1564,6 +1567,9 @@ class World {
     if (mx) this.markDirty(cx + mx, cz);
     if (mz) this.markDirty(cx, cz + mz);
     if (mx && mz) this.markDirty(cx + mx, cz + mz);
+    if (LIGHTV[old] || LIGHTV[id] || OP[old] !== OP[id]) {         // Licht reicht bis 14 Blöcke weit: Nachbarchunks mit Lichtquellen in der Nähe neu meshen
+      for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) if ((dx || dz) && (dx !== mx || dz !== mz) && this.srcNear(cx + dx, cz + dz)) this.markDirty(cx + dx, cz + dz);
+    }
     if (!silent) { if (this.onEdit) this.onEdit(x, y, z, id, old); if (this.onChange) this.onChange(x, y, z, id, old); this.fixAround(x, y, z); }
     return true;
   }
@@ -1581,6 +1587,10 @@ class World {
     const cx = x >> 4, cz = z >> 4, k = ckey(cx, cz);
     let e = this.edits.get(k); if (!e) { e = { cx, cz, m: new Map() }; this.edits.set(k, e); }
     e.m.set((x & 15) + ((z & 15) << 4) + (y << 8), id);
+  }
+  srcNear(cx, cz) {                                          // gibt es Lichtquellen im 3x3-Bereich um diesen Chunk?
+    for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) { const c = this.chunks.get(ckey(cx + dx, cz + dz)); if (c && c.srcMap.size) return true; }
+    return false;
   }
   hasNeighbors(c) {
     for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++)
@@ -1664,6 +1674,8 @@ class World {
    E. CHUNK-MESHER: Face Culling, Ambient Occlusion, weiches Himmelslicht,
       Pflanzen (Kreuzflächen), Fackeln, leuchtende Blöcke
 ===================================================================== */
+const LIGHTV = new Uint8Array(4096);                   // Lichtstärke je Blocktyp (Fackel 12, Lava 11 …)
+BLOCKS.forEach((b) => { if (b && b.light) LIGHTV[b.id] = Math.min(15, b.light); });
 const PW = CS + 2, PL = PW * PW;                       // gepaddetes Array 18 x 66 x 18
 const pad = new Uint16Array(PW * PW * (CH + 2)), padTop = new Uint8Array(PW * PW);
 
@@ -1718,6 +1730,49 @@ function fillPad(world, c) {
     }
   }
 }
+// Blocklicht (Fackeln, Laternen, Lava …): wird beim Meshen mit Breitensuche durch alle durchlässigen Blöcke verteilt
+// (Chunk + 15 Blöcke Rand) und als Vertexwert eingebacken – dadurch wirkt es aus jeder Entfernung gleich.
+const GW = CS + 30, LG = new Uint8Array(GW * GW * CH), lgBuckets = Array.from({ length: 16 }, () => []), lgArr = new Array(9);
+let lgOn = false;
+function computeBlockLight(world, c) {
+  lgOn = false;
+  let any = false;
+  for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+    const nc = world.chunks.get(ckey(c.cx + dx, c.cz + dz)); lgArr[(dz + 1) * 3 + dx + 1] = nc || null; if (nc && nc.srcMap.size) any = true;
+  }
+  if (!any) return;
+  LG.fill(0); for (let i = 0; i < 16; i++) lgBuckets[i].length = 0;
+  const bx = c.cx * CS - 15, bz = c.cz * CS - 15, L2 = GW * GW;
+  for (let k = 0; k < 9; k++) {
+    const nc = lgArr[k]; if (!nc) continue;
+    for (const [idx, lv] of nc.srcMap) {
+      const gx = nc.cx * CS + (idx & 15) - bx, gz = nc.cz * CS + ((idx >> 4) & 15) - bz, y = idx >> 8;
+      if (gx < 0 || gx >= GW || gz < 0 || gz >= GW || y >= CH) continue;
+      const gi = gx + gz * GW + y * L2; if (LG[gi] < lv) { LG[gi] = lv; lgBuckets[lv].push(gi); }
+    }
+  }
+  const NB = [1, -1, GW, -GW, L2, -L2];
+  for (let lv = 15; lv >= 2; lv--) {
+    const q = lgBuckets[lv];
+    for (let qi = 0; qi < q.length; qi++) {
+      const gi = q[qi]; if (LG[gi] !== lv) continue;
+      const y = (gi / L2) | 0, rem = gi - y * L2, gz = (rem / GW) | 0, gx = rem - gz * GW;
+      for (let n = 0; n < 6; n++) {
+        let nx = gx, nz = gz, ny = y;
+        if (n === 0) nx++; else if (n === 1) nx--; else if (n === 2) nz++; else if (n === 3) nz--; else if (n === 4) ny++; else ny--;
+        if (nx < 0 || nx >= GW || nz < 0 || nz >= GW || ny < 0 || ny >= CH) continue;
+        const ng = gi + NB[n]; if (LG[ng] >= lv - 1) continue;
+        const wx = bx + nx, wz = bz + nz, ch = lgArr[((wz >> 4) - c.cz + 1) * 3 + (wx >> 4) - c.cx + 1];
+        if (!ch || OP[ch.data[(wx & 15) + ((wz & 15) << 4) + (ny << 8)]]) continue;
+        LG[ng] = lv - 1; lgBuckets[lv - 1].push(ng);
+      }
+    }
+  }
+  lgOn = true;
+}
+// Blocklicht einer Zelle in gepaddeten Koordinaten (0–15); cellBl liefert -1 für opake Zellen
+const blAt = (x, y, z) => lgOn ? LG[(x + 14) + (z + 14) * GW + Math.min(CH - 1, Math.max(0, y - 1)) * GW * GW] : 0;
+function cellBl(x, y, z) { return OP[pad[x + z * PW + y * PL]] ? -1 : blAt(x, y, z); }
 // Himmelslicht einer Zelle: -1 = opak (zählt nicht), 0 = verdeckt, 1 = offener Himmel
 function cellSky(x, y, z) {
   if (OP[pad[x + z * PW + y * PL]]) return -1;
@@ -1770,6 +1825,7 @@ function emitBoxes(bd, x, y, z, id, B, bi) {
       if (boundary && (OP[nb] || (nb === id && ax !== 1))) continue;        // von Nachbarn verdeckt
       const cs = boundary ? cellSky(x + 1 + F.n[0], y + 1 + F.n[1], z + 1 + F.n[2]) : cellSky(x + 1, y + 1, z + 1);
       const l0 = Math.round(0.9 * F.shade * 255), l1 = (Math.max(0, cs) * 255) | 0;
+      const lz = emit || (lgOn ? Math.max(0, blAt(x + 1 + (boundary ? F.n[0] : 0), y + 1 + (boundary ? F.n[1] : 0), z + 1 + (boundary ? F.n[2] : 0))) * 17 : 0);
       const [u0, v0, u1, v1] = tileUV(B.tex[f]);
       const P4 = [], UV4 = [];
       for (let k = 0; k < 4; k++) {
@@ -1782,13 +1838,13 @@ function emitBoxes(bd, x, y, z, id, B, bi) {
         const fa = F.u[F.ua] > 0 ? p[F.ua] : 1 - p[F.ua], fb = F.v[F.va] > 0 ? p[F.va] : 1 - p[F.va];
         P4.push([x + p[0], y + p[1], z + p[2]]); UV4.push([u0 + fa * (u1 - u0), v0 + fb * (v1 - v0)]);
       }
-      pushQuadUV(bd, P4, UV4, l0, l1, emit);
+      pushQuadUV(bd, P4, UV4, l0, l1, lz);
     }
   }
 }
 // Pflanzen: zwei sich kreuzende Flächen (beidseitig)
-function emitPlant(bd, x, y, z, t, sky, emit) {
-  const [u0, v0, u1, v1] = tileUV(t), l0 = 235, l1 = (sky * 255) | 0, l2 = emit ? 255 : 0;
+function emitPlant(bd, x, y, z, t, sky, emit, blv) {
+  const [u0, v0, u1, v1] = tileUV(t), l0 = 235, l1 = (sky * 255) | 0, l2 = emit ? 255 : (blv | 0);
   const A = [[x, y, z], [x + 1, y, z + 1], [x + 1, y + 1, z + 1], [x, y + 1, z]];
   const B = [[x + 1, y, z], [x, y, z + 1], [x, y + 1, z + 1], [x + 1, y + 1, z]];
   pushQuad(bd, A[0], A[1], A[2], A[3], u0, v0, u1, v1, l0, l1, l2);
@@ -1811,7 +1867,7 @@ function emitTorch(bd, x, y, z, t) {
 }
 
 function buildChunkMesh(world, c) {
-  fillPad(world, c);
+  fillPad(world, c); computeBlockLight(world, c);
   solidB.reset(); transB.reset();
   const data = c.data, maxY = c.maxY, lights = [], lavaLights = [];
   for (let y = 0; y < maxY; y++) for (let z = 0; z < CS; z++) for (let x = 0; x < CS; x++) {
@@ -1822,7 +1878,7 @@ function buildChunkMesh(world, c) {
       const L = B.lava ? (pad[bi + PL] === AIR && lavaLights.length < 48 ? lavaLights : null) : (lights.length < 256 ? lights : null);
       if (L) L.push(c.cx * CS + x + 0.5, y + 0.5, c.cz * CS + z + 0.5, B.light);
     }
-    if (B.plant) { emitPlant(bd, x, y, z, B.tex[4], Math.max(0, cellSky(x + 1, y + 1, z + 1)), B.emit); continue; }
+    if (B.plant) { emitPlant(bd, x, y, z, B.tex[4], Math.max(0, cellSky(x + 1, y + 1, z + 1)), B.emit, Math.max(0, blAt(x + 1, y + 1, z + 1)) * 17); continue; }
     if (B.torch) { emitTorch(bd, x, y, z, B.tex[4]); continue; }
     if (B.boxes) { emitBoxes(bd, x, y, z, id, B, bi); continue; }
     const lowerLiquid = B.liquid && pad[bi + PL] !== id;
@@ -1834,7 +1890,7 @@ function buildChunkMesh(world, c) {
       const cxp = x + 1 + F.n[0], cyp = y + 1 + F.n[1], czp = z + 1 + F.n[2];
       const [u0, v0, u1, v1] = tileUV(B.tex[f]);
       const ci = cxp + czp * PW + cyp * PL;
-      const s0 = cellSky(cxp, cyp, czp);
+      const s0 = cellSky(cxp, cyp, czp), b0 = lgOn ? cellBl(cxp, cyp, czp) : 0;
       for (let k = 0; k < 4; k++) {
         const a = CA[k], b = CB[k], du = a ? 1 : -1, dv = b ? 1 : -1;
         const oc1 = OP[pad[ci + du * F.uo]], oc2 = OP[pad[ci + dv * F.vo]], oc3 = OP[pad[ci + du * F.uo + dv * F.vo]];
@@ -1846,6 +1902,13 @@ function buildChunkMesh(world, c) {
         s = cellSky(cxp + dv * F.v[0], cyp + dv * F.v[1], czp + dv * F.v[2]); if (s >= 0) { sn++; ss += s; }
         s = cellSky(cxp + du * F.u[0] + dv * F.v[0], cyp + du * F.u[1] + dv * F.v[1], czp + du * F.u[2] + dv * F.v[2]); if (s >= 0) { sn++; ss += s; }
         const sky = sn ? ss / sn : 0;
+        let bn = 0, bs = 0;
+        if (lgOn && !emit) {
+          if (b0 >= 0) { bn++; bs += b0; }
+          s = cellBl(cxp + du * F.u[0], cyp + du * F.u[1], czp + du * F.u[2]); if (s >= 0) { bn++; bs += s; }
+          s = cellBl(cxp + dv * F.v[0], cyp + dv * F.v[1], czp + dv * F.v[2]); if (s >= 0) { bn++; bs += s; }
+          s = cellBl(cxp + du * F.u[0] + dv * F.v[0], cyp + du * F.u[1] + dv * F.v[1], czp + du * F.u[2] + dv * F.v[2]); if (s >= 0) { bn++; bs += s; }
+        }
         let ry = F.o[1] + a * F.u[1] + b * F.v[1];
         if (lowerLiquid && ry === 1) ry = 0.875;
         const vi = bd.nv + k;
@@ -1853,7 +1916,7 @@ function buildChunkMesh(world, c) {
         bd.pos[vi * 3 + 1] = y + ry;
         bd.pos[vi * 3 + 2] = z + F.o[2] + a * F.u[2] + b * F.v[2];
         bd.uv[vi * 2] = a ? u1 : u0; bd.uv[vi * 2 + 1] = b ? v1 : v0;
-        bd.lt[vi * 3] = (AO_LEVEL[ao] * F.shade * 255) | 0; bd.lt[vi * 3 + 1] = (sky * 255) | 0; bd.lt[vi * 3 + 2] = emit;
+        bd.lt[vi * 3] = (AO_LEVEL[ao] * F.shade * 255) | 0; bd.lt[vi * 3 + 1] = (sky * 255) | 0; bd.lt[vi * 3 + 2] = emit || (bn ? Math.round(bs / bn * 17) : 0);
       }
       const v = bd.nv, ix = bd.idx;
       let n = bd.ni;
@@ -1921,19 +1984,16 @@ void main(){
   #ifdef CUTOUT
   if (t.a < 0.5) discard;
   #endif
-  float skyL = mix(0.30, 1.0, uDay);
-  float l = mix(0.17, skyL, vLight.y) * vLight.x;
-  l += (1.0 - vLight.y) * smoothstep(11.0, 1.5, vDepth) * 0.34 * vLight.x;   // Lampenlicht unter Tage
-  float lp = 0.0;                                                              // Punktlichter (Fackeln usw.)
-  for (int i = 0; i < 8; i++) {
-    float r = uLights[i].w;
-    if (r > 0.0) lp = max(lp, clamp(1.0 - distance(vWorld, uLights[i].xyz) / r, 0.0, 1.0));
-  }
-  l = max(l, lp * lp * 0.95 * (0.55 + 0.45 * vLight.x));
-  l = max(l, vLight.z);                                                        // selbstleuchtende Blöcke
+  float skyL = mix(0.34, 1.0, uDay);
+  float amb = mix(0.20, 0.26, uDay);                                           // Grundhelligkeit ohne Himmel/Fackel: überall gleich, egal wie weit weg
+  float l = mix(amb, skyL, vLight.y) * vLight.x;
+  float bl = vLight.z;                                                         // eingebackenes Licht von Fackeln, Laternen, Lava …
+  float lb = bl > 0.995 ? 1.0 : pow(bl, 1.1) * mix(0.72, 1.0, vLight.x);
+  l = max(l, lb);
   l = mix(l, max(l, 0.86), uNV);                                               // Nachtsicht
   vec3 tint = mix(vec3(0.78, 0.86, 1.12), vec3(1.0), uDay);
-  vec3 col = t.rgb * l * tint * mix(vec3(1.0), vec3(1.22, 1.0, 0.76), lp);
+  float warm = clamp(bl * 1.25 - l * 0.45, 0.0, 0.9);
+  vec3 col = t.rgb * l * tint * mix(vec3(1.0), vec3(1.22, 1.0, 0.76), warm);
   col = mix(col, fogColor, smoothstep(fogNear, fogFar, vDepth));
   gl_FragColor = vec4(col, t.a);
 }`;
@@ -2608,7 +2668,7 @@ function updateInteraction(dt) {
       const B = BLOCKS[target.id];
       if (!brk || brk.x !== target.x || brk.y !== target.y || brk.z !== target.z) brk = { x: target.x, y: target.y, z: target.z, t: 0 };
       if (isCreative()) {
-        if (mouse.leftPressed || creativeCool <= 0) { breakBlock(target); creativeCool = 0.22; brk = null; }
+        if (mouse.leftPressed || creativeCool <= 0) { breakBlock(target); handSwing(); creativeCool = 0.22; brk = null; }
       } else if ((B.need || 0) > (tool ? tool.tier : 0)) {          // Werkzeug zu schwach: geht gar nicht
         if (!brk.warned) {
           brk.warned = true;
@@ -2618,7 +2678,7 @@ function updateInteraction(dt) {
         const speed = (tool && tool.type === B.tool ? tool.speed : (tool && tool.type === 'sword' ? 1.4 : 1)) * (1 + 0.25 * fxAmp('haste'));
         const need = B.hard / speed;
         brk.t += dt;
-        if ((brk.snd = (brk.snd || 0) - dt) <= 0) { brk.snd = 0.25; noise(0.05, 900, 'lowpass', 0.25); if (mp.on) mp.swing = true; }
+        if ((brk.snd = (brk.snd || 0) - dt) <= 0) { brk.snd = 0.25; noise(0.05, 900, 'lowpass', 0.25); handSwing(); if (mp.on) mp.swing = true; }
         if (brk.t >= need) { breakBlock(target); brk = null; }
         else crackStage = Math.floor(brk.t / need * 10);
       }
@@ -2661,14 +2721,14 @@ function attackPlayer(rp) {
   const tool = toolOf(inv[P.sel]);
   let dmg = (tool ? tool.dmg : 1) + 3 * fxAmp('strength');
   if (!P.onGround && P.v.y < -0.5 && !P.flying && !P.inWater) dmg *= 1.5;
-  mpSend('hit', { to: rp.name, dmg: Math.max(1, Math.round(dmg)), fx: P.p.x, fz: P.p.z, by: mp.name }); sfx('hit');
+  mpSend('hit', { to: rp.name, dmg: Math.max(1, Math.round(dmg)), fx: P.p.x, fz: P.p.z, by: mp.name }); sfx('hit'); handSwing();
   if (tool) damageHeld(tool.type === 'sword' ? 1 : 2);
 }
 function attackMob(m) {
   const held = inv[P.sel], tool = toolOf(held);
   let dmg = (tool ? tool.dmg : 1) + 3 * fxAmp('strength');
   if (!P.onGround && P.v.y < -0.5 && !P.flying && !P.inWater) { dmg *= 1.5; spawnParticles(m.p.x - 0.5, m.p.y + m.h * 0.6, m.p.z - 0.5, new THREE.Color(1, 1, 0.6), 6, 3, 0.4); }   // Krit
-  m.hit(dmg, P.p.x, P.p.z); sfx('hit'); if (m.hp <= 0 && m.kind === 'hostile') achGive('kill');
+  m.hit(dmg, P.p.x, P.p.z); sfx('hit'); handSwing(); if (m.hp <= 0 && m.kind === 'hostile') achGive('kill');
   if (tool) damageHeld(tool.type === 'sword' ? 1 : 2);
 }
 
@@ -2750,7 +2810,7 @@ function useItem(pressed) {
   if (I) {
     if (I.food) {                                          // Essen (ein Bissen pro Klick)
       if (pressed && !isCreative() && (P.hunger < 20 || I.always)) {
-        P.hunger = Math.min(20, P.hunger + I.food); hudStatsDirty = true; sfx('eat');
+        P.hunger = Math.min(20, P.hunger + I.food); hudStatsDirty = true; sfx('eat'); handSwing();
         (I.effects || []).forEach(([k, sec, amp]) => addEffect(k, sec, amp));
         if (--slot.count <= 0) inv[P.sel] = null; refreshHotbar(); toast(I.effects ? 'Du fühlst dich anders …' : 'Mmh, lecker!');
       }
@@ -2807,7 +2867,7 @@ function useItem(pressed) {
   if (pb.support === 'above' && !isSolidId(world.getBlock(x, y + 1, z))) return;
   if (pb.ladder !== undefined && !isSolidId(world.getBlock(x + DIRS4[pb.ladder][0], y, z + DIRS4[pb.ladder][1]))) return;
   if (pb.solid && blockHitsPlayer(pl.id, x, y, z)) return;
-  world.setBlock(x, y, z, pl.id); sfx('place'); if (mp.on) mp.swing = true;
+  world.setBlock(x, y, z, pl.id); sfx('place'); handSwing(); if (mp.on) mp.swing = true;
   if (!isCreative() && --slot.count <= 0) inv[P.sel] = null;
   refreshHotbar();
 }
@@ -4304,7 +4364,6 @@ function frame(now) {
     world.update(P.p.x, P.p.z, 5, 7);
   }
   updateParticles(dt); updateClouds(dt);
-  lightT -= dt; if (lightT <= 0) { lightT = 0.15; world.gatherLights(P.p.x, P.p.y + EYE, P.p.z, uni.uLights.value); }
 
   // Kamera
   camera.position.set(P.p.x, P.p.y + EYE, P.p.z);
@@ -4354,6 +4413,7 @@ function frame(now) {
   }
 
   renderer.render(scene, camera);
+  updateHand(dt); renderHand();
   if (shotReq) doScreenshot();
 }
 requestAnimationFrame(frame);
@@ -5679,6 +5739,135 @@ function updateMinimap(dt) {
 applySettings();
 
 
+
+/* =====================================================================
+   P. HAND: Gegenstand in der Hand (First-Person-Ansicht, wird über die Welt gezeichnet)
+===================================================================== */
+const handScene = new THREE.Scene(), handCam = new THREE.PerspectiveCamera(58, 1, 0.02, 20);
+const handRoot = new THREE.Group(), armPivot = new THREE.Group(), itemPivot = new THREE.Group();
+handRoot.add(armPivot, itemPivot); handScene.add(handRoot);
+const hand = { id: -1, swing: 0, raise: 1, bobT: 0, mesh: null, light: 1, lightT: 0, bl: 0, visible: false };
+let handSkinDirty = true, armMesh = null;
+const handMat = new THREE.MeshBasicMaterial({ vertexColors: true }), handBlockMat = new THREE.MeshBasicMaterial({ vertexColors: true, alphaTest: 0.3 });
+handBlockMat.map = ATLAS.texture; const armMat = new THREE.MeshBasicMaterial({ alphaTest: 0.1 });
+const spriteGeos = new Map(), cubeGeos = new Map();
+// Flaches Symbol → kleines 3D-Objekt (jeder sichtbare Pixel wird zu einem Würfelchen, wie beim echten Spiel)
+function spriteGeo(id) {
+  if (spriteGeos.has(id)) return spriteGeos.get(id);
+  getIcon(id);
+  const cv = iconCanvases.get(id), d = cv.getContext('2d').getImageData(0, 0, 32, 32).data;
+  const at = (x, y) => (x < 0 || y < 0 || x > 15 || y > 15) ? 0 : d[((y * 2) * 32 + x * 2) * 4 + 3];
+  const pos = [], col = [], idx = [], zf = 1 / 32, zb = -1 / 32;
+  const quad = (v, c, sh) => { const n = pos.length / 3; v.forEach((p) => { pos.push(p[0], p[1], p[2]); col.push(c[0] * sh, c[1] * sh, c[2] * sh); }); idx.push(n, n + 1, n + 2, n, n + 2, n + 3); };
+  for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+    if (at(x, y) < 100) continue;
+    const i = ((y * 2) * 32 + x * 2) * 4, c = [d[i] / 255, d[i + 1] / 255, d[i + 2] / 255];
+    const x0 = (x - 8) / 16, x1 = (x - 7) / 16, yt = (8 - y) / 16, yb = (7 - y) / 16;
+    quad([[x0, yb, zf], [x1, yb, zf], [x1, yt, zf], [x0, yt, zf]], c, 1);
+    quad([[x1, yb, zb], [x0, yb, zb], [x0, yt, zb], [x1, yt, zb]], c, 0.78);
+    if (at(x - 1, y) < 100) quad([[x0, yb, zb], [x0, yb, zf], [x0, yt, zf], [x0, yt, zb]], c, 0.66);
+    if (at(x + 1, y) < 100) quad([[x1, yb, zf], [x1, yb, zb], [x1, yt, zb], [x1, yt, zf]], c, 0.66);
+    if (at(x, y - 1) < 100) quad([[x0, yt, zf], [x1, yt, zf], [x1, yt, zb], [x0, yt, zb]], c, 0.92);
+    if (at(x, y + 1) < 100) quad([[x0, yb, zb], [x1, yb, zb], [x1, yb, zf], [x0, yb, zf]], c, 0.5);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx);
+  spriteGeos.set(id, g); return g;
+}
+// Block → Würfel mit den Texturen aus dem Atlas
+function cubeGeo(id) {
+  if (cubeGeos.has(id)) return cubeGeos.get(id);
+  const B = BLOCKS[id], g = new THREE.BoxGeometry(1, 1, 1), uv = g.attributes.uv, col = new Float32Array(24 * 3), SH = [0.74, 0.74, 1, 0.5, 0.86, 0.86];
+  for (let f = 0; f < 6; f++) {
+    const [u0, v0, u1, v1] = tileUV(B.tex[f]);
+    uv.setXY(f * 4, u0, v1); uv.setXY(f * 4 + 1, u1, v1); uv.setXY(f * 4 + 2, u0, v0); uv.setXY(f * 4 + 3, u1, v0);
+    for (let k = 0; k < 4; k++) { col[(f * 4 + k) * 3] = col[(f * 4 + k) * 3 + 1] = col[(f * 4 + k) * 3 + 2] = SH[f]; }
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3)); cubeGeos.set(id, g); return g;
+}
+const handUsesSprite = (B) => B.plant || B.torch || B.flat !== undefined || B.shapeIcon || B.ladder !== undefined || B.door || B.support || B.trap || B.gate;
+function buildHandItem(id) {
+  while (itemPivot.children.length) itemPivot.remove(itemPivot.children[0]);
+  itemPivot.rotation.set(0, 0, 0); itemPivot.position.set(0, 0, 0); itemPivot.scale.setScalar(1);
+  if (!id || !ATLAS.ready) return;
+  if (id >= ITEM_BASE) {
+    const I = ITEMS[id], m = new THREE.Mesh(spriteGeo(id), handMat);
+    const tool = !!(I.tool || I.bow || I.rod || I.shears || I.lighter || I.spyglass);
+    itemPivot.add(m);
+    if (tool) { itemPivot.scale.setScalar(0.5); itemPivot.rotation.set(0.1, -0.45, 0.45); itemPivot.position.set(0, 0.2, -0.08); }
+    else { itemPivot.scale.setScalar(0.42); itemPivot.rotation.set(0.1, -0.5, 0.2); itemPivot.position.set(0, 0.14, -0.1); }
+  } else {
+    const B = BLOCKS[id];
+    if (handUsesSprite(B)) { const m = new THREE.Mesh(spriteGeo(id), handMat); itemPivot.add(m); itemPivot.scale.setScalar(0.42); itemPivot.rotation.set(0.1, -0.5, 0.2); itemPivot.position.set(0, 0.14, -0.1); }
+    else {
+      const m = new THREE.Mesh(cubeGeo(id), handBlockMat);
+      if (B.aabbs) { let y0 = 1, y1 = 0; for (const a of B.aabbs) { y0 = Math.min(y0, a[1]); y1 = Math.max(y1, a[4]); } m.scale.y = Math.max(0.2, y1 - y0); }
+      itemPivot.add(m); itemPivot.scale.setScalar(0.22); itemPivot.rotation.set(0.2, 0.62, 0); itemPivot.position.set(0.0, 0.2, -0.05);
+    }
+  }
+}
+function refreshHandArm() {
+  if (!ATLAS.ready) return;
+  let tex;
+  if (mp.on && mp.mySkinCv) { tex = new THREE.CanvasTexture(mp.mySkinCv); }
+  else { tex = new THREE.Texture(ATLAS.images['entity/player/wide/steve']); tex.needsUpdate = true; }
+  tex.magFilter = tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false;
+  if (armMat.map && armMat.map.dispose) armMat.map.dispose();
+  armMat.map = tex; armMat.needsUpdate = true;
+  if (!armMesh) { armMesh = new THREE.Mesh(boxGeo(4, 12, 4, 40, 16, 64, 64), armMat); armPivot.add(armMesh); }
+  handSkinDirty = false;
+}
+function handSwing() { if (hand.swing <= 0.05) hand.swing = 1; }
+function updateHand(dt) {
+  const show = !!world && ATLAS.ready && ['play', 'pause', 'chat', 'settings', 'trade', 'inv'].includes(state);
+  const held = inv[P.sel], id = held ? held.id : 0;
+  const zoom = held && held.id >= ITEM_BASE && ITEMS[held.id].spyglass && mouse.right && state === 'play';
+  hand.visible = show && !zoom && state !== 'dead';
+  if (!hand.visible) return;
+  if (handSkinDirty || !armMesh) refreshHandArm();
+  if (id !== hand.id) { hand.id = id; hand.raise = 0; buildHandItem(id); }
+  hand.raise = Math.min(1, hand.raise + dt * 4.5);
+  if (hand.swing > 0) hand.swing = Math.max(0, hand.swing - dt * 3.8);
+  const spd = state === 'play' && P.onGround && !P.flying ? Math.hypot(P.v.x, P.v.z) : 0;
+  hand.bobT += dt * spd * 1.9;
+  const k = Math.min(1, spd / 4.5), bobX = Math.cos(hand.bobT) * 0.014 * k, bobY = -Math.abs(Math.sin(hand.bobT)) * 0.02 * k;
+  const sw = Math.sin(Math.PI * (1 - hand.swing)), sq = hand.swing > 0 ? Math.sin(Math.sqrt(1 - hand.swing) * Math.PI) : 0;
+  const lower = (1 - hand.raise) * (1 - hand.raise);
+  if (!hand.freeze) {
+    handRoot.position.set(0.42 + bobX - sq * 0.12, -0.42 + bobY - lower * 0.55 - sq * 0.08, -0.8 - sq * 0.16);
+    handRoot.rotation.set(-sq * 0.9, sq * 0.35, sq * 0.2);
+  }
+  armPivot.visible = true;
+  // Helligkeit: Tageslicht, Schatten, nahe Lichtquellen (alle 0.4 s grob geschätzt)
+  hand.lightT -= dt;
+  if (hand.lightT <= 0) {
+    hand.lightT = 0.4;
+    const px = Math.floor(P.p.x), py = Math.floor(P.p.y + 1), pz = Math.floor(P.p.z);
+    const sky = world.skyExposed(px, py, pz) ? 1 : 0.4;
+    let bl = 0;
+    for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+      const c = world.chunks.get(ckey((px >> 4) + dx, (pz >> 4) + dz)); if (!c) continue;
+      for (const [i, lv] of c.srcMap) {
+        const d = Math.abs(((px >> 4) + dx) * CS + (i & 15) - px) + Math.abs(((pz >> 4) + dz) * CS + ((i >> 4) & 15) - pz) + Math.abs((i >> 8) - py);
+        if (lv - d > bl) bl = lv - d;
+      }
+    }
+    const dayL = lerp(0.34, 1, env.dayF) * (1 - 0.3 * weather.wf);
+    hand.light = clamp(Math.max(0.22 + 0.78 * dayL * sky, bl / 15 * 0.95 + 0.1), 0.2, 1);
+    if (id && id >= ITEM_BASE ? false : (id && BLOCKS[id].emit)) hand.light = 1;
+  }
+  const br = hand.light;
+  handMat.color.setScalar(br); handBlockMat.color.setScalar(br); armMat.color.setRGB(br, br * 0.97, br * 0.94);
+  if (uni.uNV.value > 0.5) { handMat.color.setScalar(Math.max(br, 0.85)); handBlockMat.color.setScalar(Math.max(br, 0.85)); armMat.color.setScalar(Math.max(br, 0.85)); }
+}
+function renderHand() {
+  if (!hand.visible) return;
+  if (handCam.aspect !== camera.aspect) { handCam.aspect = camera.aspect; handCam.updateProjectionMatrix(); }
+  renderer.autoClearColor = false; renderer.render(handScene, handCam); renderer.autoClearColor = true;
+}
+// Arm in Ruheposition: von rechts unten ins Bild
+armPivot.position.set(0.0, -0.16, 0.02); armPivot.rotation.set(-0.95, 0.3, 0.1); armPivot.scale.setScalar(0.9);
+
 /* =====================================================================
    O. MOB-INTERAKTION, HANDEL, BEUTETRUHEN, BAUWERKE
 ===================================================================== */
@@ -5908,7 +6097,7 @@ async function mpJoin(cfg) {
   const state = await mp.db.loadState(cfg.room, cfg.name, cfg.token).catch(() => null);
   mp.joinedAt = Date.now(); mp.id = rid();
   mp.players.forEach((p) => p.dispose()); mp.players.clear(); mp.mobsById.clear(); mp.pending = []; mp.dbQueue = [];
-  mp.myFace = skinFaceDataURL(await skinCanvas(cfg.skin, cfg.slim), 32);
+  mp.mySkinCv = await skinCanvas(cfg.skin, cfg.slim); mp.myFace = skinFaceDataURL(mp.mySkinCv, 32); handSkinDirty = true;
   startGame({ seed: info.seed, mode: info.mode, dist: cfg.dist, mp: true, mpEdits: edits, mpContainers: conts, mpState: state });
   mp.on = true; mp.wasHost = isHost(); mp.mode = info.mode;
   world.onEdit = mpQueueBlock; $('btnQuit').textContent = 'Verlassen';
@@ -6034,7 +6223,7 @@ $('btnMulti').disabled = true;
 
 
 // Kleiner Debug-Zugriff (z. B. für automatisierte Tests)
-window.__vc = { mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+window.__vc = { mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>
