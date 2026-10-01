@@ -231,6 +231,7 @@ body.touch #modeTag{display:none}
 <div id="touch" class="hidden">
   <div id="lookZone"></div>
   <div id="joy"><i id="joyKnob"></i></div>
+  <button id="tDrop" class="tbtn sm" type="button" style="right:96px;top:10px">Fallen</button>
   <button id="tPause" class="tbtn sm" type="button">Pause</button>
   <button id="tInv" class="tbtn sm" type="button">Inventar</button>
   <button id="tChat" class="tbtn sm" type="button">Chat</button>
@@ -412,6 +413,7 @@ body.touch #modeTag{display:none}
   </div>
 </div>
 <div id="cursorItem" class="hidden"></div>
+<button class="btn hidden" id="invDrop" type="button" style="position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:41;width:auto;padding:8px 18px">Item fallen lassen</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -1276,13 +1278,24 @@ function grad(h, x, y, z) {
   return ((h & 1) ? -u : u) + ((h & 2) ? -v : v);
 }
 
-const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2;
-const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft'];
+const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
+  BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12;
+const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese'];
+const GEN2_START = 1790872800000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
+const isDryBiome = (b) => b === BIOME_DESERT || b === BIOME_MESA;
+// Baumdichte je Biom (alt = Welten vor den neuen Biomen, neu = ab GEN2_START)
+const TREE_P1 = { 0: 0.014, 1: 0, 2: 0.01 };
+const TREE_P2 = { 0: 0.005, 1: 0, 2: 0.006, 3: 0.034, 4: 0.034, 5: 0.04, 6: 0.04, 7: 0.004, 8: 0.024, 9: 0, 10: 0.014, 11: 0.014, 12: 0.0015 };
+// Bodenbewuchs je Biom: [Gras, Farn-Anteil, Blumen, Besonderes (Kürbis/Melone)]
+const COVER1 = { 0: [0.2, 0.03, 0.012, 0.0006] };
+const COVER2 = { 0: [0.2, 0.03, 0.012, 0.0006], 3: [0.16, 0.1, 0.01, 0], 4: [0.16, 0.04, 0.02, 0], 5: [0.05, 0.2, 0.003, 0], 6: [0.5, 0.3, 0.01, 0.003], 7: [0.24, 0, 0.004, 0],
+  8: [0.1, 0.5, 0, 0], 10: [0.2, 0.1, 0.01, 0], 11: [0.12, 0, 0.03, 0], 12: [0.28, 0, 0.16, 0.0005] };
 const PADT = 3, PW_GEN = CS + PADT * 2;      // Rand um den Chunk (für Bäume)
 const genH = new Int16Array(PW_GEN * PW_GEN), genB = new Uint8Array(PW_GEN * PW_GEN), genTop = new Uint16Array(PW_GEN * PW_GEN);
 
 // Bauwerke: Hütte mit Dorfbewohner, Brunnen, Wachturm (Oberfläche) und Verlies mit Monsterkäfig (unter Tage).
 // Alles liegt komplett innerhalb eines Chunks und wird deterministisch aus dem Seed gewürfelt.
+const MESA_BANDS = [ID.terracotta, ID.orange_terracotta, ID.terracotta, ID.yellow_terracotta, ID.red_terracotta, ID.orange_terracotta, ID.white_terracotta, ID.terracotta, ID.brown_terracotta];
 class TerrainGen {
   structures(cx, cz, data, gi0, seed) {
     const S = ID, out = this.structOut = [];
@@ -1304,7 +1317,7 @@ class TerrainGen {
         const ox = 3 + ((R(3) * 4) | 0), oz = 3 + ((R(4) * 5) | 0), sx = 7, sz = 6, base = surface(ox, oz, sx, sz), b = genB[gi0(ox + 3, oz + 3)];
         if (base > 0) {
           const pal = b === BIOME_SNOW ? { wall: S.spruce_planks, log: S.spruce_log, roof: S.spruce_planks, slab: S.spruce_slab, door: 'spruce' }
-            : b === BIOME_DESERT ? { wall: S.sandstone, log: S.smooth_sandstone, roof: S.sandstone, slab: S.sandstone_slab, door: 'acacia' }
+            : b === BIOME_DESERT || b === BIOME_MESA ? { wall: S.sandstone, log: S.smooth_sandstone, roof: S.sandstone, slab: S.sandstone_slab, door: 'acacia' }
             : { wall: PLANKS, log: WOOD, roof: S.spruce_planks, slab: S.spruce_slab, door: 'oak' };
           fill(ox - 1, base + 1, oz - 1, sx + 2, 8, sz + 2, AIR); foundation(ox, oz, sx, sz, base, S.cobble);
           fill(ox, base, oz, sx, 1, sz, PLANKS);
@@ -1364,10 +1377,11 @@ class TerrainGen {
       }
     }
   }
-  constructor(seed) {
-    this.seed = seed >>> 0;
+  constructor(seed, gv) {
+    this.seed = seed >>> 0; this.v2 = gv >= 2;
     this.nA = new Perlin(seed); this.nB = new Perlin(seed + 101); this.nC = new Perlin(seed + 202);
     this.nT = new Perlin(seed + 303); this.nCa = new Perlin(seed + 404); this.nCb = new Perlin(seed + 505);
+    this.nU = new Perlin(seed + 606); this.nR = new Perlin(seed + 707);
     this.out = { h: 0, biome: 0, top: 0, sub: 0 };
   }
   fbm(n, x, z, oct) {
@@ -1384,14 +1398,32 @@ class TerrainGen {
     const ridge = clamp(1 - Math.abs(this.fbm(this.nA, x / 80 + 50, z / 80 + 50, 3) * 1.8), 0, 1); // Grate / Gipfel
     let h = SEA + 2 + c * 11 + hill * 4.5 + m * (10 + ridge * 20 + hill * 5);
     h = Math.floor(clamp(h, 2, 56));
-    const t = this.fbm(this.nT, x / 280 + 31.1, z / 280 - 17.9, 2);
-    const biome = t > 0.16 ? BIOME_DESERT : (t < -0.16 ? BIOME_SNOW : BIOME_GRASS);
-    let top, sub;
+    let biome, top, sub;
+    if (!this.v2) {
+      const t = this.fbm(this.nT, x / 280 + 31.1, z / 280 - 17.9, 2);
+      biome = t > 0.16 ? BIOME_DESERT : (t < -0.16 ? BIOME_SNOW : BIOME_GRASS);
+    } else {                                                           // Klima aus Temperatur (t), Feuchtigkeit (u) und Zufall (r)
+      const t = this.fbm(this.nT, x / 190 + 31.1, z / 190 - 17.9, 2), u = this.fbm(this.nU, x / 170 - 8.2, z / 170 + 44.6, 2), r = this.fbm(this.nR, x / 120 + 3.3, z / 120 + 9.1, 2);
+      const m0 = m;
+      if (t > 0.14) biome = u < -0.1 ? (r > 0.08 ? BIOME_MESA : BIOME_DESERT) : u < 0.12 ? BIOME_SAVANNA : BIOME_JUNGLE;
+      else if (t < -0.14) biome = u < 0.04 ? BIOME_SNOW : BIOME_TAIGA;
+      else if (u > 0.26) biome = h <= SEA + 4 ? BIOME_SWAMP : BIOME_DARK;
+      else if (u > 0.1) biome = r < -0.05 ? BIOME_BIRCH : BIOME_FOREST;
+      else if (u > -0.15) biome = r > 0.28 && m0 < 0.6 ? BIOME_CHERRY : BIOME_GRASS;
+      else biome = BIOME_MEADOW;
+      // Geländeform je Biom
+      if (biome === BIOME_MESA) { h = Math.max(h, SEA + 4); h = SEA + 2 + Math.floor((h - SEA) / 4) * 4; }               // Terrassen / Plateaus
+      else if (biome === BIOME_SWAMP) h = clamp(SEA + Math.floor(hill * 3 + 0.5), SEA - 1, SEA + 2);                    // flach mit Wasserflecken
+      else if (biome === BIOME_SAVANNA || biome === BIOME_GRASS || biome === BIOME_MEADOW) h = Math.floor(SEA + 2 + (h - SEA - 2) * 0.75);
+      else if (biome === BIOME_JUNGLE) h = Math.min(56, Math.floor(h + hill * 3));
+      h = Math.floor(clamp(h, 2, 56));
+    }
     if (biome === BIOME_DESERT) { top = SAND; sub = SAND; }
+    else if (biome === BIOME_MESA) { top = ID.red_sand; sub = ID.red_sand; }
     else if (biome === BIOME_SNOW) { top = SNOW; sub = DIRT; }
     else { top = GRASS; sub = DIRT; }
     if (m > 0.5 && h > SEA + 12) { top = STONE; sub = STONE; }             // felsige Berge
-    if (h >= 48 && biome !== BIOME_DESERT) top = SNOW;                     // Schneekappen
+    if (h >= 48 && !isDryBiome(biome)) top = SNOW;                         // Schneekappen
     if (h <= SEA + 1) { top = h >= SEA - 5 ? SAND : DIRT; sub = top === SAND ? SAND : DIRT; } // Strände / Seegrund
     o.h = h; o.biome = biome; o.top = top; o.sub = sub;
     return o;
@@ -1419,13 +1451,17 @@ class TerrainGen {
         if (r < 0.2) top = S.gravel; else if (r < 0.32) top = S.clay;
         genTop[gi] = top;
       }
-      const sb = top === STONE ? STONE : (top === SAND || top === S.gravel || top === S.clay) ? SAND : DIRT;
+      if (b === BIOME_TAIGA && top === GRASS) { const r = hash2(wx, wz, seed + 23); if (r < 0.35) top = S.podzol; else if (r < 0.5) top = S.coarse_dirt; genTop[gi] = top; }
+      else if (b === BIOME_SAVANNA && top === GRASS && hash2(wx, wz, seed + 24) < 0.1) { top = S.coarse_dirt; genTop[gi] = top; }
+      else if (b === BIOME_SWAMP && top === GRASS && h <= SEA + 1) { top = hash2(wx, wz, seed + 25) < 0.5 ? DIRT : S.clay; genTop[gi] = top; }
+      const sb = top === STONE ? STONE : (top === SAND || top === S.gravel || top === S.clay || top === S.red_sand) ? (b === BIOME_MESA ? S.red_sand : SAND) : DIRT;
       const deepY = 9 + ((hash2(wx, wz, seed + 5) * 4) | 0);              // ab hier Tiefenschiefer
       for (let y = 0; y <= h; y++) {
         let id;
         if (y === 0 || (y <= 2 && hash2(wx * 7 + y, wz, seed + 99) < 0.6 - 0.25 * y)) id = S.bedrock;
         else if (y === h) id = top;
         else if (b === BIOME_DESERT && top === SAND && y >= h - 4) id = y >= h - 1 ? SAND : S.sandstone;
+        else if (b === BIOME_MESA && top !== STONE && y >= SEA - 3 && h > SEA + 1) id = y === h ? S.red_sand : MESA_BANDS[(y + ((wx + wz) >> 6)) % MESA_BANDS.length];
         else if (y >= h - 3 && top !== STONE) id = sb;
         else id = y < deepY ? S.deepslate : STONE;
         data[base + (y << 8)] = id;
@@ -1473,18 +1509,20 @@ class TerrainGen {
     const SPR = [0, 1, 1, 2, 2, 3, 3, 3, 3];
     for (let tz = -3; tz < CS + 3; tz++) for (let tx = -3; tx < CS + 3; tx++) {
       const gi = gi0(tx, tz), b = genB[gi];
-      if (b === BIOME_DESERT) continue;
+      const TP = (this.v2 ? TREE_P2 : TREE_P1)[b] || 0; if (!TP) continue;
       const wx = cx * CS + tx, wz = cz * CS + tz, hv = hash2(wx, wz, seed);
-      if (hv >= (b === BIOME_GRASS ? 0.014 : 0.01)) continue;
+      if (hv >= TP) continue;
       const h = genH[gi], tp = genTop[gi];
-      if (h <= SEA + 1 || h > 46 || (tp !== GRASS && tp !== SNOW)) continue;
+      if (h <= (b === BIOME_SWAMP ? SEA : SEA + 1) || h > 46 || (tp !== GRASS && tp !== SNOW && tp !== S.podzol && tp !== S.coarse_dirt && !(b === BIOME_SWAMP && tp === DIRT))) continue;
       let ok = true;
       for (let dz = -2; dz <= 2 && ok; dz++) for (let dx = -2; dx <= 2; dx++) {
         if ((dx || dz) && hash2(wx + dx, wz + dz, seed) < hv) { ok = false; break; }
       }
       if (!ok) continue;
       const h2 = hash2(wx, wz, seed + 7);
-      const kind = b === BIOME_SNOW ? 'spruce' : (hash2(wx, wz, seed + 31) < 0.3 ? 'birch' : 'oak');
+      const r31 = hash2(wx, wz, seed + 31);
+      const kind = b === BIOME_SNOW || b === BIOME_TAIGA ? 'spruce' : b === BIOME_BIRCH ? 'birch' : b === BIOME_DARK ? 'dark_oak' : b === BIOME_JUNGLE ? 'jungle'
+        : b === BIOME_SAVANNA ? 'acacia' : b === BIOME_CHERRY ? 'cherry' : b === BIOME_FOREST ? (r31 < 0.25 ? 'birch' : 'oak') : (r31 < 0.3 && b !== BIOME_SWAMP ? 'birch' : 'oak');
       const logId = kind === 'oak' ? WOOD : S[kind + '_log'], leafId = kind === 'oak' ? LEAVES : S[kind + '_leaves'];
       if (kind === 'spruce') {
         const th = 6 + Math.floor(h2 * 4);
@@ -1498,12 +1536,14 @@ class TerrainGen {
         }
         for (let ly = 1; ly <= th; ly++) put(tx, h + ly, tz, logId, 1);
       } else {
-        const th = (kind === 'birch' ? 5 : 4) + Math.floor(h2 * 3);
-        for (let ly = th - 2; ly <= th + 1; ly++) {
-          const r = ly >= th ? 1 : 2;
+        const big = kind === 'dark_oak' || kind === 'cherry' || kind === 'jungle' || kind === 'acacia', RR = big ? 3 : 2;
+        const th = kind === 'jungle' ? 8 + Math.floor(h2 * 6) : kind === 'acacia' ? 5 + Math.floor(h2 * 3) : kind === 'dark_oak' ? 5 + Math.floor(h2 * 2) : (kind === 'birch' ? 5 : 4) + Math.floor(h2 * 3);
+        const lo = kind === 'acacia' ? th : kind === 'jungle' ? th - 1 : th - 2;
+        for (let ly = lo; ly <= th + 1; ly++) {
+          const r = kind === 'acacia' ? (ly === th ? 3 : 2) : ly >= th ? RR - 1 : RR;
           for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) {
-            if (r === 2 && Math.abs(dx) === 2 && Math.abs(dz) === 2 && hash2(wx + dx, wz + dz, seed + 13) < 0.5) continue;
-            if (ly === th + 1 && Math.abs(dx) === 1 && Math.abs(dz) === 1) continue;
+            if (r >= 2 && Math.abs(dx) === r && Math.abs(dz) === r && hash2(wx + dx, wz + dz, seed + 13) < 0.5) continue;
+            if (ly === th + 1 && Math.abs(dx) === r && Math.abs(dz) === r) continue;
             put(tx + dx, h + ly, tz + dz, leafId, 0);
           }
         }
@@ -1519,15 +1559,15 @@ class TerrainGen {
       const base = lx + (lz << 4), wx = cx * CS + lx, wz = cz * CS + lz;
       const below = data[base + (h << 8)], idx = base + ((h + 1) << 8);
       if (data[idx] !== AIR) continue;
-      if (below === GRASS) {
-        const r = hash2(wx, wz, seed + 51);
-        if (r < 0.2) data[idx] = r < 0.03 ? S.fern : S.short_grass;
+      if (below === GRASS || (below === S.podzol && this.v2)) {
+        const cv = (this.v2 ? COVER2[b] : COVER1[0]) || COVER1[0], r = hash2(wx, wz, seed + 51);
+        if (r < cv[0]) data[idx] = r < (this.v2 ? cv[0] * cv[1] : 0.03) ? S.fern : S.short_grass;
         else {
           const r2 = hash2(wx, wz, seed + 52);
-          if (r2 < 0.012) data[idx] = FLOWERS[(hash2(wx, wz, seed + 53) * FLOWERS.length) | 0];
-          else if (r2 > 0.9994) data[idx] = S.pumpkin;
+          if (r2 < cv[2]) data[idx] = FLOWERS[(hash2(wx, wz, seed + 53) * FLOWERS.length) | 0];
+          else if (cv[3] && r2 > 1 - cv[3]) data[idx] = b === BIOME_JUNGLE ? S.melon : S.pumpkin;
         }
-      } else if (below === SAND && b === BIOME_DESERT && h > SEA + 1) {
+      } else if ((below === SAND || below === S.red_sand) && isDryBiome(b) && h > SEA + 1) {
         const r = hash2(wx, wz, seed + 41);
         if (r < 0.007) {
           const ch = 1 + ((hash2(wx, wz, seed + 42) * 3) | 0);
@@ -1583,9 +1623,9 @@ class Chunk {
 }
 
 class World {
-  constructor(seedStr, scene) {
-    this.seedStr = seedStr; this.seed = hashString(seedStr); this.scene = scene;
-    this.gen = new TerrainGen(this.seed);
+  constructor(seedStr, scene, gv) {
+    this.seedStr = seedStr; this.seed = hashString(seedStr); this.scene = scene; this.gv = gv || 1;
+    this.gen = new TerrainGen(this.seed, this.gv);
     this.chunks = new Map(); this.edits = new Map(); this.dirty = new Set(); this.structs = new Map();
     this.R = 6; this.offsets = []; this.lcx = NaN; this.lcz = NaN;
     this.setRenderDistance(6);
@@ -2427,6 +2467,12 @@ function rayBoxes(o, d, cx, cy, cz, boxes, tMin) {
   }
   return best;
 }
+// Freie Sicht zwischen zwei Punkten (keine festen Blöcke dazwischen)?
+function lineClear(ax, ay, az, bx, by, bz) {
+  const dx = bx - ax, dy = by - ay, dz = bz - az, len = Math.hypot(dx, dy, dz); if (len < 0.5) return true;
+  const h = raycastBlocks({ x: ax, y: ay, z: az }, { x: dx / len, y: dy / len, z: dz / len }, len, false);
+  return !h || h.dist >= len - 0.05;
+}
 function raycastBlocks(o, d, max, incLiquid) {
   let x = Math.floor(o.x), y = Math.floor(o.y), z = Math.floor(o.z);
   const sx = d.x > 0 ? 1 : -1, sy = d.y > 0 ? 1 : -1, sz = d.z > 0 ? 1 : -1;
@@ -2629,8 +2675,14 @@ function updateDrops(dt) {
   for (let i = drops.length - 1; i >= 0; i--) if (!drops[i].update(dt)) { drops[i].dispose(); drops.splice(i, 1); }
 }
 function clearDrops() { drops.forEach((d) => d.dispose()); drops.length = 0; }
-function dropHeld() {                                                    // Taste Q
+const adminBedrock = (t) => !!(mp.on && mp.admin && t && t.id === ID.bedrock);
+function dropHeld(all) {                                                 // Taste Q (Strg+Q = ganzer Stapel)
   const slot = inv[P.sel]; if (!slot) return;
+  if (all && slot.count > 1) {
+    const n = slot.count, cp = Math.cos(P.pitch), dx = -Math.sin(P.yaw) * cp, dy = Math.sin(P.pitch), dz = -Math.cos(P.yaw) * cp;
+    spawnDrop(slot.id, n, P.p.x + dx * 0.5, P.p.y + EYE - 0.3, P.p.z + dz * 0.5, { dur: slot.dur, vx: dx * 5, vy: dy * 5 + 1.5, vz: dz * 5, delay: 1.6 });
+    inv[P.sel] = null; refreshHotbar(); return;
+  }
   const cp = Math.cos(P.pitch), dx = -Math.sin(P.yaw) * cp, dy = Math.sin(P.pitch), dz = -Math.cos(P.yaw) * cp;
   spawnDrop(slot.id, 1, P.p.x + dx * 0.5, P.p.y + EYE - 0.3, P.p.z + dz * 0.5, { dur: slot.dur, vx: dx * 5, vy: dy * 5 + 1.5, vz: dz * 5, delay: 1.6 });
   if (--slot.count <= 0) inv[P.sel] = null;
@@ -2694,7 +2746,9 @@ function blastEffects(cx, cy, cz, R) {
   spawnParticles(cx - 0.5, cy - 0.5, cz - 0.5, gray, 26, R * 2, R * 0.8); spawnParticles(cx - 0.5, cy - 0.5, cz - 0.5, fire, 14, R * 2.2, R * 0.6);
   const blast = (px, py, pz, isPlayer, m) => {
     const d = Math.hypot(px - cx, py - cy, pz - cz); if (d >= R * 2) return;
-    const imp = 1 - d / (R * 2), dmg = Math.floor(Math.pow(imp, 1.3) * R * 5.5), l = d || 1;
+    const imp = 1 - d / (R * 2), l = d || 1;
+    let dmg = Math.floor(Math.pow(imp, 1.3) * R * 5.5);
+    if (!lineClear(cx, cy, cz, px, py, pz)) dmg = Math.floor(dmg * 0.3);                      // Wände schirmen ab
     if (isPlayer) {
       hurt(dmg); P.v.x += (px - cx) / l * imp * 14; P.v.z += (pz - cz) / l * imp * 14; P.v.y += imp * 6;
       P.shake = Math.max(P.shake || 0, clamp(1 - d / 30, 0, 1) * 0.8);
@@ -2792,6 +2846,8 @@ function updateInteraction(dt) {
     } else if (mobTarget) {
       brk = null;
       if (atkCd <= 0) { attackMob(mobTarget); atkCd = 0.45; atkQueue = 0; if (mp.on) mp.swing = true; }
+    } else if (mouse.left && target && adminBedrock(target)) {                                  // Admin: Grundgestein abbauen
+      if (mouse.leftPressed || creativeCool <= 0) { spawnParticles(target.x, target.y, target.z, ATLAS.colors[target.id] || new THREE.Color(0.2, 0.2, 0.2)); sfx('break'); world.setBlock(target.x, target.y, target.z, AIR); handSwing(); creativeCool = 0.3; brk = null; }
     } else if (mouse.left && target && target.y > 0 && BLOCKS[target.id].hard !== Infinity) {
       const B = BLOCKS[target.id];
       if (!brk || brk.x !== target.x || brk.y !== target.y || brk.z !== target.z) brk = { x: target.x, y: target.y, z: target.z, t: 0 };
@@ -3653,8 +3709,19 @@ function renderInventory() {
     ci.classList.remove('hidden');
     ci.innerHTML = '<img src="' + getIcon(cursorItem.id) + '">' + (cursorItem.count > 1 ? '<span class="cnt">' + cursorItem.count + '</span>' : '');
   } else ci.classList.add('hidden');
+  $('invDrop').classList.toggle('hidden', !cursorItem);
   renderCraft();
 }
+function dropCursor(one) {                                                 // Item vom Cursor auf den Boden werfen
+  if (!cursorItem) return;
+  const n = one ? 1 : cursorItem.count, cp = Math.cos(P.pitch), dx = -Math.sin(P.yaw) * cp, dz = -Math.cos(P.yaw) * cp;
+  spawnDrop(cursorItem.id, n, P.p.x + dx * 0.6, P.p.y + EYE - 0.3, P.p.z + dz * 0.6, { dur: cursorItem.dur, vx: dx * 4, vy: 1.5, vz: dz * 4, delay: 1.6 });
+  cursorItem.count -= n; if (cursorItem.count <= 0) cursorItem = null;
+  renderInventory(); sfx('place');
+}
+$('inventory').addEventListener('pointerdown', (e) => { if (e.target === $('inventory') && cursorItem && state === 'inv') { e.preventDefault(); dropCursor(e.button === 2); } });
+$('inventory').addEventListener('contextmenu', (e) => e.preventDefault());
+$('invDrop').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); dropCursor(false); });
 function moveCursorItem(e) { const ci = $('cursorItem'); ci.style.left = e.clientX + 'px'; ci.style.top = e.clientY + 'px'; }
 document.addEventListener('pointermove', (e) => { if (state === 'inv') moveCursorItem(e); });
 
@@ -4108,7 +4175,10 @@ class Mob {
         } else { this.timer -= dt; if (this.timer <= 0) { this.timer = 2 + Math.random() * 3; this.moving = Math.random() < 0.5; this.yaw = Math.random() * 6.28; } if (this.moving) spd = this.speed * 0.5; }
       } else if (this.type === 'creeper') {
         face();
-        if (this.fuse > 0 || pl.dist < 3) {
+        const tg = this.tgt || { x: P.p.x, y: P.p.y, z: P.p.z };                              // Sicht: durch Wände zündet ein Creeper nicht
+        const see = lineClear(this.p.x, this.p.y + 1.2, this.p.z, tg.x, tg.y + 1.0, tg.z);
+        if (!see && this.fuse > 0) this.fuse = Math.max(0, this.fuse - dt * 2);
+        if ((this.fuse > 0 || pl.dist < 3) && (see || this.fuse > 0)) {
           if (this.fuse === 0) sfxAt('fuse', this.p.x, this.p.y, this.p.z);
           if (pl.dist > 6.5) this.fuse = 0;                                                 // Spieler entkommen → abbrechen
           else this.fuse += dt;
@@ -4216,16 +4286,16 @@ function trySpawnMob() {
   if (world.getBlock(x, y, z) !== AIR || world.getBlock(x, y + 1, z) !== AIR) return;
   let type;
   if (surfaceH || cave) {
-    const desert = !cave && world.gen.biomeAt(x, z) === BIOME_DESERT;
+    const desert = !cave && isDryBiome(world.gen.biomeAt(x, z));
     const r = Math.random();
     type = r < 0.4 ? (desert ? 'husk' : 'zombie') : r < 0.62 ? 'skeleton' : r < 0.82 ? 'spider' : 'creeper';
     if (cave && Math.random() < 0.22 && mobs.filter((m) => m.type === 'bat').length < 5) type = 'bat';
     else if (cave && Math.random() < 0.1 && mobs.filter((m) => m.type === 'slime').length < 4) type = 'slime';
   } else {
-    if (below !== GRASS && below !== SNOW) return;
+    if (below !== GRASS && below !== SNOW && below !== ID.podzol) return;
     const r = Math.random(), wolves = mobs.filter((m) => m.type === 'wolf').length, bunnies = mobs.filter((m) => m.type === 'rabbit').length;
     const biome = world.gen.biomeAt(x, z);
-    if (below === SNOW || biome === BIOME_SNOW) type = r < 0.35 && wolves < 3 ? 'wolf' : r < 0.7 && bunnies < 5 ? 'rabbit' : null;
+    if (below === SNOW || biome === BIOME_SNOW || biome === BIOME_TAIGA) type = r < 0.35 && wolves < 3 ? 'wolf' : r < 0.7 && bunnies < 5 ? 'rabbit' : null;
     else type = r < 0.26 ? 'pig' : r < 0.5 ? 'cow' : r < 0.7 ? 'sheep' : r < 0.86 ? 'chicken' : r < 0.94 ? (bunnies < 5 ? 'rabbit' : 'chicken') : (wolves < 3 ? 'wolf' : 'pig');
     if (!type) return;
   }
@@ -4249,7 +4319,7 @@ function setState(s) {
   for (const k in SCREENS) $(SCREENS[k]).classList.toggle('hidden', k !== s);
   $('hud').classList.toggle('hidden', s === 'menu' || s === 'mpmenu' || s === 'loading' || (s === 'settings' && !world));
   document.body.classList.toggle('chatting', s === 'chat');
-  if (s !== 'inv') $('cursorItem').classList.add('hidden');
+  if (s !== 'inv') { $('cursorItem').classList.add('hidden'); $('invDrop').classList.add('hidden'); }
   if (s === 'inv') renderInventory();
   if (s !== 'play' && document.pointerLockElement) document.exitPointerLock();
   if (s !== 'play') resetTouch();
@@ -4316,7 +4386,7 @@ function startGame(opts) {
   mode = opts.mode; renderDist = opts.dist;
   const save = opts.save;
   if (!opts.mp) { mp.on = false; $('btnQuit').textContent = 'Speichern & Beenden'; }
-  world = new World(save ? save.seed : opts.seed, scene);
+  world = new World(save ? save.seed : opts.seed, scene, save ? (save.gv || 1) : opts.gv || 2);          // Welten ohne gv-Eintrag = alte Biome
   world.setRenderDistance(renderDist);
   world.onChange = onBlockChange;
   curWorldKey = opts.mp ? 'mp:' + mp.room : 'sp:' + world.seedStr; loadWorldPrefs();
@@ -4358,7 +4428,7 @@ function saveGame() {
   if (!world) return false;
   if (mp.on) { mpSaveState(); return true; }
   const data = {
-    v: 1, seed: world.seedStr, mode, dist: renderDist,
+    v: 1, gv: world.gv, seed: world.seedStr, mode, dist: renderDist,
     player: { x: P.p.x, y: P.p.y, z: P.p.z, yaw: P.yaw, pitch: P.pitch, flying: P.flying },
     health: P.health, hunger: P.hunger, time: gameTime, sel: P.sel,
     inv: packItems(inv), fuel: P.fuel, armor: packItems(armor), spawn: [P.spawn.x, P.spawn.y, P.spawn.z], bed: P.bedPos,
@@ -4491,6 +4561,7 @@ $('tSprint').addEventListener('pointerdown', (e) => {
   e.preventDefault(); sprintLatch = !sprintLatch; $('tSprint').classList.toggle('on', sprintLatch); touchSprint = sprintLatch || joyFull;
 });
 holdBtn('tInv', () => { if (state === 'play') toggleInventory(); }, () => {});
+holdBtn('tDrop', () => { if (state === 'play') dropHeld(); }, () => {});
 holdBtn('tPause', () => { if (state === 'play') setState('pause'); }, () => {});
 hotbarEls.forEach((el, i) => el.addEventListener('pointerdown', (e) => { if (state === 'play' && touchMode) { e.preventDefault(); selectSlot(i); } }));
 $('btnInvClose').onclick = () => { if (state === 'inv') toggleInventory(); };
@@ -4520,7 +4591,7 @@ document.addEventListener('keydown', (e) => {
   if (state === 'play') {
     if (e.code.startsWith('Digit')) { const n = parseInt(e.code.slice(5), 10); if (n >= 1 && n <= 9) selectSlot(n - 1); }
     if (e.code === 'KeyF') toggleFly();
-    if (e.code === 'KeyQ') dropHeld();
+    if (e.code === 'KeyQ') dropHeld(e.ctrlKey);
     if (e.code === 'KeyT' || e.code === 'Enter') { e.preventDefault(); openChat(); return; }
     if (e.key === '/') { e.preventDefault(); openChat('/'); return; }
     if (mp.on && e.code === 'Tab') { mp.tab = true; renderTabList(); }
@@ -5959,7 +6030,7 @@ function updateWeather(dt) {
   weather.rain += (tr - weather.rain) * Math.min(1, dt * 0.35); weather.thunder += (tt - weather.thunder) * Math.min(1, dt * 0.35);
   const biome = world.gen.biomeAt(Math.floor(P.p.x), Math.floor(P.p.z));
   weather.biome = biome;
-  weather.wf = biome === BIOME_DESERT ? 0 : weather.rain;                          // in der Wüste regnet es nicht
+  weather.wf = isDryBiome(biome) ? 0 : weather.rain;                          // in der Wüste regnet es nicht
   const snow = biome === BIOME_SNOW, amt = weather.wf > 0.03 ? Math.min(1, weather.wf) : 0;
   rainMesh.visible = !snow && amt > 0; snowMesh.visible = snow && amt > 0;
   if (amt > 0) updatePrecip(dt, snow, amt);
@@ -6495,14 +6566,16 @@ const mpHandlers = {
       case 'pos': {
         let rp = mp.players.get(from);
         if (!rp) { mpHandlers.join(from, { name: p.n, joinedAt: p.j }); rp = mp.players.get(from); if (!rp) return; }
+        if (p.pq !== undefined) (mp.pendPr = mp.pendPr || new Map()).set(from, { t: p.pq, at: performance.now() });          // Ping-Anfrage: bei der nächsten Gelegenheit zurückschicken
+        if (Array.isArray(p.pr)) for (const [id, t, hold] of p.pr) if (id === mp.id && typeof t === 'number') {                // Antwort auf meine Anfrage
+          const r = Math.max(0, performance.now() - t - (Number(hold) || 0)); rp.rtt = rp.rtt === undefined ? r : rp.rtt * 0.6 + r * 0.4;
+        }
         rp.target.set(p.x, p.y, p.z); rp.tyaw = p.yw; rp.pitch = p.pt; rp.mode = p.m || 'survival';
         if (!rp.have) { rp.p.copy(rp.target); rp.have = true; rp.bodyYaw = p.yw; rp.yaw = p.yw; }
         rp.setHeld(p.h || 0); rp.setArmor(p.a || '0000'); { const ad = rp.name === ADMIN_NAME && !!p.ad; if (ad !== !!rp.admin) { rp.admin = ad; rp.setRank(ad ? '[Admin]' : ''); if (mp.tab) renderTabList(); } }
         rp.sneak = !!p.sn; rp.sleeping = !!p.sl; rp.eating = !!p.ea; if (p.sw) rp.swing = 0.3;
         break;
       }
-      case 'pg': mpSend('pn', { t: p.t, to: from }); break;
-      case 'pn': if (p.to === mp.id) { const rp = mp.players.get(from); if (rp) { const r = performance.now() - p.t; rp.rtt = rp.rtt === undefined ? r : rp.rtt * 0.6 + r * 0.4; } } break;
       case 'blocks': for (const [x, y, z, id] of p.b) world.setBlock(x, y, z, id, true); break;
       case 'chat':
         if (p.to) { if (p.to === mp.name) { chatAdd(null, p.n + ' flüstert: ' + p.t, 'whisper'); lastMsgFrom = p.n; } break; }
@@ -6628,7 +6701,7 @@ async function mpJoin(cfg) {
   mp.joinedAt = Date.now(); mp.id = rid();
   mp.players.forEach((p) => p.dispose()); mp.players.clear(); mp.mobsById.clear(); mp.pending = []; mp.dbQueue = [];
   mp.mySkinCv = await skinCanvas(cfg.skin, cfg.slim); mp.myFace = skinFaceDataURL(mp.mySkinCv, 32); handSkinDirty = true;
-  startGame({ seed: info.seed, mode: info.mode, dist: cfg.dist, mp: true, mpEdits: edits, mpContainers: conts, mpState: state });
+  startGame({ seed: info.seed, mode: info.mode, dist: cfg.dist, gv: (info.epoch_ms || 0) >= GEN2_START ? 2 : 1, mp: true, mpEdits: edits, mpContainers: conts, mpState: state });
   mp.on = true; mp.wasHost = isHost(); mp.mode = info.mode;
   world.onEdit = mpQueueBlock; $('btnQuit').textContent = 'Verlassen';
   $('chat').innerHTML = ''; $('mpinfo').classList.remove('hidden'); mpStatusHud();
@@ -6670,8 +6743,18 @@ setInterval(() => {                                                    // Wächt
 window.addEventListener('offline', () => { if (mp.on && mp.backend === 'online') setNetLost(true); });
 $('btnNetLeave').onclick = () => { $('btnQuit').click(); };
 
-// --- Ping: alle ~3 s misst jeder per Ping/Pong die Laufzeit zu den anderen Spielern (Tab-Liste) ---
-const pingMs = () => { const v = [...mp.players.values()].filter((q) => q.have && q.rtt !== undefined).map((q) => q.rtt); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null; };
+// --- Ping: Anfrage und Antwort reisen in den ohnehin gesendeten Positions-Paketen mit (kein Extra-Verkehr, kein Ratenlimit-Problem).
+// Alle ~3 s hängt jeder eine Ping-Marke (pq) an; die anderen schicken sie mit ihrer Haltezeit zurück (pr). Alleine: Zeit eines kurzen Datenbankaufrufs.
+const pingMs = () => {
+  const v = [...mp.players.values()].filter((q) => q.have && q.rtt !== undefined).map((q) => q.rtt);
+  if (v.length) return Math.round(v.reduce((a, b) => a + b, 0) / v.length);
+  return mp.selfPing === undefined ? null : Math.round(mp.selfPing);
+};
+async function mpSelfPing() {
+  if (!mp.on || !mp.db || mp.pinging) return; mp.pinging = true;
+  try { const t = performance.now(); await mp.db.listRooms(); mp.selfPing = performance.now() - t; } catch (e) { /* egal */ }
+  mp.pinging = false;
+}
 function pingText(ms) {
   if (ms === null || ms === undefined) return { t: '–', c: '#aaa' };
   return { t: ms + ' ms', c: ms < 120 ? '#6fe36f' : ms < 250 ? '#f0d34a' : '#ff6b5b' };
@@ -6681,13 +6764,17 @@ function pingText(ms) {
 function mpTick(dt) {
   if (!mp.on) return;
   mp.pingT = (mp.pingT || 0) - dt; mp.tabT = (mp.tabT || 0) - dt;
-  if (mp.pingT <= 0) { mp.pingT = 3; mpSend('pg', { t: performance.now() }); }
+  if (mp.pingT <= 0) { mp.pingT = 3; mp.pqNext = true; }
+  mp.selfT = (mp.selfT || 0) - dt; if (mp.selfT <= 0) { mp.selfT = 15; mpSelfPing(); }
   if (mp.tab && mp.tabT <= 0) { mp.tabT = 1; renderTabList(); }
   mp.sendT -= dt; mp.blockT -= dt; mp.dbT -= dt; mp.mobT -= dt; mp.saveT -= dt;
   if (mp.sendT <= 0) {
     mp.sendT = 0.11;
     const held = inv[P.sel]; const heldId = held ? held.id : 0;
-    mpSend('pos', { n: mp.name, j: mp.joinedAt, x: r2(P.p.x), y: r2(P.p.y), z: r2(P.p.z), yw: r2(P.yaw), pt: r2(P.pitch), h: heldId, a: armorCode(), sw: mp.swing ? 1 : 0, m: mode, sn: P.sneak ? 1 : 0, sl: P.sleeping ? 1 : 0, ea: P.eat ? 1 : 0, ad: mp.admin ? 1 : 0 });
+    const pk = {};
+    if (mp.pqNext) { pk.pq = performance.now(); mp.pqNext = false; }
+    if (mp.pendPr && mp.pendPr.size) { const now = performance.now(); pk.pr = [...mp.pendPr].map(([id, o]) => [id, o.t, Math.round(now - o.at)]); mp.pendPr.clear(); }
+    mpSend('pos', { ...pk, n: mp.name, j: mp.joinedAt, x: r2(P.p.x), y: r2(P.p.y), z: r2(P.p.z), yw: r2(P.yaw), pt: r2(P.pitch), h: heldId, a: armorCode(), sw: mp.swing ? 1 : 0, m: mode, sn: P.sneak ? 1 : 0, sl: P.sleeping ? 1 : 0, ea: P.eat ? 1 : 0, ad: mp.admin ? 1 : 0 });
     mp.swing = false;
   }
   if (mp.blockT <= 0) { mp.blockT = 0.1; mpFlushBlocks(); }

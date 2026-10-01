@@ -276,3 +276,175 @@ begin
 end $$;
 
 revoke all on function public.vc_room_info(public.vc_rooms) from public, anon, authenticated;
+
+
+-- ===================== Dev-Konsole (Migration voxelcraft_dev_console) =====================
+-- Gehört zu dev.html. Alles läuft über PIN-geprüfte Funktionen; der PIN wird nur als Hash gespeichert und NICHT im Repo.
+-- Setzen (einmalig, im SQL-Editor – "DEIN_PIN" ersetzen):
+--   update public.vc_dev_cfg set pin_hash = encode(extensions.digest(convert_to('vc-dev:' || 'DEIN_PIN', 'utf8'), 'sha256'), 'hex') where id = 1;
+-- Brute-Force-Schutz: 5 falsche Eingaben in Folge sperren die Konsole für 15 Minuten.
+create table if not exists public.vc_dev_cfg (
+  id int primary key default 1 check (id = 1),
+  pin_hash text,
+  fails int not null default 0,
+  locked_until timestamptz
+);
+alter table public.vc_dev_cfg enable row level security;
+revoke all on public.vc_dev_cfg from anon, authenticated;
+insert into public.vc_dev_cfg (id) values (1) on conflict do nothing;
+
+-- Gibt NULL zurück, wenn der PIN stimmt, sonst ein Fehlerobjekt (kein RAISE, damit der Fehlversuch-Zähler gespeichert bleibt)
+create or replace function public.vc_dev_auth(p_pin text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare c public.vc_dev_cfg; h text;
+begin
+  select * into c from public.vc_dev_cfg where id = 1 for update;
+  if c.pin_hash is null then return jsonb_build_object('ok', false, 'error', 'not_configured'); end if;
+  if c.locked_until is not null and c.locked_until > now() then
+    return jsonb_build_object('ok', false, 'error', 'locked', 'retry_s', ceil(extract(epoch from (c.locked_until - now())))::int);
+  end if;
+  h := encode(extensions.digest(convert_to('vc-dev:' || coalesce(p_pin, ''), 'utf8'), 'sha256'), 'hex');
+  if h = c.pin_hash then
+    update public.vc_dev_cfg set fails = 0, locked_until = null where id = 1;
+    return null;
+  end if;
+  update public.vc_dev_cfg set fails = case when c.fails + 1 >= 5 then 0 else c.fails + 1 end,
+    locked_until = case when c.fails + 1 >= 5 then now() + interval '15 minutes' else null end where id = 1;
+  return jsonb_build_object('ok', false, 'error', 'bad_pin', 'left', greatest(0, 4 - c.fails));
+end $$;
+
+create or replace function public.vc_dev_login(p_pin text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare e jsonb;
+begin
+  e := public.vc_dev_auth(p_pin); if e is not null then return e; end if;
+  return jsonb_build_object('ok', true);
+end $$;
+
+create or replace function public.vc_dev_overview(p_pin text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare e jsonb;
+begin
+  e := public.vc_dev_auth(p_pin); if e is not null then return e; end if;
+  return jsonb_build_object('ok', true,
+    'now_ms', (extract(epoch from now()) * 1000)::bigint,
+    'rooms', (select coalesce(jsonb_agg(jsonb_build_object(
+        'id', r.id, 'mode', r.mode, 'seed', r.seed, 'owner', r.owner, 'ops', to_jsonb(r.ops), 'public', r.is_public,
+        'created_at', r.created_at, 'epoch_ms', r.epoch_ms,
+        'edits', (select count(*) from public.vc_edits x where x.room = r.id),
+        'containers', (select count(*) from public.vc_containers c where c.room = r.id),
+        'states', (select count(*) from public.vc_states s where s.room = r.id)
+      ) order by r.created_at desc), '[]'::jsonb) from public.vc_rooms r),
+    'players', (select coalesce(jsonb_agg(jsonb_build_object(
+        'name', p.name, 'created_at', p.created_at, 'last_seen', p.last_seen, 'slim', p.slim, 'has_skin', p.skin is not null,
+        'rooms', (select coalesce(jsonb_agg(s.room), '[]'::jsonb) from public.vc_states s where s.name = p.name)
+      ) order by p.last_seen desc), '[]'::jsonb) from public.vc_players p));
+end $$;
+
+create or replace function public.vc_dev_room(p_pin text, p_room text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare e jsonb; r public.vc_rooms;
+begin
+  e := public.vc_dev_auth(p_pin); if e is not null then return e; end if;
+  select * into r from public.vc_rooms where id = p_room;
+  if not found then return jsonb_build_object('ok', false, 'error', 'no_server'); end if;
+  return jsonb_build_object('ok', true,
+    'room', jsonb_build_object('id', r.id, 'mode', r.mode, 'seed', r.seed, 'owner', r.owner, 'ops', to_jsonb(r.ops), 'public', r.is_public, 'created_at', r.created_at, 'epoch_ms', r.epoch_ms),
+    'states', (select coalesce(jsonb_agg(jsonb_build_object('name', s.name, 'data', s.data, 'updated_at', s.updated_at) order by s.updated_at desc), '[]'::jsonb) from public.vc_states s where s.room = p_room),
+    'containers', (select coalesce(jsonb_agg(jsonb_build_object('x', c.x, 'y', c.y, 'z', c.z, 'items', c.items, 'updated_at', c.updated_at) order by c.updated_at desc), '[]'::jsonb) from public.vc_containers c where c.room = p_room),
+    'builders', (select coalesce(jsonb_agg(jsonb_build_object('name', b.by_name, 'edits', b.n) order by b.n desc), '[]'::jsonb)
+                 from (select by_name, count(*) as n from public.vc_edits where room = p_room group by by_name order by count(*) desc limit 20) b));
+end $$;
+
+create or replace function public.vc_dev_delete_room(p_pin text, p_room text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare e jsonb;
+begin
+  e := public.vc_dev_auth(p_pin); if e is not null then return e; end if;
+  delete from public.vc_rooms where id = p_room;
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- Welt zurücksetzen: alle Block-Änderungen und Container des Servers löschen (Server, Besitzer und Spielerdaten bleiben)
+create or replace function public.vc_dev_reset_world(p_pin text, p_room text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare e jsonb; n1 int; n2 int;
+begin
+  e := public.vc_dev_auth(p_pin); if e is not null then return e; end if;
+  delete from public.vc_edits where room = p_room; get diagnostics n1 = row_count;
+  delete from public.vc_containers where room = p_room; get diagnostics n2 = row_count;
+  return jsonb_build_object('ok', true, 'edits', n1, 'containers', n2);
+end $$;
+
+create or replace function public.vc_dev_delete_container(p_pin text, p_room text, p_x integer, p_y integer, p_z integer)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare e jsonb;
+begin
+  e := public.vc_dev_auth(p_pin); if e is not null then return e; end if;
+  delete from public.vc_containers where room = p_room and x = p_x and y = p_y and z = p_z;
+  return jsonb_build_object('ok', true);
+end $$;
+
+create or replace function public.vc_dev_set_state(p_pin text, p_room text, p_name text, p_data jsonb)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare e jsonb;
+begin
+  e := public.vc_dev_auth(p_pin); if e is not null then return e; end if;
+  if p_data is null then
+    delete from public.vc_states where room = p_room and name = p_name;
+  else
+    update public.vc_states set data = p_data, updated_at = now() where room = p_room and name = p_name;
+  end if;
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- Konto löschen: Spielerprofil + alle Spielerdaten; Server des Spielers behalten (Besitzer wird leer) oder werden mitgelöscht
+create or replace function public.vc_dev_delete_player(p_pin text, p_name text, p_delete_rooms boolean)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare e jsonb; v_name text; n_rooms int := 0;
+begin
+  e := public.vc_dev_auth(p_pin); if e is not null then return e; end if;
+  select name into v_name from public.vc_players where name_lower = lower(p_name);
+  if v_name is null then return jsonb_build_object('ok', false, 'error', 'no_player'); end if;
+  if coalesce(p_delete_rooms, false) then
+    delete from public.vc_rooms where lower(owner) = lower(v_name); get diagnostics n_rooms = row_count;
+  else
+    update public.vc_rooms set owner = null where lower(owner) = lower(v_name);
+  end if;
+  update public.vc_rooms set ops = array_remove(ops, v_name);
+  delete from public.vc_states where name = v_name;
+  delete from public.vc_players where name = v_name;
+  return jsonb_build_object('ok', true, 'rooms_deleted', n_rooms);
+end $$;
+
+-- Server-Einstellungen ändern (Besitzer, Operatoren, öffentlich, Modus); NULL = unverändert, Besitzer '' = leeren
+create or replace function public.vc_dev_update_room(p_pin text, p_room text, p_owner text, p_ops text[], p_public boolean, p_mode text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare e jsonb; v_owner text;
+begin
+  e := public.vc_dev_auth(p_pin); if e is not null then return e; end if;
+  if p_mode is not null and p_mode not in ('survival', 'creative') then return jsonb_build_object('ok', false, 'error', 'bad_mode'); end if;
+  if p_owner is not null and p_owner <> '' then
+    select name into v_owner from public.vc_players where name_lower = lower(p_owner);
+    if v_owner is null then return jsonb_build_object('ok', false, 'error', 'no_player'); end if;
+  end if;
+  update public.vc_rooms set
+    owner = case when p_owner is null then owner when p_owner = '' then null else v_owner end,
+    ops = coalesce(p_ops, ops), is_public = coalesce(p_public, is_public), mode = coalesce(p_mode, mode)
+  where id = p_room;
+  return jsonb_build_object('ok', found);
+end $$;
+
+revoke all on function public.vc_dev_auth(text) from public, anon, authenticated;
+do $$
+declare f text;
+begin
+  foreach f in array array[
+    'vc_dev_login(text)', 'vc_dev_overview(text)', 'vc_dev_room(text,text)', 'vc_dev_delete_room(text,text)', 'vc_dev_reset_world(text,text)',
+    'vc_dev_delete_container(text,text,integer,integer,integer)', 'vc_dev_set_state(text,text,text,jsonb)', 'vc_dev_delete_player(text,text,boolean)',
+    'vc_dev_update_room(text,text,text,text[],boolean,text)'
+  ] loop
+    execute format('revoke all on function public.%s from public', f);
+    execute format('grant execute on function public.%s to anon, authenticated', f);
+  end loop;
+end $$;

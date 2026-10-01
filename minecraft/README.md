@@ -21,7 +21,7 @@ Ein Minecraft-ähnliches Voxel-Spiel, das komplett im Browser läuft – eine ei
 | Fackeln an Wänden | Rechtsklick auf die Seite eines Blocks | genauso |
 | Hotbar | 1–9 / Mausrad | Slots antippen |
 | Inventar & Handwerk | E (oder Rechtsklick auf Werkbank/Ofen) | Button „Inventar“ |
-| Item fallen lassen | Q | – |
+| Item fallen lassen (Strg+Q = ganzer Stapel; im Inventar: außerhalb klicken) | Q | Knopf „Fallen“ |
 | Chat & Befehle | T / Enter, `/` für Befehle | Button „Chat“ |
 | Spielerliste (Mehrspieler) | Tab (halten) | – |
 | Minikarte an/aus | N | Pausenmenü → Einstellungen |
@@ -50,7 +50,7 @@ Zeit-, Wetter- und Blitzbefehle werden im Mehrspielermodus an alle Spieler über
 
 ## Inhalt
 
-* Unendliche Welt aus Chunks (16×16×64), Perlin-Rauschen, Biome (Wiese, Wüste, Schnee), Seen, Berge, Höhlen, Lava in der Tiefe
+* Unendliche Welt aus Chunks (16×16×64), Perlin-Rauschen, 13 Biome (Wiese, Blumenwiese, Wald, Birkenwald, Dunkler Wald, Kirschhain, Dschungel, Savanne, Wüste, Mesa, Taiga, Schneelandschaft, Sumpf; ältere Welten behalten ihre alten Biome), Seen, Berge, Höhlen, Lava in der Tiefe
 * ~1900 Blöcke inkl. Halbstufen und Treppen fast aller Materialien: Erze (auch als Tiefenschiefer-Variante), Holzarten, Wolle/Beton/Terrakotta/Glas in 16 Farben, Pflanzen, Fackeln,
   Leuchtblöcke (Fackeln und Lava beleuchten ihre Umgebung), Kakteen (stechen), Eis, Lava (verbrennt) …
 * **Überleben:** Herzen, Hunger, Fallschaden. Blöcke fallen als **Drops** zu Boden und müssen aufgesammelt werden.
@@ -102,6 +102,8 @@ schmale Arme werden erkannt), Weltnamen eingeben und beitreten. Wer denselben We
 * PvP im Überlebensmodus, Chat (T), Spielerliste mit Ping (Tab), Befehle: `/help`, `/players`, `/tp <Name>`, `/spawn`, `/me <Text>`, `/kill`.
 * Mobs werden vom ältesten Spieler im Raum simuliert (Host); die anderen sehen sie als Abbild. Geht der Host, übernimmt automatisch der nächste.
 * Fällt bei einem Online-Server das Internet aus, wird das Spiel angehalten („Verbindung verloren“), bis die Verbindung wieder steht; verpasste Block-Änderungen werden danach nachgeladen.
+* **Admin (nur für den Spieler „Anton“, genau so geschrieben):** `/admin` gibt auf jedem Server alle Rechte (zählt als OP, nicht deop- oder rauswerfbar, auch nicht vom Besitzer; `/op`/`/deop` gelten auf fremden Servern nur für die Sitzung) und erlaubt als Einziger, Grundgestein abzubauen. Neben dem Namen steht 🛡 [Admin] in Tab-Liste, Chat und über dem Kopf. `/unadmin` schaltet alles wieder ab. Der Befehl ist für alle anderen unsichtbar.
+* **Ping:** Die Tab-Liste zeigt hinter jedem Spieler den Ping (reist in den Positions-Paketen mit); allein auf dem Server wird die Zeit eines Datenbankaufrufs angezeigt.
 * Modus „Lokal“ braucht kein Internet: Spieler in anderen Tabs desselben Browsers sehen sich (BroadcastChannel) – gut zum Ausprobieren.
 
 ### Eigenes Supabase-Projekt einrichten
@@ -137,3 +139,17 @@ Bitte die Lizenz des verwendeten Texturpakets beachten, bevor die Datei veröffe
 * **Weltgenerierung:** `TerrainGen.generate` (Schichten, Erze, Bäume, Pflanzen).
 * **Mobs:** `MOBTYPES`, `buildMobModel` und die Klasse `Mob`.
 * **Items, Werkzeuge:** Funktion `item(...)` im Block `BLOCKDEFS`; Rezepte: `recipe(...)` im Abschnitt „Inventar, Crafting & HUD“.
+
+
+## Dev-Konsole (`dev.html`)
+
+Eigene Seite nur für den Betreiber: PIN-Login, dann sieht man alle Server (wer ist gerade online, Besitzer/OPs, geänderte Blöcke), alle Konten, die
+Spielerdaten pro Server (Position, Leben, Inventar, Rüstung), Container und wer wie viel gebaut hat – und kann Server, Konten, Spielerdaten, Container und
+einzelne Inventar-Einträge löschen, eine Welt zurücksetzen sowie Besitzer/OPs/Modus ändern.
+
+1. Die Migration „Dev-Konsole“ ganz unten in `supabase/schema.sql` im Supabase-SQL-Editor ausführen.
+2. PIN setzen (steht bewusst **nicht** im Repo): `update public.vc_dev_cfg set pin_hash = encode(extensions.digest(convert_to('vc-dev:' || 'DEIN_PIN', 'utf8'), 'sha256'), 'hex') where id = 1;`
+3. `dev.html` im Browser öffnen. Die Seite wird mit `python3 tools/build_dev.py` aus `tools/dev_template.html` gebaut (Block-/Item-Namen aus `tools/dev_names.json`).
+
+Schutz: Die Funktionen prüfen den PIN serverseitig; nach 5 falschen Eingaben ist die Konsole 15 Minuten gesperrt. Ein 4-stelliger PIN ist trotzdem schwach –
+die Seite deshalb nicht öffentlich ins Netz stellen.

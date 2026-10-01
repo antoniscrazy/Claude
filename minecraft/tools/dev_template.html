@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>VoxelCraft Dev-Konsole</title>
+<!--
+  Dev-Konsole für VoxelCraft: eigene Seite, nur mit PIN. Zeigt alle Server, wer gerade online ist, alle Konten und Spielerdaten
+  und erlaubt Löschen/Bearbeiten. Braucht die Migration "voxelcraft_dev_console" (supabase/schema.sql, ganz unten).
+  Die Namenstabelle (Block-/Item-IDs) wird mit tools/build_dev.py aus tools/dev_names.json eingesetzt.
+-->
+<style>
+:root{--bg:#14161a;--panel:#1d2026;--line:#000;--hi:#4c9a34;--txt:#f2f2f2;--dim:#9aa3ad;--red:#d9534f;--yel:#e8c34a;--blue:#6ea8ff}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:var(--bg);color:var(--txt);font-family:"Courier New",Consolas,monospace;font-weight:bold}
+body{padding:16px}
+.hidden{display:none !important}
+h1{font-size:24px;letter-spacing:2px;color:#fff;text-shadow:3px 3px 0 #2b5a1c}
+h2{font-size:18px;margin:18px 0 8px}
+.dim{color:var(--dim);font-weight:normal}
+.btn{font:inherit;color:#fff;background:#5d6168;border:2px solid #000;padding:7px 12px;cursor:pointer;box-shadow:inset -2px -2px 0 #3c3f45,inset 2px 2px 0 #8a8f97}
+.btn:hover{background:#6b7fbd}
+.btn.red{background:#9c3a37}.btn.red:hover{background:#c0443f}
+.btn.sm{padding:3px 8px;font-size:13px}
+.btn.on{background:var(--hi)}
+input,select{font:inherit;color:#fff;background:#0e1013;border:2px solid #000;padding:7px 10px;box-shadow:inset 2px 2px 0 #333}
+.panel{background:var(--panel);border:3px solid #000;box-shadow:inset 0 0 0 2px #444;padding:14px 16px;margin:10px 0}
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.top .sp{flex:1}
+#login{max-width:340px;margin:12vh auto;text-align:center}
+#login input{width:100%;text-align:center;font-size:22px;letter-spacing:8px;margin:14px 0}
+#msg{margin-top:10px;min-height:20px;color:var(--yel)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat{background:#0e1013;border:2px solid #000;padding:10px}
+.stat b{font-size:26px;display:block;color:var(--hi)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.card{background:#0e1013;border:2px solid #000;padding:12px;cursor:pointer}
+.card:hover{border-color:var(--hi)}
+.card h3{font-size:17px;margin-bottom:4px;word-break:break-all}
+.tag{display:inline-block;font-size:12px;padding:1px 6px;border:1px solid #444;margin:2px 4px 2px 0;color:var(--dim)}
+.tag.on{border-color:var(--hi);color:var(--hi)}
+.tag.red{border-color:var(--red);color:var(--red)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:6px 8px;text-align:left;border-bottom:1px solid #2a2e35;vertical-align:middle}
+th{color:var(--dim);font-weight:bold}
+.face{width:28px;height:28px;image-rendering:pixelated;border:1px solid #000;vertical-align:middle;margin-right:8px;background:#333}
+.ini{display:inline-flex;width:28px;height:28px;align-items:center;justify-content:center;border:1px solid #000;margin-right:8px;font-size:14px;vertical-align:middle}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#555;margin-right:6px}
+.dot.on{background:#4cd137;box-shadow:0 0 6px #4cd137}
+.inv{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;margin:8px 0}
+.slot{background:#0e1013;border:1px solid #333;min-height:44px;padding:3px;font-size:11px;line-height:1.15;position:relative;word-break:break-word}
+.slot i{position:absolute;right:3px;bottom:1px;font-style:normal;color:var(--yel)}
+.slot button{position:absolute;right:0;top:0;border:0;background:#9c3a37;color:#fff;font:inherit;font-size:11px;cursor:pointer;padding:0 4px;display:none}
+.slot:hover button{display:block}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:6px 0}
+.row label{color:var(--dim);font-weight:normal}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#000;border:2px solid var(--hi);padding:8px 14px;z-index:50}
+.scroll{overflow-x:auto}
+@media (max-width:640px){.inv{grid-template-columns:repeat(5,1fr)}}
+</style>
+</head>
+<body>
+
+<div id="login" class="panel">
+  <h1>DEV</h1>
+  <div class="dim">VoxelCraft Konsole</div>
+  <input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN" maxlength="12">
+  <button class="btn" id="btnLogin" type="button" style="width:100%">Einloggen</button>
+  <div id="msg"></div>
+</div>
+
+<div id="app" class="hidden">
+  <div class="top">
+    <h1>DEV-KONSOLE</h1><span class="dim" id="clock"></span><span class="sp"></span>
+    <button class="btn sm" id="btnRefresh" type="button">↻ Aktualisieren</button>
+    <button class="btn sm" id="btnLogout" type="button">Ausloggen</button>
+  </div>
+  <div class="tabs">
+    <button class="btn on" data-tab="over" type="button">Übersicht</button>
+    <button class="btn" data-tab="rooms" type="button">Server</button>
+    <button class="btn" data-tab="players" type="button">Konten</button>
+  </div>
+  <div id="tab-over"></div>
+  <div id="tab-rooms" class="hidden"></div>
+  <div id="tab-players" class="hidden"></div>
+  <div id="tab-room" class="hidden"></div>
+</div>
+<div id="toast" class="toast hidden"></div>
+
+<script>
+const SUPABASE_URL = 'https://wzagswxluqpfzksoqsca.supabase.co';
+const SUPABASE_KEY = '__ANON_KEY__';
+const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js';
+const NAMES = /*NAMES*/{}/*END*/;
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const itemName = (id) => NAMES[id] || ('#' + id);
+
+let sb = null, PIN = '', ov = null, curRoom = null, curTab = 'over';
+const channels = new Map();                  // room -> { ch, players: Map(key -> meta) }
+const faces = new Map();                     // name(lower) -> {skin}
+
+function toast(t) { const el = $('toast'); el.textContent = t; el.classList.remove('hidden'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.add('hidden'), 2600); }
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    if (window.supabase) return res();
+    const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('supabase-js konnte nicht geladen werden (Internet?)'));
+    document.head.appendChild(s);
+  });
+}
+async function client() {
+  if (sb) return sb;
+  await loadScript(SUPABASE_JS);
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }, realtime: { params: { eventsPerSecond: 10 } } });
+  return sb;
+}
+async function rpc(fn, args) {
+  const c = await client();
+  const { data, error } = await c.rpc(fn, Object.assign({ p_pin: PIN }, args || {}));
+  if (error) throw new Error(/Could not find the function|does not exist|schema cache/i.test(error.message) ? 'Die Datenbank-Funktionen fehlen noch (Migration „voxelcraft_dev_console“ ausführen).' : error.message);
+  if (data && data.ok === false) {
+    const e = new Error(data.error === 'bad_pin' ? 'Falscher PIN (' + data.left + ' Versuche übrig).' : data.error === 'locked' ? 'Gesperrt – bitte in ' + Math.ceil(data.retry_s / 60) + ' Min. erneut versuchen.' : data.error === 'not_configured' ? 'Es wurde noch kein PIN in der Datenbank gesetzt.' : data.error || 'Fehler');
+    e.code = data.error; throw e;
+  }
+  return data;
+}
+
+// ---------- Login ----------
+async function login(pin) {
+  $('msg').textContent = 'Prüfe …'; PIN = pin;
+  try { await rpc('vc_dev_login', {}); }
+  catch (e) { PIN = ''; $('msg').textContent = e.message; return; }
+  try { sessionStorage.setItem('vcdev', pin); } catch (e) { /* egal */ }
+  $('login').classList.add('hidden'); $('app').classList.remove('hidden'); $('msg').textContent = '';
+  await refresh(); startLive();
+}
+$('btnLogin').onclick = () => { const v = $('pin').value.trim(); if (v) login(v); };
+$('pin').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('btnLogin').click(); });
+$('btnLogout').onclick = () => { try { sessionStorage.removeItem('vcdev'); } catch (e) { /* egal */ } location.reload(); };
+$('btnRefresh').onclick = () => refresh(true);
+document.querySelectorAll('[data-tab]').forEach((b) => { b.onclick = () => showTab(b.dataset.tab); });
+
+function showTab(t) {
+  curTab = t; curRoom = null;
+  document.querySelectorAll('[data-tab]').forEach((b) => b.classList.toggle('on', b.dataset.tab === t));
+  for (const k of ['over', 'rooms', 'players', 'room']) $('tab-' + k).classList.toggle('hidden', k !== t);
+  render();
+}
+
+// ---------- Live: wer ist gerade online? (Realtime-Presence der Server-Kanäle, nur lesend) ----------
+function startLive() {
+  if (startLive.t) return; startLive.t = setInterval(() => { refresh(); }, 20000);
+  setInterval(() => { $('clock').textContent = new Date().toLocaleTimeString('de-DE'); }, 1000);
+}
+async function syncChannels() {
+  const c = await client(), ids = new Set((ov ? ov.rooms : []).map((r) => r.id));
+  for (const id of ids) {
+    if (channels.has(id)) continue;
+    const entry = { players: new Map() }; channels.set(id, entry);
+    const ch = c.channel('vc:' + id, { config: { broadcast: { self: false }, presence: { key: 'dev-' + Math.random().toString(36).slice(2) } } });
+    const upd = () => { entry.players = new Map(); const st = ch.presenceState(); for (const k in st) if (st[k][0] && st[k][0].name) entry.players.set(st[k][0].name, st[k][0]); render(true); };
+    ch.on('presence', { event: 'sync' }, upd).on('presence', { event: 'join' }, upd).on('presence', { event: 'leave' }, upd);
+    ch.subscribe(); entry.ch = ch;
+  }
+  for (const [id, e] of channels) if (!ids.has(id)) { try { c.removeChannel(e.ch); } catch (x) { /* egal */ } channels.delete(id); }
+}
+const onlineIn = (room) => (channels.get(room) ? [...channels.get(room).players.keys()] : []);
+const onlineNames = () => { const s = new Set(); for (const [, e] of channels) for (const n of e.players.keys()) s.add(n); return s; };
+
+// ---------- Daten ----------
+async function refresh(manual) {
+  try {
+    ov = await rpc('vc_dev_overview', {});
+    const c = await client(); const { data } = await c.from('vc_players').select('name,skin,slim');
+    (data || []).forEach((p) => faces.set(p.name.toLowerCase(), p));
+    await syncChannels();
+    if (curRoom) await loadRoom(curRoom, true);
+    render();
+    if (manual) toast('Aktualisiert');
+  } catch (e) { toast(e.message); if (e.code === 'locked' || e.code === 'bad_pin') location.reload(); }
+}
+let roomData = null;
+async function loadRoom(id, silent) {
+  try { roomData = await rpc('vc_dev_room', { p_room: id }); curRoom = id; if (!silent) { curTab = 'room'; for (const k of ['over', 'rooms', 'players', 'room']) $('tab-' + k).classList.toggle('hidden', k !== 'room'); } render(); }
+  catch (e) { toast(e.message); }
+}
+
+// ---------- Darstellung ----------
+function faceHtml(name) {
+  const p = faces.get(String(name).toLowerCase());
+  if (p && p.skin && p.skin.startsWith('data:')) return '<canvas class="face" data-skin="' + esc(name) + '" width="8" height="8"></canvas>';
+  let h = 0; for (const ch of String(name)) h = (h * 31 + ch.charCodeAt(0)) % 360;
+  return '<span class="ini" style="background:hsl(' + h + ',55%,38%)">' + esc(String(name)[0] || '?').toUpperCase() + '</span>';
+}
+function paintFaces(root) {
+  root.querySelectorAll('canvas.face').forEach((cv) => {
+    const p = faces.get(cv.dataset.skin.toLowerCase()); if (!p || !p.skin) return;
+    const im = new Image(); im.onload = () => { const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; c.drawImage(im, 8, 8, 8, 8, 0, 0, 8, 8); c.drawImage(im, 40, 8, 8, 8, 0, 0, 8, 8); }; im.src = p.skin;
+  });
+}
+const ago = (iso) => { if (!iso) return '–'; const s = (Date.now() - new Date(iso).getTime()) / 1000; return s < 90 ? 'gerade eben' : s < 3600 ? Math.round(s / 60) + ' Min.' : s < 86400 ? Math.round(s / 3600) + ' Std.' : Math.round(s / 86400) + ' Tg.'; };
+const dt = (iso) => iso ? new Date(iso).toLocaleString('de-DE') : '–';
+
+function render() {
+  if (!ov) return;
+  if (curTab === 'over') renderOver(); else if (curTab === 'rooms') renderRooms(); else if (curTab === 'players') renderPlayers(); else if (curTab === 'room') renderRoom();
+  paintFaces(document.body);
+}
+function roomCard(r) {
+  const on = onlineIn(r.id);
+  return '<div class="card" data-room="' + esc(r.id) + '"><h3>' + esc(r.id) + '</h3>' +
+    '<span class="tag ' + (on.length ? 'on' : '') + '">● ' + on.length + ' online</span><span class="tag">' + (r.mode === 'creative' ? 'Kreativ' : 'Überleben') + '</span>' + (r.public ? '' : '<span class="tag red">privat</span>') +
+    '<div class="dim" style="margin-top:6px">👑 ' + esc(r.owner || '—') + ' · ⭐ ' + esc((r.ops || []).join(', ') || '—') + '</div>' +
+    '<div class="dim">Blöcke geändert: ' + r.edits + ' · Container: ' + r.containers + ' · Spielerdaten: ' + r.states + '</div>' +
+    '<div class="dim">Online: ' + (on.map(esc).join(', ') || '—') + '</div></div>';
+}
+function bindCards(root) { root.querySelectorAll('[data-room]').forEach((c) => { c.onclick = () => loadRoom(c.dataset.room); }); }
+
+function renderOver() {
+  const on = onlineNames(), el = $('tab-over');
+  const active = ov.rooms.filter((r) => onlineIn(r.id).length).sort((a, b) => onlineIn(b.id).length - onlineIn(a.id).length);
+  el.innerHTML = '<div class="stats">' +
+    '<div class="stat"><b>' + on.size + '</b>Spieler online</div><div class="stat"><b>' + ov.rooms.length + '</b>Server</div><div class="stat"><b>' + active.length + '</b>Server belebt</div>' +
+    '<div class="stat"><b>' + ov.players.length + '</b>Konten</div><div class="stat"><b>' + ov.rooms.reduce((a, r) => a + r.edits, 0) + '</b>geänderte Blöcke</div></div>' +
+    '<h2>Gerade online</h2><div class="panel">' + (on.size ? [...on].map((n) => '<div>' + faceHtml(n) + '<span class="dot on"></span>' + esc(n) + ' <span class="dim">auf ' + ov.rooms.filter((r) => onlineIn(r.id).includes(n)).map((r) => esc(r.id)).join(', ') + '</span></div>').join('') : '<span class="dim">Niemand.</span>') + '</div>' +
+    '<h2>Aktive Server</h2><div class="grid">' + (active.map(roomCard).join('') || '<span class="dim">Keine aktiven Server.</span>') + '</div>';
+  bindCards(el);
+}
+function renderRooms() {
+  const el = $('tab-rooms'); el.innerHTML = '<div class="grid">' + (ov.rooms.map(roomCard).join('') || '<span class="dim">Keine Server.</span>') + '</div>'; bindCards(el);
+}
+function renderPlayers() {
+  const on = onlineNames(), el = $('tab-players');
+  el.innerHTML = '<div class="panel scroll"><table><tr><th>Konto</th><th>Status</th><th>Zuletzt gesehen</th><th>Registriert</th><th>Server (Daten)</th><th></th></tr>' +
+    ov.players.map((p) => '<tr><td>' + faceHtml(p.name) + esc(p.name) + '</td><td><span class="dot ' + (on.has(p.name) ? 'on' : '') + '"></span>' + (on.has(p.name) ? 'online' : 'offline') + '</td><td>' + ago(p.last_seen) + '</td><td>' + dt(p.created_at) +
+      '</td><td>' + (p.rooms || []).map((r) => '<a class="tag" href="#" data-room="' + esc(r) + '" style="color:var(--blue)">' + esc(r) + '</a>').join('') + '</td><td><button class="btn red sm" data-delp="' + esc(p.name) + '" type="button">Löschen</button></td></tr>').join('') + '</table></div>';
+  el.querySelectorAll('a[data-room]').forEach((a) => { a.onclick = (e) => { e.preventDefault(); loadRoom(a.dataset.room); }; });
+  el.querySelectorAll('[data-delp]').forEach((b) => { b.onclick = () => deletePlayer(b.dataset.delp); });
+}
+function invHtml(inv, key) {
+  const slots = (inv || []).map((s, i) => s ? '<div class="slot" title="' + esc(itemName(s[0])) + '">' + esc(itemName(s[0])) + (s[1] > 1 ? '<i>' + s[1] + '</i>' : '') + '<button data-del="' + key + ':' + i + '" type="button">✕</button></div>' : '<div class="slot"></div>');
+  return '<div class="inv">' + slots.join('') + '</div>';
+}
+function renderRoom() {
+  const el = $('tab-room'); if (!roomData || !roomData.room) { el.innerHTML = ''; return; }
+  const r = roomData.room, on = onlineIn(r.id);
+  el.innerHTML = '<div class="top"><button class="btn sm" id="back" type="button">← Zurück</button><h1>' + esc(r.id) + '</h1><span class="tag ' + (on.length ? 'on' : '') + '">● ' + on.length + ' online</span><span class="sp"></span></div>' +
+    '<div class="panel"><div class="row"><label>Seed</label>' + esc(r.seed) + ' <label>Erstellt</label>' + dt(r.created_at) + '</div>' +
+    '<div class="row"><label>Besitzer</label><input id="fOwner" value="' + esc(r.owner || '') + '" size="14"><label>OPs</label><input id="fOps" value="' + esc((r.ops || []).join(', ')) + '" size="22">' +
+    '<label>Modus</label><select id="fMode"><option value="survival"' + (r.mode === 'survival' ? ' selected' : '') + '>Überleben</option><option value="creative"' + (r.mode === 'creative' ? ' selected' : '') + '>Kreativ</option></select>' +
+    '<label>öffentlich</label><input type="checkbox" id="fPub"' + (r.public ? ' checked' : '') + '><button class="btn sm" id="btnSave" type="button">Speichern</button></div>' +
+    '<div class="row"><button class="btn red sm" id="btnReset" type="button">Welt zurücksetzen (Blöcke + Container)</button><button class="btn red sm" id="btnDelRoom" type="button">Server löschen</button></div></div>' +
+    '<h2>Gerade online</h2><div class="panel">' + (on.map((n) => '<div>' + faceHtml(n) + '<span class="dot on"></span>' + esc(n) + '</div>').join('') || '<span class="dim">Niemand.</span>') + '</div>' +
+    '<h2>Spielerdaten (' + roomData.states.length + ')</h2>' +
+    roomData.states.map((s) => { const d = s.data || {}, p = d.pos || [0, 0, 0];
+      return '<div class="panel"><div class="top">' + faceHtml(s.name) + '<b>' + esc(s.name) + '</b>' + (on.includes(s.name) ? '<span class="tag on">online</span>' : '') +
+        '<span class="dim">gespeichert ' + ago(s.updated_at) + '</span><span class="sp"></span><button class="btn red sm" data-delstate="' + esc(s.name) + '" type="button">Daten löschen</button></div>' +
+        '<div class="row"><span>❤ ' + (d.hp != null ? Math.round(d.hp) : '–') + '/20</span><span>🍗 ' + (d.hunger != null ? Math.round(d.hunger) : '–') + '/20</span><span>📍 ' + p.map((v) => Math.round(v)).join(' / ') + '</span>' + (d.bed ? '<span>🛏 ' + d.bed.join(' / ') + '</span>' : '') + '</div>' +
+        '<div class="dim">Inventar (Hover → ✕ entfernt den Eintrag)</div>' + invHtml(d.inv, 'inv:' + esc(s.name)) +
+        (d.armor && d.armor.some(Boolean) ? '<div class="dim">Rüstung</div>' + invHtml(d.armor, 'armor:' + esc(s.name)) : '') + '</div>'; }).join('') +
+    '<h2>Container (' + roomData.containers.length + ')</h2><div class="panel scroll"><table><tr><th>Ort</th><th>Inhalt</th><th>Zuletzt</th><th></th></tr>' +
+    roomData.containers.map((c) => '<tr><td>' + c.x + ' / ' + c.y + ' / ' + c.z + '</td><td>' + (c.items || []).filter(Boolean).map((s) => esc(itemName(s[0])) + ' ×' + s[1]).join(', ') + '</td><td>' + ago(c.updated_at) + '</td><td><button class="btn red sm" data-delc="' + c.x + ',' + c.y + ',' + c.z + '" type="button">Leeren</button></td></tr>').join('') + '</table></div>' +
+    '<h2>Wer hat gebaut?</h2><div class="panel">' + (roomData.builders.map((b) => '<div>' + faceHtml(b.name || '?') + esc(b.name || '—') + ' <span class="dim">' + b.edits + ' Blöcke</span></div>').join('') || '<span class="dim">Noch keine Änderungen.</span>') + '</div>';
+  $('back').onclick = () => showTab('rooms');
+  $('btnSave').onclick = saveRoom; $('btnReset').onclick = resetRoom; $('btnDelRoom').onclick = delRoom;
+  el.querySelectorAll('[data-delstate]').forEach((b) => { b.onclick = () => delState(b.dataset.delstate); });
+  el.querySelectorAll('[data-delc]').forEach((b) => { b.onclick = () => delContainer(b.dataset.delc); });
+  el.querySelectorAll('[data-del]').forEach((b) => { b.onclick = () => delSlot(b.dataset.del); });
+}
+
+// ---------- Aktionen ----------
+async function act(fn, args, okMsg, reload) {
+  try { await rpc(fn, args); toast(okMsg); if (reload) await refresh(); else if (curRoom) await loadRoom(curRoom, true); } catch (e) { toast(e.message); }
+}
+function saveRoom() {
+  const ops = $('fOps').value.split(/[ ,;]+/).map((s) => s.trim()).filter(Boolean);
+  act('vc_dev_update_room', { p_room: curRoom, p_owner: $('fOwner').value.trim(), p_ops: ops, p_public: $('fPub').checked, p_mode: $('fMode').value }, 'Gespeichert', true);
+}
+function resetRoom() { if (confirm('Alle Block-Änderungen und Container von „' + curRoom + '“ löschen? Die Welt wird auf den Ursprung zurückgesetzt.')) act('vc_dev_reset_world', { p_room: curRoom }, 'Welt zurückgesetzt', true); }
+async function delRoom() {
+  const n = prompt('Server wirklich löschen? Zur Bestätigung den Servernamen eingeben:\n' + curRoom);
+  if (n !== curRoom) return;
+  try { await rpc('vc_dev_delete_room', { p_room: curRoom }); toast('Server gelöscht'); showTab('rooms'); await refresh(); } catch (e) { toast(e.message); }
+}
+function delState(name) { if (confirm('Spielerdaten von ' + name + ' auf „' + curRoom + '“ löschen? Er startet neu.')) act('vc_dev_set_state', { p_room: curRoom, p_name: name, p_data: null }, 'Gelöscht'); }
+function delContainer(k) { const [x, y, z] = k.split(',').map(Number); if (confirm('Container ' + k + ' leeren?')) act('vc_dev_delete_container', { p_room: curRoom, p_x: x, p_y: y, p_z: z }, 'Container entfernt'); }
+function delSlot(key) {
+  const [kind, rest] = [key.split(':')[0], key.slice(key.indexOf(':') + 1)], i = parseInt(rest.slice(rest.lastIndexOf(':') + 1), 10), name = rest.slice(0, rest.lastIndexOf(':'));
+  const s = roomData.states.find((x) => x.name === name); if (!s || !s.data || !s.data[kind]) return;
+  const data = JSON.parse(JSON.stringify(s.data)); data[kind][i] = 0;
+  act('vc_dev_set_state', { p_room: curRoom, p_name: name, p_data: data }, 'Eintrag entfernt');
+}
+async function deletePlayer(name) {
+  if (!confirm('Konto „' + name + '“ samt allen Spielerdaten löschen?')) return;
+  const rooms = confirm('Auch alle Server löschen, die „' + name + '“ gehören?\nOK = ja, Abbrechen = Server behalten (ohne Besitzer)');
+  act('vc_dev_delete_player', { p_name: name, p_delete_rooms: rooms }, 'Konto gelöscht', true);
+}
+
+// Auto-Login in dieser Browser-Sitzung
+try { const p = sessionStorage.getItem('vcdev'); if (p) login(p); } catch (e) { /* egal */ }
+$('pin').focus();
+</script>
+</body>
+</html>
