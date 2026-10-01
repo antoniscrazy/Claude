@@ -69,6 +69,8 @@ Zeit-, Wetter- und Blitzbefehle werden im Mehrspielermodus an alle Spieler über
 * **Mobs:** zusätzlich Wolf (mit Knochen zähmen, folgt dir, sitzt auf Rechtsklick, greift Monster an), Kaninchen, Schleim (teilt sich), Fledermaus
   und **Dorfbewohner** mit Handel (8 Berufe, Smaragde). Schafe haben Wollfarben und lassen sich scheren.
 * **Bauwerke** in der Welt: Hütten mit Dorfbewohner, Brunnen, Wachtürme und Verliese mit Monsterkäfig – mit Beutetruhen.
+* **Wurftränke:** jeden Trank mit Schießpulver zum Wurftrank machen (Werkbank, Reiter „Tränke“); Rechtsklick wirft ihn, in der Wolke (4 Blöcke) wirkt er auf Spieler und Mobs – auch im Mehrspielermodus.
+* **Mehrspieler:** andere Spieler tragen sichtbar ihre Rüstung (Leder, Eisen, Gold, Diamant) und halten ihr Item; ein kurzer Klick genügt zum Schlagen (Touch: Mob/Spieler antippen).
 * **Hand-Ansicht:** Du siehst den Gegenstand in deiner Hand (Blöcke als Würfel, Werkzeuge und Items als kleine 3D-Objekte) mit Wippen beim Laufen, Schlag-, Abbau- und Wechsel-Animation.
 * **Beleuchtung:** Fackeln, Laternen, Lava usw. leuchten fest in die Welt eingebacken – aus jeder Entfernung gleich hell, ohne „Kopflampen“-Effekt.
 * **Erfolge**, **Minikarte** (N), **Einstellungen** (Sichtfeld, Empfindlichkeit, Lautstärke, Sichtweite, Wolken) und Screenshots (F2).
