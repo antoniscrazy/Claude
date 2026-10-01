@@ -188,10 +188,13 @@ body.touch #fxbar{right:auto;left:10px;top:calc(18px + var(--mm,128px));text-ali
 .tbtn{position:absolute;pointer-events:auto;touch-action:none;font:inherit;color:#fff;background:rgba(0,0,0,.42);
   border:3px solid rgba(255,255,255,.5);border-radius:50%;width:66px;height:66px;font-size:24px;text-shadow:1px 1px #000}
 .tbtn.down{background:rgba(120,160,255,.65)}
-.tbtn.sm{border-radius:8px;width:auto;height:38px;padding:0 12px;font-size:15px;right:max(10px,env(safe-area-inset-right))}
-#tJump{right:max(24px,env(safe-area-inset-right));bottom:112px;width:82px;height:82px}
-#tDown{right:max(34px,env(safe-area-inset-right));bottom:206px}
-#tPause{top:30px}#tInv{top:76px}#tFly{top:122px}#tChat{top:168px}#tSneak{top:214px}
+.tbtn.sq{border-radius:14px;width:68px;height:68px;font-size:30px;line-height:1;padding:0;background:rgba(40,40,40,.55);border-color:rgba(255,255,255,.55);display:flex;align-items:center;justify-content:center}
+.tbtn.sq.down,.tbtn.sq.on{background:rgba(120,160,255,.7)}
+.tbtn.sm{border-radius:8px;width:auto;height:34px;padding:0 12px;font-size:15px;right:max(10px,env(safe-area-inset-right))}
+#tJump{right:max(22px,env(safe-area-inset-right));bottom:156px}
+#tSneak{right:max(22px,env(safe-area-inset-right));bottom:80px}
+#tSprint{right:calc(max(22px,env(safe-area-inset-right)) + 82px);bottom:118px}
+#tPause{top:10px}#tInv{top:52px}#tChat{top:94px}
 body.touch #hotbar{pointer-events:auto}
 body.touch #modeTag{display:none}
 </style>
@@ -228,13 +231,21 @@ body.touch #modeTag{display:none}
 <div id="touch" class="hidden">
   <div id="lookZone"></div>
   <div id="joy"><i id="joyKnob"></i></div>
-  <button id="tJump" class="tbtn" type="button">▲</button>
-  <button id="tDown" class="tbtn hidden" type="button">▼</button>
   <button id="tPause" class="tbtn sm" type="button">Pause</button>
   <button id="tInv" class="tbtn sm" type="button">Inventar</button>
-  <button id="tFly" class="tbtn sm hidden" type="button">Fliegen</button>
   <button id="tChat" class="tbtn sm" type="button">Chat</button>
-  <button id="tSneak" class="tbtn sm" type="button">Schleichen</button>
+  <button id="tSprint" class="tbtn sq" type="button" aria-label="Sprinten">»</button>
+  <button id="tJump" class="tbtn sq" type="button" aria-label="Springen / Fliegen">▲</button>
+  <button id="tSneak" class="tbtn sq" type="button" aria-label="Schleichen / Sinken">▼</button>
+</div>
+
+<!-- Verbindung verloren (Mehrspieler) -->
+<div id="netLost" class="overlay hidden" style="z-index:200;background:rgba(0,0,0,.82)">
+  <div class="panel" style="max-width:380px;text-align:center">
+    <h2>Verbindung verloren</h2>
+    <p style="margin:10px 0 16px;line-height:1.4">Das Internet ist weg. Sobald die Verbindung wieder steht, geht es automatisch weiter – bis dahin ist das Spiel angehalten.</p>
+    <button class="btn" id="btnNetLeave" type="button">Server verlassen</button>
+  </div>
 </div>
 
 <!-- Startmenü -->
@@ -2233,7 +2244,7 @@ function moveEntity(w, e, dt) {
 
 const keys = Object.create(null);
 const touchMove = { x: 0, y: 0 };   // virtueller Joystick (-1..1)
-let touchSprint = false, touchSneak = false;
+let touchSprint = false, touchSneak = false, sprintLatch = false, joyFull = false;
 
 function updatePlayer(dt) {
   const w = world, p = P.p, v = P.v;
@@ -4393,11 +4404,10 @@ function toggleFly() {
 }
 function updateTouchUI() {
   $('touch').classList.toggle('hidden', !(touchMode && state === 'play'));
-  $('tFly').classList.toggle('hidden', !isCreative());
-  $('tDown').classList.toggle('hidden', !(P.flying && isCreative()));
+  $('tSneak').textContent = '▼'; $('tJump').textContent = '▲';
 }
 function resetTouch() {
-  touchMove.x = touchMove.y = 0; touchSprint = false; joyId = null; lookT = null; touchSneak = false; $('tSneak').classList.remove('down');
+  touchMove.x = touchMove.y = 0; touchSprint = false; joyId = null; lookT = null; touchSneak = false; sprintLatch = false; joyFull = false; $('tSneak').classList.remove('on', 'down'); $('tSprint').classList.remove('on');
   $('joyKnob').style.transform = 'translate(-50%,-50%)';
   keys.Space = false; keys.KeyC = false; mouse.left = false; mouse.right = false;
   document.querySelectorAll('.tbtn.down').forEach((b) => b.classList.remove('down'));
@@ -4417,12 +4427,12 @@ function joyMove(e) {
   let mx = dx / R, my = -dy / R;
   if (Math.hypot(mx, my) < 0.12) { mx = 0; my = 0; }                 // Totzone
   touchMove.x = mx; touchMove.y = my;
-  touchSprint = my > 0.6 && Math.hypot(mx, my) > 0.95;               // ganz nach vorn = sprinten
+  joyFull = my > 0.6 && Math.hypot(mx, my) > 0.95; touchSprint = joyFull || sprintLatch;     // ganz nach vorn oder Sprint-Knopf = sprinten
   $('joyKnob').style.transform = 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px))';
 }
 function joyEnd(e) {
   if (e.pointerId !== joyId) return;
-  joyId = null; touchMove.x = touchMove.y = 0; touchSprint = false;
+  joyId = null; touchMove.x = touchMove.y = 0; touchSprint = false; joyFull = false; sprintLatch = false; $('tSprint').classList.remove('on');
   $('joyKnob').style.transform = 'translate(-50%,-50%)';
 }
 joy.addEventListener('pointerdown', (e) => { e.preventDefault(); if (joyId !== null) return; joyId = e.pointerId; joy.setPointerCapture(e.pointerId); joyMove(e); });
@@ -4462,15 +4472,24 @@ lookZone.addEventListener('pointercancel', (e) => lookEnd(e, true));
 
 function holdBtn(id, on, off) {
   const el = $(id);
-  el.addEventListener('pointerdown', (e) => { e.preventDefault(); el.setPointerCapture(e.pointerId); el.classList.add('down'); on(); });
+  el.addEventListener('pointerdown', (e) => { e.preventDefault(); try { el.setPointerCapture(e.pointerId); } catch (err) { /* egal */ } el.classList.add('down'); on(); });
   const up = () => { el.classList.remove('down'); off(); };
   el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
 }
 holdBtn('tJump', () => { keys.Space = true; const now = performance.now(); if ((isCreative() || P.canFly) && now - (P.lastSpace || 0) < 320) { toggleFly(); P.lastSpace = 0; } else P.lastSpace = now; }, () => { keys.Space = false; });
-holdBtn('tDown', () => { keys.KeyC = true; }, () => { keys.KeyC = false; });
-holdBtn('tFly', toggleFly, () => {});
 holdBtn('tChat', () => { if (state === 'play') openChat(); }, () => {});
-$('tSneak').addEventListener('pointerdown', (e) => { e.preventDefault(); touchSneak = !touchSneak; $('tSneak').classList.toggle('down', touchSneak); });
+// Schleichen-Knopf: am Boden umschalten, im Flug gedrückt halten = sinken
+$('tSneak').addEventListener('pointerdown', (e) => {
+  e.preventDefault(); try { $('tSneak').setPointerCapture(e.pointerId); } catch (err) { /* egal */ }
+  if (P.flying) { keys.KeyC = true; $('tSneak').classList.add('down'); }
+  else { touchSneak = !touchSneak; $('tSneak').classList.toggle('on', touchSneak); }
+});
+const sneakUp = () => { if (keys.KeyC) { keys.KeyC = false; $('tSneak').classList.remove('down'); } };
+$('tSneak').addEventListener('pointerup', sneakUp); $('tSneak').addEventListener('pointercancel', sneakUp);
+// Sprint-Knopf: antippen = sprinten, bis man den Joystick loslässt oder noch einmal tippt
+$('tSprint').addEventListener('pointerdown', (e) => {
+  e.preventDefault(); sprintLatch = !sprintLatch; $('tSprint').classList.toggle('on', sprintLatch); touchSprint = sprintLatch || joyFull;
+});
 holdBtn('tInv', () => { if (state === 'play') toggleInventory(); }, () => {});
 holdBtn('tPause', () => { if (state === 'play') setState('pause'); }, () => {});
 hotbarEls.forEach((el, i) => el.addEventListener('pointerdown', (e) => { if (state === 'play' && touchMode) { e.preventDefault(); selectSlot(i); } }));
@@ -4551,7 +4570,8 @@ function frame(now) {
     $('loadBar').style.width = Math.round(have / need * 100) + '%';
     if (have >= need) { P.v.set(0, 0, 0); resume(); }
   } else {
-    const live = state === 'play', simOnly = mp.on && (state === 'inv' || state === 'pause' || state === 'chat' || state === 'dead' || state === 'settings' || state === 'trade');
+    const frozen = mp.on && mp.offline;                                // Internet weg: Mehrspieler-Welt ist angehalten
+    const live = !frozen && state === 'play', simOnly = !frozen && mp.on && (state === 'inv' || state === 'pause' || state === 'chat' || state === 'dead' || state === 'settings' || state === 'trade');
     if (live) {
       if (!mp.on && rules.daycycle) gameTime += dt;
       updatePlayer(dt); updateEffects(dt);
@@ -4630,7 +4650,7 @@ const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/
 const mp = {
   on: false, room: null, name: '', token: '', backend: 'online', db: null, net: null, id: '', roomInfo: null, mode: 'survival',
   players: new Map(),            // id -> RemotePlayer
-  pending: [], dbQueue: [], sendT: 0, blockT: 0, dbT: 0, mobT: 0, saveT: 0, skew: 0, epoch: 0, freeze: null, sleepCount: 0, joinedAt: 0, dropSeq: 0, mobSeq: 0,
+  pending: [], dbQueue: [], sendT: 0, blockT: 0, dbT: 0, mobT: 0, saveT: 0, skew: 0, epoch: 0, freeze: null, sleepCount: 0, joinedAt: 0, offline: false, dropSeq: 0, mobSeq: 0,
   mobsById: new Map(), chat: [], skinCache: new Map(), lastHit: null, swing: false, tab: false, wasHost: true, myFace: '', owner: null, ops: new Set(),
 };
 
@@ -4863,14 +4883,18 @@ class SupabaseNet {
         for (const key in st) if (key !== me.id && st[key][0]) cb.join(key, st[key][0]);
       });
       const to = setTimeout(() => rej(new Error('Realtime-Verbindung fehlgeschlagen (Zeitüberschreitung)')), 12000);
+      let joined = false;
       ch.subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') { clearTimeout(to); try { await ch.track(me.meta); } catch (e) { /* egal */ } res(); }
-        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') { clearTimeout(to); rej(new Error('Realtime-Fehler: ' + status)); }
-        else if (status === 'CLOSED' && mp.on) cb.closed && cb.closed();
+        if (status === 'SUBSCRIBED') {
+          clearTimeout(to); try { await ch.track(me.meta); } catch (e) { /* egal */ }
+          if (joined) cb.reconnected && cb.reconnected(); else { joined = true; res(); }
+        } else if (!joined && (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT')) { clearTimeout(to); rej(new Error('Realtime-Fehler: ' + status)); }
+        else if (joined && mp.on && (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT')) cb.closed && cb.closed();
       });
     });
   }
   send(e, p) { if (this.ch) this.ch.send({ type: 'broadcast', event: 'e', payload: { e, p, f: this.id } }); }
+  healthy() { return !!this.ch && this.ch.state === 'joined'; }
   async leave() { if (this.ch) { try { await this.ch.untrack(); } catch (e) { /* egal */ } this.sb.removeChannel(this.ch); this.ch = null; } }
 }
 class SupabaseDB {
@@ -5318,7 +5342,7 @@ function applySug() {
   sug.sel = 0; renderSug(); inp.focus(); return true;
 }
 function openChat(prefill) {
-  if (state !== 'play') return;
+  if (state !== 'play' || (mp.on && mp.offline)) return;
   setState('chat'); const i = $('chatInput'); i.value = prefill || ''; histPos = -1; sug.sel = 0; renderSug(); setTimeout(() => i.focus(), 30);
 }
 function closeChat(send) {
@@ -6391,11 +6415,13 @@ function renderTabList() {
   const box = $('tablist'); if (!mp.on) { box.classList.add('hidden'); return; }
   box.innerHTML = '<h2>Spieler online</h2>';
   const mk = (n) => (isOwnerName(n) ? '👑 ' : isOp(n) ? '⭐ ' : '') + n;
-  const rows = [{ name: mk(mp.name) + ' (du)', face: mp.myFace, mode }, ...[...mp.players.values()].map((p) => ({ name: mk(p.name), face: p.faceURL, mode: p.mode }))];
+  const rows = [{ name: mk(mp.name) + ' (du)', face: mp.myFace, mode, ping: pingMs() }, ...[...mp.players.values()].map((p) => ({ name: mk(p.name), face: p.faceURL, mode: p.mode, ping: p.rtt === undefined ? null : Math.round(p.rtt) }))];
   rows.forEach((r) => {
     const d = document.createElement('div'); d.className = 'trow';
     const img = document.createElement('img'); if (r.face) img.src = r.face; d.appendChild(img);
-    const s = document.createElement('span'); s.textContent = r.name; d.appendChild(s); box.appendChild(d);
+    const s = document.createElement('span'); s.textContent = r.name; s.style.flex = '1'; d.appendChild(s);
+    const pg = pingText(r.ping), q = document.createElement('span'); q.textContent = '● ' + pg.t; q.style.color = pg.c; q.style.fontSize = '13px'; q.style.marginLeft = '14px'; d.appendChild(q);
+    box.appendChild(d);
   });
   box.classList.toggle('hidden', !mp.tab);
 }
@@ -6415,7 +6441,8 @@ const mpHandlers = {
     const rp = mp.players.get(id); if (!rp) return;
     chatSys(rp.name + ' hat das Spiel verlassen'); rp.dispose(); mp.players.delete(id); mpStatusHud(); if (mp.tab) renderTabList();
   },
-  closed() { chatSys('Verbindung zum Server verloren'); },
+  closed() { setNetLost(true); },
+  reconnected() { mpRecover(); },
   event(e, p, from) {
     switch (e) {
       case 'pos': {
@@ -6426,6 +6453,8 @@ const mpHandlers = {
         rp.setHeld(p.h || 0); rp.setArmor(p.a || '0000'); rp.sneak = !!p.sn; rp.sleeping = !!p.sl; rp.eating = !!p.ea; if (p.sw) rp.swing = 0.3;
         break;
       }
+      case 'pg': mpSend('pn', { t: p.t, to: from }); break;
+      case 'pn': if (p.to === mp.id) { const rp = mp.players.get(from); if (rp) { const r = performance.now() - p.t; rp.rtt = rp.rtt === undefined ? r : rp.rtt * 0.6 + r * 0.4; } } break;
       case 'blocks': for (const [x, y, z, id] of p.b) world.setBlock(x, y, z, id, true); break;
       case 'chat':
         if (p.to) { if (p.to === mp.name) { chatAdd(null, p.n + ' flüstert: ' + p.t, 'whisper'); lastMsgFrom = p.n; } break; }
@@ -6560,7 +6589,7 @@ async function mpJoin(cfg) {
 }
 async function mpLeave() {
   if (!mp.on) return;
-  mp.on = false;
+  mp.on = false; mp.offline = false; $('netLost').classList.add('hidden');
   try { mpFlushBlocks(); await Promise.race([Promise.all([mpFlushDb(), mpSaveState()]), new Promise((r) => setTimeout(r, 2500))]); } catch (e) { /* egal */ }
   try { await mp.net.leave(); } catch (e) { /* egal */ }
   mp.players.forEach((p) => p.dispose()); mp.players.clear(); mp.mobsById.clear();
@@ -6568,9 +6597,44 @@ async function mpLeave() {
   $('mpinfo').classList.add('hidden'); $('tablist').classList.add('hidden'); mp.tab = false; mp.owner = null; mp.ops = new Set();
 }
 
+// --- Verbindung verloren: Welt anhalten, bis das Internet wieder da ist ---
+function setNetLost(on) {
+  if (!mp.on || mp.offline === on) return;
+  mp.offline = on; $('netLost').classList.toggle('hidden', !on);
+  if (on) { if (state === 'play') setState('pause'); resetTouch(); mp.pingT = 0; }
+  else toast('Verbindung wiederhergestellt');
+}
+async function mpRecover() {                                           // wieder online: verpasste Block-Änderungen nachladen
+  if (!mp.on || !mp.offline) return;
+  try {
+    const edits = await mp.db.getEdits(mp.room);
+    for (const [x, y, z, b] of edits || []) { if (world.getBlock(x, y, z) !== b) world.setBlock(x, y, z, b, true); world.recordEdit(x, y, z, b); }
+  } catch (e) { return; }                                              // Datenbank noch nicht erreichbar – der Wächter versucht es erneut
+  setNetLost(false);
+}
+let netBad = 0;
+setInterval(() => {                                                    // Wächter (nur Online-Server; „Lokal“ braucht kein Internet)
+  if (!mp.on || mp.backend !== 'online' || !mp.net) return;
+  const ok = navigator.onLine !== false && (!mp.net.healthy || mp.net.healthy());
+  if (!ok) { netBad++; if (navigator.onLine === false || netBad >= 2) setNetLost(true); }
+  else { netBad = 0; if (mp.offline) mpRecover(); }
+}, 1500);
+window.addEventListener('offline', () => { if (mp.on && mp.backend === 'online') setNetLost(true); });
+$('btnNetLeave').onclick = () => { $('btnQuit').click(); };
+
+// --- Ping: alle ~3 s misst jeder per Ping/Pong die Laufzeit zu den anderen Spielern (Tab-Liste) ---
+const pingMs = () => { const v = [...mp.players.values()].filter((q) => q.have && q.rtt !== undefined).map((q) => q.rtt); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null; };
+function pingText(ms) {
+  if (ms === null || ms === undefined) return { t: '–', c: '#aaa' };
+  return { t: ms + ' ms', c: ms < 120 ? '#6fe36f' : ms < 250 ? '#f0d34a' : '#ff6b5b' };
+}
+
 // --- Tick: Positionen, Blöcke, Mobs, Speichern ---
 function mpTick(dt) {
   if (!mp.on) return;
+  mp.pingT = (mp.pingT || 0) - dt; mp.tabT = (mp.tabT || 0) - dt;
+  if (mp.pingT <= 0) { mp.pingT = 3; mpSend('pg', { t: performance.now() }); }
+  if (mp.tab && mp.tabT <= 0) { mp.tabT = 1; renderTabList(); }
   mp.sendT -= dt; mp.blockT -= dt; mp.dbT -= dt; mp.mobT -= dt; mp.saveT -= dt;
   if (mp.sendT <= 0) {
     mp.sendT = 0.11;

@@ -11,11 +11,11 @@ Ein Minecraft-ähnliches Voxel-Spiel, das komplett im Browser läuft – eine ei
 
 | Aktion | Tastatur / Maus | Touch |
 | --- | --- | --- |
-| Bewegen | WASD | Joystick links (ganz nach vorn = Sprint) |
+| Bewegen | WASD | Joystick links |
 | Umsehen | Maus | Wischen auf der rechten Fläche |
-| Springen / Schwimmen (im Kreativmodus: Doppeltipp = Fliegen an/aus) | Leertaste | ▲-Button |
-| Schleichen (kein Abstürzen von Kanten) | Shift | Knopf „Schleichen“ |
-| Sprinten | Strg oder W doppelt tippen | Joystick ganz nach vorn |
+| Springen / Schwimmen (im Kreativmodus: Doppeltipp = Fliegen an/aus) | Leertaste | ▲-Button (rechts unten) |
+| Schleichen (kein Abstürzen von Kanten) | Shift | Knopf ▼ unter dem Sprung-Knopf (im Flug: halten = sinken) |
+| Sprinten | Strg oder W doppelt tippen | Knopf » links neben ▲ / ▼ (oder Joystick ganz nach vorn) |
 | Abbauen / Angreifen | Linksklick (halten) | Finger gedrückt halten |
 | Platzieren / Essen & Trinken (gedrückt halten, ~1,3 s, mit Animation) | Rechtsklick | kurz antippen / halten |
 | Fackeln an Wänden | Rechtsklick auf die Seite eines Blocks | genauso |
@@ -99,8 +99,9 @@ schmale Arme werden erkannt), Weltnamen eingeben und beitreten. Wer denselben We
 * Spieler erscheinen mit ihrem Skin, Namensschild, Lauf-/Schlaganimation und Item in der Hand.
 * Blockänderungen, Drops, Truhen, TNT, Pfeile und Mobs werden live synchronisiert; Blockänderungen und Truhen werden zusätzlich in der Datenbank gespeichert,
   ebenso Inventar und Position jedes Spielers (beim nächsten Beitritt geht es dort weiter).
-* PvP im Überlebensmodus, Chat (T), Spielerliste (Tab), Befehle: `/help`, `/players`, `/tp <Name>`, `/spawn`, `/me <Text>`, `/kill`.
+* PvP im Überlebensmodus, Chat (T), Spielerliste mit Ping (Tab), Befehle: `/help`, `/players`, `/tp <Name>`, `/spawn`, `/me <Text>`, `/kill`.
 * Mobs werden vom ältesten Spieler im Raum simuliert (Host); die anderen sehen sie als Abbild. Geht der Host, übernimmt automatisch der nächste.
+* Fällt bei einem Online-Server das Internet aus, wird das Spiel angehalten („Verbindung verloren“), bis die Verbindung wieder steht; verpasste Block-Änderungen werden danach nachgeladen.
 * Modus „Lokal“ braucht kein Internet: Spieler in anderen Tabs desselben Browsers sehen sich (BroadcastChannel) – gut zum Ausprobieren.
 
 ### Eigenes Supabase-Projekt einrichten
