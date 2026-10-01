@@ -74,7 +74,7 @@ Zeit-, Wetter- und Blitzbefehle werden im Mehrspielermodus an alle Spieler über
 * **Mehrspieler:** andere Spieler tragen sichtbar ihre Rüstung (Leder, Eisen, Gold, Diamant) und halten ihr Item; ein kurzer Klick genügt zum Schlagen (Touch: Mob/Spieler antippen).
 * **Hand-Ansicht:** Du siehst den Gegenstand in deiner Hand (Blöcke als Würfel, Werkzeuge und Items als kleine 3D-Objekte) mit Wippen beim Laufen, Schlag-, Abbau- und Wechsel-Animation.
 * **Beleuchtung:** Fackeln, Laternen, Lava usw. leuchten fest in die Welt eingebacken – aus jeder Entfernung gleich hell, ohne „Kopflampen“-Effekt.
-* **Betten** in 16 Farben (zweiteilig, auf den Boden platzieren): Rechtsklick setzt den Startpunkt, nachts schläft man – im Mehrspielermodus wird die Nacht übersprungen, wenn alle schlafen. Fehlt das Bett, startet man am Weltspawn.
+* **Betten** in 16 Farben (zweiteilig, auf den Boden platzieren): Rechtsklick setzt den Startpunkt, nachts schläft man – im Mehrspielermodus wird die Nacht übersprungen, sobald alle Spieler im Bett liegen (die anderen sehen dich im Bett liegen, die Uhrzeit ist für alle – auch Neulinge – gleich). `/gamerule daycycle false` friert die Tageszeit auf dem ganzen Server ein. Fehlt das Bett, startet man am Weltspawn.
 * **Skelette** tragen Bögen und schießen Pfeile (sie lassen manchmal einen Bogen fallen).
 * **Erfolge**, **Minikarte** (N), **Einstellungen** (Sichtfeld, Empfindlichkeit, Lautstärke, Sichtweite, Wolken) und Screenshots (F2).
 * **Kreativ:** alle Blöcke und Items in Kategorien, unendlich, kein Schaden

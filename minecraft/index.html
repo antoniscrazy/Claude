@@ -3228,9 +3228,10 @@ function startSleep(hx, y, hz, dir) {
   $('sleepOv').classList.remove('hidden'); toast('Du schläfst … (bewegen zum Aufstehen)');
 }
 function wakeUp() { if (!P.sleeping) return; P.sleeping = false; $('sleepOv').classList.add('hidden'); }
-function skipToMorning() {                       // Nacht überspringen (nur Einzelspieler)
+function skipToMorning() {                       // Nacht überspringen (Einzelspieler; im Mehrspielermodus entscheidet der Host, wenn alle schlafen)
   const d = gameTime / DAY_LEN, base = Math.floor(d);
   gameTime = (d - base > 0.5 ? base + 1.02 : base + 0.02) * DAY_LEN; toast('Du hast die Nacht verschlafen');
+  if (mp.on) { mp.epoch = Date.now() + mp.skew - (gameTime - 0.08 * DAY_LEN) * 1000; if (mp.freeze !== null) mp.freeze = gameTime; net('env', { ep: mp.epoch, fr: mp.freeze, sk: 1 }); weather.override = { kind: 'clear', until: gameTime + 300 }; }
 }
 function useBucket(slot, I) {
   const eye = eyeV, d = dirV;
@@ -4598,7 +4599,7 @@ const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/
 const mp = {
   on: false, room: null, name: '', token: '', backend: 'online', db: null, net: null, id: '', roomInfo: null, mode: 'survival',
   players: new Map(),            // id -> RemotePlayer
-  pending: [], dbQueue: [], sendT: 0, blockT: 0, dbT: 0, mobT: 0, saveT: 0, skew: 0, epoch: 0, joinedAt: 0, dropSeq: 0, mobSeq: 0,
+  pending: [], dbQueue: [], sendT: 0, blockT: 0, dbT: 0, mobT: 0, saveT: 0, skew: 0, epoch: 0, freeze: null, sleepCount: 0, joinedAt: 0, dropSeq: 0, mobSeq: 0,
   mobsById: new Map(), chat: [], skinCache: new Map(), lastHit: null, swing: false, tab: false, wasHost: true, myFace: '', owner: null, ops: new Set(),
 };
 
@@ -4689,7 +4690,7 @@ class RemotePlayer {
     this.id = id; this.name = name; this.joinedAt = joinedAt || 0;
     this.p = new THREE.Vector3(); this.target = new THREE.Vector3(); this.have = false;
     this.yaw = 0; this.tyaw = 0; this.bodyYaw = 0; this.pitch = 0; this.held = 0; this.swing = 0; this.walk = 0; this.speed = 0;
-    this.hw = 0.3; this.h = 1.8; this.sneak = false; this.sneakK = 0; this.sleeping = false; this.sleepK = 0; this.eating = false; this.eatT = 0; this.mode = 'survival'; this.model = null; this.heldMesh = null; this.heldId = 0; this.skinKey = '';
+    this.hw = 0.3; this.h = 1.8; this.sneak = false; this.sneakK = 0; this.sleeping = false; this.sleepK = 0; this.sleepT = 0; this.eating = false; this.eatT = 0; this.mode = 'survival'; this.model = null; this.heldMesh = null; this.heldId = 0; this.skinKey = '';
     this.group = new THREE.Group(); this.group.visible = false; scene.add(this.group);
     this.tag = makeNameTag(name); this.tag.position.y = 2.15; this.group.add(this.tag);
     this.setSkin({ kind: 'preset', name: 'steve' }, false);
@@ -4733,17 +4734,21 @@ class RemotePlayer {
     this.speed += (Math.min(d / Math.max(dt, 1e-3), 8) - this.speed) * Math.min(1, dt * 8);
     let dy = this.tyaw - this.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); this.yaw += dy * Math.min(1, dt * 14);
     let bd = this.yaw - this.bodyYaw; bd = Math.atan2(Math.sin(bd), Math.cos(bd));
-    if (this.speed > 0.4 || Math.abs(bd) > 0.9) this.bodyYaw += bd * Math.min(1, dt * (this.speed > 0.4 ? 10 : 4));
-    const M = this.model;
-    this.group.position.copy(this.p); M.g.rotation.y = this.bodyYaw + Math.PI;                    // Modell blickt nach +z, die Spieler-Blickrichtung ist −z M.headG.rotation.y = this.yaw - this.bodyYaw; M.headG.rotation.x = -this.pitch * 0.8;
+    if (!this.sleeping && (this.speed > 0.4 || Math.abs(bd) > 0.9)) this.bodyYaw += bd * Math.min(1, dt * (this.speed > 0.4 ? 10 : 4));
+    this.sleepK += ((this.sleeping ? 1 : 0) - this.sleepK) * Math.min(1, dt * 6);
+    this.sleepT = this.sleeping ? this.sleepT + dt : 0;
+    if (this.sleeping) this.bodyYaw = this.yaw - Math.PI;         // im Bett: Körper entlang des Bettes (Blickrichtung = Richtung zum Kopfkissen)
+    const M = this.model, sk = this.sleepK, fx = -Math.sin(this.yaw), fz = -Math.cos(this.yaw);
+    this.group.position.set(this.p.x - fx * 1.45 * sk, this.p.y + sk * 0.04, this.p.z - fz * 1.45 * sk);   // Füße liegen hinter dem Kopfkissen
+    M.g.rotation.y = this.bodyYaw + Math.PI;                       // Modell blickt nach +z, die Spieler-Blickrichtung ist −z
+    M.headG.rotation.y = (this.yaw - this.bodyYaw) * (1 - sk); M.headG.rotation.x = -this.pitch * 0.8 * (1 - sk);
     this.walk += dt * (2 + this.speed * 1.8);
     const amp = Math.min(1, this.speed / 3) * 0.9, sw = Math.sin(this.walk) * amp;
-    this.sleepK += ((this.sleeping ? 1 : 0) - this.sleepK) * Math.min(1, dt * 6);
-    M.g.rotation.order = 'YXZ'; M.g.rotation.x = -this.sleepK * (Math.PI / 2) * 0.98; M.g.position.y = this.sleepK * 0.05;
+    M.g.rotation.order = 'YXZ'; M.g.rotation.x = -sk * (Math.PI / 2) * 0.98; M.g.position.y = sk * 0.05;
     this.sneakK += ((this.sneak && !this.sleeping ? 1 : 0) - this.sneakK) * Math.min(1, dt * 12);
     const th = this.sneakK * 0.5;                                // Schleichen: Oberkörper nach vorn neigen (Drehpunkt Hüfte)
     M.body.rotation.x = th; M.body.position.set(0, (12 * (1 - Math.cos(th))) / 16, (-12 * Math.sin(th)) / 16);
-    this.tag.position.y = 2.15 - this.sneakK * 0.3;
+    this.tag.position.set(fx * 1.45 * sk, 2.15 - this.sneakK * 0.3 - sk * 1.3, fz * 1.45 * sk);
     M.legR.rotation.x = sw - th; M.legL.rotation.x = -sw - th; M.armL.rotation.x = sw * 0.8;
     if (this.swing > 0) { this.swing -= dt; M.armR.rotation.x = -1.4 - Math.sin((1 - this.swing / 0.3) * Math.PI) * 0.9; }
     else M.armR.rotation.x = -sw * 0.8 + (this.heldId ? -0.35 : 0);
@@ -4913,7 +4918,7 @@ class LocalDB {
 /* ---------------- L3. Sitzung, Synchronisation, Chat ---------------- */
 function mpSend(e, p) { if (mp.on && mp.net) mp.net.send(e, p); }
 const r2 = (n) => Math.round(n * 100) / 100;
-const mpGameTime = () => ((Date.now() + mp.skew - mp.epoch) / 1000 + 0.08 * DAY_LEN);
+const mpGameTime = () => (mp.freeze !== null && mp.freeze !== undefined ? mp.freeze : (Date.now() + mp.skew - mp.epoch) / 1000 + 0.08 * DAY_LEN);
 function isHost() {                                       // ältester Spieler simuliert die Mobs
   if (!mp.on) return true;
   let best = { t: mp.joinedAt, id: mp.id };
@@ -5122,7 +5127,7 @@ function setClock(hours, relative) {                              // hours = Tag
   const cur = ((gameTime / DAY_LEN) % 1 + 1) % 1;
   const frac = relative ? cur + hours / 24 : (((hours - 6) / 24) % 1 + 1) % 1;
   gameTime = base + frac * DAY_LEN + (relative ? 0 : 0);
-  if (mp.on) { mp.epoch = Date.now() + mp.skew - (gameTime - 0.08 * DAY_LEN) * 1000; net('env', { ep: mp.epoch }); }
+  if (mp.on) { mp.epoch = Date.now() + mp.skew - (gameTime - 0.08 * DAY_LEN) * 1000; if (mp.freeze !== null) mp.freeze = gameTime; net('env', { ep: mp.epoch, fr: mp.freeze }); }
 }
 
 // ----- Befehlsregister -----
@@ -5681,8 +5686,14 @@ cmd(['gamerule', 'regel'], {
     const k = a[0].toLowerCase(); if (!['mobspawn', 'daycycle', 'mobgriefing'].includes(k)) fail('Regeln: mobspawn, daycycle, mobgriefing');
     if (a[1] === undefined) { chatAdd(null, k + ' = ' + rules[k], 'sys'); return; }
     if (!['true', 'false'].includes(a[1].toLowerCase())) fail('Wert: true oder false');
-    if (k === 'daycycle' && mp.on) fail('Der Tag-Nacht-Zyklus lässt sich nur im Einzelspieler anhalten.');
     rules[k] = a[1].toLowerCase() === 'true'; saveWorldPrefs(); chatOk(k + ' = ' + rules[k]);
+    if (mp.on) {                                                       // Regeln gelten für den ganzen Server (Tageszeit wird eingefroren / läuft weiter)
+      if (k === 'daycycle') {
+        if (!rules.daycycle) mp.freeze = gameTime;
+        else { mp.freeze = null; mp.epoch = Date.now() + mp.skew - (gameTime - 0.08 * DAY_LEN) * 1000; }
+      }
+      net('env', { ep: mp.epoch, fr: mp.freeze, rules: { ...rules } });
+    }
   },
 });
 
@@ -6347,6 +6358,10 @@ const mpHandlers = {
     if (mp.players.has(id) || !meta || !meta.name) return;
     const rp = new RemotePlayer(id, meta.name, meta.joinedAt); mp.players.set(id, rp);
     chatSys(meta.name + ' ist beigetreten'); achGive('mp'); mpEnsureProfile(rp); mpStatusHud(); if (mp.tab) renderTabList();
+    if (isHost()) {                                                    // der Host bringt Neulinge auf den aktuellen Stand (Uhrzeit, Regeln, Wetter)
+      const o = weather.override && gameTime < weather.override.until ? weather.override : null;
+      net('env', { ep: mp.epoch, fr: mp.freeze, rules: { ...rules }, ...(o ? { wk: o.kind, wd: Math.round(o.until - gameTime) } : {}) });
+    }
   },
   leave(id) {
     const rp = mp.players.get(id); if (!rp) return;
@@ -6382,6 +6397,9 @@ const mpHandlers = {
       }
       case 'env':
         if (typeof p.ep === 'number') mp.epoch = p.ep;
+        if ('fr' in p) mp.freeze = typeof p.fr === 'number' ? p.fr : null;
+        if (p.rules) { Object.assign(rules, p.rules); hudStatsDirty = true; }
+        if (p.sk) { weather.override = { kind: 'clear', until: mpGameTime() + 300 }; if (P.sleeping) toast('Die Nacht wurde verschlafen'); }
         if (p.wk) weather.override = { kind: p.wk, until: gameTime + (p.wd || 900) };
         break;
       case 'bolt': strikeLightning(p.x, p.z, true); break;
@@ -6478,7 +6496,7 @@ async function mpJoin(cfg) {
     info = await mp.db.joinRoom(cfg.room, cfg.name, cfg.token);
     if (!info || !info.ok) throw new Error('Diesen Server gibt es nicht. Prüfe den Namen oder erstelle einen neuen Server.');
   }
-  mp.owner = info.owner || null; mp.ops = new Set((info.ops || []).map((n) => n.toLowerCase()));
+  mp.freeze = null; mp.sleepCount = 0; mp.owner = info.owner || null; mp.ops = new Set((info.ops || []).map((n) => n.toLowerCase()));
   mp.roomInfo = info; mp.skew = info.now_ms - Date.now(); mp.epoch = info.epoch_ms;
   const [edits, conts] = await Promise.all([mp.db.getEdits(cfg.room), mp.db.getContainers(cfg.room)]);
   const state = await mp.db.loadState(cfg.room, cfg.name, cfg.token).catch(() => null);
@@ -6518,7 +6536,11 @@ function mpTick(dt) {
   if (host && !mp.wasHost) mobs.forEach((m) => { m.remote = false; });        // Host-Wechsel: Puppen werden echte Mobs
   mp.wasHost = host;
   if (host && mp.mobT <= 0) { mp.mobT = 0.2; mpSendMobs(); }
-  if (host && P.sleeping && P.sleepT > 2.6 && [...mp.players.values()].every((q) => !q.have || q.sleeping)) { setClock(6.5); }
+  // Schlafen: sobald ALLE Spieler im Bett liegen, überspringt der Host die Nacht (alle anderen wachen durch den Zeitsprung auf)
+  const others = [...mp.players.values()].filter((q) => q.have);
+  const nSleep = (P.sleeping ? 1 : 0) + others.filter((q) => q.sleeping).length, nAll = 1 + others.length;
+  if (nSleep !== mp.sleepCount) { if (nSleep > 0 && state === 'play' && nSleep < nAll) toast('Schlafende Spieler: ' + nSleep + '/' + nAll); mp.sleepCount = nSleep; }
+  if (host && P.sleeping && P.sleepT > 2.6 && others.every((q) => q.sleeping && q.sleepT > 2.2)) { skipToMorning(); mp.sleepCount = 0; }
   if (mp.saveT <= 0) { mp.saveT = 30; mpSaveState(); }
   const light = lerp(0.42, 1, env.dayF);
   for (const rp of mp.players.values()) rp.update(dt, light * (world.skyExposed(Math.floor(rp.p.x), Math.floor(rp.p.y + 1), Math.floor(rp.p.z)) ? 1 : 0.6));
@@ -6620,7 +6642,7 @@ $('btnMulti').disabled = true;
 
 
 // Kleiner Debug-Zugriff (z. B. für automatisierte Tests)
-window.__vc = { mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+window.__vc = { BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>
