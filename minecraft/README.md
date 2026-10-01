@@ -13,11 +13,11 @@ Ein Minecraft-ähnliches Voxel-Spiel, das komplett im Browser läuft – eine ei
 | --- | --- | --- |
 | Bewegen | WASD | Joystick links (ganz nach vorn = Sprint) |
 | Umsehen | Maus | Wischen auf der rechten Fläche |
-| Springen / Schwimmen | Leertaste | ▲-Button |
+| Springen / Schwimmen (im Kreativmodus: Doppeltipp = Fliegen an/aus) | Leertaste | ▲-Button |
 | Schleichen (kein Abstürzen von Kanten) | Shift | Knopf „Schleichen“ |
 | Sprinten | Strg oder W doppelt tippen | Joystick ganz nach vorn |
 | Abbauen / Angreifen | Linksklick (halten) | Finger gedrückt halten |
-| Platzieren / Essen | Rechtsklick | kurz antippen |
+| Platzieren / Essen & Trinken (gedrückt halten, ~1,3 s, mit Animation) | Rechtsklick | kurz antippen / halten |
 | Hotbar | 1–9 / Mausrad | Slots antippen |
 | Inventar & Handwerk | E (oder Rechtsklick auf Werkbank/Ofen) | Button „Inventar“ |
 | Item fallen lassen | Q | – |
