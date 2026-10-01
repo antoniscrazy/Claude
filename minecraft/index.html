@@ -4246,13 +4246,15 @@ function setState(s) {
 }
 function lockPointer() {
   if (touchMode) return;              // Touch-Geräte brauchen keinen Pointer-Lock
-  const r = canvas.requestPointerLock && canvas.requestPointerLock();
-  if (r && r.catch) r.catch(() => { if (state === 'play') setState('pause'); });
+  // Ohne frischen Klick (z. B. nach dem Laden einer Mehrspieler-Welt) verweigert der Browser die Maus-Sperre –
+  // das ist kein Grund zu pausieren: weiterspielen und per Klick ins Spiel die Maus fangen.
+  const fail = () => { if (state === 'play' && !document.pointerLockElement) toast('Klicke ins Spiel, um die Maus zu steuern'); };
+  try { const r = canvas.requestPointerLock && canvas.requestPointerLock(); if (r && r.catch) r.catch(fail); } catch (e) { fail(); }
 }
 document.addEventListener('pointerlockchange', () => {
   if (!document.pointerLockElement && state === 'play') setState('pause');
 });
-document.addEventListener('pointerlockerror', () => { if (state === 'play') setState('pause'); });
+document.addEventListener('pointerlockerror', () => { if (state === 'play') toast('Klicke ins Spiel, um die Maus zu steuern'); });
 canvas.addEventListener('click', () => { if (state === 'play' && !document.pointerLockElement && !touchMode) lockPointer(); });
 
 function resume() { setState('play'); lockPointer(); }
