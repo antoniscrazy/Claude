@@ -192,3 +192,87 @@ begin
     execute format('grant execute on function public.%s to anon, authenticated', f);
   end loop;
 end $$;
+
+
+-- ===================== Server & Operatoren (Migration voxelcraft_servers_and_ops) =====================
+alter table public.vc_rooms add column if not exists owner text, add column if not exists ops text[] not null default '{}', add column if not exists is_public boolean not null default true;
+
+create or replace function public.vc_room_info(r public.vc_rooms)
+returns jsonb language sql stable security definer set search_path = '' as $$
+  select jsonb_build_object('ok', true, 'id', r.id, 'seed', r.seed, 'mode', r.mode, 'epoch_ms', r.epoch_ms,
+    'now_ms', (extract(epoch from now()) * 1000)::bigint, 'owner', r.owner, 'ops', to_jsonb(r.ops), 'public', r.is_public);
+$$;
+
+create or replace function public.vc_create_room(p_room text, p_seed text, p_mode text, p_name text, p_token text, p_public boolean)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare v_pname text; v_row public.vc_rooms;
+begin
+  if not public.vc_check(p_name, p_token) then raise exception 'unauthorized'; end if;
+  if p_room is null or p_room !~ '^[a-z0-9_-]{2,24}$' then raise exception 'bad_room'; end if;
+  if p_mode not in ('survival', 'creative') then raise exception 'bad_mode'; end if;
+  if p_seed is null or char_length(p_seed) not between 1 and 40 then raise exception 'bad_seed'; end if;
+  select name into v_pname from public.vc_players where name_lower = lower(p_name);
+  if exists (select 1 from public.vc_rooms where id = p_room) then return jsonb_build_object('ok', false, 'error', 'exists'); end if;
+  insert into public.vc_rooms (id, seed, mode, owner, is_public) values (p_room, p_seed, p_mode, v_pname, coalesce(p_public, true)) returning * into v_row;
+  return public.vc_room_info(v_row);
+end $$;
+
+create or replace function public.vc_join_room(p_room text, p_name text, p_token text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare v_row public.vc_rooms;
+begin
+  if not public.vc_check(p_name, p_token) then raise exception 'unauthorized'; end if;
+  select * into v_row from public.vc_rooms where id = p_room;
+  if not found then return jsonb_build_object('ok', false, 'error', 'no_server'); end if;
+  return public.vc_room_info(v_row);
+end $$;
+
+-- Nur der Besitzer darf Operatoren ernennen/entfernen; der Besitzer selbst bleibt immer OP und kann nicht entfernt werden.
+create or replace function public.vc_set_op(p_room text, p_name text, p_token text, p_target text, p_op boolean)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare v_row public.vc_rooms; v_t text;
+begin
+  if not public.vc_check(p_name, p_token) then raise exception 'unauthorized'; end if;
+  select * into v_row from public.vc_rooms where id = p_room;
+  if not found then return jsonb_build_object('ok', false, 'error', 'no_server'); end if;
+  if v_row.owner is null or lower(v_row.owner) <> lower(p_name) then return jsonb_build_object('ok', false, 'error', 'not_owner'); end if;
+  select name into v_t from public.vc_players where name_lower = lower(p_target);
+  if v_t is null then return jsonb_build_object('ok', false, 'error', 'no_player'); end if;
+  if lower(v_t) = lower(v_row.owner) then return jsonb_build_object('ok', false, 'error', 'owner'); end if;
+  if p_op then
+    update public.vc_rooms set ops = (select coalesce(array_agg(distinct x), '{}') from unnest(ops || v_t) x) where id = p_room;
+  else
+    update public.vc_rooms set ops = array_remove(ops, v_t) where id = p_room;
+  end if;
+  select * into v_row from public.vc_rooms where id = p_room;
+  return public.vc_room_info(v_row);
+end $$;
+
+create or replace function public.vc_delete_room(p_room text, p_name text, p_token text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare v_row public.vc_rooms;
+begin
+  if not public.vc_check(p_name, p_token) then raise exception 'unauthorized'; end if;
+  select * into v_row from public.vc_rooms where id = p_room;
+  if not found then return jsonb_build_object('ok', false, 'error', 'no_server'); end if;
+  if v_row.owner is null or lower(v_row.owner) <> lower(p_name) then return jsonb_build_object('ok', false, 'error', 'not_owner'); end if;
+  delete from public.vc_rooms where id = p_room;
+  return jsonb_build_object('ok', true);
+end $$;
+
+create or replace function public.vc_list_rooms()
+returns jsonb language sql stable security definer set search_path = '' as $$
+  select coalesce(jsonb_agg(jsonb_build_object('id', id, 'mode', mode, 'owner', owner) order by created_at desc), '[]'::jsonb)
+  from (select id, mode, owner, created_at from public.vc_rooms where is_public order by created_at desc limit 20) r;
+$$;
+
+create or replace function public.vc_ensure_room(p_room text, p_seed text, p_mode text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare v_row public.vc_rooms;
+begin
+  select * into v_row from public.vc_rooms where id = p_room;
+  if not found then raise exception 'use_vc_create_room'; end if;
+  return jsonb_build_object('id', v_row.id, 'seed', v_row.seed, 'mode', v_row.mode, 'epoch_ms', v_row.epoch_ms, 'now_ms', (extract(epoch from now()) * 1000)::bigint);
+end $$;
+
+revoke all on function public.vc_room_info(public.vc_rooms) from public, anon, authenticated;

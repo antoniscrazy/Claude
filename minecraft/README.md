@@ -14,7 +14,8 @@ Ein Minecraft-ähnliches Voxel-Spiel, das komplett im Browser läuft – eine ei
 | Bewegen | WASD | Joystick links (ganz nach vorn = Sprint) |
 | Umsehen | Maus | Wischen auf der rechten Fläche |
 | Springen / Schwimmen | Leertaste | ▲-Button |
-| Sprinten | Shift | Joystick ganz nach vorn |
+| Schleichen (kein Abstürzen von Kanten) | Shift | Knopf „Schleichen“ |
+| Sprinten | Strg oder W doppelt tippen | Joystick ganz nach vorn |
 | Abbauen / Angreifen | Linksklick (halten) | Finger gedrückt halten |
 | Platzieren / Essen | Rechtsklick | kurz antippen |
 | Hotbar | 1–9 / Mausrad | Slots antippen |
@@ -73,15 +74,27 @@ Zeit-, Wetter- und Blitzbefehle werden im Mehrspielermodus an alle Spieler über
 * **Mehrspieler:** andere Spieler tragen sichtbar ihre Rüstung (Leder, Eisen, Gold, Diamant) und halten ihr Item; ein kurzer Klick genügt zum Schlagen (Touch: Mob/Spieler antippen).
 * **Hand-Ansicht:** Du siehst den Gegenstand in deiner Hand (Blöcke als Würfel, Werkzeuge und Items als kleine 3D-Objekte) mit Wippen beim Laufen, Schlag-, Abbau- und Wechsel-Animation.
 * **Beleuchtung:** Fackeln, Laternen, Lava usw. leuchten fest in die Welt eingebacken – aus jeder Entfernung gleich hell, ohne „Kopflampen“-Effekt.
+* **Betten** in 16 Farben (zweiteilig, auf den Boden platzieren): Rechtsklick setzt den Startpunkt, nachts schläft man – im Mehrspielermodus wird die Nacht übersprungen, wenn alle schlafen. Fehlt das Bett, startet man am Weltspawn.
+* **Skelette** tragen Bögen und schießen Pfeile (sie lassen manchmal einen Bogen fallen).
 * **Erfolge**, **Minikarte** (N), **Einstellungen** (Sichtfeld, Empfindlichkeit, Lautstärke, Sichtweite, Wolken) und Screenshots (F2).
 * **Kreativ:** alle Blöcke und Items in Kategorien, unendlich, kein Schaden
 * Tag-Nacht-Zyklus, Sound (per WebAudio erzeugt), Speichern/Laden (localStorage), Seed-Eingabe, Sichtweite einstellbar
+
+## Server & Operatoren
+
+Im Mehrspielermodus gibt es **Server**: Wähle „Server erstellen“ (Name, Seed, Modus, öffentlich/privat) – du wirst **Besitzer** und automatisch Operator (OP).
+Andere wählen „Server beitreten“ und klicken ihn in der Liste an oder tippen den Namen ein.
+
+* Nur **OPs** dürfen Cheat- und Teleport-Befehle (`/gamemode`, `/give`, `/time`, `/weather`, `/tp`, `/fill` …) – normale Spieler nur Chat, `/msg`, `/roll`, `/pos` usw.
+* Der Besitzer ernennt mit **`/op Name`** Operatoren und entfernt sie mit **`/deop Name`**. Der Besitzer ist immer OP und **kann nicht deoppt oder rausgeworfen werden**. `/ops` zeigt die Liste, 👑 = Besitzer, ⭐ = OP (Tab-Liste).
+* OPs können Befehle bei anderen ausführen: `/gamemode creative @Name`, `/give diamond 5 @Name`, `/heal @Name` … und mit `/kick Name [Grund]` Spieler rauswerfen (Operatoren nur der Besitzer).
 
 ## Mehrspieler (Supabase)
 
 Im Hauptmenü „🌍 Mehrspieler“: Namen eingeben (3–16 Zeichen), Skin wählen (9 Vorlagen aus dem Texturpaket oder eigenes 64×64-PNG hochladen;
 schmale Arme werden erkannt), Weltnamen eingeben und beitreten. Wer denselben Weltnamen benutzt, spielt in derselben Welt.
 
+* Die **Locator-Leiste** über der Hotbar zeigt Mitspieler (mit Gesicht), dein Bett (gelb) und deine Homes (pink) in Blickrichtung, dazu die Himmelsrichtungen.
 * Spieler erscheinen mit ihrem Skin, Namensschild, Lauf-/Schlaganimation und Item in der Hand.
 * Blockänderungen, Drops, Truhen, TNT, Pfeile und Mobs werden live synchronisiert; Blockänderungen und Truhen werden zusätzlich in der Datenbank gespeichert,
   ebenso Inventar und Position jedes Spielers (beim nächsten Beitritt geht es dort weiter).
