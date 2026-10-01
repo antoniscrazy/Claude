@@ -4650,7 +4650,7 @@ const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/
 const mp = {
   on: false, room: null, name: '', token: '', backend: 'online', db: null, net: null, id: '', roomInfo: null, mode: 'survival',
   players: new Map(),            // id -> RemotePlayer
-  pending: [], dbQueue: [], sendT: 0, blockT: 0, dbT: 0, mobT: 0, saveT: 0, skew: 0, epoch: 0, freeze: null, sleepCount: 0, joinedAt: 0, offline: false, dropSeq: 0, mobSeq: 0,
+  pending: [], dbQueue: [], sendT: 0, blockT: 0, dbT: 0, mobT: 0, saveT: 0, skew: 0, epoch: 0, freeze: null, sleepCount: 0, joinedAt: 0, offline: false, admin: false, dropSeq: 0, mobSeq: 0,
   mobsById: new Map(), chat: [], skinCache: new Map(), lastHit: null, swing: false, tab: false, wasHost: true, myFace: '', owner: null, ops: new Set(),
 };
 
@@ -4726,10 +4726,13 @@ function armorTexture(layer, mat) {
 }
 const tierOfArmor = (id) => { const k = ITEMS[id].key; return k.startsWith('leather') ? 1 : k.startsWith('iron') ? 2 : k.startsWith('golden') ? 3 : 4; };
 const armorCode = () => armor.map((s) => s ? tierOfArmor(s.id) : 0).join('');
-function makeNameTag(name) {
+function makeNameTag(name, rank) {
+  const label = rank ? rank + ' ' + name : name;
   const cv = document.createElement('canvas'), c = cv.getContext('2d'); c.font = 'bold 26px "Courier New", monospace';
-  const w = Math.ceil(c.measureText(name).width) + 20; cv.width = w; cv.height = 38;
-  c.font = 'bold 26px "Courier New", monospace'; c.fillStyle = 'rgba(0,0,0,0.5)'; c.fillRect(0, 0, w, 38); c.fillStyle = '#fff'; c.textBaseline = 'middle'; c.fillText(name, 10, 20);
+  const w = Math.ceil(c.measureText(label).width) + 20; cv.width = w; cv.height = 38;
+  c.font = 'bold 26px "Courier New", monospace'; c.fillStyle = 'rgba(0,0,0,0.5)'; c.fillRect(0, 0, w, 38); c.textBaseline = 'middle';
+  if (rank) { c.fillStyle = '#ff5555'; c.fillText(rank, 10, 20); c.fillStyle = '#fff'; c.fillText(' ' + name, 10 + c.measureText(rank).width, 20); }
+  else { c.fillStyle = '#fff'; c.fillText(name, 10, 20); }
   const t = new THREE.CanvasTexture(cv); t.minFilter = THREE.LinearFilter; t.generateMipmaps = false;
   const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, fog: false }));
   spr.scale.set(w / 150, 38 / 150, 1); return spr;
@@ -4745,6 +4748,10 @@ class RemotePlayer {
     this.group = new THREE.Group(); this.group.visible = false; scene.add(this.group);
     this.tag = makeNameTag(name); this.tag.position.y = 2.15; this.group.add(this.tag);
     this.setSkin({ kind: 'preset', name: 'steve' }, false);
+  }
+  setRank(rank) {                                                  // Rang-Label über dem Kopf (leer = keins)
+    const old = this.tag; this.tag = makeNameTag(this.name, rank); this.tag.position.copy(old.position); this.group.add(this.tag);
+    this.group.remove(old); old.material.map.dispose(); old.material.dispose();
   }
   async setSkin(spec, slim) {
     const key = (spec.kind === 'preset' ? 'p:' + spec.name : spec.data.length + ':' + spec.data.slice(-40)) + (slim ? ':s' : ':w');
@@ -5040,7 +5047,7 @@ async function mpEnsureProfile(rp) {
 // --- Chat ---
 function chatAdd(name, text, cls) {
   const line = document.createElement('div'); line.className = 'cl' + (cls ? ' ' + cls : '');
-  if (name) { const b = document.createElement('b'); b.textContent = '<' + name + '> '; line.appendChild(b); }
+  if (name) { const b = document.createElement('b'); b.textContent = (isAdminName(name) ? '🛡 [Admin] ' : '') + '<' + name + '> '; line.appendChild(b); }
   line.appendChild(document.createTextNode(text));
   const box = $('chat'); box.appendChild(line); while (box.children.length > 60) box.removeChild(box.firstChild);
   box.scrollTop = box.scrollHeight;
@@ -5110,7 +5117,19 @@ const chatOk = (t) => chatAdd(null, t, 'ok');
 const net = (t, p) => { if (mp.on) mpSend(t, p); };
 // Operatoren: der Server-Besitzer ist immer OP (und nicht entfernbar), weitere OPs vergibt nur er mit /op
 const isOwnerName = (n) => !!n && !!mp.owner && mp.owner.toLowerCase() === n.toLowerCase();
-const isOp = (n) => !!n && (isOwnerName(n) || mp.ops.has(n.toLowerCase()));
+// Admin: nur der Spieler „Anton“ (genau so geschrieben) kann sich mit /admin zum Admin machen. Admin zählt überall als OP,
+// ist weder vom Besitzer deopp- noch rauswerfbar und wird in Tab-Liste, Chat und über dem Kopf angezeigt. /unadmin schaltet es wieder ab.
+const ADMIN_NAME = 'Anton';
+const adminEligible = () => mp.on && mp.name === ADMIN_NAME;
+const isAdminName = (n) => {
+  if (n !== ADMIN_NAME) return false;
+  if (mp.on && mp.name === n) return !!mp.admin;
+  for (const rp of mp.players.values()) if (rp.name === n) return !!rp.admin;
+  return false;
+};
+const rankMark = (n) => (isAdminName(n) ? '🛡 [Admin] ' : isOwnerName(n) ? '👑 ' : isOp(n) ? '⭐ ' : '');
+const isOp = (n) => !!n && (isAdminName(n) || isOwnerName(n) || mp.ops.has(n.toLowerCase()));
+const visibleCmds = () => CMD_LIST.filter((s) => !s.hidden || adminEligible());
 let remoteExec = false;
 const canCheat = () => !mp.on || remoteExec || isOp(mp.name);
 const norm = (s) => String(s).toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss').replace(/[^a-z0-9]/g, '');
@@ -5237,7 +5256,7 @@ function argSuggestions(a, partial) {
       const names = [...(mp.on ? [mp.name] : []), ...[...mp.players.values()].map((p) => p.name)];
       pick(names, () => 'Spieler'); break;
     }
-    case 'cmd': pick([...new Set(CMD_LIST.flatMap((s) => [s.name, ...s.aliases]))], (k) => CMDS[k].desc); break;
+    case 'cmd': pick([...new Set(visibleCmds().flatMap((s) => [s.name, ...s.aliases]))], (k) => CMDS[k].desc); break;
     case 'mob': pick(MOB_KEYS(), (k) => MOBTYPES[k].de); break;
     case 'effect': pick(Object.keys(EFFECTS).concat(['clear']), (k) => k === 'clear' ? 'alle Effekte entfernen' : EFFECTS[k][0]); break;
     case 'enum': pick(a.list.map((o) => Array.isArray(o) ? o[0] : o), (k) => { const o = a.list.find((q) => Array.isArray(q) && q[0] === k); return o ? o[1] : ''; }); break;
@@ -5262,7 +5281,7 @@ function chatSuggest(text) {
   const replaceFrom = text.length - partial.length;
   if (idx === 0) {                                                // Befehlsname
     const pl = partial.toLowerCase(), seen = new Set(), items = [], contains = [];
-    const scan = (pred, dest) => { for (const s of CMD_LIST) for (const n of [s.name, ...s.aliases]) if (pred(n) && !(seen.has(n))) { seen.add(n); dest.push({ ins: n, label: '/' + n, desc: s.desc + (n !== s.name ? '  (= /' + s.name + ')' : ''), lock: (!!s.cheat && !canCheat()) || ((s.mpOp && mp.on) && !canCheat()) || (s.mpOnly && !mp.on) }); } };
+    const scan = (pred, dest) => { for (const s of visibleCmds()) for (const n of [s.name, ...s.aliases]) if (pred(n) && !(seen.has(n))) { seen.add(n); dest.push({ ins: n, label: '/' + n, desc: s.desc + (n !== s.name ? '  (= /' + s.name + ')' : ''), lock: (!!s.cheat && !canCheat()) || ((s.mpOp && mp.on) && !canCheat()) || (s.mpOnly && !mp.on) }); } };
     scan((n) => n.startsWith(pl), items); scan((n) => !n.startsWith(pl) && n.includes(pl) && pl.length > 1, contains);
     const all = items.concat(contains);
     const exact = CMDS[pl];
@@ -5286,9 +5305,10 @@ const CHAT_HIST = []; let histPos = -1, chatDraft = '';
 function chatCommand(body) {
   const parts = body.trim().split(/\s+/), name = (parts[0] || '').toLowerCase(), args = parts.slice(1);
   if (!name) return;
-  const c = CMDS[name];
+  let c = CMDS[name];
+  if (c && c.hidden && !adminEligible()) c = undefined;               // geheime Befehle gibt es für alle anderen nicht
   if (!c) {
-    const near = [...new Set(CMD_LIST.flatMap((s) => [s.name, ...s.aliases]))].filter((n) => n.startsWith(name.slice(0, 2)) || n.includes(name)).slice(0, 4);
+    const near = [...new Set(visibleCmds().flatMap((s) => [s.name, ...s.aliases]))].filter((n) => n.startsWith(name.slice(0, 2)) || n.includes(name)).slice(0, 4);
     return chatErr('Unbekannter Befehl „/' + name + '“.' + (near.length ? ' Meintest du: ' + near.map((n) => '/' + n).join(', ') + '?' : ' /help zeigt alle Befehle.'));
   }
   if ((c.cheat || (c.mpOp && mp.on)) && !canCheat()) return chatErr('/' + c.name + ' dürfen nur Operatoren (OPs). Der Server-Besitzer kann dich mit /op ernennen.');
@@ -5526,7 +5546,7 @@ cmd(['players', 'list', 'spieler'], {
   desc: 'Zeigt alle Spieler in der Welt',
   run() {
     if (!mp.on) { chatAdd(null, 'Einzelspieler – nur du bist hier.', 'sys'); return; }
-    const mk = (n) => (isOwnerName(n) ? '👑 ' : isOp(n) ? '⭐ ' : '') + n;
+    const mk = (n) => rankMark(n) + n;
     const rows = [mk(mp.name) + ' (du)', ...[...mp.players.values()].map((p) => mk(p.name) + (p.have ? ' [' + Math.round(Math.hypot(p.p.x - P.p.x, p.p.z - P.p.z)) + ' m]' : ''))];
     chatAdd(null, 'Online (' + rows.length + '): ' + rows.join(', '), 'sys');
   },
@@ -5548,9 +5568,19 @@ cmd(['r', 'reply'], {
 // ----- Operatoren (nur Server-Besitzer) -----
 const opErr = { not_owner: 'Nur der Besitzer des Servers darf das.', no_player: 'Spieler nicht gefunden – er muss schon einmal auf irgendeinem Server gespielt haben.', owner: 'Der Besitzer ist immer Operator und kann nicht entfernt werden.', no_server: 'Der Server existiert nicht mehr.' };
 async function setOpState(a, on) {
-  if (!isOwnerName(mp.name)) return chatErr('Nur der Besitzer des Servers darf Operatoren verwalten.');
-  const target = a[0]; if (!target) return chatErr('Spielername fehlt.');
+  const target = a[0];
+  if (!isOwnerName(mp.name)) {
+    if (!mp.admin) return chatErr('Nur der Besitzer des Servers darf Operatoren verwalten.');
+    if (!target) return chatErr('Spielername fehlt.');
+    const canon = (findPlayer(target) || {}).name || target;                          // Admin auf fremdem Server: gilt nur für diese Sitzung
+    if (isOwnerName(canon)) return chatErr(opErr.owner);
+    const low = canon.toLowerCase(); if (on) mp.ops.add(low); else mp.ops.delete(low);
+    mpSend('op', { t: canon, v: on ? 1 : 0 }); chatOk(canon + (on ? ' ist jetzt Operator (nur bis zum Neustart des Servers).' : ' ist kein Operator mehr.')); if (mp.tab) renderTabList();
+    return;
+  }
+  if (!target) return chatErr('Spielername fehlt.');
   if (isOwnerName(target)) return chatErr(opErr.owner);
+  if (isAdminName(target)) return chatErr('Admins kann man nicht deoppen.');
   try {
     const res = await mp.db.setOp(mp.room, mp.name, mp.token, target, on);
     if (!res || !res.ok) return chatErr(opErr[res && res.error] || 'Fehlgeschlagen.');
@@ -5562,6 +5592,22 @@ async function setOpState(a, on) {
 }
 cmd(['op'], { desc: 'Macht einen Spieler zum Operator (nur Server-Besitzer)', mpOnly: true, needs: 1, args: [T.player()], run(a) { setOpState(a, true); } });
 cmd(['deop'], { desc: 'Nimmt einem Spieler die Operator-Rechte (der Besitzer bleibt immer OP)', mpOnly: true, needs: 1, args: [T.player()], run(a) { setOpState(a, false); } });
+cmd(['admin'], {
+  desc: 'Admin-Modus an: alle Rechte auf jedem Server', hidden: true, mpOnly: true,
+  run() {
+    if (!adminEligible()) fail('Unbekannter Befehl.');
+    if (mp.admin) { chatOk('Du bist schon Admin.'); return; }
+    mp.admin = true; mp.sendT = 0; chatOk('🛡 Admin-Modus an – du hast alle Rechte und bist nicht deop- oder rauswerfbar.'); if (mp.tab) renderTabList();
+  },
+});
+cmd(['unadmin'], {
+  desc: 'Admin-Modus aus: wieder ein normaler Spieler', hidden: true, mpOnly: true,
+  run() {
+    if (!adminEligible()) fail('Unbekannter Befehl.');
+    if (!mp.admin) { chatOk('Du bist kein Admin.'); return; }
+    mp.admin = false; mp.sendT = 0; chatOk('Admin-Modus aus – du bist wieder ein normaler Spieler.'); if (mp.tab) renderTabList();
+  },
+});
 cmd(['ops'], {
   desc: 'Zeigt Besitzer und Operatoren', mpOnly: true,
   run() { chatAdd(null, '👑 Besitzer: ' + (mp.owner || '— (alte Welt ohne Besitzer)') + '   ⭐ Operatoren: ' + ([...mp.ops].join(', ') || '—'), 'sys'); },
@@ -5571,6 +5617,7 @@ cmd(['kick'], {
   run(a) {
     const t = findPlayer(a[0]);
     if (isOwnerName(t.name)) fail('Den Besitzer kann man nicht rauswerfen.');
+    if (isAdminName(t.name)) fail('Admins kann man nicht rauswerfen.');
     if (isOp(t.name) && !isOwnerName(mp.name)) fail('Operatoren kann nur der Besitzer rauswerfen.');
     mpSend('kick', { to: t.name, why: a.slice(1).join(' ').slice(0, 80) }); chatOk(t.name + ' wurde rausgeworfen.');
   },
@@ -6414,7 +6461,7 @@ function updateStructs(dt) {
 function renderTabList() {
   const box = $('tablist'); if (!mp.on) { box.classList.add('hidden'); return; }
   box.innerHTML = '<h2>Spieler online</h2>';
-  const mk = (n) => (isOwnerName(n) ? '👑 ' : isOp(n) ? '⭐ ' : '') + n;
+  const mk = (n) => rankMark(n) + n;
   const rows = [{ name: mk(mp.name) + ' (du)', face: mp.myFace, mode, ping: pingMs() }, ...[...mp.players.values()].map((p) => ({ name: mk(p.name), face: p.faceURL, mode: p.mode, ping: p.rtt === undefined ? null : Math.round(p.rtt) }))];
   rows.forEach((r) => {
     const d = document.createElement('div'); d.className = 'trow';
@@ -6450,7 +6497,8 @@ const mpHandlers = {
         if (!rp) { mpHandlers.join(from, { name: p.n, joinedAt: p.j }); rp = mp.players.get(from); if (!rp) return; }
         rp.target.set(p.x, p.y, p.z); rp.tyaw = p.yw; rp.pitch = p.pt; rp.mode = p.m || 'survival';
         if (!rp.have) { rp.p.copy(rp.target); rp.have = true; rp.bodyYaw = p.yw; rp.yaw = p.yw; }
-        rp.setHeld(p.h || 0); rp.setArmor(p.a || '0000'); rp.sneak = !!p.sn; rp.sleeping = !!p.sl; rp.eating = !!p.ea; if (p.sw) rp.swing = 0.3;
+        rp.setHeld(p.h || 0); rp.setArmor(p.a || '0000'); { const ad = rp.name === ADMIN_NAME && !!p.ad; if (ad !== !!rp.admin) { rp.admin = ad; rp.setRank(ad ? '[Admin]' : ''); if (mp.tab) renderTabList(); } }
+        rp.sneak = !!p.sn; rp.sleeping = !!p.sl; rp.eating = !!p.ea; if (p.sw) rp.swing = 0.3;
         break;
       }
       case 'pg': mpSend('pn', { t: p.t, to: from }); break;
@@ -6460,15 +6508,15 @@ const mpHandlers = {
         if (p.to) { if (p.to === mp.name) { chatAdd(null, p.n + ' flüstert: ' + p.t, 'whisper'); lastMsgFrom = p.n; } break; }
         if (p.n === '*') chatSys(p.t); else chatAdd(p.n, p.t); break;
       case 'op': {                                                  // nur vom Besitzer gültig
-        const sender = mp.players.get(from); if (!sender || !isOwnerName(sender.name) || !p.t) break;
+        const sender = mp.players.get(from); if (!sender || !(isOwnerName(sender.name) || isAdminName(sender.name)) || !p.t) break;
         const low = String(p.t).toLowerCase(); if (p.v) mp.ops.add(low); else mp.ops.delete(low);
-        if (low === mp.name.toLowerCase()) chatAdd(null, p.v ? '⭐ Du bist jetzt Operator!' : 'Du bist kein Operator mehr.', 'ok'); else chatSys(p.t + (p.v ? ' ist jetzt Operator' : ' ist kein Operator mehr'));
+        if (low === mp.name.toLowerCase()) { if (p.v || !mp.admin) chatAdd(null, p.v ? '⭐ Du bist jetzt Operator!' : 'Du bist kein Operator mehr.', 'ok'); } else chatSys(p.t + (p.v ? ' ist jetzt Operator' : ' ist kein Operator mehr'));
         if (mp.tab) renderTabList();
         break;
       }
       case 'rcmd': { if (p.to !== mp.name) break; const sender = mp.players.get(from); if (!sender || !isOp(sender.name)) break; runRemoteCommand(p.c, Array.isArray(p.a) ? p.a.map(String) : [], sender.name); break; }
       case 'kick': {
-        if (p.to !== mp.name) break; const sender = mp.players.get(from); if (!sender || isOwnerName(mp.name)) break;
+        if (p.to !== mp.name) break; const sender = mp.players.get(from); if (!sender || isOwnerName(mp.name) || mp.admin) break;
         if (isOwnerName(sender.name) || (isOp(sender.name) && !isOp(mp.name))) kickedFromServer(p.why);
         break;
       }
@@ -6573,7 +6621,7 @@ async function mpJoin(cfg) {
     info = await mp.db.joinRoom(cfg.room, cfg.name, cfg.token);
     if (!info || !info.ok) throw new Error('Diesen Server gibt es nicht. Prüfe den Namen oder erstelle einen neuen Server.');
   }
-  mp.freeze = null; mp.sleepCount = 0; mp.owner = info.owner || null; mp.ops = new Set((info.ops || []).map((n) => n.toLowerCase()));
+  mp.freeze = null; mp.sleepCount = 0; mp.admin = false; mp.owner = info.owner || null; mp.ops = new Set((info.ops || []).map((n) => n.toLowerCase()));
   mp.roomInfo = info; mp.skew = info.now_ms - Date.now(); mp.epoch = info.epoch_ms;
   const [edits, conts] = await Promise.all([mp.db.getEdits(cfg.room), mp.db.getContainers(cfg.room)]);
   const state = await mp.db.loadState(cfg.room, cfg.name, cfg.token).catch(() => null);
@@ -6639,7 +6687,7 @@ function mpTick(dt) {
   if (mp.sendT <= 0) {
     mp.sendT = 0.11;
     const held = inv[P.sel]; const heldId = held ? held.id : 0;
-    mpSend('pos', { n: mp.name, j: mp.joinedAt, x: r2(P.p.x), y: r2(P.p.y), z: r2(P.p.z), yw: r2(P.yaw), pt: r2(P.pitch), h: heldId, a: armorCode(), sw: mp.swing ? 1 : 0, m: mode, sn: P.sneak ? 1 : 0, sl: P.sleeping ? 1 : 0, ea: P.eat ? 1 : 0 });
+    mpSend('pos', { n: mp.name, j: mp.joinedAt, x: r2(P.p.x), y: r2(P.p.y), z: r2(P.p.z), yw: r2(P.yaw), pt: r2(P.pitch), h: heldId, a: armorCode(), sw: mp.swing ? 1 : 0, m: mode, sn: P.sneak ? 1 : 0, sl: P.sleeping ? 1 : 0, ea: P.eat ? 1 : 0, ad: mp.admin ? 1 : 0 });
     mp.swing = false;
   }
   if (mp.blockT <= 0) { mp.blockT = 0.1; mpFlushBlocks(); }
