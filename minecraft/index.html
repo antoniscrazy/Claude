@@ -1287,10 +1287,13 @@ function grad(h, x, y, z) {
   return ((h & 1) ? -u : u) + ((h & 2) ? -v : v);
 }
 
+// Block-/Item-IDs, die diese Version nicht kennt (Mitspieler mit anderer Version, alte Spielstände): nie abstürzen, Blöcke werden zu lila Wolle, Items entfallen
+const validId = (id) => id > 0 && (id < 5000 ? !!BLOCKS[id] : !!ITEMS[id]);
+const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese'];
-const GAME_VER = '2026-10-02.5';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-02.6';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
 const isDryBiome = (b) => b === BIOME_DESERT || b === BIOME_MESA;
 // Baumdichte je Biom (alt = Welten vor den neuen Biomen, neu = ab GEN2_START)
@@ -1589,7 +1592,7 @@ class TerrainGen {
     this.structures(cx, cz, data, gi0, seed);
 
     // Spieler-Änderungen anwenden
-    if (edits) for (const [idx, id] of edits.m) data[idx] = id;
+    if (edits) for (const [idx, id] of edits.m) data[idx] = safeBlock(id);
     return data;
   }
 }
@@ -1676,6 +1679,7 @@ class World {
   // silent = Änderung kommt von außen (Netzwerk): kein Echo an den Server, keine Folgeeffekte
   setBlock(x, y, z, id, silent) {
     if (y < 0 || y >= CH) return false;
+    id = safeBlock(id);
     const cx = x >> 4, cz = z >> 4, k = ckey(cx, cz), c = this.chunks.get(k);
     const lx = x & 15, lz = z & 15, idx = lx + (lz << 4) + (y << 8);
     if (!c) {                                               // Chunk nicht geladen: Änderung trotzdem merken (Multiplayer)
@@ -1716,6 +1720,7 @@ class World {
     if (nid !== id) this.setBlock(x, y, z, nid, false);
   }
   recordEdit(x, y, z, id) {                                  // Änderung merken, ohne sie sofort anzuwenden (beim Laden von Chunks)
+    id = safeBlock(id);
     const cx = x >> 4, cz = z >> 4, k = ckey(cx, cz);
     let e = this.edits.get(k); if (!e) { e = { cx, cz, m: new Map() }; this.edits.set(k, e); }
     e.m.set((x & 15) + ((z & 15) << 4) + (y << 8), id);
@@ -2671,6 +2676,7 @@ class Drop {
 }
 function spawnDrop(id, count, x, y, z, o) {
   o = o || {};
+  if (!validId(id)) return;
   if (!mp.on && o.dur === undefined && maxStack(id) > 1) {                       // benachbarte gleiche Drops zusammenfassen
     for (const d of drops) {
       if (d.id === id && d.dur === undefined && d.count + count <= maxStack(id) && Math.abs(d.p.x - x) < 1 && Math.abs(d.p.y - y) < 1 && Math.abs(d.p.z - z) < 1) { d.count += count; d.age = Math.min(d.age, 2); return d; }
@@ -3279,7 +3285,7 @@ function closeContainer() {
   openChest = null;
 }
 const packItems = (arr) => arr.map((s) => s ? (s.dur === undefined ? [s.id, s.count] : [s.id, s.count, s.dur]) : 0);
-const unpackItems = (arr) => arr.map((s) => s ? (s[2] === undefined ? { id: s[0], count: s[1] } : { id: s[0], count: s[1], dur: s[2] }) : null);
+const unpackItems = (arr) => arr.map((s) => s && validId(s[0]) ? (s[2] === undefined ? { id: s[0], count: s[1] } : { id: s[0], count: s[1], dur: s[2] }) : null);
 
 // ----- Bogen -----
 function shootBow() {
