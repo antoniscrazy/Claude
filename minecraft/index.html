@@ -1290,6 +1290,7 @@ function grad(h, x, y, z) {
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese'];
+const GAME_VER = '2026-10-02.4';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
 const isDryBiome = (b) => b === BIOME_DESERT || b === BIOME_MESA;
 // Baumdichte je Biom (alt = Welten vor den neuen Biomen, neu = ab GEN2_START)
@@ -2379,7 +2380,7 @@ function updatePlayer(dt) {
   // Hunger & Regeneration (nur Überleben)
   if (!isCreative()) {
     P.exhaust += Math.hypot(v.x, v.z) * dt * (sprint ? 0.10 : 0.025) + (jumped ? 0.05 : 0) + fxAmp('hunger') * 0.02 * dt * 10;
-    if (P.exhaust >= 4) { P.exhaust -= 4; P.hunger = Math.max(0, P.hunger - 1); hudStatsDirty = true; }
+    if (P.exhaust >= 8) { P.exhaust -= 8; P.hunger = Math.max(0, P.hunger - 1); hudStatsDirty = true; }
     if (P.hunger >= 18 && P.health < 20) {
       P.regenT += dt; if (P.regenT >= 4) { P.regenT = 0; P.health = Math.min(20, P.health + 1); P.exhaust += 1; hudStatsDirty = true; }
     } else P.regenT = 0;
@@ -5111,7 +5112,7 @@ function isHost() {                                       // ältester Spieler s
 // Spieler in der Nähe von (x,z), einschließlich mir (für Mob-Ziele und Spawn-Orte)
 function allPlayerSpots() {
   const out = [{ name: null, x: P.p.x, y: P.p.y, z: P.p.z, mode }];
-  if (mp.on) for (const rp of mp.players.values()) if (rp.have) out.push({ name: rp.name, x: rp.p.x, y: rp.p.y, z: rp.p.z, mode: rp.mode });
+  if (mp.on) for (const rp of mp.players.values()) if (rp.have) out.push({ name: rp.name, x: rp.target.x, y: rp.target.y, z: rp.target.z, mode: rp.mode });   // gemeldete Position (nicht die vorausberechnete)
   return out;
 }
 
@@ -6581,7 +6582,8 @@ function renderTabList() {
 const mpHandlers = {
   join(id, meta) {
     if (mp.players.has(id) || !meta || !meta.name) return;
-    const rp = new RemotePlayer(id, meta.name, meta.joinedAt); mp.players.set(id, rp);
+    const rp = new RemotePlayer(id, meta.name, meta.joinedAt); mp.players.set(id, rp); rp.ver = meta.v;
+    if (meta.v !== GAME_VER) chatAdd(null, '⚠ ' + meta.name + ' nutzt eine ' + (meta.v ? 'andere' : 'alte') + ' Spielversion' + (meta.v ? ' (' + meta.v + ')' : '') + ' – deshalb sieht er eine andere Welt und kann dich nicht sehen. Er braucht die neueste index.html!', 'err');
     chatSys(meta.name + ' ist beigetreten'); achGive('mp'); mpEnsureProfile(rp); mpStatusHud(); if (mp.tab) renderTabList();
     if (isHost()) {                                                    // der Host bringt Neulinge auf den aktuellen Stand (Uhrzeit, Regeln, Wetter)
       const o = weather.override && gameTime < weather.override.until ? weather.override : null;
@@ -6652,6 +6654,7 @@ const mpHandlers = {
       case 'arrow': arrows.push(new Arrow(p.x, p.y, p.z, p.vx, p.vy, p.vz, p.o === 'mob' ? 'mob' : 'remote')); sfxAt('shoot', p.x, p.y, p.z); break;
       case 'hit':
         if (p.to === mp.name && state !== 'dead') {
+          if (Math.hypot(P.p.x - p.fx, P.p.z - p.fz) > 6) break;                       // Angreifer ist in Wirklichkeit weit weg (veraltete Position) – kein Phantomschaden
           mp.lastHit = { by: p.by || '?', t: Date.now() };
           hurt(p.dmg); const dx = P.p.x - p.fx, dz = P.p.z - p.fz, l = Math.hypot(dx, dz) || 1; P.v.x += dx / l * 6; P.v.z += dz / l * 6; P.v.y = Math.max(P.v.y, 4);
         }
@@ -6747,7 +6750,7 @@ async function mpJoin(cfg) {
   mp.on = true; mp.wasHost = isHost(); mp.mode = info.mode;
   world.onEdit = mpQueueBlock; $('btnQuit').textContent = 'Verlassen';
   $('chat').innerHTML = ''; $('mpinfo').classList.remove('hidden'); mpStatusHud();
-  await mp.net.join(cfg.room, { id: mp.id, meta: { name: cfg.name, joinedAt: mp.joinedAt } }, mpHandlers);
+  await mp.net.join(cfg.room, { id: mp.id, meta: { name: cfg.name, joinedAt: mp.joinedAt, v: GAME_VER } }, mpHandlers);
   chatSys('Willkommen auf „' + cfg.room + '“' + (mp.owner ? ' (Besitzer: ' + mp.owner + ')' : '') + '! T = Chat, Tab = Spielerliste, /help = Befehle' + (isOp(mp.name) ? ' – du bist Operator' : ''));
 }
 async function mpLeave() {

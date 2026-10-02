@@ -239,6 +239,10 @@ function renderPlayers() {
   el.querySelectorAll('a[data-room]').forEach((a) => { a.onclick = (e) => { e.preventDefault(); loadRoom(a.dataset.room); }; });
   el.querySelectorAll('[data-delp]').forEach((b) => { b.onclick = () => deletePlayer(b.dataset.delp); });
 }
+function verTag(room, name) {                         // Spielversion aus der Presence (alte Clients haben keine → rot)
+  const m = channels.get(room) && channels.get(room).players.get(name), v = m && m.v;
+  return ' <span class="tag ' + (v ? '' : 'red') + '">' + esc(v || 'alte Version') + '</span>';
+}
 function invHtml(inv, key) {
   const slots = (inv || []).map((s, i) => s ? '<div class="slot" title="' + esc(itemName(s[0])) + '">' + esc(itemName(s[0])) + (s[1] > 1 ? '<i>' + s[1] + '</i>' : '') + '<button data-del="' + key + ':' + i + '" type="button">✕</button></div>' : '<div class="slot"></div>');
   return '<div class="inv">' + slots.join('') + '</div>';
@@ -254,7 +258,7 @@ function renderRoom() {
     '<div class="row"><button class="btn red sm" id="btnReset" type="button">Welt zurücksetzen (Blöcke + Container)</button><button class="btn red sm" id="btnDelRoom" type="button">Server löschen</button></div>' +
     '<h2 style="margin-top:14px">Spieler benachrichtigen</h2><div class="row"><input id="fMsg" size="52" value="Der Server wird neu gestartet. Bitte schließe diese Website und öffne sie in ein paar Minuten neu."></div>' +
     '<div class="row"><button class="btn sm" id="btnNotice" type="button">📢 Nachricht an alle senden</button><button class="btn red sm" id="btnRestart" type="button">🔄 Server neustarten (Spieler werden getrennt)</button></div></div>' +
-    '<h2>Gerade online</h2><div class="panel">' + (on.map((n) => '<div>' + faceHtml(n) + '<span class="dot on"></span>' + esc(n) + '</div>').join('') || '<span class="dim">Niemand.</span>') + '</div>' +
+    '<h2>Gerade online</h2><div class="panel">' + (on.map((n) => '<div>' + faceHtml(n) + '<span class="dot on"></span>' + esc(n) + verTag(r.id, n) + '</div>').join('') || '<span class="dim">Niemand.</span>') + '</div>' +
     '<h2>Spielerdaten (' + roomData.states.length + ')</h2>' +
     roomData.states.map((s) => { const d = s.data || {}, p = d.pos || [0, 0, 0];
       return '<div class="panel"><div class="top">' + faceHtml(s.name) + '<b>' + esc(s.name) + '</b>' + (on.includes(s.name) ? '<span class="tag on">online</span>' : '') +
