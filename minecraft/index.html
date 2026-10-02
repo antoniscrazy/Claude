@@ -1293,7 +1293,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese'];
-const GAME_VER = '2026-10-02.7';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-02.8';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
 const isDryBiome = (b) => b === BIOME_DESERT || b === BIOME_MESA;
 // Baumdichte je Biom (alt = Welten vor den neuen Biomen, neu = ab GEN2_START)
@@ -4752,7 +4752,8 @@ requestAnimationFrame(frame);
 ===================================================================== */
 // Zweites Supabase-Projekt (optional): verteilt die Echtzeit-Last. Projekt 1: Bewegung/Kämpfe + Datenbank, Projekt 2: Blöcke, Mobs, Chat und Aktionen.
 // Leer lassen = alles über Projekt 1. Nur URL + öffentlicher anon-Key des zweiten Projekts eintragen (keine Tabellen nötig, nur Realtime).
-const SUPABASE2_URL = window.VC_SB2_URL || '', SUPABASE2_KEY = window.VC_SB2_KEY || '';
+const SUPABASE2_URL = window.VC_SB2_URL || 'https://kqwbgbjlexfxxgajunpa.supabase.co';
+const SUPABASE2_KEY = window.VC_SB2_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtxd2JnYmpsZXhmeHhnYWp1bnBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5Mjk5NTQsImV4cCI6MjEwNjUwNTk1NH0.bxcSnqBkdz14dgXuBsOfc9h0cuZSPQivdkGPn621wGQ';
 const SUPABASE_URL = 'https://wzagswxluqpfzksoqsca.supabase.co';
 // Öffentlicher (anon) Schlüssel – darf im Browser stehen; Schreibzugriffe laufen nur über geprüfte SQL-Funktionen
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6YWdzd3hsdXFwZnprc29xc2NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3NjE0MDEsImV4cCI6MjEwNjMzNzQwMX0.1QSHMqDg_8lDQbyYAODGkeNT3p8uoXdJ7ho5jIl6fqo';
