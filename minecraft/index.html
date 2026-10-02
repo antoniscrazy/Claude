@@ -241,6 +241,15 @@ body.touch #modeTag{display:none}
 </div>
 
 <!-- Verbindung verloren (Mehrspieler) -->
+<!-- Nachricht der Dev-Konsole (Server-Neustart) -->
+<div id="devMsg" class="overlay hidden" style="z-index:210;background:rgba(0,0,0,.88)">
+  <div class="panel" style="max-width:420px;text-align:center">
+    <h2 id="devMsgTitle">Server-Neustart</h2>
+    <p id="devMsgText" style="margin:10px 0 16px;line-height:1.4"></p>
+    <button class="btn" id="btnDevMsgOk" type="button">OK</button>
+  </div>
+</div>
+
 <div id="netLost" class="overlay hidden" style="z-index:200;background:rgba(0,0,0,.82)">
   <div class="panel" style="max-width:380px;text-align:center">
     <h2>Verbindung verloren</h2>
@@ -4719,7 +4728,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js';
 
 const mp = {
-  out: [], posPend: null, posKey: '', posAt: 0, on: false, room: null, name: '', token: '', backend: 'online', db: null, net: null, id: '', roomInfo: null, mode: 'survival',
+  rateMul: 1, rateAt: 0, out: [], posPend: null, posKey: '', posAt: 0, on: false, room: null, name: '', token: '', backend: 'online', db: null, net: null, id: '', roomInfo: null, mode: 'survival',
   players: new Map(),            // id -> RemotePlayer
   pending: [], dbQueue: [], sendT: 0, blockT: 0, dbT: 0, mobT: 0, saveT: 0, skew: 0, epoch: 0, freeze: null, sleepCount: 0, joinedAt: 0, offline: false, admin: false, dropSeq: 0, mobSeq: 0,
   mobsById: new Map(), chat: [], skinCache: new Map(), lastHit: null, swing: false, tab: false, wasHost: true, myFace: '', owner: null, ops: new Set(),
@@ -4945,7 +4954,7 @@ function loadScript(src, timeoutMs) {
 let sbInst = null;
 async function sbClient(timeoutMs) {
   await loadScript(SUPABASE_JS, timeoutMs || 12000);
-  if (!sbInst) sbInst = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }, realtime: { params: { eventsPerSecond: 20 } } });
+  if (!sbInst) sbInst = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }, realtime: { params: { eventsPerSecond: 20 }, worker: typeof window.Worker !== 'undefined' } });
   return sbInst;
 }
 // --- Online: Supabase ---
@@ -4956,6 +4965,7 @@ class SupabaseNet {
     return new Promise((res, rej) => {
       const ch = this.ch = this.sb.channel('vc:' + room, { config: { broadcast: { self: false, ack: false }, presence: { key: me.id } } });
       ch.on('broadcast', { event: 'e' }, ({ payload }) => { if (payload && payload.f !== me.id) cb.event(payload.e, payload.p, payload.f); });
+      ch.on('system', {}, (pl) => { if (pl && /too many|rate/i.test(JSON.stringify(pl))) cb.rateLimited && cb.rateLimited(); });
       ch.on('presence', { event: 'join' }, ({ key, newPresences }) => { if (key !== me.id && newPresences && newPresences[0]) cb.join(key, newPresences[0]); });
       ch.on('presence', { event: 'leave' }, ({ key }) => { if (key !== me.id) cb.leave(key); });
       ch.on('presence', { event: 'sync' }, () => {
@@ -5076,7 +5086,10 @@ function mpSend(e, p) {
   if (e === 'mobs') { const i = mp.out.findIndex((q) => q[0] === 'mobs'); if (i >= 0) { mp.out[i] = [e, p]; return; } }
   mp.out.push([e, p]);
 }
-const mpFlushInterval = () => { const n = 1 + mp.players.size; return Math.min(0.6, Math.max(0.12, (n * n) / 100)); };
+// Sendeintervall: Gesamtlast bleibt bei ca. 40 Nachrichten/s für den ganzen Server (Limit ab ~100/s), egal ob 2 oder 15 Spieler.
+// Meldet Supabase trotzdem „zu viele Nachrichten“, wird automatisch langsamer gesendet und danach wieder schneller.
+const mpFlushInterval = () => { const n = 1 + mp.players.size; return Math.min(1.2, Math.max(0.1, n / 40) * mp.rateMul); };
+function mpRateLimited() { mp.rateMul = Math.min(4, mp.rateMul * 1.6); mp.rateAt = performance.now(); }
 function mpFlush(force) {
   if (!(mp.on && mp.net)) return;
   const now = performance.now(), items = mp.out; mp.out = [];
@@ -6581,8 +6594,16 @@ const mpHandlers = {
   },
   closed() { netBad = Math.max(netBad, 1); },                     // supabase-js verbindet selbst neu; nur wenn es länger dauert, wird angehalten
   reconnected() { mpRecover(); },
+  rateLimited() { mpRateLimited(); },
   event(e, p, from) {
     switch (e) {
+      case 'dev': {                                                   // Befehl der Dev-Konsole (Absender-ID beginnt mit „dev-“)
+        if (!p || !String(from).startsWith('dev-')) break;
+        const t = String(p.t || '').slice(0, 300);
+        if (p.c === 'notice') { chatAdd(null, '📢 ' + t, 'ok'); toast('📢 ' + t); }
+        else if (p.c === 'restart') mpDevRestart(t);
+        break;
+      }
       case 'b': if (Array.isArray(p)) for (const q of p) if (Array.isArray(q)) mpHandlers.event(q[0], q[1], from); break;
       case 'pos': {
         let rp = mp.players.get(from);
@@ -6740,6 +6761,16 @@ async function mpLeave() {
   $('mpinfo').classList.add('hidden'); $('tablist').classList.add('hidden'); mp.tab = false; mp.owner = null; mp.ops = new Set();
 }
 
+// Server-Neustart durch die Dev-Konsole: Stand speichern, Server verlassen, Hinweis „Website schließen“ zeigen
+async function mpDevRestart(text) {
+  $('devMsgTitle').textContent = 'Server-Neustart';
+  $('devMsgText').textContent = text || 'Der Server wird neu gestartet. Bitte schließe diese Website und öffne sie in ein paar Minuten neu.';
+  $('devMsg').classList.remove('hidden');
+  try { await mpLeave(); } catch (e) { /* egal */ }
+  setState('menu');
+}
+$('btnDevMsgOk').onclick = () => $('devMsg').classList.add('hidden');
+
 // --- Verbindung verloren: Welt anhalten, bis das Internet wieder da ist ---
 function setNetLost(on) {
   if (!mp.on || mp.offline === on) return;
@@ -6790,6 +6821,7 @@ function mpTick(dt) {
   mp.selfT = (mp.selfT || 0) - dt; if (mp.selfT <= 0) { mp.selfT = 15; mpSelfPing(); }
   if (mp.tab && mp.tabT <= 0) { mp.tabT = 1; renderTabList(); }
   mp.sendT -= dt; mp.blockT -= dt; mp.dbT -= dt; mp.mobT -= dt; mp.saveT -= dt; mp.flushT = (mp.flushT || 0) - dt;
+  if (mp.rateMul > 1 && performance.now() - mp.rateAt > 8000) { mp.rateMul = Math.max(1, mp.rateMul * 0.9); mp.rateAt = performance.now() - 4000; }
   if (mp.sendT <= 0) {
     mp.sendT = 0.11;
     const held = inv[P.sel]; const heldId = held ? held.id : 0;
@@ -6912,7 +6944,7 @@ $('btnMulti').disabled = true;
 
 
 // Kleiner Debug-Zugriff (z. B. für automatisierte Tests)
-window.__vc = { BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+window.__vc = { mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>

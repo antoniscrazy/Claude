@@ -146,7 +146,7 @@ Bitte die Lizenz des verwendeten Texturpakets beachten, bevor die Datei veröffe
 
 Eigene Seite nur für den Betreiber: PIN-Login, dann sieht man alle Server (wer ist gerade online, Besitzer/OPs, geänderte Blöcke), alle Konten, die
 Spielerdaten pro Server (Position, Leben, Inventar, Rüstung), Container und wer wie viel gebaut hat – und kann Server, Konten, Spielerdaten, Container und
-einzelne Inventar-Einträge löschen, eine Welt zurücksetzen sowie Besitzer/OPs/Modus ändern.
+einzelne Inventar-Einträge löschen, eine Welt zurücksetzen, Besitzer/OPs/Modus ändern, allen Spielern eines Servers eine Nachricht schicken und den Server **neustarten**: Die Spieler speichern ihren Stand, verlassen den Server und sehen den Hinweis, die Website zu schließen und später neu zu öffnen (der Befehl wird nur von Absendern mit „dev-“-ID angenommen).
 
 1. Die Migration „Dev-Konsole“ ganz unten in `supabase/schema.sql` im Supabase-SQL-Editor ausführen.
 2. PIN setzen (steht bewusst **nicht** im Repo): `update public.vc_dev_cfg set pin_hash = encode(extensions.digest(convert_to('vc-dev:' || 'DEIN_PIN', 'utf8'), 'sha256'), 'hex') where id = 1;`

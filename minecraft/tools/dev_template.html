@@ -158,8 +158,8 @@ async function syncChannels() {
   const c = await client(), ids = new Set((ov ? ov.rooms : []).map((r) => r.id));
   for (const id of ids) {
     if (channels.has(id)) continue;
-    const entry = { players: new Map() }; channels.set(id, entry);
-    const ch = c.channel('vc:' + id, { config: { broadcast: { self: false }, presence: { key: 'dev-' + Math.random().toString(36).slice(2) } } });
+    const entry = { players: new Map(), key: 'dev-' + Math.random().toString(36).slice(2) }; channels.set(id, entry);
+    const ch = c.channel('vc:' + id, { config: { broadcast: { self: false }, presence: { key: entry.key } } });
     const upd = () => { entry.players = new Map(); const st = ch.presenceState(); for (const k in st) if (st[k][0] && st[k][0].name) entry.players.set(st[k][0].name, st[k][0]); render(true); };
     ch.on('presence', { event: 'sync' }, upd).on('presence', { event: 'join' }, upd).on('presence', { event: 'leave' }, upd);
     ch.subscribe(); entry.ch = ch;
@@ -251,7 +251,9 @@ function renderRoom() {
     '<div class="row"><label>Besitzer</label><input id="fOwner" value="' + esc(r.owner || '') + '" size="14"><label>OPs</label><input id="fOps" value="' + esc((r.ops || []).join(', ')) + '" size="22">' +
     '<label>Modus</label><select id="fMode"><option value="survival"' + (r.mode === 'survival' ? ' selected' : '') + '>Überleben</option><option value="creative"' + (r.mode === 'creative' ? ' selected' : '') + '>Kreativ</option></select>' +
     '<label>öffentlich</label><input type="checkbox" id="fPub"' + (r.public ? ' checked' : '') + '><button class="btn sm" id="btnSave" type="button">Speichern</button></div>' +
-    '<div class="row"><button class="btn red sm" id="btnReset" type="button">Welt zurücksetzen (Blöcke + Container)</button><button class="btn red sm" id="btnDelRoom" type="button">Server löschen</button></div></div>' +
+    '<div class="row"><button class="btn red sm" id="btnReset" type="button">Welt zurücksetzen (Blöcke + Container)</button><button class="btn red sm" id="btnDelRoom" type="button">Server löschen</button></div>' +
+    '<h2 style="margin-top:14px">Spieler benachrichtigen</h2><div class="row"><input id="fMsg" size="52" value="Der Server wird neu gestartet. Bitte schließe diese Website und öffne sie in ein paar Minuten neu."></div>' +
+    '<div class="row"><button class="btn sm" id="btnNotice" type="button">📢 Nachricht an alle senden</button><button class="btn red sm" id="btnRestart" type="button">🔄 Server neustarten (Spieler werden getrennt)</button></div></div>' +
     '<h2>Gerade online</h2><div class="panel">' + (on.map((n) => '<div>' + faceHtml(n) + '<span class="dot on"></span>' + esc(n) + '</div>').join('') || '<span class="dim">Niemand.</span>') + '</div>' +
     '<h2>Spielerdaten (' + roomData.states.length + ')</h2>' +
     roomData.states.map((s) => { const d = s.data || {}, p = d.pos || [0, 0, 0];
@@ -265,12 +267,22 @@ function renderRoom() {
     '<h2>Wer hat gebaut?</h2><div class="panel">' + (roomData.builders.map((b) => '<div>' + faceHtml(b.name || '?') + esc(b.name || '—') + ' <span class="dim">' + b.edits + ' Blöcke</span></div>').join('') || '<span class="dim">Noch keine Änderungen.</span>') + '</div>';
   $('back').onclick = () => showTab('rooms');
   $('btnSave').onclick = saveRoom; $('btnReset').onclick = resetRoom; $('btnDelRoom').onclick = delRoom;
+  $('btnNotice').onclick = () => sendToRoom('notice'); $('btnRestart').onclick = () => { if (confirm('Alle Spieler auf „' + curRoom + '“ speichern lassen und trennen? Sie sehen den Hinweis zum Schließen der Website.')) sendToRoom('restart'); };
   el.querySelectorAll('[data-delstate]').forEach((b) => { b.onclick = () => delState(b.dataset.delstate); });
   el.querySelectorAll('[data-delc]').forEach((b) => { b.onclick = () => delContainer(b.dataset.delc); });
   el.querySelectorAll('[data-del]').forEach((b) => { b.onclick = () => delSlot(b.dataset.del); });
 }
 
 // ---------- Aktionen ----------
+// Befehl an alle Spieler eines Servers: Broadcast auf dem Server-Kanal (Absender-ID „dev-…“; das Spiel nimmt nur solche Absender an)
+async function sendToRoom(cmd) {
+  const e = channels.get(curRoom), t = $('fMsg').value.trim();
+  if (!e || !e.ch) return toast('Keine Verbindung zum Server-Kanal.');
+  try {
+    const res = await e.ch.send({ type: 'broadcast', event: 'e', payload: { e: 'b', p: [['dev', { c: cmd, t }]], f: e.key } });
+    toast(res === 'ok' ? (cmd === 'restart' ? 'Neustart gesendet – ' + onlineIn(curRoom).length + ' Spieler online' : 'Nachricht gesendet') : 'Senden fehlgeschlagen (' + res + ')');
+  } catch (x) { toast(x.message); }
+}
 async function act(fn, args, okMsg, reload) {
   try { await rpc(fn, args); toast(okMsg); if (reload) await refresh(); else if (curRoom) await loadRoom(curRoom, true); } catch (e) { toast(e.message); }
 }
