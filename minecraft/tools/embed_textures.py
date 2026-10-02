@@ -32,15 +32,15 @@ def main():
         Image = None
 
     if os.path.isdir(pack):
-        def read(rel):
-            with open(os.path.join(pack, 'assets/minecraft/textures', rel + '.png'), 'rb') as f:
+        def read(rel, ext='.png'):
+            with open(os.path.join(pack, 'assets/minecraft/textures', rel + ext), 'rb') as f:
                 return f.read()
     else:
         z = zipfile.ZipFile(pack)
-        def read(rel):
-            return z.read('assets/minecraft/textures/' + rel + '.png')
+        def read(rel, ext='.png'):
+            return z.read('assets/minecraft/textures/' + rel + ext)
 
-    out, missing, total = {}, [], 0
+    out, anim, missing, total = {}, {}, [], 0
     for n in sorted(names):
         try:
             data = read(n)
@@ -51,7 +51,17 @@ def main():
             im = Image.open(io.BytesIO(data))
             w, h = im.size
             if h > w and h % w == 0 and n.startswith('block/'):     # animierter Streifen -> erstes Bild
+                full = data
                 buf = io.BytesIO(); im.convert('RGBA').crop((0, 0, w, w)).save(buf, 'PNG', optimize=True); data = buf.getvalue()
+                try:                                                             # Animation (.mcmeta): Bildfolge + Tempo
+                    meta = json.loads(read(n, '.png.mcmeta').decode('utf-8')).get('animation', {})
+                    nfr = h // w
+                    frames = [f if isinstance(f, int) else f.get('index', 0) for f in meta.get('frames', range(nfr))]
+                    base = meta.get('frametime', 1)
+                    times = [base if isinstance(f, int) else (f.get('time') or base) for f in meta.get('frames', range(nfr))]
+                    anim[n] = {'d': 'data:image/png;base64,' + base64.b64encode(full).decode(), 'f': frames, 't': times}
+                except (KeyError, FileNotFoundError, ValueError):
+                    pass
         out[n] = 'data:image/png;base64,' + base64.b64encode(data).decode()
         total += len(data)
     if missing:
@@ -61,9 +71,11 @@ def main():
         s = f.read()
     a, b = s.index('/*PACK_BEGIN*/'), s.index('/*PACK_END*/')
     s = s[:a] + '/*PACK_BEGIN*/' + js + s[b:]
+    a, b = s.index('/*ANIM_BEGIN*/'), s.index('/*ANIM_END*/')
+    s = s[:a] + '/*ANIM_BEGIN*/' + json.dumps(anim, separators=(',', ':')) + s[b:]
     with open(html_path, 'w', encoding='utf-8') as f:
         f.write(s)
-    print('%d Texturen eingebettet (%.1f KB PNG, %.1f KB Base64)' % (len(out), total / 1024, len(js) / 1024))
+    print('%d Texturen eingebettet (%.1f KB PNG, %.1f KB Base64), %d animiert' % (len(out), total / 1024, len(js) / 1024, len(anim)))
 
 if __name__ == '__main__':
     main()

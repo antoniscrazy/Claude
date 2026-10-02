@@ -79,7 +79,10 @@ Zeit-, Wetter- und Blitzbefehle werden im Mehrspielermodus an alle Spieler über
 * **Skelette** tragen Bögen und schießen Pfeile (sie lassen manchmal einen Bogen fallen).
 * **Erfolge**, **Minikarte** (N), **Einstellungen** (Sichtfeld, Empfindlichkeit, Lautstärke, Sichtweite, Wolken) und Screenshots (F2).
 * **Kreativ:** alle Blöcke und Items in Kategorien, unendlich, kein Schaden
-* Tag-Nacht-Zyklus, Sound (per WebAudio erzeugt), Speichern/Laden (localStorage), Seed-Eingabe, Sichtweite einstellbar
+* **Sound** (alles per WebAudio erzeugt): Schritte, Abbau-/Platzier-Geräusche je nach Material (Stein, Holz, Erde, Sand, Schnee, Glas, Wolle, Metall), Landen und Platschen, eigene Stimmen für jeden Mob, Feuerball-Geräusche, Atmosphäre (Höhlentropfen, Vögel am Tag, Grillen nachts, Nether-Dröhnen) und ruhige Hintergrundmusik (in den Einstellungen abschaltbar, im Nether dunkler). Dazu **Partikel**: Glut im Nether, Leuchtkäfer nachts, Feuerball-Spuren.
+* **Animierte Texturen** (Wasser, Lava, Magma, Netherportal, Feuer, Seelaterne …) laufen mit den Original-Animationen (`.mcmeta`) aus dem Texturpaket.
+* **Piglin-Tauschhandel:** Goldbarren in der Hand + Rechtsklick auf einen Piglin → zufällige Nether-Güter. Lohenrute → Lohenstaub (Crafting), Lohenrute ist Brennstoff; Lohenstaub + Schleimball → Magmacreme.
+* Tag-Nacht-Zyklus, Sound, Speichern/Laden (localStorage), Seed-Eingabe, Sichtweite einstellbar
 
 ## Server & Operatoren
 
