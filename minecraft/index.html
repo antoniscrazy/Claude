@@ -1293,7 +1293,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese'];
-const GAME_VER = '2026-10-02.6';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-02.7';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
 const isDryBiome = (b) => b === BIOME_DESERT || b === BIOME_MESA;
 // Baumdichte je Biom (alt = Welten vor den neuen Biomen, neu = ab GEN2_START)
@@ -4750,6 +4750,9 @@ requestAnimationFrame(frame);
    L. MEHRSPIELER (Supabase Realtime + Postgres) – mit lokalem Modus für mehrere Tabs
       L1. Skins & Spielermodell · L2. Netzwerk-Schichten · L3. Sitzung, Chat, Synchronisation
 ===================================================================== */
+// Zweites Supabase-Projekt (optional): verteilt die Echtzeit-Last. Projekt 1: Bewegung/Kämpfe + Datenbank, Projekt 2: Blöcke, Mobs, Chat und Aktionen.
+// Leer lassen = alles über Projekt 1. Nur URL + öffentlicher anon-Key des zweiten Projekts eintragen (keine Tabellen nötig, nur Realtime).
+const SUPABASE2_URL = window.VC_SB2_URL || '', SUPABASE2_KEY = window.VC_SB2_KEY || '';
 const SUPABASE_URL = 'https://wzagswxluqpfzksoqsca.supabase.co';
 // Öffentlicher (anon) Schlüssel – darf im Browser stehen; Schreibzugriffe laufen nur über geprüfte SQL-Funktionen
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6YWdzd3hsdXFwZnprc29xc2NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3NjE0MDEsImV4cCI6MjEwNjMzNzQwMX0.1QSHMqDg_8lDQbyYAODGkeNT3p8uoXdJ7ho5jIl6fqo';
@@ -4980,16 +4983,38 @@ function loadScript(src, timeoutMs) {
 
 // Ein gemeinsamer Supabase-Client (wird erst beim Öffnen des Mehrspielermodus nachgeladen)
 let sbInst = null;
+let sbInst2 = null;
+async function sbClient2(timeoutMs) {
+  await loadScript(SUPABASE_JS, timeoutMs || 12000);
+  if (!sbInst2) sbInst2 = window.supabase.createClient(SUPABASE2_URL, SUPABASE2_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }, realtime: { params: { eventsPerSecond: 20 }, worker: typeof window.Worker !== 'undefined' } });
+  return sbInst2;
+}
 async function sbClient(timeoutMs) {
   await loadScript(SUPABASE_JS, timeoutMs || 12000);
   if (!sbInst) sbInst = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }, realtime: { params: { eventsPerSecond: 20 }, worker: typeof window.Worker !== 'undefined' } });
   return sbInst;
 }
 // --- Online: Supabase ---
+const FAST_EVENTS = new Set(['pos', 'hit']);                  // Projekt 1: Spielerbewegung und Schläge; alles andere (Blöcke, Mobs, Chat, Aktionen) läuft über Projekt 2
 class SupabaseNet {
-  constructor(sb) { this.sb = sb; this.ch = null; }
+  constructor(sb, sb2) { this.sb = sb; this.sb2 = sb2 || null; this.ch = null; this.ch2 = null; this.dual = !!sb2; }
   join(room, me, cb) {
     this.id = me.id; this.cb = cb;
+    const second = !this.sb2 ? Promise.resolve() : new Promise((res2) => {
+      const c2 = this.ch2 = this.sb2.channel('vc:' + room + ':act', { config: { broadcast: { self: false, ack: false } } });
+      c2.on('broadcast', { event: 'e' }, ({ payload }) => { if (payload && payload.f !== me.id) cb.event(payload.e, payload.p, payload.f); });
+      c2.on('system', {}, (pl) => { if (pl && /too many|rate/i.test(JSON.stringify(pl))) cb.rateLimited && cb.rateLimited(); });
+      const to2 = setTimeout(() => { this.dual = false; res2(); }, 8000);               // zweites Projekt nicht erreichbar: alles über Projekt 1
+      let j2 = false;
+      c2.subscribe((st) => {
+        if (st === 'SUBSCRIBED') { clearTimeout(to2); if (j2) cb.reconnected && cb.reconnected(); else { j2 = true; res2(); } }
+        else if (!j2 && (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT')) { clearTimeout(to2); this.dual = false; res2(); }
+        else if (j2 && mp.on && (st === 'CLOSED' || st === 'CHANNEL_ERROR' || st === 'TIMED_OUT')) cb.closed && cb.closed();
+      });
+    });
+    return Promise.all([second, this.join1(room, me, cb)]).then(() => {});
+  }
+  join1(room, me, cb) {
     return new Promise((res, rej) => {
       const ch = this.ch = this.sb.channel('vc:' + room, { config: { broadcast: { self: false, ack: false }, presence: { key: me.id } } });
       ch.on('broadcast', { event: 'e' }, ({ payload }) => { if (payload && payload.f !== me.id) cb.event(payload.e, payload.p, payload.f); });
@@ -5011,9 +5036,15 @@ class SupabaseNet {
       });
     });
   }
-  send(e, p) { if (this.ch) this.ch.send({ type: 'broadcast', event: 'e', payload: { e, p, f: this.id } }); }
-  healthy() { return !!this.ch && this.ch.state === 'joined'; }
-  async leave() { if (this.ch) { try { await this.ch.untrack(); } catch (e) { /* egal */ } this.sb.removeChannel(this.ch); this.ch = null; } }
+  send(e, p, ch2) {
+    const ch = ch2 && this.dual && this.ch2 ? this.ch2 : this.ch;
+    if (ch) ch.send({ type: 'broadcast', event: 'e', payload: { e, p, f: this.id } });
+  }
+  healthy() { return !!this.ch && this.ch.state === 'joined' && (!this.dual || !this.ch2 || this.ch2.state === 'joined'); }
+  async leave() {
+    if (this.ch2) { try { this.sb2.removeChannel(this.ch2); } catch (e) { /* egal */ } this.ch2 = null; }
+    if (this.ch) { try { await this.ch.untrack(); } catch (e) { /* egal */ } this.sb.removeChannel(this.ch); this.ch = null; }
+  }
 }
 class SupabaseDB {
   constructor(sb) { this.sb = sb; }
@@ -5116,7 +5147,7 @@ function mpSend(e, p) {
 }
 // Sendeintervall: Gesamtlast bleibt bei ca. 40 Nachrichten/s für den ganzen Server (Limit ab ~100/s), egal ob 2 oder 15 Spieler.
 // Meldet Supabase trotzdem „zu viele Nachrichten“, wird automatisch langsamer gesendet und danach wieder schneller.
-const mpFlushInterval = () => { const n = 1 + mp.players.size; return Math.min(1.2, Math.max(0.1, n / 40) * mp.rateMul); };
+const mpFlushInterval = () => { const n = 1 + mp.players.size; return Math.min(1.2, Math.max(0.1, n / (mp.net && mp.net.dual ? 70 : 40)) * mp.rateMul); };
 function mpRateLimited() { mp.rateMul = Math.min(4, mp.rateMul * 1.6); mp.rateAt = performance.now(); }
 function mpFlush(force) {
   if (!(mp.on && mp.net)) return;
@@ -5126,7 +5157,12 @@ function mpFlush(force) {
     if (key !== mp.posKey || q.sw || q.pq !== undefined || q.pr || now - mp.posAt > 1000) { items.unshift(['pos', q]); mp.posKey = key; mp.posAt = now; }
     mp.posPend = null;
   }
-  if (items.length) mp.net.send('b', items);
+  if (!items.length) return;
+  if (mp.net.dual) {                                                  // zwei Projekte: Bewegung/Schläge über Projekt 1, der Rest über Projekt 2
+    const fast = items.filter((q) => FAST_EVENTS.has(q[0])), slow = items.filter((q) => !FAST_EVENTS.has(q[0]));
+    if (fast.length) mp.net.send('b', fast, false);
+    if (slow.length) mp.net.send('b', slow, true);
+  } else mp.net.send('b', items);
 }
 const r2 = (n) => Math.round(n * 100) / 100;
 const mpGameTime = () => (mp.freeze !== null && mp.freeze !== undefined ? mp.freeze : (Date.now() + mp.skew - mp.epoch) / 1000 + 0.08 * DAY_LEN);
@@ -6762,7 +6798,8 @@ async function mpJoin(cfg) {
   mp.backend = cfg.backend; mp.name = cfg.name; mp.token = cfg.token; mp.room = cfg.room;
   if (cfg.backend === 'online') {
     const sb = await sbClient(12000);
-    mp.db = new SupabaseDB(sb); mp.net = new SupabaseNet(sb);
+    let sb2 = null; if (SUPABASE2_URL && SUPABASE2_KEY) { try { sb2 = await sbClient2(12000); } catch (e) { sb2 = null; } }
+    mp.db = new SupabaseDB(sb); mp.net = new SupabaseNet(sb, sb2);
   } else { mp.db = new LocalDB(); mp.net = new LocalNet(); }
   const reg = await mp.db.register(cfg.name, cfg.token, skinToDb(cfg.skin), cfg.slim);
   if (!reg || !reg.ok) throw new Error(reg && reg.error === 'name_taken' ? 'Dieser Name ist bereits vergeben (gehört einem anderen Browser).' : 'Anmeldung fehlgeschlagen');
