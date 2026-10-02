@@ -1290,7 +1290,7 @@ function grad(h, x, y, z) {
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese'];
-const GAME_VER = '2026-10-02.4';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-02.5';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
 const isDryBiome = (b) => b === BIOME_DESERT || b === BIOME_MESA;
 // Baumdichte je Biom (alt = Welten vor den neuen Biomen, neu = ab GEN2_START)
@@ -1637,7 +1637,7 @@ class World {
     this.seedStr = seedStr; this.seed = hashString(seedStr); this.scene = scene; this.gv = gv || 1;
     this.gen = new TerrainGen(this.seed, this.gv);
     this.chunks = new Map(); this.edits = new Map(); this.dirty = new Set(); this.structs = new Map();
-    this.R = 6; this.offsets = []; this.lcx = NaN; this.lcz = NaN;
+    this.R = 6; this.offsets = []; this.lcx = NaN; this.lcz = NaN; this.anchors = []; this.cleanAt = 0;
     this.setRenderDistance(6);
   }
   setRenderDistance(R) {
@@ -1740,12 +1740,13 @@ class World {
   // Streaming: generieren, meshen, entladen. Zeitbudgets in Millisekunden.
   update(px, pz, genBudget, meshBudget) {
     const pcx = Math.floor(px / CS), pcz = Math.floor(pz / CS), R = this.R;
-    if (pcx !== this.lcx || pcz !== this.lcz) {
-      this.lcx = pcx; this.lcz = pcz;
-      const lim = (R + 3) * (R + 3);
+    const tnow = performance.now();
+    if (pcx !== this.lcx || pcz !== this.lcz || tnow - this.cleanAt > 5000) {
+      this.lcx = pcx; this.lcz = pcz; this.cleanAt = tnow;
+      const lim = (R + 3) * (R + 3), A = this.anchors;
       for (const [k, c] of this.chunks) {
         const dx = c.cx - pcx, dz = c.cz - pcz;
-        if (dx * dx + dz * dz > lim) { this.disposeChunk(c); this.dirty.delete(c); this.chunks.delete(k); }
+        if (dx * dx + dz * dz > lim && !A.some((a) => (c.cx - a[0]) ** 2 + (c.cz - a[1]) ** 2 <= 10)) { this.disposeChunk(c); this.dirty.delete(c); this.chunks.delete(k); }   // Chunks um andere Spieler (Mob-Simulation des Hosts) bleiben
       }
     }
     // Bearbeitete Chunks sofort neu meshen (max. 4 pro Frame)
@@ -1758,6 +1759,12 @@ class World {
     for (const o of this.offsets) {
       if (performance.now() - t0 > genBudget) break;
       if (!this.chunks.has(ckey(pcx + o[0], pcz + o[1]))) this.ensureChunk(pcx + o[0], pcz + o[1]);
+    }
+    for (const a of this.anchors) {                                         // Host: Gelände um die anderen Spieler laden (nur Daten, kein Mesh), damit dort Mobs spawnen und angreifen
+      for (let dz = -2; dz <= 2; dz++) for (let dx = -2; dx <= 2; dx++) {
+        if (performance.now() - t0 > genBudget) break;
+        if (!this.chunks.has(ckey(a[0] + dx, a[1] + dz))) this.ensureChunk(a[0] + dx, a[1] + dz);
+      }
     }
     t0 = performance.now();
     const rr = R * R;
@@ -4125,7 +4132,9 @@ class Mob {
   // Puppe (Mehrspieler, nicht der Host): nur Darstellung, Werte kommen vom Host
   remoteUpdate(dt, light) {
     const k = Math.min(1, dt * 10);
-    this.p.lerp(this.target, this.p.distanceTo(this.target) > 5 ? 1 : k);
+    const goal = this._goal || (this._goal = new THREE.Vector3());
+    goal.copy(this.target); if (this.mvel && this.moving) goal.addScaledVector(this.mvel, Math.min(0.8, (performance.now() - (this.tAt || 0)) / 1000));    // zwischen den seltenen Paketen weiterlaufen
+    this.p.lerp(goal, this.p.distanceTo(goal) > 5 ? 1 : k);
     let dy = this.tyaw - this.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); this.yaw += dy * k;
     if (this.moving) this.walk += dt * 8;
     const sw = this.moving ? Math.sin(this.walk) * 0.75 : 0, L = this.model.legs;
@@ -4148,7 +4157,7 @@ class Mob {
     if (!w.getChunk(cx, cz)) return;
     let spd = 0;
     this.moveYaw = null;
-    const hunting = this.kind === 'hostile' && !isCreative() && (state === 'play' || mp.on);
+    const hunting = this.kind === 'hostile' && (mp.on || (!isCreative() && state === 'play'));      // Mehrspieler: ob jemand im Überleben ist, prüft toPlayer() je Spieler
     const pl = this.toPlayer();
     if (this.T.ai) {
       spd = this[this.T.ai](dt, pl, hunting);
@@ -4635,6 +4644,18 @@ window.addEventListener('beforeunload', () => { if (world && (state === 'play' |
 // ----- Hauptschleife -----
 let lightT = 0;
 let last = performance.now(), fpsAcc = 0, fpsN = 0, fps = 0, dbgT = 0, fovCur = 75;
+// Versteckter Tab: requestAnimationFrame pausiert – im Mehrspielermodus würden dann Mobs (Host!), Positionen und Pings für ALLE einfrieren.
+// Ein Web-Worker-Takt (wird vom Browser nicht gedrosselt) treibt in dem Fall die Simulation ohne Darstellung weiter.
+function bgStep(dt) {
+  if (!mp.on || mp.offline || !world || state === 'loading' || state === 'menu' || state === 'mpmenu') return;
+  gameTime = mpGameTime();
+  updateMobs(dt); updateDrops(dt); updatePrimed(dt); updateArrows(dt); updateFallers(dt); P.bowCd -= dt; mpTick(dt); updateWeather(dt); updateThrown(dt);
+}
+try {
+  const bg = new Worker(URL.createObjectURL(new Blob(['setInterval(function(){postMessage(1)},100)'], { type: 'application/javascript' })));
+  bg.onmessage = () => { if (document.hidden) bgStep(0.1); };
+} catch (e) { /* ohne Worker: nur im sichtbaren Tab */ }
+
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
@@ -5105,6 +5126,7 @@ const r2 = (n) => Math.round(n * 100) / 100;
 const mpGameTime = () => (mp.freeze !== null && mp.freeze !== undefined ? mp.freeze : (Date.now() + mp.skew - mp.epoch) / 1000 + 0.08 * DAY_LEN);
 function isHost() {                                       // ältester Spieler simuliert die Mobs
   if (!mp.on) return true;
+  if (performance.now() - mp.joinT < 3500 && mp.players.size === 0) return false;   // gerade beigetreten: erst warten, bis die anderen Spieler bekannt sind (sonst entstehen „Geister“-Mobs)
   let best = { t: mp.joinedAt, id: mp.id };
   for (const rp of mp.players.values()) if (rp.joinedAt < best.t || (rp.joinedAt === best.t && rp.id < best.id)) best = { t: rp.joinedAt, id: rp.id };
   return best.id === mp.id;
@@ -6582,6 +6604,10 @@ function renderTabList() {
 const mpHandlers = {
   join(id, meta) {
     if (mp.players.has(id) || !meta || !meta.name) return;
+    if (meta.name === mp.name) return;                                           // meine eigene alte Sitzung (Neuladen / Verbindungsabbruch) – kein Doppelgänger
+    for (const [oid, o] of [...mp.players]) if (o.name === meta.name) {          // derselbe Spieler mit neuer Sitzung: nur die neueste bleibt
+      if ((o.joinedAt || 0) <= (meta.joinedAt || 0)) { o.dispose(); mp.players.delete(oid); } else return;
+    }
     const rp = new RemotePlayer(id, meta.name, meta.joinedAt); mp.players.set(id, rp); rp.ver = meta.v;
     if (meta.v !== GAME_VER) chatAdd(null, '⚠ ' + meta.name + ' nutzt eine ' + (meta.v ? 'andere' : 'alte') + ' Spielversion' + (meta.v ? ' (' + meta.v + ')' : '') + ' – deshalb sieht er eine andere Welt und kann dich nicht sehen. Er braucht die neueste index.html!', 'err');
     chatSys(meta.name + ' ist beigetreten'); achGive('mp'); mpEnsureProfile(rp); mpStatusHud(); if (mp.tab) renderTabList();
@@ -6696,6 +6722,9 @@ function mpApplyMobs(list) {
     seen.add(mid);
     let m = mp.mobsById.get(mid);
     if (!m) { m = new Mob(type, x, y, z, mid, ex); m.remote = true; m.target = new THREE.Vector3(x, y, z); m.tyaw = yaw; mp.mobsById.set(mid, m); mobs.push(m); }
+    { const tn = performance.now(); if (!m.mvel) m.mvel = new THREE.Vector3();
+      if (m.tAt && tn - m.tAt > 50) { m.mvel.set((x - m.target.x) / ((tn - m.tAt) / 1000), 0, (z - m.target.z) / ((tn - m.tAt) / 1000)); if (m.mvel.length() > 9) m.mvel.set(0, 0, 0); }
+      m.tAt = tn; }
     m.target.set(x, y, z); m.tyaw = yaw; m.hp = hp; m.fuse = fuse; m.moving = !!mv; if (fl) m.flash = 0.15;
     if (ex !== undefined && m.ex !== ex) { m.ex = ex; m.applyEx(); }
     if (owner !== undefined) { if (owner && owner === mp.name && m.owner !== owner && m.type === 'wolf') achGive('wolf'); m.owner = owner; }
@@ -6743,7 +6772,7 @@ async function mpJoin(cfg) {
   mp.roomInfo = info; mp.skew = info.now_ms - Date.now(); mp.epoch = info.epoch_ms;
   const [edits, conts] = await Promise.all([mp.db.getEdits(cfg.room), mp.db.getContainers(cfg.room)]);
   const state = await mp.db.loadState(cfg.room, cfg.name, cfg.token).catch(() => null);
-  mp.joinedAt = Date.now(); mp.id = rid();
+  mp.joinedAt = Date.now() + mp.skew; mp.joinT = performance.now(); mp.id = rid();          // Serverzeit statt Uhr des Geräts: alle ordnen die Spieler gleich
   mp.players.forEach((p) => p.dispose()); mp.players.clear(); mp.mobsById.clear(); mp.pending = []; mp.dbQueue = [];
   mp.mySkinCv = await skinCanvas(cfg.skin, cfg.slim); mp.myFace = skinFaceDataURL(mp.mySkinCv, 32); handSkinDirty = true;
   startGame({ seed: info.seed, mode: info.mode, dist: cfg.dist, gv: (info.epoch_ms || 0) >= GEN2_START ? 2 : 1, mp: true, mpEdits: edits, mpContainers: conts, mpState: state });
@@ -6837,7 +6866,9 @@ function mpTick(dt) {
   if (mp.blockT <= 0) { mp.blockT = 0.1; mpFlushBlocks(); }
   if (mp.dbT <= 0) { mp.dbT = 1.5; mpFlushDb(); }
   const host = isHost();
+  world.anchors = host ? [...mp.players.values()].filter((q) => q.have).map((q) => [Math.floor(q.target.x / CS), Math.floor(q.target.z / CS)]) : [];
   if (host && !mp.wasHost) mobs.forEach((m) => { m.remote = false; });        // Host-Wechsel: Puppen werden echte Mobs
+  if (!host && mp.wasHost) { for (let i = mobs.length - 1; i >= 0; i--) if (!mobs[i].remote) { mobs[i].dispose(); mobs.splice(i, 1); } }       // nicht mehr Host: eigene Mobs waren Geister, ab jetzt gibt es nur noch Puppen des Hosts
   mp.wasHost = host;
   if (host && mp.mobT <= 0) { mp.mobT = 0.3; mpSendMobs(); }
   if (mp.flushT <= 0) { mp.flushT = mpFlushInterval(); mpFlush(); }
