@@ -1293,7 +1293,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese'];
-const GAME_VER = '2026-10-02.8';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-02.9';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
 const isDryBiome = (b) => b === BIOME_DESERT || b === BIOME_MESA;
 // Baumdichte je Biom (alt = Welten vor den neuen Biomen, neu = ab GEN2_START)
@@ -6644,6 +6644,10 @@ function renderTabList() {
 }
 
 // --- Empfang ---
+function mpVersionWarn(rp, what) {                                         // höchstens eine Warnung pro Spieler und Sitzung
+  if (rp.verWarned) return; rp.verWarned = true;
+  chatAdd(null, '⚠ ' + rp.name + ' nutzt eine ' + what + ' – deshalb sieht er eine andere Welt und kann dich nicht sehen. Er braucht die neueste index.html!', 'err');
+}
 const mpHandlers = {
   join(id, meta) {
     if (mp.players.has(id) || !meta || !meta.name) return;
@@ -6652,7 +6656,7 @@ const mpHandlers = {
       if ((o.joinedAt || 0) <= (meta.joinedAt || 0)) { o.dispose(); mp.players.delete(oid); } else return;
     }
     const rp = new RemotePlayer(id, meta.name, meta.joinedAt); mp.players.set(id, rp); rp.ver = meta.v;
-    if (meta.v !== GAME_VER) chatAdd(null, '⚠ ' + meta.name + ' nutzt eine ' + (meta.v ? 'andere' : 'alte') + ' Spielversion' + (meta.v ? ' (' + meta.v + ')' : '') + ' – deshalb sieht er eine andere Welt und kann dich nicht sehen. Er braucht die neueste index.html!', 'err');
+    if (meta.v && meta.v !== GAME_VER) mpVersionWarn(rp, 'andere Spielversion (' + meta.v + ')');          // nur wenn die Version wirklich gemeldet wurde
     chatSys(meta.name + ' ist beigetreten'); achGive('mp'); mpEnsureProfile(rp); mpStatusHud(); if (mp.tab) renderTabList();
     if (isHost()) {                                                    // der Host bringt Neulinge auf den aktuellen Stand (Uhrzeit, Regeln, Wetter)
       const o = weather.override && gameTime < weather.override.until ? weather.override : null;
@@ -6666,7 +6670,7 @@ const mpHandlers = {
   closed() { netBad = Math.max(netBad, 1); },                     // supabase-js verbindet selbst neu; nur wenn es länger dauert, wird angehalten
   reconnected() { mpRecover(); },
   rateLimited() { mpRateLimited(); },
-  event(e, p, from) {
+  event(e, p, from, viaBatch) {
     switch (e) {
       case 'dev': {                                                   // Befehl der Dev-Konsole (Absender-ID beginnt mit „dev-“)
         if (!p || !String(from).startsWith('dev-')) break;
@@ -6675,10 +6679,11 @@ const mpHandlers = {
         else if (p.c === 'restart') mpDevRestart(t);
         break;
       }
-      case 'b': if (Array.isArray(p)) for (const q of p) if (Array.isArray(q)) mpHandlers.event(q[0], q[1], from); break;
+      case 'b': if (Array.isArray(p)) for (const q of p) if (Array.isArray(q)) mpHandlers.event(q[0], q[1], from, true); break;
       case 'pos': {
         let rp = mp.players.get(from);
         if (!rp) { mpHandlers.join(from, { name: p.n, joinedAt: p.j }); rp = mp.players.get(from); if (!rp) return; }
+        if (!viaBatch) mpVersionWarn(rp, 'alte Spielversion');                       // neue Versionen senden alles gebündelt – ein Einzelpaket heißt: alter Client
         if (p.pq !== undefined) (mp.pendPr = mp.pendPr || new Map()).set(from, { t: p.pq, at: performance.now() });          // Ping-Anfrage: bei der nächsten Gelegenheit zurückschicken
         if (Array.isArray(p.pr)) for (const [id, t, hold] of p.pr) if (id === mp.id && typeof t === 'number') {                // Antwort auf meine Anfrage
           const r = Math.max(0, performance.now() - t - (Number(hold) || 0)); rp.rtt = rp.rtt === undefined ? r : rp.rtt * 0.6 + r * 0.4;
