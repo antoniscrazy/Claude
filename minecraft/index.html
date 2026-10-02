@@ -4719,7 +4719,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js';
 
 const mp = {
-  on: false, room: null, name: '', token: '', backend: 'online', db: null, net: null, id: '', roomInfo: null, mode: 'survival',
+  out: [], posPend: null, posKey: '', posAt: 0, on: false, room: null, name: '', token: '', backend: 'online', db: null, net: null, id: '', roomInfo: null, mode: 'survival',
   players: new Map(),            // id -> RemotePlayer
   pending: [], dbQueue: [], sendT: 0, blockT: 0, dbT: 0, mobT: 0, saveT: 0, skew: 0, epoch: 0, freeze: null, sleepCount: 0, joinedAt: 0, offline: false, admin: false, dropSeq: 0, mobSeq: 0,
   mobsById: new Map(), chat: [], skinCache: new Map(), lastHit: null, swing: false, tab: false, wasHost: true, myFace: '', owner: null, ops: new Set(),
@@ -4813,7 +4813,7 @@ function makeNameTag(name, rank) {
 class RemotePlayer {
   constructor(id, name, joinedAt) {
     this.id = id; this.name = name; this.joinedAt = joinedAt || 0;
-    this.p = new THREE.Vector3(); this.target = new THREE.Vector3(); this.have = false;
+    this.p = new THREE.Vector3(); this.target = new THREE.Vector3(); this.vel = new THREE.Vector3(); this.tAt = 0; this.have = false;
     this.yaw = 0; this.tyaw = 0; this.bodyYaw = 0; this.pitch = 0; this.held = 0; this.swing = 0; this.walk = 0; this.speed = 0;
     this.hw = 0.3; this.h = 1.8; this.sneak = false; this.sneakK = 0; this.sleeping = false; this.sleepK = 0; this.sleepT = 0; this.eating = false; this.eatT = 0; this.mode = 'survival'; this.model = null; this.heldMesh = null; this.heldId = 0; this.skinKey = '';
     this.group = new THREE.Group(); this.group.visible = false; scene.add(this.group);
@@ -4857,8 +4857,10 @@ class RemotePlayer {
   }
   update(dt, light) {
     if (!this.have || !this.model) return;
-    const d = this.p.distanceTo(this.target);
-    if (d > 6) this.p.copy(this.target); else this.p.lerp(this.target, Math.min(1, dt * 12));
+    const lead = Math.min(0.7, (performance.now() - this.tAt) / 1000);                              // seltener Positions-Pakete: mit der letzten Geschwindigkeit weiterlaufen
+    const goal = this._goal || (this._goal = new THREE.Vector3()); goal.copy(this.target).addScaledVector(this.vel, lead);
+    const d = this.p.distanceTo(goal);
+    if (d > 6) this.p.copy(goal); else this.p.lerp(goal, Math.min(1, dt * 12));
     this.speed += (Math.min(d / Math.max(dt, 1e-3), 8) - this.speed) * Math.min(1, dt * 8);
     let dy = this.tyaw - this.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); this.yaw += dy * Math.min(1, dt * 14);
     let bd = this.yaw - this.bodyYaw; bd = Math.atan2(Math.sin(bd), Math.cos(bd));
@@ -5066,7 +5068,25 @@ class LocalDB {
 }
 
 /* ---------------- L3. Sitzung, Synchronisation, Chat ---------------- */
-function mpSend(e, p) { if (mp.on && mp.net) mp.net.send(e, p); }
+// Alle ausgehenden Ereignisse werden gesammelt und als EINE Nachricht pro Intervall gesendet (Supabase begrenzt die Nachrichten pro Sekunde
+// für das ganze Projekt – viele Einzelnachrichten führten bei mehreren Spielern zu Verbindungsabbrüchen).
+function mpSend(e, p) {
+  if (!(mp.on && mp.net)) return;
+  if (e === 'pos') { mp.posPend = p; return; }                       // nur der neueste Positionsstand zählt
+  if (e === 'mobs') { const i = mp.out.findIndex((q) => q[0] === 'mobs'); if (i >= 0) { mp.out[i] = [e, p]; return; } }
+  mp.out.push([e, p]);
+}
+const mpFlushInterval = () => { const n = 1 + mp.players.size; return Math.min(0.6, Math.max(0.12, (n * n) / 100)); };
+function mpFlush(force) {
+  if (!(mp.on && mp.net)) return;
+  const now = performance.now(), items = mp.out; mp.out = [];
+  if (mp.posPend) {                                                   // Position nur senden, wenn sich etwas geändert hat (sonst höchstens 1x pro Sekunde)
+    const q = mp.posPend, key = [q.x, q.y, q.z, q.yw, q.pt, q.h, q.a, q.m, q.sn, q.sl, q.ea, q.ad].join('|');
+    if (key !== mp.posKey || q.sw || q.pq !== undefined || q.pr || now - mp.posAt > 1000) { items.unshift(['pos', q]); mp.posKey = key; mp.posAt = now; }
+    mp.posPend = null;
+  }
+  if (items.length) mp.net.send('b', items);
+}
 const r2 = (n) => Math.round(n * 100) / 100;
 const mpGameTime = () => (mp.freeze !== null && mp.freeze !== undefined ? mp.freeze : (Date.now() + mp.skew - mp.epoch) / 1000 + 0.08 * DAY_LEN);
 function isHost() {                                       // ältester Spieler simuliert die Mobs
@@ -6559,10 +6579,11 @@ const mpHandlers = {
     const rp = mp.players.get(id); if (!rp) return;
     chatSys(rp.name + ' hat das Spiel verlassen'); rp.dispose(); mp.players.delete(id); mpStatusHud(); if (mp.tab) renderTabList();
   },
-  closed() { setNetLost(true); },
+  closed() { netBad = Math.max(netBad, 1); },                     // supabase-js verbindet selbst neu; nur wenn es länger dauert, wird angehalten
   reconnected() { mpRecover(); },
   event(e, p, from) {
     switch (e) {
+      case 'b': if (Array.isArray(p)) for (const q of p) if (Array.isArray(q)) mpHandlers.event(q[0], q[1], from); break;
       case 'pos': {
         let rp = mp.players.get(from);
         if (!rp) { mpHandlers.join(from, { name: p.n, joinedAt: p.j }); rp = mp.players.get(from); if (!rp) return; }
@@ -6570,7 +6591,7 @@ const mpHandlers = {
         if (Array.isArray(p.pr)) for (const [id, t, hold] of p.pr) if (id === mp.id && typeof t === 'number') {                // Antwort auf meine Anfrage
           const r = Math.max(0, performance.now() - t - (Number(hold) || 0)); rp.rtt = rp.rtt === undefined ? r : rp.rtt * 0.6 + r * 0.4;
         }
-        rp.target.set(p.x, p.y, p.z); rp.tyaw = p.yw; rp.pitch = p.pt; rp.mode = p.m || 'survival';
+        rp.target.set(p.x, p.y, p.z); rp.vel.set(p.vx || 0, p.vy || 0, p.vz || 0); rp.tAt = performance.now(); rp.tyaw = p.yw; rp.pitch = p.pt; rp.mode = p.m || 'survival';
         if (!rp.have) { rp.p.copy(rp.target); rp.have = true; rp.bodyYaw = p.yw; rp.yaw = p.yw; }
         rp.setHeld(p.h || 0); rp.setArmor(p.a || '0000'); { const ad = rp.name === ADMIN_NAME && !!p.ad; if (ad !== !!rp.admin) { rp.admin = ad; rp.setRank(ad ? '[Admin]' : ''); if (mp.tab) renderTabList(); } }
         rp.sneak = !!p.sn; rp.sleeping = !!p.sl; rp.eating = !!p.ea; if (p.sw) rp.swing = 0.3;
@@ -6710,7 +6731,8 @@ async function mpJoin(cfg) {
 }
 async function mpLeave() {
   if (!mp.on) return;
-  mp.on = false; mp.offline = false; $('netLost').classList.add('hidden');
+  try { mpFlush(); } catch (e) { /* egal */ }
+  mp.on = false; mp.offline = false; $('netLost').classList.add('hidden'); mp.out = []; mp.posPend = null;
   try { mpFlushBlocks(); await Promise.race([Promise.all([mpFlushDb(), mpSaveState()]), new Promise((r) => setTimeout(r, 2500))]); } catch (e) { /* egal */ }
   try { await mp.net.leave(); } catch (e) { /* egal */ }
   mp.players.forEach((p) => p.dispose()); mp.players.clear(); mp.mobsById.clear();
@@ -6767,14 +6789,14 @@ function mpTick(dt) {
   if (mp.pingT <= 0) { mp.pingT = 3; mp.pqNext = true; }
   mp.selfT = (mp.selfT || 0) - dt; if (mp.selfT <= 0) { mp.selfT = 15; mpSelfPing(); }
   if (mp.tab && mp.tabT <= 0) { mp.tabT = 1; renderTabList(); }
-  mp.sendT -= dt; mp.blockT -= dt; mp.dbT -= dt; mp.mobT -= dt; mp.saveT -= dt;
+  mp.sendT -= dt; mp.blockT -= dt; mp.dbT -= dt; mp.mobT -= dt; mp.saveT -= dt; mp.flushT = (mp.flushT || 0) - dt;
   if (mp.sendT <= 0) {
     mp.sendT = 0.11;
     const held = inv[P.sel]; const heldId = held ? held.id : 0;
     const pk = {};
     if (mp.pqNext) { pk.pq = performance.now(); mp.pqNext = false; }
     if (mp.pendPr && mp.pendPr.size) { const now = performance.now(); pk.pr = [...mp.pendPr].map(([id, o]) => [id, o.t, Math.round(now - o.at)]); mp.pendPr.clear(); }
-    mpSend('pos', { ...pk, n: mp.name, j: mp.joinedAt, x: r2(P.p.x), y: r2(P.p.y), z: r2(P.p.z), yw: r2(P.yaw), pt: r2(P.pitch), h: heldId, a: armorCode(), sw: mp.swing ? 1 : 0, m: mode, sn: P.sneak ? 1 : 0, sl: P.sleeping ? 1 : 0, ea: P.eat ? 1 : 0, ad: mp.admin ? 1 : 0 });
+    mpSend('pos', { ...pk, n: mp.name, j: mp.joinedAt, x: r2(P.p.x), y: r2(P.p.y), z: r2(P.p.z), yw: r2(P.yaw), pt: r2(P.pitch), h: heldId, a: armorCode(), sw: mp.swing ? 1 : 0, m: mode, sn: P.sneak ? 1 : 0, sl: P.sleeping ? 1 : 0, ea: P.eat ? 1 : 0, ad: mp.admin ? 1 : 0, vx: r2(P.v.x), vy: r2(P.v.y), vz: r2(P.v.z) });
     mp.swing = false;
   }
   if (mp.blockT <= 0) { mp.blockT = 0.1; mpFlushBlocks(); }
@@ -6782,7 +6804,8 @@ function mpTick(dt) {
   const host = isHost();
   if (host && !mp.wasHost) mobs.forEach((m) => { m.remote = false; });        // Host-Wechsel: Puppen werden echte Mobs
   mp.wasHost = host;
-  if (host && mp.mobT <= 0) { mp.mobT = 0.2; mpSendMobs(); }
+  if (host && mp.mobT <= 0) { mp.mobT = 0.3; mpSendMobs(); }
+  if (mp.flushT <= 0) { mp.flushT = mpFlushInterval(); mpFlush(); }
   // Schlafen: sobald ALLE Spieler im Bett liegen, überspringt der Host die Nacht (alle anderen wachen durch den Zeitsprung auf)
   const others = [...mp.players.values()].filter((q) => q.have);
   const nSleep = (P.sleeping ? 1 : 0) + others.filter((q) => q.sleeping).length, nAll = 1 + others.length;
