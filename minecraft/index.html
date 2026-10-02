@@ -207,6 +207,7 @@ body.touch #modeTag{display:none}
   <div id="crosshair"></div>
   <div id="vignette"></div>
   <div id="under"></div>
+  <div id="portalFx" style="position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(circle at center, rgba(150,60,230,.55), rgba(70,10,140,.85))"></div>
   <div id="modeTag"></div>
   <div id="debug" class="hidden"></div>
   <div id="toast"></div>
@@ -964,6 +965,15 @@ BLOCKS[WATER].drop = 0; BLOCKS[ID.lava].drop = 0; BLOCKS[ID.bedrock].drop = 0;
   const base = BLOCKS[ID[k]]; base.wallIds = [];
   for (let d = 0; d < 4; d++) base.wallIds.push(add(k + '_wall_' + d, de, base.tex.slice(), { solid: false, opaque: false, torch: true, emit: true, light: base.light, hard: 0.05, wallDir: d, drop: ID[k] }));
 });
+// ---------- NETHER-Erweiterung: Blöcke (am Ende angehängt) ----------
+add('nether_quartz_ore', 'Nether-Quarzerz', allSides('nether_quartz_ore'), { hard: 3, tab: 'natur' });
+add('nether_gold_ore', 'Nether-Golderz', allSides('nether_gold_ore'), { hard: 3, tab: 'natur' });
+const PORTAL_IDS = [];
+for (let d = 0; d < 2; d++) {                                        // d=0: Portalfläche in der X-Y-Ebene (Blick nach Z), d=1: in der Z-Y-Ebene
+  const pb = d === 0 ? [0, 0, 6 / 16, 1, 1, 10 / 16] : [6 / 16, 0, 0, 10 / 16, 1, 1];
+  PORTAL_IDS.push(add('nether_portal_' + d, 'Netherportal', allSides('nether_portal'), { solid: false, opaque: false, trans: true, hard: 0.1, emit: true, light: 11, boxes: [box(pb)], sel: [pb], aabbs: [pb], portal: d, drop: 0, samecull: true, tab: d === 0 ? 'natur' : undefined, flat: tile('nether_portal') }));
+}
+ID.nether_portal = PORTAL_IDS[0];
 if (nextId >= 4000) throw new Error('Zu viele Blöcke');
 
 // ---------- Items (Nicht-Blöcke, IDs ab 1000) ----------
@@ -1060,6 +1070,16 @@ POTIONS.forEach(([k, de, tint, sec, amp]) => item('splash_' + k, 'Wurftrank: ' +
 // Türen (Item -> zweiteiliger Block)
 DOOR_KINDS.forEach(([k, de]) => { const id = item(k + '_door', de + 'tür', k + '_door', { door: k }); DOOR_FAMS[k].ids.forEach((b) => { BLOCKS[b].drop = id; }); });
 
+// ---------- NETHER-Erweiterung: Items (immer ganz am Ende anhängen, damit alte IDs gültig bleiben) ----------
+item('quartz', 'Netherquarz', 'quartz'); item('nether_brick', 'Netherziegel (Item)', 'nether_brick');
+item('glowstone_dust', 'Leuchtsteinstaub', 'glowstone_dust'); item('magma_cream', 'Magmacreme', 'magma_cream');
+item('netherite_scrap', 'Netheritschrott', 'netherite_scrap'); item('netherite_ingot', 'Netheritbarren', 'netherite_ingot');
+TOOL_TIERS.netherite = { de: 'Netherit', tier: 5, speed: 9, dur: 2031, sword: 8, axe: 7, pick: 6, shovel: 6 };
+TOOL_TYPES.forEach(([tt, de, dk]) => { const T = TOOL_TIERS.netherite; item('netherite_' + tt, T.de + de, 'netherite_' + tt, { stack: 1, tool: { type: tt, tier: T.tier, speed: T.speed, dur: T.dur, dmg: T[dk] } }); });
+ARMOR_TIERS.netherite = { de: 'Netherit', pts: [3, 8, 6, 3], dur: 37 };
+ARMOR_PARTS.forEach(([pp, de, d], i) => item('netherite_' + pp, 'Netherit' + de, 'netherite_' + pp, { stack: 1, armor: { slot: i, pts: ARMOR_TIERS.netherite.pts[i] }, maxDur: ARMOR_TIERS.netherite.dur * d }));
+TIER_DE.push('Netherit');
+
 // ---------- Abbau: passendes Werkzeug und benötigte Stufe (0 Hand, 1 Holz, 2 Stein, 3 Eisen, 4 Diamant) ----------
 const setMine = (id, tool, need) => { BLOCKS[id].tool = tool; BLOCKS[id].need = need; };
 [GRASS, DIRT, SAND, SNOW].forEach((id) => setMine(id, 'shovel', 0));
@@ -1074,6 +1094,7 @@ for (const k in ID) {
   else if (/^(deepslate_)?(iron|copper|lapis)_(ore|block)$/.test(k)) setMine(id, 'pickaxe', 2);
   else if (/^(deepslate_)?(gold|redstone|diamond|emerald)_(ore|block)$/.test(k)) setMine(id, 'pickaxe', 3);
   else if (k === 'obsidian') setMine(id, 'pickaxe', 4);
+  else if (/^nether_(quartz|gold)_ore$/.test(k)) setMine(id, 'pickaxe', 1);
 }
 
 // Zusätzliche (Nicht-Block-)Texturen aus dem Pack
@@ -1204,8 +1225,39 @@ function paintAtlas() {
     ATLAS.colors[b.id] = n ? new THREE.Color(r / n / 255, g / n / 255, bl / n / 255) : new THREE.Color(0.6, 0.6, 0.6);
   });
 }
+// Selbst erzeugte Texturen für das Nether-Update (aus vorhandenen Pack-Texturen umgefärbt bzw. gezeichnet)
+function genNetherImages() {
+  const I = ATLAS.images, mkc = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+  const recolor = (src, f) => { const c = mkc(src.width, src.height), x = c.getContext('2d'); x.drawImage(src, 0, 0); const im = x.getImageData(0, 0, c.width, c.height), d = im.data;
+    for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 0) { const o = f(d[i], d[i + 1], d[i + 2], (i >> 2) % c.width, ((i >> 2) / c.width) | 0); d[i] = o[0]; d[i + 1] = o[1]; d[i + 2] = o[2]; } x.putImageData(im, 0, 0); return c; };
+  const lum = (r, g, b) => (0.3 * r + 0.59 * g + 0.11 * b) / 255;
+  const netherite = (r, g, b) => { const l = lum(r, g, b); return [Math.min(255, 44 + l * 100), Math.min(255, 38 + l * 86), Math.min(255, 50 + l * 104)]; };
+  for (const t of ['sword', 'pickaxe', 'axe', 'shovel', 'hoe']) if (I['item/diamond_' + t]) I['item/netherite_' + t] = recolor(I['item/diamond_' + t], netherite);
+  for (const t of ['helmet', 'chestplate', 'leggings', 'boots']) if (I['item/diamond_' + t]) I['item/netherite_' + t] = recolor(I['item/diamond_' + t], netherite);
+  for (const l of ['humanoid', 'humanoid_leggings']) if (I['entity/equipment/' + l + '/diamond']) I['entity/equipment/' + l + '/netherite'] = recolor(I['entity/equipment/' + l + '/diamond'], netherite);
+  if (I['item/iron_ingot']) I['item/netherite_ingot'] = recolor(I['item/iron_ingot'], (r, g, b) => { const l = lum(r, g, b); return [40 + l * 95, 34 + l * 78, 38 + l * 80]; });
+  if (I['item/copper_ingot']) I['item/netherite_scrap'] = recolor(I['item/copper_ingot'], (r, g, b) => { const l = lum(r, g, b); return [90 + l * 110, 55 + l * 70, 50 + l * 60]; });
+  if (I['item/sugar']) I['item/glowstone_dust'] = recolor(I['item/sugar'], (r, g, b) => { const l = lum(r, g, b); return [Math.min(255, 150 + l * 105), Math.min(255, 110 + l * 100), 20 + l * 50]; });
+  if (I['item/slime_ball']) I['item/magma_cream'] = recolor(I['item/slime_ball'], (r, g, b) => { const l = lum(r, g, b); return [Math.min(255, 150 + l * 110), 60 + l * 100, 10 + l * 25]; });
+  const pix = (name, rows, pal) => { const c = mkc(16, 16), x = c.getContext('2d'); rows.forEach((row, y) => [...row].forEach((ch, xx) => { if (pal[ch]) { x.fillStyle = pal[ch]; x.fillRect(xx, y, 1, 1); } })); I[name] = c; };
+  pix('item/quartz', ['................', '................', '.........ww.....', '........wWWw....', '.......wWWWWw...', '......wWWgWWw...', '.....wWWgWWWw...', '....wWWgWWWw....', '...wWWgWWWw.....', '..wWWgWWWw......', '..wWgWWWw.......', '..wWWWWw........', '...wwww.........', '................', '................', '................'],
+    { w: '#d9d5cf', W: '#f2efe9', g: '#bdb8b1' });
+  pix('item/nether_brick', ['................', '................', '................', '..dddddddddddd..', '.dRRRRRRRRRRRRd.', '.dRrRRRRRRRRrRd.', '.dRRRRRRRRRRRRd.', '.dRRRRRRRRRRRRd.', '..dddddddddddd..', '................', '................', '................', '................', '................', '................', '................'],
+    { d: '#1c0b0f', R: '#4a1b22', r: '#5d2a30' });
+  // Erze: Netherrack-Grundtextur mit hellen Punkten
+  const ore = (name, color, dark) => { if (!I['block/netherrack']) return; const c = mkc(16, 16), x = c.getContext('2d'); x.drawImage(I['block/netherrack'], 0, 0);
+    const spots = [[3, 3], [4, 3], [3, 4], [10, 2], [11, 2], [10, 3], [6, 8], [7, 8], [6, 9], [7, 9], [12, 10], [12, 11], [13, 11], [2, 12], [3, 12], [8, 13], [9, 13]];
+    spots.forEach(([sx, sy], i) => { x.fillStyle = i % 4 === 3 ? dark : color; x.fillRect(sx, sy, 1, 1); }); I[name] = c; };
+  ore('block/nether_quartz_ore', '#ece8e0', '#bfb9ae'); ore('block/nether_gold_ore', '#f4d03f', '#c9941d');
+  // Portal: violetter Wirbel
+  { const c = mkc(16, 16), x = c.getContext('2d'); for (let yy = 0; yy < 16; yy++) for (let xx = 0; xx < 16; xx++) {
+      const v = (Math.sin(xx * 0.9 + yy * 0.5) + Math.sin(yy * 1.1 - xx * 0.3) + 2) / 4, a = 0.55 + 0.25 * v;
+      x.fillStyle = 'rgba(' + ((110 + v * 90) | 0) + ',' + ((30 + v * 40) | 0) + ',' + ((190 + v * 60) | 0) + ',' + a + ')'; x.fillRect(xx, yy, 1, 1); }
+    I['block/nether_portal'] = c; }
+}
 ATLAS.promise = Promise.all(Object.keys(PACK).map((k) => loadImage(PACK[k]).then((img) => { ATLAS.images[k] = img; })))
   .then(() => {
+    genNetherImages();
     paintAtlas();
     for (let i = 0; i < 10; i++) {
       const t = new THREE.Texture(ATLAS.images['block/destroy_stage_' + i]);
@@ -1291,11 +1343,11 @@ function grad(h, x, y, z) {
 const validId = (id) => id > 0 && (id < 5000 ? !!BLOCKS[id] : !!ITEMS[id]);
 const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
-  BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12;
-const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese'];
-const GAME_VER = '2026-10-02.9';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+  BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13;
+const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether'];
+const GAME_VER = '2026-10-02.10';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
-const isDryBiome = (b) => b === BIOME_DESERT || b === BIOME_MESA;
+const isDryBiome = (b) => b === BIOME_DESERT || b === BIOME_MESA || b === BIOME_NETHER;
 // Baumdichte je Biom (alt = Welten vor den neuen Biomen, neu = ab GEN2_START)
 const TREE_P1 = { 0: 0.014, 1: 0, 2: 0.01 };
 const TREE_P2 = { 0: 0.005, 1: 0, 2: 0.006, 3: 0.034, 4: 0.034, 5: 0.04, 6: 0.04, 7: 0.004, 8: 0.024, 9: 0, 10: 0.014, 11: 0.014, 12: 0.0015 };
@@ -1635,11 +1687,70 @@ class Chunk {
   }
 }
 
+// Nether: Höhle zwischen Grundgestein-Boden und -Decke mit Lavameer, Seelensand-Tälern, Basaltdeltas, Erzen und Leuchtstein an der Decke
+class NetherGen {
+  constructor(seed) { this.seed = seed >>> 0; const s = seed | 0; this.n1 = new Perlin(s + 901); this.n2 = new Perlin(s + 902); this.nB = new Perlin(s + 903); }
+  column(x, z, o) { o.h = 31; o.biome = BIOME_NETHER; o.top = ID.netherrack; o.sub = ID.netherrack; return o; }
+  biomeAt() { return BIOME_NETHER; }
+  generate(cx, cz, edits) {
+    const S = ID, data = new Uint16Array(CS * CS * CH), seed = this.seed | 0, LY = 13, NR = S.netherrack, TOP = CH - 1;
+    for (let lz = 0; lz < CS; lz++) for (let lx = 0; lx < CS; lx++) {
+      const wx = cx * CS + lx, wz = cz * CS + lz, base = lx + (lz << 4);
+      for (let y = 0; y < CH; y++) {
+        let id;
+        if (y === 0 || y === TOP) id = S.bedrock;
+        else if (y <= 2 && hash2(wx * 7 + y, wz, seed + 99) < 0.65 - 0.25 * y) id = S.bedrock;
+        else if (y >= TOP - 2 && hash2(wx * 5 + y, wz, seed + 98) < 0.65 - 0.25 * (TOP - y)) id = S.bedrock;
+        else {
+          const g = Math.max(0, (9 - y) / 9) * 1.6 + Math.max(0, (y - 50) / 12) * 1.6 - 0.16;
+          const d = this.n1.noise(wx * 0.028, y * 0.055, wz * 0.028) * 0.85 + this.n2.noise(wx * 0.09, y * 0.12, wz * 0.09) * 0.22 + g;
+          id = d > 0 ? NR : (y <= LY ? S.lava : AIR);
+        }
+        data[base + (y << 8)] = id;
+      }
+    }
+    // Oberflächen: Seelensand-Täler, Basaltdeltas, Magma am Lavameer, Leuchtstein an der Decke
+    for (let lz = 0; lz < CS; lz++) for (let lx = 0; lx < CS; lx++) {
+      const wx = cx * CS + lx, wz = cz * CS + lz, base = lx + (lz << 4), bv = this.nB.noise(wx * 0.011, 0.5, wz * 0.011);
+      for (let y = 3; y < TOP - 3; y++) {
+        const i = base + (y << 8);
+        if (data[i] !== NR) continue;
+        if (data[i + 256] === AIR && y > LY) {                                      // Boden
+          if (bv > 0.26 && y < 42) { data[i] = S.soul_sand; if (data[i - 256] === NR) data[i - 256] = hash2(wx, wz + y, seed + 5) < 0.5 ? S.soul_soil : S.soul_sand; }
+          else if (bv < -0.28) { data[i] = hash2(wx + y, wz, seed + 6) < 0.55 ? S.basalt : S.blackstone; if (data[i - 256] === NR) data[i - 256] = S.blackstone; }
+        } else if (y <= LY + 1 && data[i + 256] !== AIR && hash2(wx * 3 + y, wz, seed + 7) < 0.22) data[i] = S.magma;         // Ufer des Lavameers
+        if (y >= 44 && data[i - 256] === AIR && hash2(wx * 11, wz * 13 + y, seed + 8) < 0.011) {                                // Leuchtstein-Cluster hängt an der Decke
+          data[i] = S.glowstone;
+          for (let k = 0; k < 9; k++) { const ox = lx + ((hash2(wx + k * 3, wz, seed + k) * 5) | 0) - 2, oz = lz + ((hash2(wx, wz + k * 5, seed + 20 + k) * 5) | 0) - 2, oy = y - ((hash2(wx + k, wz + k, seed + 40 + k) * 4) | 0);
+            if (ox >= 0 && ox < CS && oz >= 0 && oz < CS && oy > 3) { const j = ox + (oz << 4) + (oy << 8); if (data[j] === NR || data[j] === AIR) data[j] = S.glowstone; } }
+        }
+      }
+    }
+    // Erze (nur im Netherrack)
+    const rng = mulberry32((hash2(cx, cz, seed + 777) * 4294967295) >>> 0);
+    const vein = (id, count, minY, maxY, size) => {
+      for (let n = 0; n < count; n++) {
+        let x = (rng() * 16) | 0, y = minY + ((rng() * (maxY - minY + 1)) | 0), z = (rng() * 16) | 0;
+        for (let k = 0; k < size; k++) {
+          if (y > 2 && y < TOP - 2 && x >= 0 && x < 16 && z >= 0 && z < 16) { const i = x + (z << 4) + (y << 8); if (data[i] === NR) data[i] = id; }
+          const d = (rng() * 6) | 0; if (d === 0) x++; else if (d === 1) x--; else if (d === 2) y++; else if (d === 3) y--; else if (d === 4) z++; else z--;
+        }
+      }
+    };
+    vein(S.nether_quartz_ore, 16, 8, 58, 7); vein(S.nether_gold_ore, 7, 6, 44, 5); if (rng() < 0.5) vein(S.ancient_debris, 1, 6, 26, 3);
+    if (edits) for (const [idx, id] of edits.m) data[idx] = safeBlock(id);
+    return data;
+  }
+}
+
 class World {
   constructor(seedStr, scene, gv) {
     this.seedStr = seedStr; this.seed = hashString(seedStr); this.scene = scene; this.gv = gv || 1;
-    this.gen = new TerrainGen(this.seed, this.gv);
-    this.chunks = new Map(); this.edits = new Map(); this.dirty = new Set(); this.structs = new Map();
+    // Zwei Dimensionen: 0 Oberwelt, 1 Nether – je eigene Chunks, Änderungen und Generator; this.chunks/edits/gen zeigen auf die aktuelle
+    this.dimData = [{ chunks: new Map(), edits: new Map(), structs: new Map(), gen: new TerrainGen(this.seed, this.gv) }, { chunks: new Map(), edits: new Map(), structs: new Map(), gen: new NetherGen(this.seed) }];
+    this.dim = 0; const D0 = this.dimData[0];
+    this.gen = D0.gen;
+    this.chunks = D0.chunks; this.edits = D0.edits; this.dirty = new Set(); this.structs = D0.structs;
     this.R = 6; this.offsets = []; this.lcx = NaN; this.lcz = NaN; this.anchors = []; this.cleanAt = 0;
     this.setRenderDistance(6);
   }
@@ -1653,6 +1764,19 @@ class World {
     this.lcx = NaN;
   }
   getChunk(cx, cz) { return this.chunks.get(ckey(cx, cz)); }
+  switchDim(d) {                                             // Dimension wechseln: aktuelle Chunks verwerfen (Änderungen bleiben in edits), die der anderen werden neu erzeugt
+    if (d === this.dim) return;
+    for (const c of this.chunks.values()) this.disposeChunk(c);
+    this.chunks.clear(); this.dirty.clear();
+    const D = this.dimData[d]; this.dim = d; this.gen = D.gen; this.chunks = D.chunks; this.edits = D.edits; this.structs = D.structs;
+    this.lcx = NaN; this.lcz = NaN; this.anchors = [];
+  }
+  recordEditDim(d, x, y, z, id) {
+    id = safeBlock(id); const cx = x >> 4, cz = z >> 4, k = ckey(cx, cz), E = this.dimData[d].edits;
+    let e = E.get(k); if (!e) { e = { cx, cz, m: new Map() }; E.set(k, e); }
+    e.m.set((x & 15) + ((z & 15) << 4) + (y << 8), id);
+  }
+  setBlockDim(d, x, y, z, id) { if (d === this.dim) return this.setBlock(x, y, z, id, true); this.recordEditDim(d, x, y, z, id); return false; }
   // -1 = Chunk nicht geladen
   getBlock(x, y, z) {
     if (y < 0) return STONE; if (y >= CH) return AIR;
@@ -1796,20 +1920,20 @@ class World {
   }
   countMeshed() { let n = 0; for (const c of this.chunks.values()) if (c.meshed) n++; return n; }
 
-  serializeEdits() {
+  serializeEdits(d) {
     const out = {};
-    for (const e of this.edits.values()) {
+    for (const e of this.dimData[d === undefined ? 0 : d].edits.values()) {
       const arr = []; for (const [i, id] of e.m) arr.push(i, id);
       out[e.cx + ',' + e.cz] = arr;
     }
     return out;
   }
-  loadEdits(obj) {
-    this.edits.clear();
+  loadEdits(obj, d) {
+    const E = this.dimData[d === undefined ? 0 : d].edits; E.clear();
     for (const key in obj) {
       const [cx, cz] = key.split(',').map(Number), arr = obj[key], m = new Map();
       for (let i = 0; i < arr.length; i += 2) m.set(arr[i], arr[i + 1]);
-      this.edits.set(ckey(cx, cz), { cx, cz, m });
+      E.set(ckey(cx, cz), { cx, cz, m });
     }
   }
 }
@@ -2132,7 +2256,7 @@ camera.rotation.order = 'YXZ';
 R_.scene = scene;
 
 const uni = {
-  map: { value: ATLAS.texture }, uDay: { value: 1 }, uNV: { value: 0 },
+  map: { value: ATLAS.texture }, uDay: { value: 1 }, uNV: { value: 0 }, uNether: { value: 0 },
   fogColor: { value: new THREE.Color(0x87ceeb) }, fogNear: { value: 40 }, fogFar: { value: 90 },
   uLights: { value: Array.from({ length: 8 }, () => new THREE.Vector4(0, 0, 0, 0)) },   // nächste Lichtquellen (xyz, Radius)
 };
@@ -2147,7 +2271,7 @@ void main(){
   gl_Position = projectionMatrix * mv;
 }`;
 const FRAG = `
-uniform sampler2D map; uniform float uDay; uniform float uNV; uniform vec3 fogColor; uniform float fogNear; uniform float fogFar;
+uniform sampler2D map; uniform float uDay; uniform float uNV; uniform float uNether; uniform vec3 fogColor; uniform float fogNear; uniform float fogFar;
 uniform vec4 uLights[8];
 varying vec2 vUv; varying vec3 vLight; varying float vDepth; varying vec3 vWorld;
 void main(){
@@ -2157,12 +2281,14 @@ void main(){
   #endif
   float skyL = mix(0.34, 1.0, uDay);
   float amb = mix(0.20, 0.26, uDay);                                           // Grundhelligkeit ohne Himmel/Fackel: überall gleich, egal wie weit weg
+  amb = mix(amb, 0.42, uNether);
   float l = mix(amb, skyL, vLight.y) * vLight.x;
   float bl = vLight.z;                                                         // eingebackenes Licht von Fackeln, Laternen, Lava …
   float lb = bl > 0.995 ? 1.0 : pow(bl, 1.1) * mix(0.72, 1.0, vLight.x);
   l = max(l, lb);
   l = mix(l, max(l, 0.86), uNV);                                               // Nachtsicht
   vec3 tint = mix(vec3(0.78, 0.86, 1.12), vec3(1.0), uDay);
+  tint = mix(tint, vec3(1.16, 0.84, 0.76), uNether);
   float warm = clamp(bl * 1.25 - l * 0.45, 0.0, 0.9);
   vec3 col = t.rgb * l * tint * mix(vec3(1.0), vec3(1.22, 1.0, 0.76), warm);
   col = mix(col, fogColor, smoothstep(fogNear, fogFar, vDepth));
@@ -2205,7 +2331,11 @@ const tmpCol = new THREE.Color(), skyCol = new THREE.Color();
 const sunDir = new THREE.Vector3();
 const env = { dayF: 1, dayT: 0.1 };
 
+const NETHER_SKY = new THREE.Color(0x2b0a0a);
 function updateSky(dayT) {
+  const nether = !!world && world.dim === 1;
+  sunMesh.visible = moonMesh.visible = stars.visible = !nether; cloudMesh.visible = !nether && settings.clouds; uni.uNether.value = nether ? 1 : 0;
+  if (nether) { env.dayF = 0.4; env.dayT = 0.1; skyCol.copy(NETHER_SKY); uni.uDay.value = 0.4; return; }
   const a = dayT * Math.PI * 2, s = Math.sin(a);
   const dayF = smooth(-0.12, 0.22, s);
   const dusk = Math.max(0, 1 - Math.abs(s) / 0.3);
@@ -2585,6 +2715,9 @@ function lootFor(id) {
     case ID.redstone_ore: case ID.deepslate_redstone_ore: out.push([I.redstone, between(4, 5)]); break;
     case ID.diamond_ore: case ID.deepslate_diamond_ore: out.push([I.diamond, 1]); break;
     case ID.emerald_ore: case ID.deepslate_emerald_ore: out.push([I.emerald, 1]); break;
+    case ID.nether_quartz_ore: out.push([I.quartz, between(1, 2)]); break;
+    case ID.glowstone: out.push([I.glowstone_dust, between(2, 4)]); break;
+    case ID.nether_gold_ore: out.push([I.gold_nugget, between(2, 6)]); break;
     case ID.gravel: out.push(r() < 0.15 ? [I.flint, 1] : [ID.gravel, 1]); break;
     case ID.tnt: out.push([ID.tnt, 1]); break;
     case ID.short_grass: case ID.fern: if (r() < 0.12) out.push([I.wheat_seeds, 1]); break;
@@ -3040,7 +3173,10 @@ function useItem(pressed) {
       }
       return;
     }
-    if (I.lighter) {                                       // Feuerzeug: TNT anzünden
+    if (I.lighter) {                                       // Feuerzeug: TNT anzünden / Obsidianrahmen zum Portal entzünden
+      if (pressed && target && target.id === ID.obsidian && (target.nx || target.ny || target.nz)) {
+        if (tryLightPortal(target.x + target.nx, target.y + target.ny, target.z + target.nz)) { damageHeld(1); refreshHotbar(); } else toast('Kein gültiger Portalrahmen (Obsidian, innen mind. 2x3)');
+      }
       if (pressed && target && target.id === ID.tnt) {
         world.setBlock(target.x, target.y, target.z, AIR); igniteTNT(target.x, target.y, target.z, 4);
         damageHeld(1); refreshHotbar();
@@ -3220,8 +3356,98 @@ function popBlock(x, y, z, drop) {
   world.setBlock(x, y, z, AIR);
   if (drop && !isCreative()) lootFor(nid).forEach(([i, n]) => spawnDrop(i, n, x + 0.5, y + 0.4, z + 0.5));
 }
+// ----- Nether: Portale, Dimensionswechsel -----
+const portalDir = (x, y, z) => { const b = world.getBlock(x, y, z); return b > 0 && BLOCKS[b].portal !== undefined ? BLOCKS[b].portal : -1; };
+function tryLightPortal(x, y, z) {                                     // Rahmen aus Obsidian (mind. 2x3 innen) um die gezündete Zelle füllen
+  for (let d = 0; d < 2; d++) {
+    const ax = d === 0 ? 1 : 0, az = d === 0 ? 0 : 1, cells = [], seen = new Set(), q = [[x, y, z]]; let ok = true;
+    while (q.length && ok) {
+      const [cx, cy, cz] = q.pop(), k = cx + ',' + cy + ',' + cz; if (seen.has(k)) continue;
+      const b = world.getBlock(cx, cy, cz);
+      if (b === ID.obsidian) continue;
+      if (b !== AIR && portalDir(cx, cy, cz) < 0) { ok = false; break; }
+      seen.add(k); cells.push([cx, cy, cz]); if (cells.length > 21 * 21) { ok = false; break; }
+      q.push([cx + ax, cy, cz + az], [cx - ax, cy, cz - az], [cx, cy + 1, cz], [cx, cy - 1, cz]);
+    }
+    if (!ok || !cells.length) continue;
+    let mnH = 1e9, mxH = -1e9, mnY = 1e9, mxY = -1e9;
+    for (const [cx, cy, cz] of cells) { const hh = d === 0 ? cx : cz; mnH = Math.min(mnH, hh); mxH = Math.max(mxH, hh); mnY = Math.min(mnY, cy); mxY = Math.max(mxY, cy); }
+    const w = mxH - mnH + 1, h = mxY - mnY + 1;
+    if (w < 2 || h < 3 || cells.length !== w * h) continue;
+    portalBuilding = true; for (const [cx, cy, cz] of cells) world.setBlock(cx, cy, cz, PORTAL_IDS[d], false); portalBuilding = false;
+    sfx('craft'); achGive('portal'); return true;
+  }
+  return false;
+}
+function portalHolds(x, y, z) {                                         // hat ein Portalblock noch Obsidian/Portal an seinen 4 Ebenen-Nachbarn?
+  const d = portalDir(x, y, z); if (d < 0) return true;
+  const ax = d === 0 ? 1 : 0, az = d === 0 ? 0 : 1;
+  for (const [dx, dy, dz] of [[ax, 0, az], [-ax, 0, -az], [0, 1, 0], [0, -1, 0]]) {
+    const b = world.getBlock(x + dx, y + dy, z + dz);
+    if (!(b === ID.obsidian || (b > 0 && BLOCKS[b].portal === d))) return false;
+  }
+  return true;
+}
+let pendingArrival = null, portalBuilding = false;
+function clearDimEntities() { clearMobs(); clearDrops(); clearPrimed(); clearArrows(); clearFallers(); clearThrown(); }
+function enterDimension(td, x, y, z, opt) {
+  if (!world) return;
+  wakeUp(); clearDimEntities();
+  world.switchDim(td); P.p.set(x, y === null ? 40 : y, z); P.v.set(0, 0, 0); P.portalT = 0; P.portalLock = true; P.fallPeak = P.p.y;
+  pendingArrival = opt || {}; mp.lastDim = -1;
+  setState('loading');
+}
+function startDimTravel() {
+  const td = world.dim === 0 ? 1 : 0, k = td === 1 ? 1 / 8 : 8;
+  enterDimension(td, Math.floor(P.p.x * k) + 0.5, null, Math.floor(P.p.z * k) + 0.5, { portal: true });
+}
+function buildPortalAt(bx, by, bz) {                                    // Obsidianrahmen (4x5) entlang X mit Portal innen; Luft davor/dahinter
+  portalBuilding = true;
+  for (let x = bx - 2; x <= bx + 3; x++) for (let z = bz - 1; z <= bz + 1; z++) for (let y = by + 1; y <= by + 5; y++) world.setBlock(x, y, z, AIR, false);
+  for (let x = bx - 2; x <= bx + 3; x++) for (let z = bz - 1; z <= bz + 1; z++) if (!isSolidId(world.getBlock(x, by - 1, z))) world.setBlock(x, by - 1, z, ID.obsidian, false);
+  for (let x = bx - 1; x <= bx + 2; x++) for (let y = by; y <= by + 4; y++) {
+    const inner = x >= bx && x <= bx + 1 && y >= by + 1 && y <= by + 3;
+    world.setBlock(x, y, bz, inner ? PORTAL_IDS[0] : ID.obsidian, false);
+  }
+  portalBuilding = false;
+}
+function placeAtPortal(tx, tz) {
+  let best = null, bd = 1e9;
+  for (let dz = -22; dz <= 22; dz++) for (let dx = -22; dx <= 22; dx++) {
+    const x = Math.floor(tx) + dx, z = Math.floor(tz) + dz; if (!world.getChunk(x >> 4, z >> 4)) continue;
+    for (let y = 1; y < CH - 1; y++) if (portalDir(x, y, z) >= 0) { const d2 = dx * dx + dz * dz + (y - 30) * (y - 30) * 0.01; if (d2 < bd) { bd = d2; best = [x, y, z]; } }
+  }
+  if (best) {                                                           // vorhandenes Portal: unterste Zelle dieser Säule
+    let [x, y, z] = best; while (portalDir(x, y - 1, z) >= 0) y--;
+    P.p.set(x + 0.5, y, z + 0.5); return;
+  }
+  const x = Math.floor(tx), z = Math.floor(tz); for (let dx = -2; dx <= 2; dx += 2) world.ensureChunk((x + dx) >> 4, z >> 4);
+  let by = -1;
+  if (world.dim === 0) { for (let y = CH - 2; y > 1; y--) { const b = world.getBlock(x, y, z); if (b > 0 && BLOCKS[b].solid && !BLOCKS[b].liquid && b !== LEAVES) { by = y + 1; break; } } if (by < SEA + 1) by = SEA + 1; }
+  else {                                                                // Nether: festen Boden suchen (nicht über Lava), sonst Plattform in 30
+    for (let y = 16; y < CH - 8; y++) { const d = world.getBlock(x, y - 1, z); if (world.getBlock(x, y, z) === AIR && world.getBlock(x, y + 1, z) === AIR && d > 0 && BLOCKS[d].solid && !BLOCKS[d].liquid) { by = y; break; } }
+    if (by < 0) by = 30;
+  }
+  buildPortalAt(x, by, z); P.p.set(x + 1.0, by + 1, z + 0.5);
+}
+function finishArrival() {
+  const a = pendingArrival; pendingArrival = null; if (!a) return;
+  if (a.portal) { placeAtPortal(P.p.x, P.p.z); if (world.dim === 1) achGive('nether'); }
+  P.fallPeak = P.p.y; mp.lastDim = -1;
+}
+function updatePortal(dt) {
+  const fx = $('portalFx');
+  const inP = portalDir(Math.floor(P.p.x), Math.floor(P.p.y + 0.2), Math.floor(P.p.z)) >= 0 || portalDir(Math.floor(P.p.x), Math.floor(P.p.y + 1.2), Math.floor(P.p.z)) >= 0;
+  if (inP) { if (!P.portalLock) P.portalT = (P.portalT || 0) + dt; } else { P.portalLock = false; P.portalT = Math.max(0, (P.portalT || 0) - dt * 2); }
+  const need = isCreative() ? 0.2 : 3;
+  fx.style.opacity = P.portalT > 0.05 ? Math.min(0.85, P.portalT / need * 0.85) : 0;
+  if (P.portalT >= need && !P.portalLock) { P.portalT = 0; startDimTravel(); }
+}
 function checkSupports(x, y, z, id) {                                // Türen, Leitern, Laternen, Kerzen verlieren ihren Halt
   const cur = id > 0 ? BLOCKS[id] : null;
+  if (!portalBuilding) for (const [dx, dy, dz] of [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]]) {   // Portale ohne Rahmen verschwinden
+    if (portalDir(x + dx, y + dy, z + dz) >= 0 && !portalHolds(x + dx, y + dy, z + dz)) world.setBlock(x + dx, y + dy, z + dz, AIR, false);
+  }
   const up = world.getBlock(x, y + 1, z), dn = world.getBlock(x, y - 1, z);
   if (up > 0 && BLOCKS[up].door && BLOCKS[up].door.half === 1 && !(cur && cur.door && cur.door.half === 0)) popBlock(x, y + 1, z, false);
   if (dn > 0 && BLOCKS[dn].door && BLOCKS[dn].door.half === 0 && !(cur && cur.door && cur.door.half === 1)) popBlock(x, y - 1, z, true);
@@ -3271,7 +3497,8 @@ function equipFromHand() {
 // ----- Container (Truhen, Fässer) -----
 const containers = new Map();                   // "x,y,z" -> Array(27) mit Stapeln oder null
 let openChest = null;
-const ckeyOf = (x, y, z) => x + ',' + y + ',' + z;
+const ckeyOf = (x, y, z) => x + ',' + (y + 128 * (world ? world.dim : 0)) + ',' + z;       // Nether-Container: Höhe +128 (so landen sie auch in der Datenbank getrennt)
+const ckeyEnc = (x, y, z) => x + ',' + y + ',' + z;
 function openContainer(x, y, z) {
   const key = ckeyOf(x, y, z);
   if (!containers.has(key)) containers.set(key, new Array(27).fill(null));
@@ -3502,7 +3729,7 @@ CONN_FAMS.filter((f) => f.kind === 'wall').forEach((f) => { const full = ID[f.ke
 recipe('Bauteile', ID.glass_pane, 16, [[GLASS, 6]], 'table');
 COLORS.forEach(([c]) => recipe('Bauteile', ID[c + '_glass_pane'], 16, [[ID[c + '_glass'], 6]], 'table'));
 recipe('Bauteile', ID.iron_bars, 16, [[IID.iron_ingot, 6]], 'table');
-recipe('Bauteile', ID.ladder, 3, [[IID.stick, 7]], 'table');
+recipe('Bauteile', ID.ladder, 3, [[IID.stick, 7]]);                                            // Leitern: überall herstellbar (keine Werkbank nötig)
 recipe('Bauteile', ID.lantern, 1, [[ID.torch, 1], [IID.iron_ingot, 1]], 'table');
 recipe('Bauteile', ID.soul_lantern, 1, [[ID.soul_torch, 1], [IID.iron_ingot, 1]], 'table');
 recipe('Bauteile', ID.candle, 2, [[IID.string, 1], [IID.bone, 1]]);
@@ -3535,6 +3762,16 @@ recipe('Werkzeug', IID.compass, 1, [[IID.iron_ingot, 4], [IID.redstone, 1]], 'ta
  ['strength', IID.gunpowder], ['jump', IID.slime_ball], ['fire_resistance', IID.gold_ingot]].forEach(([k, ing]) => recipe('Tränke', IID['potion_' + k], 1, [[IID.glass_bottle, 1], [ing, 1]], 'table'));
 POTIONS.forEach(([k]) => recipe('Tränke', IID['splash_' + k], 1, [[IID['potion_' + k], 1], [IID.gunpowder, 1]], 'table'));
 recipe('Ofen', IID.cooked_rabbit, 1, [[IID.rabbit, 1]], 'furnace'); recipe('Ofen', IID.cooked_cod, 1, [[IID.cod, 1]], 'furnace'); recipe('Ofen', IID.cooked_salmon, 1, [[IID.salmon, 1]], 'furnace');
+// ----- Nether-Rezepte -----
+recipe('Bauen', ID.obsidian, 2, [[IID.lava_bucket, 1], [IID.water_bucket, 1]]);                      // Lava + Wasser
+recipe('Ofen', IID.nether_brick, 1, [[ID.netherrack, 1]], 'furnace'); recipe('Bauen', ID.nether_bricks, 1, [[IID.nether_brick, 4]], 'table');
+recipe('Bauen', ID.quartz, 1, [[IID.quartz, 4]], 'table'); recipe('Bauen', ID.glowstone, 1, [[IID.glowstone_dust, 4]]); recipe('Bauen', ID.magma, 1, [[IID.magma_cream, 4]], 'table');
+recipe('Bauen', ID.soul_torch, 4, [['coal', 1], [IID.stick, 1], [ID.soul_sand, 1]]);
+recipe('Ofen', IID.netherite_scrap, 1, [[ID.ancient_debris, 1]], 'furnace');
+recipe('Bauen', IID.netherite_ingot, 1, [[IID.netherite_scrap, 4], [IID.gold_ingot, 4]], 'table');
+recipe('Bauen', ID.netherite_block, 1, [[IID.netherite_ingot, 9]], 'table'); recipe('Bauen', IID.netherite_ingot, 9, [[ID.netherite_block, 1]]);
+['sword', 'pickaxe', 'axe', 'shovel', 'hoe'].forEach((t) => recipe('Werkzeug', IID['netherite_' + t], 1, [[IID['diamond_' + t], 1], [IID.netherite_ingot, 1]], 'table'));
+['helmet', 'chestplate', 'leggings', 'boots'].forEach((t) => recipe('Rüstung', IID['netherite_' + t], 1, [[IID['diamond_' + t], 1], [IID.netherite_ingot, 1]], 'table'));
 const CRAFT_CATS = ['Holz', 'Werkzeug', 'Rüstung', 'Bauen', 'Bauteile', 'Stufen', 'Nahrung', 'Tränke', 'Ofen'];
 
 const countItem = (spec) => inv.reduce((n, s) => n + (s && matchIng(spec, s.id) ? s.count : 0), 0);
@@ -3783,8 +4020,13 @@ const MOBTYPES = {
   rabbit: { de: 'Kaninchen', hw: 0.25, h: 0.5, hp: 3, speed: 2.2, kind: 'passive', ai: 'rabbitAI', loot: [['rabbit', 0, 1, 0.8]] },
   bat: { de: 'Fledermaus', hw: 0.25, h: 0.6, hp: 6, speed: 2.6, kind: 'passive', ai: 'batAI', fly: true, loot: [] },
   slime: { de: 'Schleim', hw: 0.26, h: 0.52, hp: 4, speed: 2.8, kind: 'hostile', ai: 'slimeAI', loot: [['slime_ball', 0, 2, 1]] },
+  zombified_piglin: { de: 'Zombifizierter Piglin', hw: 0.3, h: 1.95, hp: 20, speed: 2.8, kind: 'hostile', fire: true, loot: [['gold_nugget', 0, 3, 1], ['rotten_flesh', 0, 1, 0.5], ['gold_ingot', 1, 1, 0.05]] },
+  magma_cube: { de: 'Magmawürfel', hw: 0.26, h: 0.52, hp: 4, speed: 2.8, kind: 'hostile', ai: 'slimeAI', fire: true, loot: [['magma_cream', 0, 1, 0.3]] },
+  wither_skeleton: { de: 'Wither-Skelett', hw: 0.35, h: 2.3, hp: 26, speed: 2.5, kind: 'hostile', fire: true, loot: [['bone', 0, 2, 1], ['coal', 0, 1, 0.5]] },
   villager: { de: 'Dorfbewohner', hw: 0.3, h: 1.95, hp: 20, speed: 1.0, kind: 'passive', ai: 'villagerAI', keep: true, loot: [] },
 };
+const isSlime = (t) => t === 'slime' || t === 'magma_cube';
+const MELEE = new Set(['zombie', 'husk', 'zombified_piglin', 'wither_skeleton']);
 const SHEEP_WOOL = ['white', 'white', 'white', 'white', 'light_gray', 'gray', 'black', 'brown', 'pink'];
 const VILLAGER_JOBS = [
   { key: 'farmer', de: 'Bauer', trades: [[IID.wheat, 20, IID.emerald, 1], [IID.emerald, 1, IID.bread, 6], [IID.carrot, 22, IID.emerald, 1], [IID.potato, 26, IID.emerald, 1], [IID.emerald, 1, IID.cookie, 8], [IID.emerald, 5, IID.iron_hoe, 1]] },
@@ -3858,19 +4100,19 @@ function buildMobModel(type, mats, tint, ex) {
     part(boxGeo(6, 8, 6, 0, 9, 64, 32), m, 0, 8, 0).rotation.x = R90;
     part(boxGeo(1, 4, 6, 24, 13, 64, 32), m, -3.5, 9.5, 0); part(boxGeo(1, 4, 6, 24, 13, 64, 32), m, 3.5, 9.5, 0);
     legs.push(limb(boxGeo(3, 5, 3, 26, 0, 64, 32), m, -2, 5, 0, 2.5), limb(boxGeo(3, 5, 3, 26, 0, 64, 32), m, 2, 5, 0, 2.5));
-  } else if (type === 'zombie' || type === 'husk') {
-    const m = mk(type);
+  } else if (type === 'zombie' || type === 'husk' || type === 'zombified_piglin') {
+    const m = type === 'zombified_piglin' ? mk('zombie', [1.25, 0.72, 0.62]) : mk(type);
     part(boxGeo(8, 8, 8, 0, 0, 64, 64), m, 0, 28, 0);
     part(boxGeo(8, 12, 4, 16, 16, 64, 64), m, 0, 18, 0);
     legs.push(limb(boxGeo(4, 12, 4, 0, 16, 64, 64), m, -2, 12, 0, 6), limb(boxGeo(4, 12, 4, 0, 16, 64, 64), m, 2, 12, 0, 6));
     for (const [x, u, v] of [[-6, 40, 16], [6, 40, 16]]) { const a = limb(boxGeo(4, 12, 4, u, v, 64, 64), m, x, 22, 0, 4); a.rotation.x = -1.45; arms.push(a); }
-  } else if (type === 'skeleton') {
-    const m = mk('skeleton');
+  } else if (type === 'skeleton' || type === 'wither_skeleton') {
+    const m = type === 'wither_skeleton' ? mk('skeleton', [0.32, 0.32, 0.36]) : mk('skeleton'); if (type === 'wither_skeleton') g.scale.setScalar(1.18);
     part(boxGeo(8, 8, 8, 0, 0, 64, 32), m, 0, 28, 0);
     part(boxGeo(8, 12, 4, 16, 16, 64, 32), m, 0, 18, 0);
     legs.push(limb(boxGeo(2, 12, 2, 0, 16, 64, 32), m, -2, 12, 0, 6), limb(boxGeo(2, 12, 2, 0, 16, 64, 32), m, 2, 12, 0, 6));
     for (const x of [-5, 5]) { const a = limb(boxGeo(2, 12, 2, 40, 16, 64, 32), m, x, 22, 0, 4); a.rotation.x = -1.3; arms.push(a); }
-    if (IID.bow) {                                           // Skelette tragen einen Bogen
+    if (IID.bow && type === 'skeleton') {                    // Skelette tragen einen Bogen
       const bm = new THREE.MeshBasicMaterial({ vertexColors: true }); mats.push({ m: bm, tint: [1, 1, 1] });
       const bow = new THREE.Mesh(spriteGeo(IID.bow), bm);
       bow.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(-1, 0, 0)));
@@ -3911,9 +4153,9 @@ function buildMobModel(type, mats, tint, ex) {
     part(boxGeo(2, 4, 5, 30, 15, 64, 32), m, -3.2, 3.5, -6); part(boxGeo(2, 4, 5, 16, 15, 64, 32), m, 3.2, 3.5, -6);
     part(boxGeo(2, 1, 7, 26, 24, 64, 32), m, -3.2, 0.5, -5); part(boxGeo(2, 1, 7, 8, 24, 64, 32), m, 3.2, 0.5, -5);
     part(boxGeo(3, 3, 2, 52, 6, 64, 32), m, 0, 5.5, -8.6);
-  } else if (type === 'slime') {
-    const inner = mk('slime');
-    const outer = new THREE.MeshBasicMaterial({ map: MT.slime, transparent: true, opacity: 0.8, depthWrite: false }); mats.push({ m: outer, tint: [1, 1, 1] });
+  } else if (isSlime(type)) {
+    const mt = type === 'magma_cube' ? [1.7, 0.55, 0.2] : null, inner = mk('slime', mt);
+    const outer = new THREE.MeshBasicMaterial({ map: MT.slime, transparent: true, opacity: 0.8, depthWrite: false }); mats.push({ m: outer, tint: mt || [1, 1, 1] });
     part(boxGeo(6, 6, 6, 0, 16, 64, 32), inner, 0, 4, 0);
     part(boxGeo(2, 2, 2, 32, 0, 64, 32), inner, -2.4, 5, 2.6); part(boxGeo(2, 2, 2, 32, 4, 64, 32), inner, 2.4, 5, 2.6);
     part(boxGeo(1, 1, 1, 32, 8, 64, 32), inner, 0, 2.6, 3.2);
@@ -3956,9 +4198,9 @@ class Mob {
     this.type = type; this.kind = T.kind; this.T = T;
     this.p = new THREE.Vector3(x, y, z); this.v = new THREE.Vector3();
     this.hw = T.hw; this.h = T.h; this.hp = T.hp; this.speed = T.speed; this.step = 0.6;
-    if (ex === undefined) ex = type === 'sheep' ? (Math.random() * SHEEP_TINTS.length) | 0 : type === 'rabbit' ? (Math.random() * 3) | 0 : type === 'villager' ? (Math.random() * VILLAGER_JOBS.length) | 0 : type === 'slime' ? 1 : 0;
+    if (ex === undefined) ex = type === 'sheep' ? (Math.random() * SHEEP_TINTS.length) | 0 : type === 'rabbit' ? (Math.random() * 3) | 0 : type === 'villager' ? (Math.random() * VILLAGER_JOBS.length) | 0 : isSlime(type) ? 1 : 0;
     this.ex = ex; this.owner = ''; this.home = null; this.hopT = 0; this.regrow = 0; this.flyTy = 0; this._py = y;
-    if (type === 'slime') { const sz = Math.max(1, ex | 0); this.hw = 0.26 * sz; this.h = 0.52 * sz; this.hp = 4 * sz; this.size = sz; }
+    if (isSlime(type)) { const sz = Math.max(1, ex | 0); this.hw = 0.26 * sz; this.h = 0.52 * sz; this.hp = 4 * sz; this.size = sz; }
     this.yaw = Math.random() * Math.PI * 2; this.timer = 0; this.moving = false; this.walk = 0;
     this.flash = 0; this.cd = 0; this.panic = 0; this.angry = 0; this.fuse = 0; this.shootCd = 1 + Math.random() * 2; this.strafe = Math.random() < 0.5 ? 1 : -1;
     this.mats = [];
@@ -4010,14 +4252,14 @@ class Mob {
   }
   die() {
     if (!isCreative()) for (const [key, min, max, chance] of this.T.loot) {
-      if (Math.random() > chance || (this.type === 'slime' && this.size > 1)) continue;
+      if (Math.random() > chance || (isSlime(this.type) && this.size > 1)) continue;
       const n = min + Math.floor(Math.random() * (max - min + 1));
       if (n > 0) spawnDrop(IID[key], n, this.p.x, this.p.y + 0.5, this.p.z);
     }
     if (this.type === 'sheep' && !this.sheared) spawnDrop(ID[SHEEP_WOOL[this.ex & 15] + '_wool'], 1, this.p.x, this.p.y + 0.5, this.p.z);
-    if (this.type === 'slime' && this.size > 1) {                                 // Schleim teilt sich
+    if (isSlime(this.type) && this.size > 1) {                                 // Schleim teilt sich
       const n = 2 + ((Math.random() * 3) | 0), sz = this.size >> 1;
-      for (let i = 0; i < n; i++) { const a = new Mob('slime', this.p.x + (Math.random() - 0.5) * this.size * 0.5, this.p.y + 0.3, this.p.z + (Math.random() - 0.5) * this.size * 0.5, undefined, sz); a.v.y = 5; mobs.push(a); }
+      for (let i = 0; i < n; i++) { const a = new Mob(this.type, this.p.x + (Math.random() - 0.5) * this.size * 0.5, this.p.y + 0.3, this.p.z + (Math.random() - 0.5) * this.size * 0.5, undefined, sz); a.v.y = 5; mobs.push(a); }
     }
     sfxAt('mob', this.p.x, this.p.y, this.p.z);
     spawnParticles(this.p.x - 0.5, this.p.y + this.h / 2 - 0.5, this.p.z - 0.5, new THREE.Color(0.85, 0.85, 0.85), 14, 3, 0.6);
@@ -4131,7 +4373,7 @@ class Mob {
     const X = this.model.X, g = this.model.g;
     if (this.type === 'bat') { this.walk += dt * 16; const a = Math.sin(this.walk) * 0.9; X.wings.forEach((pv) => { pv.rotation.z = a; pv.userData.tip.rotation.z = a * 0.6; }); }
     else if (this.type === 'wolf' && X.tail) X.tail.rotation.z = Math.sin(performance.now() / 160) * (this.tame ? 0.5 : 0.15);
-    else if (this.type === 'slime') { const vy = (this.p.y - this._py) / Math.max(dt, 1e-3); g.scale.set(this.size * (1 - clamp(vy * 0.012, -0.12, 0.12)), this.size * (1 + clamp(vy * 0.03, -0.25, 0.3)), this.size * (1 - clamp(vy * 0.012, -0.12, 0.12))); }
+    else if (isSlime(this.type)) { const vy = (this.p.y - this._py) / Math.max(dt, 1e-3); g.scale.set(this.size * (1 - clamp(vy * 0.012, -0.12, 0.12)), this.size * (1 + clamp(vy * 0.03, -0.25, 0.3)), this.size * (1 - clamp(vy * 0.012, -0.12, 0.12))); }
     else if (this.type === 'rabbit') { const vy = (this.p.y - this._py) / Math.max(dt, 1e-3); g.rotation.x = clamp(-vy * 0.05, -0.5, 0.5); }
     this._py = this.p.y;
   }
@@ -4175,7 +4417,7 @@ class Mob {
     } else if (hunting && pl.dist < 30) {
       const face = () => { this.yaw = Math.atan2(pl.dx, pl.dz); };
       this.cd -= dt;
-      if (this.type === 'zombie' || this.type === 'husk') {
+      if (MELEE.has(this.type)) {
         face(); this.moving = pl.dist > 0.9; spd = this.moving ? this.speed : 0;
         if (pl.dist < 1.2 && Math.abs(pl.dy) < 1.6 && this.cd <= 0) { this.cd = 1; this.strike(3, pl); }
       } else if (this.type === 'skeleton') {
@@ -4215,7 +4457,7 @@ class Mob {
     if (this.poisonT > 0) { this.poisonT -= dt; this.poisonAcc = (this.poisonAcc || 0) + dt; if (this.poisonAcc >= 1) { this.poisonAcc = 0; this.hp -= 1; this.flash = 0.15; } }
     // Tageslicht: Zombies und Skelette brennen
     if (this.T.burn && env.dayF > 0.7 && w.skyExposed(Math.floor(this.p.x), Math.floor(this.p.y + 1), Math.floor(this.p.z))) { this.hp -= dt * 2; this.flash = 0.1; }
-    if (w.getBlock(Math.floor(this.p.x), Math.floor(this.p.y + 0.3), Math.floor(this.p.z)) === ID.lava) { this.hp -= dt * 6; this.flash = 0.1; }
+    if (w.getBlock(Math.floor(this.p.x), Math.floor(this.p.y + 0.3), Math.floor(this.p.z)) === ID.lava && !this.T.fire) { this.hp -= dt * 6; this.flash = 0.1; }
 
     const my = this.moveYaw === null ? this.yaw : this.moveYaw;
     const tx = Math.sin(my) * spd, tz = Math.cos(my) * spd;
@@ -4226,7 +4468,7 @@ class Mob {
     else if (inWater) { this.v.y = Math.min(this.v.y + 22 * dt, 2.2); this.v.y *= 1 - Math.min(1, 2 * dt); }
     else this.v.y = Math.max(this.v.y - 30 * dt, -50);
     moveEntity(w, this, dt);
-    if (this.hitH && this.onGround && this.moving && !this.T.fly && this.type !== 'slime' && this.type !== 'rabbit') this.v.y = 8.4;
+    if (this.hitH && this.onGround && this.moving && !this.T.fly && !isSlime(this.type) && this.type !== 'rabbit') this.v.y = 8.4;
     if (this.kind === 'passive' && !this.T.fly && this.hitH && this.timer > 1 && this.panic <= 0) this.yaw += Math.PI * (0.5 + Math.random());
     if (this.moving) this.walk += dt * 8 * Math.min(1.6, Math.abs(spd) / this.speed);
     // Animation
@@ -4290,7 +4532,24 @@ function updateMobs(dt) {
   }
 }
 // Spawn: friedliche Tiere am Tag auf Gras, Monster nachts an der Oberfläche und in dunklen Höhlen (nur Überleben)
+function trySpawnNether() {                                              // Nether: Piglin-Zombies, Magmawürfel und Wither-Skelette auf festem Boden
+  const hostile = mobs.filter((m) => m.kind === 'hostile').length;
+  if (isCreative() || hostile >= 12 || rules.difficulty === 'peaceful') return;
+  const spots = allPlayerSpots(), base = spots[(Math.random() * spots.length) | 0];
+  const ang = Math.random() * Math.PI * 2, dist = 12 + Math.random() * 18;
+  const x = Math.floor(base.x + Math.cos(ang) * dist), z = Math.floor(base.z + Math.sin(ang) * dist);
+  if (!world.getChunk(x >> 4, z >> 4)) return;
+  let y = Math.max(5, Math.min(CH - 6, Math.floor(base.y + (Math.random() - 0.5) * 16))), found = false;
+  for (let k = 0; k < 14 && y > 3; k++, y--) {
+    const b = world.getBlock(x, y, z), d = world.getBlock(x, y - 1, z);
+    if (b === AIR && world.getBlock(x, y + 1, z) === AIR && d > 0 && BLOCKS[d].solid && !BLOCKS[d].liquid) { found = true; break; }
+  }
+  if (!found) return;
+  const r = Math.random(), type = r < 0.5 ? 'zombified_piglin' : r < 0.8 ? 'magma_cube' : 'wither_skeleton';
+  mobs.push(new Mob(type, x + 0.5, y, z + 0.5, undefined, type === 'magma_cube' ? [1, 1, 2][(Math.random() * 3) | 0] : undefined));
+}
 function trySpawnMob() {
+  if (world.dim === 1) return trySpawnNether();
   const passive = mobs.filter((m) => m.kind === 'passive' && !m.T.keep && !m.T.fly).length, hostile = mobs.filter((m) => m.kind === 'hostile').length;
   const night = env.dayF < 0.3;
   const wantP = env.dayF > 0.3 && passive < 14, wantH = !isCreative() && hostile < 9 && rules.difficulty !== 'peaceful';
@@ -4384,7 +4643,9 @@ function respawn() {
   wakeUp(); clearEffects(); P.health = 20; P.hunger = 20; P.exhaust = 0; P.v.set(0, 0, 0);
   if (P.bedPos && !(BLOCKS[world.getBlock(P.bedPos[0], P.bedPos[1], P.bedPos[2])] || {}).bed) { P.bedPos = null; P.spawn.copy(P.worldSpawn); toast('Dein Bett fehlt – du startest am Weltspawn'); }
   P.p.copy(P.spawn); P.fallPeak = P.p.y; hudStatsDirty = true;
-  clearMobs(); clearDrops(); clearPrimed(); clearArrows(); clearFallers(); clearThrown(); resume();
+  clearMobs(); clearDrops(); clearPrimed(); clearArrows(); clearFallers(); clearThrown();
+  if (world.dim !== 0) { enterDimension(0, P.spawn.x, P.spawn.y, P.spawn.z, { exact: true }); return; }
+  resume();
 }
 
 // Spawnpunkt: Land in Nähe des Ursprungs, auf festem Untergrund (kein Baum / Wasser)
@@ -4417,15 +4678,16 @@ function startGame(opts) {
   curWorldKey = opts.mp ? 'mp:' + mp.room : 'sp:' + world.seedStr; loadWorldPrefs();
   P.fx = {}; P.god = false; P.canFly = false; P.speedMul = 1; P.back = null; fxDirty = true; undoBuf = null;
   achLoad(); reelIn(); weather.override = null; weather.rain = weather.thunder = weather.wf = 0; weather.flash = 0; rainMesh.visible = snowMesh.visible = false;
-  if (save) world.loadEdits(save.edits || {});
+  if (save) { world.loadEdits(save.edits || {}, 0); world.loadEdits(save.edits1 || {}, 1); }
   containers.clear(); armor.fill(null); P.bowCd = 0; openChest = null;
-  if (opts.mpEdits) for (const [x, y, z, b] of opts.mpEdits) world.recordEdit(x, y, z, b);
-  if (opts.mpContainers) for (const [x, y, z, items] of opts.mpContainers) containers.set(ckeyOf(x, y, z), unpackItems(items));
+  if (opts.mpEdits) for (const [x, y, z, b] of opts.mpEdits) { const d = y >= 128 ? 1 : 0; world.recordEditDim(d, x, y - 128 * d, z, b); }
+  if (opts.mpContainers) for (const [x, y, z, items] of opts.mpContainers) containers.set(ckeyEnc(x, y, z), unpackItems(items));
   uni.fogNear.value = renderDist * CS * 0.55; uni.fogFar.value = renderDist * CS - 6;
   for (let i = 0; i < 36; i++) inv[i] = null;
   cursorItem = null; brk = null;
   const sp = findSpawn();
-  P.spawn.set(sp.x, sp.y, sp.z); P.worldSpawn = new THREE.Vector3(sp.x, sp.y, sp.z); P.bedPos = null; P.sleeping = false; $('sleepOv').classList.add('hidden');
+  if (save && save.dim === 1) world.switchDim(1);
+  P.spawn.set(sp.x, sp.y, sp.z); P.worldSpawn = new THREE.Vector3(sp.x, sp.y, sp.z); P.bedPos = null; P.portalT = 0; P.portalLock = true; P.sleeping = false; $('sleepOv').classList.add('hidden');
   P.v.set(0, 0, 0); P.yaw = 0; P.pitch = 0; P.flying = false; P.health = 20; P.hunger = 20; P.exhaust = 0; P.sel = 0; P.hurtT = 0; P.fuel = 0; P.shake = 0;
   gameTime = 0.08 * DAY_LEN;
   if (save) {
@@ -4458,7 +4720,7 @@ function saveGame() {
     health: P.health, hunger: P.hunger, time: gameTime, sel: P.sel,
     inv: packItems(inv), fuel: P.fuel, armor: packItems(armor), spawn: [P.spawn.x, P.spawn.y, P.spawn.z], bed: P.bedPos,
     containers: Object.fromEntries([...containers].map(([k, v]) => [k, packItems(v)])),
-    edits: world.serializeEdits(),
+    edits: world.serializeEdits(0), edits1: world.serializeEdits(1), dim: world.dim,
   };
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); return true; }
   catch (e) { toast('Speichern fehlgeschlagen (Speicher voll?)'); return false; }
@@ -4676,13 +4938,13 @@ function frame(now) {
       const c = world.getChunk(world.lcx + o[0], world.lcz + o[1]); if (c && c.meshed) have++;
     }
     $('loadBar').style.width = Math.round(have / need * 100) + '%';
-    if (have >= need) { P.v.set(0, 0, 0); resume(); }
+    if (have >= need) { P.v.set(0, 0, 0); finishArrival(); resume(); }
   } else {
     const frozen = mp.on && mp.offline;                                // Internet weg: Mehrspieler-Welt ist angehalten
     const live = !frozen && state === 'play', simOnly = !frozen && mp.on && (state === 'inv' || state === 'pause' || state === 'chat' || state === 'dead' || state === 'settings' || state === 'trade');
     if (live) {
       if (!mp.on && rules.daycycle) gameTime += dt;
-      updatePlayer(dt); updateEffects(dt);
+      updatePlayer(dt); updateEffects(dt); updatePortal(dt);
       updateInteraction(dt);
       saveTimer += dt; if (saveTimer > 45) { saveTimer = 0; saveGame(); }
     }
@@ -4714,6 +4976,8 @@ function frame(now) {
   } else if (water) {
     uni.fogColor.value.setRGB(0.1, 0.24, 0.5).multiplyScalar(0.3 + 0.7 * env.dayF);
     uni.fogNear.value = 0.5; uni.fogFar.value = 22;
+  } else if (world.dim === 1) {
+    uni.fogColor.value.copy(skyCol); uni.fogNear.value = 14; uni.fogFar.value = Math.min(renderDist * CS - 6, 96);
   } else {
     uni.fogColor.value.copy(skyCol);
     uni.fogNear.value = renderDist * CS * 0.55 * (1 - 0.5 * weather.wf); uni.fogFar.value = (renderDist * CS - 6) * (1 - 0.35 * weather.wf);
@@ -4830,13 +5094,13 @@ function buildPlayerModel(canvas, slim) {
   return { g, body, headG, armR, armL, legR, legL, mats, tex, canvas };
 }
 // Rüstung auf Spielermodellen (Texturen aus dem Paket: humanoid / humanoid_leggings)
-const ARMOR_MATS = [null, 'leather', 'iron', 'gold', 'diamond'], armorTexCache = {};
+const ARMOR_MATS = [null, 'leather', 'iron', 'gold', 'diamond', 'netherite'], armorTexCache = {};
 function armorTexture(layer, mat) {
   const k = layer + mat; if (armorTexCache[k]) return armorTexCache[k];
   const t = new THREE.Texture(ATLAS.images['entity/equipment/' + layer + '/' + mat]); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; t.needsUpdate = true;
   return (armorTexCache[k] = t);
 }
-const tierOfArmor = (id) => { const k = ITEMS[id].key; return k.startsWith('leather') ? 1 : k.startsWith('iron') ? 2 : k.startsWith('golden') ? 3 : 4; };
+const tierOfArmor = (id) => { const k = ITEMS[id].key; return k.startsWith('leather') ? 1 : k.startsWith('iron') ? 2 : k.startsWith('golden') ? 3 : k.startsWith('netherite') ? 5 : 4; };
 const armorCode = () => armor.map((s) => s ? tierOfArmor(s.id) : 0).join('');
 function makeNameTag(name, rank) {
   const label = rank ? rank + ' ' + name : name;
@@ -4928,7 +5192,7 @@ class RemotePlayer {
     for (const m of M.mats) m.color.setScalar(light);
     if (this.heldMat) this.heldMat.color.setScalar(light);
     for (const [am] of (this.armorParts || [])) { const t = am.material.userData.tint; am.material.color.setRGB(light * t[0], light * t[1], light * t[2]); }
-    this.group.visible = true;
+    this.group.visible = (this.dim || 0) === world.dim;                                  // Spieler in der anderen Dimension sind nicht zu sehen
   }
   dispose() {
     scene.remove(this.group);
@@ -4958,7 +5222,7 @@ function buildHeldMesh(id) {
 function raycastPlayers(o, d, max) {
   let best = null, bt = max;
   for (const rp of mp.players.values()) {
-    if (!rp.have) continue;
+    if (!rp.have || (rp.dim || 0) !== world.dim) continue;
     const min = [rp.p.x - rp.hw, rp.p.y, rp.p.z - rp.hw], mx = [rp.p.x + rp.hw, rp.p.y + rp.h, rp.p.z + rp.hw], oo = [o.x, o.y, o.z], dd = [d.x, d.y, d.z];
     let t0 = 0, t1 = bt, ok = true;
     for (let i = 0; i < 3 && ok; i++) {
@@ -5143,8 +5407,9 @@ class LocalDB {
 function mpSend(e, p) {
   if (!(mp.on && mp.net)) return;
   if (e === 'pos') { mp.posPend = p; return; }                       // nur der neueste Positionsstand zählt
-  if (e === 'mobs') { const i = mp.out.findIndex((q) => q[0] === 'mobs'); if (i >= 0) { mp.out[i] = [e, p]; return; } }
-  mp.out.push([e, p]);
+  const dm = world ? world.dim : 0;
+  if (e === 'mobs') { const i = mp.out.findIndex((q) => q[0] === 'mobs'); if (i >= 0) { mp.out[i] = [e, p, dm]; return; } }
+  mp.out.push([e, p, dm]);                                          // 3. Eintrag: Dimension, in der das Ereignis passiert ist
 }
 // Sendeintervall: Gesamtlast bleibt bei ca. 40 Nachrichten/s für den ganzen Server (Limit ab ~100/s), egal ob 2 oder 15 Spieler.
 // Meldet Supabase trotzdem „zu viele Nachrichten“, wird automatisch langsamer gesendet und danach wieder schneller.
@@ -5154,7 +5419,7 @@ function mpFlush(force) {
   if (!(mp.on && mp.net)) return;
   const now = performance.now(), items = mp.out; mp.out = [];
   if (mp.posPend) {                                                   // Position nur senden, wenn sich etwas geändert hat (sonst höchstens 1x pro Sekunde)
-    const q = mp.posPend, key = [q.x, q.y, q.z, q.yw, q.pt, q.h, q.a, q.m, q.sn, q.sl, q.ea, q.ad].join('|');
+    const q = mp.posPend, key = [q.x, q.y, q.z, q.yw, q.pt, q.h, q.a, q.m, q.sn, q.sl, q.ea, q.ad, q.dm].join('|');
     if (key !== mp.posKey || q.sw || q.pq !== undefined || q.pr || now - mp.posAt > 1000) { items.unshift(['pos', q]); mp.posKey = key; mp.posAt = now; }
     mp.posPend = null;
   }
@@ -5171,18 +5436,19 @@ function isHost() {                                       // ältester Spieler s
   if (!mp.on) return true;
   if (performance.now() - mp.joinT < 3500 && mp.players.size === 0) return false;   // gerade beigetreten: erst warten, bis die anderen Spieler bekannt sind (sonst entstehen „Geister“-Mobs)
   let best = { t: mp.joinedAt, id: mp.id };
-  for (const rp of mp.players.values()) if (rp.joinedAt < best.t || (rp.joinedAt === best.t && rp.id < best.id)) best = { t: rp.joinedAt, id: rp.id };
+  const myDim = world ? world.dim : 0;                                // pro Dimension simuliert der älteste Spieler dort die Mobs
+  for (const rp of mp.players.values()) if ((rp.dim || 0) === myDim && (rp.joinedAt < best.t || (rp.joinedAt === best.t && rp.id < best.id))) best = { t: rp.joinedAt, id: rp.id };
   return best.id === mp.id;
 }
 // Spieler in der Nähe von (x,z), einschließlich mir (für Mob-Ziele und Spawn-Orte)
 function allPlayerSpots() {
   const out = [{ name: null, x: P.p.x, y: P.p.y, z: P.p.z, mode }];
-  if (mp.on) for (const rp of mp.players.values()) if (rp.have) out.push({ name: rp.name, x: rp.target.x, y: rp.target.y, z: rp.target.z, mode: rp.mode });   // gemeldete Position (nicht die vorausberechnete)
+  if (mp.on) for (const rp of mp.players.values()) if (rp.have && (rp.dim || 0) === world.dim) out.push({ name: rp.name, x: rp.target.x, y: rp.target.y, z: rp.target.z, mode: rp.mode });   // gemeldete Position (nicht die vorausberechnete)
   return out;
 }
 
 // --- Änderungen an Blöcken ---
-function mpQueueBlock(x, y, z, id) { mp.pending.push([x, y, z, id]); mp.dbQueue.push([x, y, z, id]); }
+function mpQueueBlock(x, y, z, id) { const ey = y + 128 * world.dim; mp.pending.push([x, ey, z, id]); mp.dbQueue.push([x, ey, z, id]); }     // Nether: Höhe +128 (Datenbank erlaubt y 0–255)
 function mpFlushBlocks() {
   while (mp.pending.length) mpSend('blocks', { b: mp.pending.splice(0, 300) });
 }
@@ -5195,7 +5461,8 @@ async function mpFlushDb() {
   catch (e) { mp.dbQueue.unshift(...batch); mpStatusHud('Speichern fehlgeschlagen – neuer Versuch …'); }
   dbBusy = false;
 }
-function mpSaveContainer(x, y, z, items) {
+function mpSaveContainer(x, y0, z, items) {
+  const y = y0 + 128 * world.dim;
   const packed = items && items.length ? packItems(items) : [];
   mpSend('container', { x, y, z, items: packed });
   if (mp.db) mp.db.setContainer(mp.room, mp.name, mp.token, x, y, z, packed).catch(() => mpStatusHud('Kiste konnte nicht gespeichert werden'));
@@ -5378,6 +5645,10 @@ function tpTo(x, y, z) {
 }
 function surfaceY(x, z) {                                         // oberste feste Höhe bei x,z (lädt den Chunk bei Bedarf)
   world.ensureChunk(Math.floor(x) >> 4, Math.floor(z) >> 4);
+  if (world.dim === 1) {                                           // Nether: erster begehbarer Boden von unten (nicht über Lava)
+    for (let y = 16; y < CH - 6; y++) { const d = world.getBlock(Math.floor(x), y - 1, Math.floor(z)); if (world.getBlock(Math.floor(x), y, Math.floor(z)) === AIR && world.getBlock(Math.floor(x), y + 1, Math.floor(z)) === AIR && d > 0 && BLOCKS[d].solid && !BLOCKS[d].liquid) return y; }
+    return 30;
+  }
   for (let y = CH - 1; y > 0; y--) { const b = world.getBlock(Math.floor(x), y, Math.floor(z)); if (b > 0 && BLOCKS[b].solid) return y + 1; }
   return 40;
 }
@@ -5671,6 +5942,7 @@ cmd(['tp', 'teleport'], {
     if (a.length === 1 || !isNum(a[0])) {
       if (!mp.on) fail('Ohne Mitspieler: /tp <x> <y> <z> oder /tp <x> <z>');
       const t = findPlayer(a[0]); if (!t.have) fail(t.name + ' ist noch nicht sichtbar.');
+      if ((t.dim || 0) !== world.dim) { enterDimension(t.dim || 0, t.target.x, t.target.y + 0.1, t.target.z, { exact: true }); chatOk('Zu ' + t.name + ' in die andere Dimension gereist'); return; }
       tpTo(t.p.x, t.p.y, t.p.z); chatOk('Zu ' + t.name + ' teleportiert'); return;
     }
     if (!canCheat()) fail('Koordinaten-Teleport geht in Überlebens-Welten nur zu Spielern.');
@@ -5684,7 +5956,9 @@ cmd(['back', 'zurueck'], {
   desc: 'Zurück zur letzten Position vor einem Teleport',
   run() { if (!P.back) fail('Keine frühere Position gespeichert.'); const b = P.back; tpTo(b[0], b[1], b[2]); chatOk('Zurückteleportiert'); },
 });
-cmd(['spawn'], { desc: 'Zum Startpunkt', run() { tpTo(P.spawn.x, P.spawn.y, P.spawn.z); chatOk('Zum Startpunkt teleportiert'); } });
+cmd(['spawn'], { desc: 'Zum Startpunkt', run() { if (world.dim !== 0) { enterDimension(0, P.spawn.x, P.spawn.y, P.spawn.z, { exact: true }); chatOk('Zurück in die Oberwelt'); return; } tpTo(P.spawn.x, P.spawn.y, P.spawn.z); chatOk('Zum Startpunkt teleportiert'); } });
+cmd(['nether'], { desc: 'Reist ins Nether (Koordinaten /8, mit Portal am Ziel)', cheat: true, run() { if (world.dim === 1) fail('Du bist schon im Nether.'); startDimTravel(); } });
+cmd(['overworld', 'oberwelt'], { desc: 'Reist zurück in die Oberwelt (Koordinaten x8, mit Portal am Ziel)', cheat: true, run() { if (world.dim === 0) fail('Du bist schon in der Oberwelt.'); startDimTravel(); } });
 cmd(['setspawn', 'spawnpoint'], {
   desc: 'Setzt deinen Wiederbelebungspunkt hierher',
   run() { P.spawn.set(P.p.x, P.p.y, P.p.z); chatOk('Spawnpunkt gesetzt: ' + Math.floor(P.p.x) + ' ' + Math.floor(P.p.y) + ' ' + Math.floor(P.p.z)); },
@@ -6218,6 +6492,7 @@ function updateFishing(dt) {
 
 // ----- Erfolge -----
 const ACHIEVEMENTS = {
+  portal: ['Feuer und Obsidian', 'Entzünde ein Netherportal', 'obsidian'], nether: ['Ins Nether', 'Betritt den Nether', 'netherrack'],
   wood: ['Baumfäller', 'Sammle einen Baumstamm', 'oak_log'], table: ['Handwerker', 'Stelle eine Werkbank her', 'crafting_table'],
   stone: ['Steinzeit', 'Baue Bruchstein ab', 'cobble'], furnace: ['Heißer Ofen', 'Baue einen Ofen', 'furnace'],
   iron: ['Eisenzeit', 'Schmelze einen Eisenbarren', 'iron_ingot'], diamond: ['Diamanten!', 'Finde einen Diamanten', 'diamond'],
@@ -6308,7 +6583,7 @@ function updateMinimap(dt) {
   mmCtx.putImageData(mmImg, 0, 0);
   const dot = (x, z, col, sz) => { const sx = x - px + half, sy = z - pz + half; if (sx < 2 || sy < 2 || sx > S - 2 || sy > S - 2) return; mmCtx.fillStyle = col; mmCtx.fillRect(sx - sz / 2, sy - sz / 2, sz, sz); };
   for (const m of mobs) dot(m.p.x, m.p.z, m.kind === 'hostile' ? '#ff4a4a' : '#f4f4f4', 3);
-  if (mp.on) for (const rp of mp.players.values()) if (rp.have) { dot(rp.p.x, rp.p.z, '#4ac8ff', 5); }
+  if (mp.on) for (const rp of mp.players.values()) if (rp.have && (rp.dim || 0) === world.dim) { dot(rp.p.x, rp.p.z, '#4ac8ff', 5); }
   dot(P.spawn.x, P.spawn.z, '#ffd23a', 4);
   Object.values(P.homes).forEach((h) => dot(h[0], h[2], '#ff7ad9', 4));
   mmCtx.save(); mmCtx.translate(half, half); mmCtx.rotate(-P.yaw + Math.PI); mmCtx.fillStyle = '#fff'; mmCtx.strokeStyle = '#000'; mmCtx.lineWidth = 1.2;
@@ -6453,7 +6728,7 @@ function updateLocator() {
   const on = settings.locator && world && ['play', 'pause', 'chat', 'inv', 'trade', 'settings'].includes(state);
   bar.style.display = on ? 'block' : 'none'; if (!on) return;
   const W = bar.clientWidth || 400, HALF = 1.15, targets = [];                     // sichtbarer Winkelbereich: ±66°
-  if (mp.on) for (const rp of mp.players.values()) if (rp.have) targets.push({ k: 'p:' + rp.id, x: rp.p.x, y: rp.p.y, z: rp.p.z, face: rp.faceURL, col: 'hsl(' + hueOf(rp.name) + ',85%,60%)', op: isOp(rp.name) });
+  if (mp.on) for (const rp of mp.players.values()) if (rp.have && (rp.dim || 0) === world.dim) targets.push({ k: 'p:' + rp.id, x: rp.p.x, y: rp.p.y, z: rp.p.z, face: rp.faceURL, col: 'hsl(' + hueOf(rp.name) + ',85%,60%)', op: isOp(rp.name) });
   if (P.bedPos) targets.push({ k: 'bed', x: P.bedPos[0] + 0.5, y: P.bedPos[1], z: P.bedPos[2] + 0.5, dot: '#ffd23a' });
   for (const n in P.homes) targets.push({ k: 'h:' + n, x: P.homes[n][0], y: P.homes[n][1], z: P.homes[n][2], dot: '#ff7ad9' });
   const seen = new Set();
@@ -6644,6 +6919,7 @@ function renderTabList() {
 }
 
 // --- Empfang ---
+const DIM_EVENTS = new Set(['drop', 'dropgone', 'tnt', 'explode', 'arrow', 'fall', 'throw', 'splash', 'bolt', 'mobs']);
 function mpVersionWarn(rp, what) {                                         // höchstens eine Warnung pro Spieler und Sitzung
   if (rp.verWarned) return; rp.verWarned = true;
   chatAdd(null, '⚠ ' + rp.name + ' nutzt eine ' + what + ' – deshalb sieht er eine andere Welt und kann dich nicht sehen. Er braucht die neueste index.html!', 'err');
@@ -6670,7 +6946,8 @@ const mpHandlers = {
   closed() { netBad = Math.max(netBad, 1); },                     // supabase-js verbindet selbst neu; nur wenn es länger dauert, wird angehalten
   reconnected() { mpRecover(); },
   rateLimited() { mpRateLimited(); },
-  event(e, p, from, viaBatch) {
+  event(e, p, from, viaBatch, dm) {
+    if (dm !== undefined && DIM_EVENTS.has(e) && dm !== (world ? world.dim : 0)) return;           // Ereignis aus der anderen Dimension: nicht für mich
     switch (e) {
       case 'dev': {                                                   // Befehl der Dev-Konsole (Absender-ID beginnt mit „dev-“)
         if (!p || !String(from).startsWith('dev-')) break;
@@ -6679,7 +6956,7 @@ const mpHandlers = {
         else if (p.c === 'restart') mpDevRestart(t);
         break;
       }
-      case 'b': if (Array.isArray(p)) for (const q of p) if (Array.isArray(q)) mpHandlers.event(q[0], q[1], from, true); break;
+      case 'b': if (Array.isArray(p)) for (const q of p) if (Array.isArray(q)) mpHandlers.event(q[0], q[1], from, true, q[2]); break;
       case 'pos': {
         let rp = mp.players.get(from);
         if (!rp) { mpHandlers.join(from, { name: p.n, joinedAt: p.j }); rp = mp.players.get(from); if (!rp) return; }
@@ -6688,13 +6965,14 @@ const mpHandlers = {
         if (Array.isArray(p.pr)) for (const [id, t, hold] of p.pr) if (id === mp.id && typeof t === 'number') {                // Antwort auf meine Anfrage
           const r = Math.max(0, performance.now() - t - (Number(hold) || 0)); rp.rtt = rp.rtt === undefined ? r : rp.rtt * 0.6 + r * 0.4;
         }
+        rp.dim = p.dm || 0;
         rp.target.set(p.x, p.y, p.z); rp.vel.set(p.vx || 0, p.vy || 0, p.vz || 0); rp.tAt = performance.now(); rp.tyaw = p.yw; rp.pitch = p.pt; rp.mode = p.m || 'survival';
         if (!rp.have) { rp.p.copy(rp.target); rp.have = true; rp.bodyYaw = p.yw; rp.yaw = p.yw; }
         rp.setHeld(p.h || 0); rp.setArmor(p.a || '0000'); { const ad = rp.name === ADMIN_NAME && !!p.ad; if (ad !== !!rp.admin) { rp.admin = ad; rp.setRank(ad ? '[Admin]' : ''); if (mp.tab) renderTabList(); } }
         rp.sneak = !!p.sn; rp.sleeping = !!p.sl; rp.eating = !!p.ea; if (p.sw) rp.swing = 0.3;
         break;
       }
-      case 'blocks': for (const [x, y, z, id] of p.b) world.setBlock(x, y, z, id, true); break;
+      case 'blocks': for (const [x, y, z, id] of p.b) { const d = y >= 128 ? 1 : 0; world.setBlockDim(d, x, y - 128 * d, z, id); } break;
       case 'chat':
         if (p.to) { if (p.to === mp.name) { chatAdd(null, p.n + ' flüstert: ' + p.t, 'whisper'); lastMsgFrom = p.n; } break; }
         if (p.n === '*') chatSys(p.t); else chatAdd(p.n, p.t); break;
@@ -6739,7 +7017,7 @@ const mpHandlers = {
       case 'drop': spawnDrop(p.i, p.n, p.x, p.y, p.z, { did: p.d, dur: p.u, vx: p.vx, vy: p.vy, vz: p.vz, remote: true }); break;
       case 'dropgone': { const i = drops.findIndex((d) => d.did === p.d); if (i >= 0) { drops[i].dispose(); drops.splice(i, 1); } break; }
       case 'container': {
-        const key = ckeyOf(p.x, p.y, p.z);
+        const key = ckeyEnc(p.x, p.y, p.z);
         if (p.items && p.items.length) containers.set(key, unpackItems(p.items)); else containers.delete(key);
         if (state === 'inv' && openChest && openChest.key === key) { if (!containers.has(key)) containers.set(key, new Array(27).fill(null)); renderInventory(); }
         break;
@@ -6781,7 +7059,7 @@ function mpApplyMobs(list) {
 }
 
 // --- Zustand speichern / laden ---
-const mpStateData = () => ({ inv: packItems(inv), armor: packItems(armor), hp: P.health, hunger: P.hunger, pos: [P.p.x, P.p.y, P.p.z], yaw: P.yaw, pitch: P.pitch,
+const mpStateData = () => ({ dim: world ? world.dim : 0, inv: packItems(inv), armor: packItems(armor), hp: P.health, hunger: P.hunger, pos: [P.p.x, P.p.y, P.p.z], yaw: P.yaw, pitch: P.pitch,
   sel: P.sel, fuel: P.fuel, spawn: [P.spawn.x, P.spawn.y, P.spawn.z], bed: P.bedPos });
 function applyMpState(d) {
   if (!d) return;
@@ -6791,6 +7069,7 @@ function applyMpState(d) {
     P.health = d.hp || 20; P.hunger = d.hunger === undefined ? 20 : d.hunger; P.sel = d.sel || 0; P.fuel = d.fuel || 0;
     if (d.spawn) P.spawn.set(d.spawn[0], d.spawn[1], d.spawn[2]);
     P.bedPos = d.bed || null;
+    if (d.dim === 1) world.switchDim(1);
     if (d.pos) { P.p.set(d.pos[0], d.pos[1], d.pos[2]); P.yaw = d.yaw || 0; P.pitch = d.pitch || 0; }
   } catch (e) { /* defekter Spielstand: ignorieren */ }
 }
@@ -6909,7 +7188,7 @@ function mpTick(dt) {
     const pk = {};
     if (mp.pqNext) { pk.pq = performance.now(); mp.pqNext = false; }
     if (mp.pendPr && mp.pendPr.size) { const now = performance.now(); pk.pr = [...mp.pendPr].map(([id, o]) => [id, o.t, Math.round(now - o.at)]); mp.pendPr.clear(); }
-    mpSend('pos', { ...pk, n: mp.name, j: mp.joinedAt, x: r2(P.p.x), y: r2(P.p.y), z: r2(P.p.z), yw: r2(P.yaw), pt: r2(P.pitch), h: heldId, a: armorCode(), sw: mp.swing ? 1 : 0, m: mode, sn: P.sneak ? 1 : 0, sl: P.sleeping ? 1 : 0, ea: P.eat ? 1 : 0, ad: mp.admin ? 1 : 0, vx: r2(P.v.x), vy: r2(P.v.y), vz: r2(P.v.z) });
+    mpSend('pos', { ...pk, n: mp.name, j: mp.joinedAt, x: r2(P.p.x), y: r2(P.p.y), z: r2(P.p.z), yw: r2(P.yaw), pt: r2(P.pitch), h: heldId, a: armorCode(), sw: mp.swing ? 1 : 0, m: mode, sn: P.sneak ? 1 : 0, sl: P.sleeping ? 1 : 0, ea: P.eat ? 1 : 0, ad: mp.admin ? 1 : 0, dm: world.dim, vx: r2(P.v.x), vy: r2(P.v.y), vz: r2(P.v.z) });
     mp.swing = false;
   }
   if (mp.blockT <= 0) { mp.blockT = 0.1; mpFlushBlocks(); }
@@ -7027,7 +7306,7 @@ $('btnMulti').disabled = true;
 
 
 // Kleiner Debug-Zugriff (z. B. für automatisierte Tests)
-window.__vc = { mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+window.__vc = { tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>
