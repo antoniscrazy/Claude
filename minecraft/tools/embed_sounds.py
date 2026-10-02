@@ -16,7 +16,7 @@ KNOWN = ('block', 'dig', 'mob', 'damage', 'ui', 'step', 'random', 'ambient', 'li
 # Block-Material -> Gruppen je Art (all = für Abbauen/Platzieren/Schritt gleich)
 MATS = {
     'soft': {'all': ['dig/grass']}, 'wood': {'all': ['dig/wood']}, 'stone': {'all': ['dig/stone']}, 'sand': {'all': ['dig/sand']},
-    'snow': {'all': ['dig/snow']}, 'wool': {'all': ['dig/cloth']}, 'gravel': {'all': ['dig/gravel']},
+    'snow': {'all': ['dig/snow']}, 'glass': {'break': ['random/glass'], 'place': ['random/glass']}, 'wool': {'all': ['dig/cloth']}, 'gravel': {'all': ['dig/gravel']},
     'metal': {'break': ['block/copper/break'], 'step': ['block/copper/step']},
     'chain': {'break': ['block/chain/break'], 'step': ['block/chain/step']},
     'lantern': {'break': ['block/lantern/break'], 'place': ['block/lantern/place']},
@@ -74,6 +74,10 @@ EVENTS = {
     'stonecut': ('ui/stonecutter/cut',), 'bell': ('block/bell/bell_use',),
 }
 
+# Spiel-Effekt (sfx-Name) -> (Gruppe, Lautstärke)
+SFX = {'explode': ('random/explode', 1.0), 'fuse': ('random/fuse', 0.7), 'shoot': ('random/bow', 0.8), 'eat': ('random/eat', 0.9),
+       'toolbreak': ('random/break', 0.9), 'pop': ('random/pop', 0.6), 'splash': ('random/splash', 0.9), 'click': ('random/click', 0.6)}
+
 def ffmpeg_exe():
     exe = shutil.which('ffmpeg')
     if exe: return exe
@@ -127,6 +131,10 @@ def main():
     for k, (g,) in EVENTS.items():
         need(g)
         if groups[g]: ev[k] = g
+    sfx = {}
+    for k, (g, v) in SFX.items():
+        need(g)
+        if groups[g]: sfx[k] = [g, v]
     ff, tmp, out, total, n = ffmpeg_exe(), tempfile.mkdtemp(), {}, 0, 0
     for g, srcs in sorted(groups.items()):
         lst = []
@@ -141,7 +149,8 @@ def main():
         mob[t] = {k: v for k, v in mob[t].items() if v in out}
     mat = {m: {k: [g for g in gl if g in out] for k, gl in kinds.items()} for m, kinds in mat.items()}
     ev = {k: v for k, v in ev.items() if v in out}
-    js = json.dumps({'files': out, 'mat': mat, 'mob': mob, 'ev': ev}, separators=(',', ':'), ensure_ascii=False)
+    sfx = {k: v for k, v in sfx.items() if v[0] in out}
+    js = json.dumps({'files': out, 'mat': mat, 'mob': mob, 'ev': ev, 'sfx': sfx}, separators=(',', ':'), ensure_ascii=False)
     s = open(html, encoding='utf-8').read()
     a, b = s.index('/*SND_BEGIN*/'), s.index('/*SND_END*/')
     s = s[:a] + '/*SND_BEGIN*/' + js + s[b:]
