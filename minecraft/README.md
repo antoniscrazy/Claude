@@ -56,8 +56,8 @@ Zeit-, Wetter- und Blitzbefehle werden im Mehrspielermodus an alle Spieler über
 * ~1900 Blöcke inkl. Halbstufen und Treppen fast aller Materialien: Erze (auch als Tiefenschiefer-Variante), Holzarten, Wolle/Beton/Terrakotta/Glas in 16 Farben, Pflanzen, Fackeln,
   Leuchtblöcke (Fackeln und Lava beleuchten ihre Umgebung), Kakteen (stechen), Eis, Lava (verbrennt) …
 * **Überleben:** Herzen, Hunger, Fallschaden. Blöcke fallen als **Drops** zu Boden und müssen aufgesammelt werden.
-  Ohne passendes Werkzeug geht vieles nicht: Stein braucht eine Holzspitzhacke, Eisenerz eine Steinspitzhacke,
-  Gold/Redstone/Diamant/Smaragd eine Eisenspitzhacke, Obsidian eine Diamantspitzhacke.
+  Alles lässt sich abbauen (außer Grundgestein), aber ohne passendes Werkzeug dauert es ~3,3× länger und es fällt nichts herunter: Stein braucht eine Holzspitzhacke, Eisenerz eine Steinspitzhacke,
+  Gold/Redstone/Diamant/Smaragd eine Eisenspitzhacke, Obsidian eine Diamantspitzhacke, damit der Block etwas droppt.
 * **Werkzeuge** (Holz, Stein, Eisen, Gold, Diamant): Spitzhacke, Axt, Schaufel, Schwert mit Haltbarkeit, Abbau-Tempo und Schaden.
 * **Handwerk:** Rezeptliste im Inventar (Holz, Werkzeug, Bauen, Ofen). Werkbank/Ofen müssen in der Nähe stehen; der Ofen braucht Brennstoff.
 * **TNT** mit dem Feuerzeug (Feuerstein + Eisenbarren) anzünden – Explosionen zerstören Blöcke, verletzen Spieler und Mobs und zünden weiteres TNT.

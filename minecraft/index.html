@@ -84,7 +84,7 @@ input[type=text]:focus,select:focus{border-color:#8fd06a}
 .slot img{width:74%;height:74%;image-rendering:pixelated;pointer-events:none}
 .slot .cnt{position:absolute;right:3px;bottom:1px;font-size:14px;text-shadow:2px 2px #000}
 .slot.active{border-color:#fff;box-shadow:0 0 0 2px #fff;z-index:2}
-#toast{position:absolute;left:50%;bottom:92px;transform:translateX(-50%);font-size:18px;text-shadow:2px 2px #000;opacity:0;transition:opacity .35s;white-space:nowrap}
+#toast{position:absolute;left:50%;bottom:92px;transform:translateX(-50%);font-size:18px;text-shadow:2px 2px #000;opacity:0;transition:opacity .35s;text-align:center;width:max-content;max-width:92vw;background:rgba(0,0,0,.45);padding:3px 12px;pointer-events:none}
 #debug{position:absolute;left:8px;top:8px;font-size:13px;line-height:1.35;white-space:pre;background:rgba(0,0,0,.45);padding:6px 8px;text-shadow:1px 1px #000}
 #vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(200,0,0,0) 40%,rgba(200,0,0,.7) 100%);opacity:0}
 #under{position:absolute;inset:0;background:rgba(30,70,170,.35);display:none}
@@ -1349,7 +1349,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether'];
-const GAME_VER = '2026-10-03.1';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-03.3';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
 const isDryBiome = (b) => b === BIOME_DESERT || b === BIOME_MESA || b === BIOME_NETHER;
 // Baumdichte je Biom (alt = Welten vor den neuen Biomen, neu = ab GEN2_START)
@@ -3267,17 +3267,19 @@ function updateInteraction(dt) {
       if (!brk || brk.x !== target.x || brk.y !== target.y || brk.z !== target.z) brk = { x: target.x, y: target.y, z: target.z, t: 0 };
       if (isCreative()) {
         if (mouse.leftPressed || creativeCool <= 0) { breakBlock(target); handSwing(); creativeCool = 0.22; brk = null; }
-      } else if ((B.need || 0) > (tool ? tool.tier : 0)) {          // Werkzeug zu schwach: geht gar nicht
-        if (!brk.warned) {
-          brk.warned = true;
-          toast('Dafür brauchst du eine ' + TIER_DE[B.need] + '-Spitzhacke (oder besser)');
-        }
       } else {
-        const speed = (tool && tool.type === B.tool ? tool.speed : (tool && tool.type === 'sword' ? 1.4 : 1)) * (1 + 0.25 * fxAmp('haste'));
+        // Alles ist abbaubar: ohne das passende Werkzeug (Art und Stufe) dauert es ~3,3× länger und es fällt nichts
+        const harvest = !(B.need > 0) || !!(tool && tool.tier >= B.need && (!B.tool || tool.type === B.tool));
+        if (!harvest && !brk.warned) {
+          brk.warned = true;
+          toast('Ohne ' + TIER_DE[B.need] + '-' + ({ pickaxe: 'Spitzhacke', axe: 'Axt', shovel: 'Schaufel' }[B.tool] || 'Werkzeug') + ' dauert es länger und es droppt nichts');
+        }
+        brk.noDrop = !harvest;
+        const speed = (tool && tool.type === B.tool ? tool.speed : (tool && tool.type === 'sword' ? 1.4 : 1)) * (1 + 0.25 * fxAmp('haste')) / (harvest ? 1 : 3.3);
         const need = B.hard / speed;
         brk.t += dt;
         if ((brk.snd = (brk.snd || 0) - dt) <= 0) { brk.snd = 0.25; blockSfx('step', target.id); handSwing(); if (mp.on) mp.swing = true; }
-        if (brk.t >= need) { breakBlock(target); brk = null; }
+        if (brk.t >= need) { breakBlock(target, brk.noDrop); brk = null; }
         else crackStage = Math.floor(brk.t / need * 10);
       }
     }
@@ -3294,18 +3296,18 @@ function updateInteraction(dt) {
   if (mouse.rightRelease) { mouse.right = false; mouse.rightRelease = false; }   // Touch-Tipp: ein Frame lang
 }
 
-function breakBlock(hit) {
+function breakBlock(hit, noDrop) {
   const id = hit.id;
   spawnParticles(hit.x, hit.y, hit.z, ATLAS.colors[id] || new THREE.Color(1, 1, 1));
   blockSfx('break', id);
-  if (BLOCKS[id].loot && !isCreative()) rollLoot(BLOCKS[id].loot.kind, hit.x, hit.y, hit.z).forEach(([i, n]) => spawnDrop(i, n, hit.x + 0.5, hit.y + 0.5, hit.z + 0.5));
+  if (BLOCKS[id].loot && !isCreative() && !noDrop) rollLoot(BLOCKS[id].loot.kind, hit.x, hit.y, hit.z).forEach(([i, n]) => spawnDrop(i, n, hit.x + 0.5, hit.y + 0.5, hit.z + 0.5));
   if (BLOCKS[id].container) {                                    // Inhalt fällt heraus
     const key = ckeyOf(hit.x, hit.y, hit.z), items = containers.get(key);
     if (items) { items.forEach((it) => { if (it) spawnDrop(it.id, it.count, hit.x + 0.5, hit.y + 0.5, hit.z + 0.5, { dur: it.dur }); }); containers.delete(key); if (mp.on) mpSaveContainer(hit.x, hit.y, hit.z, []); }
   }
   world.setBlock(hit.x, hit.y, hit.z, AIR);
   if (!isCreative()) {
-    lootFor(id).forEach(([i, n]) => spawnDrop(i, n, hit.x + 0.5, hit.y + 0.4, hit.z + 0.5));
+    if (!noDrop) lootFor(id).forEach(([i, n]) => spawnDrop(i, n, hit.x + 0.5, hit.y + 0.4, hit.z + 0.5));
     if (BLOCKS[id].hard > 0.06) damageHeld(toolOf(inv[P.sel]) && toolOf(inv[P.sel]).type === 'sword' ? 2 : 1);
   }
   const up = world.getBlock(hit.x, hit.y + 1, hit.z);           // Pflanzen / Fackeln darüber verlieren ihren Halt
@@ -4126,7 +4128,7 @@ const hotbarEls = [];
 for (let i = 0; i < 9; i++) { const d = document.createElement('div'); d.className = 'slot'; $('hotbar').appendChild(d); hotbarEls.push(d); }
 let toastT = 0;
 function toast(msg) {
-  const t = $('toast'); t.textContent = msg; t.style.opacity = 1; clearTimeout(toastT);
+  const t = $('toast'); t.textContent = msg; t.style.bottom = (($('bottom').offsetHeight || 80) + 26) + 'px'; t.style.opacity = 1; clearTimeout(toastT);      // immer über Rüstung, Herzen, Locator und Hotbar
   toastT = setTimeout(() => { t.style.opacity = 0; }, 1800);
 }
 let lastSelName = -1;
@@ -7738,7 +7740,7 @@ $('btnMulti').disabled = true;
 
 
 // Kleiner Debug-Zugriff (z. B. für automatisierte Tests)
-window.__vc = { SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+window.__vc = { toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>
