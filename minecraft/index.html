@@ -73,6 +73,9 @@ input[type=text]:focus,select:focus{border-color:#8fd06a}
 #dino{background:linear-gradient(#78b6ff,#a9d6ff);gap:10px}
 #dinoCv{width:min(96vw,960px);height:auto;image-rendering:pixelated;border:4px solid #111;box-shadow:0 0 0 3px #555;touch-action:manipulation;background:#78b6ff}
 #dino .btn{width:auto;min-width:260px}
+#snake{background:linear-gradient(#2c5a1e,#173d12);gap:10px}
+#snakeCv{width:auto;height:auto;max-width:min(96vw,840px);max-height:calc(100vh - 190px);image-rendering:pixelated;border:4px solid #111;box-shadow:0 0 0 3px #555;touch-action:none;background:#1c4a14}
+#snake .btn{width:auto;min-width:260px}
 #loading .bar{width:min(420px,80vw);height:18px;border:2px solid #000;background:#222;margin-top:14px}
 #loading .bar i{display:block;height:100%;width:0;background:#6ac04a}
 
@@ -388,6 +391,14 @@ body.touch #modeTag{display:none}
   <canvas id="dinoCv" width="720" height="300"></canvas>
   <div class="sub" style="color:#143">Leertaste / ↑ / Tippen = Springen · ↓ = schneller fallen</div>
   <button class="btn" id="dinoBack" type="button">⬅ Zurück zum Hauptmenü</button>
+</div>
+
+<!-- Easter Egg: Creeper-Snake (erreichbar über den Creeper im Hauptmenü) -->
+<div id="snake" class="overlay hidden">
+  <h2 style="color:#fff">Creeper-Snake</h2>
+  <canvas id="snakeCv" width="600" height="460"></canvas>
+  <div class="sub" style="color:#cfe">Pfeiltasten / WASD / Wischen = Steuern · Schießpulver fressen · TNT meiden!</div>
+  <button class="btn" id="snakeBack" type="button">⬅ Zurück zum Hauptmenü</button>
 </div>
 
 <!-- Einstellungen -->
@@ -5454,12 +5465,12 @@ let state = 'menu';       // menu | loading | play | pause | inv | dead
 let touchMode = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
 if (touchMode) document.body.classList.add('touch');
 let gameTime = 0, saveTimer = 0;
-const SCREENS = { dino: 'dino', menu: 'menu', mpmenu: 'mpmenu', loading: 'loading', pause: 'pause', inv: 'inventory', dead: 'death', chat: 'chatBar', settings: 'settings', trade: 'trade' };
+const SCREENS = { snake: 'snake', dino: 'dino', menu: 'menu', mpmenu: 'mpmenu', loading: 'loading', pause: 'pause', inv: 'inventory', dead: 'death', chat: 'chatBar', settings: 'settings', trade: 'trade' };
 
 function setState(s) {
   state = s;
   for (const k in SCREENS) $(SCREENS[k]).classList.toggle('hidden', k !== s);
-  $('hud').classList.toggle('hidden', s === 'menu' || s === 'dino' || s === 'mpmenu' || s === 'loading' || (s === 'settings' && !world));
+  $('hud').classList.toggle('hidden', s === 'menu' || s === 'dino' || s === 'snake' || s === 'mpmenu' || s === 'loading' || (s === 'settings' && !world));
   document.body.classList.toggle('chatting', s === 'chat');
   if (s !== 'inv') { $('cursorItem').classList.add('hidden'); $('invDrop').classList.add('hidden'); }
   if (s === 'inv') renderInventory();
@@ -8250,7 +8261,16 @@ function groundDraw(ctx, x0, w, topY, S, rows, scroll) {                       /
   for (let x = x0 + off - ts; x < x0 + w + ts; x += ts) { ctx.drawImage(T.grass, Math.round(x), topY, ts, ts); for (let r = 1; r < rows; r++) ctx.drawImage(T.dirt, Math.round(x), topY + r * ts, ts, ts); }
 }
 // --- Menü-Szene ---
-const MenuScene = { cv: $('menuScene'), raf: 0, t0: 0, hit: null, hover: false, wave: 0 };
+const MenuScene = { cv: $('menuScene'), raf: 0, t0: 0, hit: null, hover: false, wave: 0, hit2: null, hover2: false };
+let MENU_CREEPER = null;
+function menuCreeper() {                                                     // Creeper von vorn aus der Pack-Textur (+ weiße Blink-Variante)
+  if (MENU_CREEPER) return MENU_CREEPER;
+  const im = ATLAS.images['entity/creeper/creeper']; if (!im) return null;
+  const white = (c) => { const w = document.createElement('canvas'); w.width = c.width; w.height = c.height; const x = w.getContext('2d'); x.drawImage(c, 0, 0); x.globalCompositeOperation = 'source-atop'; x.fillStyle = 'rgba(255,255,255,0.72)'; x.fillRect(0, 0, w.width, w.height); return w; };
+  const c = { head: atCrop(im, [8, 8, 8, 8]), body: atCrop(im, [20, 20, 8, 12]), leg: atCrop(im, [4, 20, 4, 6]) };
+  c.headW = white(c.head); c.bodyW = white(c.body); c.legW = white(c.leg);
+  return (MENU_CREEPER = c);
+}
 function menuSceneSize() {
   const cv = MenuScene.cv; cv.width = Math.max(320, window.innerWidth); cv.height = Math.max(320, window.innerHeight);
   MenuScene.S = Math.max(3, Math.min(6, Math.round(cv.height / 150)));
@@ -8269,18 +8289,33 @@ function menuSceneFrame(now) {
   if (MenuScene.hover) { pose.head = -0.12; pose.armN = 1.3 + Math.sin(t * 9) * 0.35; }          // winkt, wenn man mit der Maus drüber ist
   steveDraw(ctx, sx, gy, S, pose);
   MenuScene.hit = { x: sx - 7 * S, y: gy - 33 * S, w: 14 * S, h: 33 * S };
+  const cr = menuCreeper();
+  if (cr) {                                                                  // Creeper rechts: zischt und bläht sich auf, wenn man draufzeigt
+    const hv = MenuScene.hover2, k = hv ? 1 + 0.07 * Math.min(1, ((MenuScene.hoverT2 = (MenuScene.hoverT2 || 0) + dtm)) * 3) : (MenuScene.hoverT2 = 0, 1);
+    const flash = hv && Math.floor(t * 8) % 2 === 0, cx = W - sx - 10 * S, sh = hv ? Math.sin(t * 50) * 0.5 * S : 0;
+    ctx.save(); ctx.imageSmoothingEnabled = false; ctx.translate(cx + sh, gy); ctx.scale(k, k);
+    ctx.drawImage(flash ? cr.legW : cr.leg, -4 * S, -6 * S, 4 * S, 6 * S); ctx.drawImage(flash ? cr.legW : cr.leg, 0, -6 * S, 4 * S, 6 * S);
+    ctx.drawImage(flash ? cr.bodyW : cr.body, -4 * S, -18 * S, 8 * S, 12 * S); ctx.drawImage(flash ? cr.headW : cr.head, -4 * S, -26 * S, 8 * S, 8 * S);
+    ctx.restore();
+    MenuScene.hit2 = { x: cx - 5 * S, y: gy - 28 * S, w: 10 * S, h: 28 * S };
+  }
 }
 function menuSceneSync(s) {
   if (s === 'menu') { if (!MenuScene.raf) { menuSceneSize(); MenuScene.t0 = performance.now(); MenuScene.raf = requestAnimationFrame(menuSceneFrame); } }
   else if (MenuScene.raf) { cancelAnimationFrame(MenuScene.raf); MenuScene.raf = 0; atStop(); }
   if (s === 'dino') dinoStart();
   else dinoStop();
+  if (s === 'snake') snakeStart();
+  else snakeStop();
 }
 window.addEventListener('resize', () => { if (MenuScene.raf) menuSceneSize(); });
-const menuHit = (e) => { const r = MenuScene.cv.getBoundingClientRect(), h = MenuScene.hit; if (!h) return false; const x = (e.clientX - r.left) * MenuScene.cv.width / r.width, y = (e.clientY - r.top) * MenuScene.cv.height / r.height; return x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h; };
-MenuScene.cv.addEventListener('pointermove', (e) => { const h = menuHit(e); MenuScene.hover = h; MenuScene.cv.style.cursor = h ? 'pointer' : ''; });
-MenuScene.cv.addEventListener('pointerleave', () => { MenuScene.hover = false; });
-MenuScene.cv.addEventListener('pointerdown', (e) => { if (menuHit(e)) { MenuScene.hover = false; sfx('click'); setState('dino'); } });
+const menuHit = (e, h = MenuScene.hit) => { const r = MenuScene.cv.getBoundingClientRect(); if (!h) return false; const x = (e.clientX - r.left) * MenuScene.cv.width / r.width, y = (e.clientY - r.top) * MenuScene.cv.height / r.height; return x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h; };
+MenuScene.cv.addEventListener('pointermove', (e) => { const h = menuHit(e), h2 = menuHit(e, MenuScene.hit2); MenuScene.hover = h; MenuScene.hover2 = h2; MenuScene.cv.style.cursor = h || h2 ? 'pointer' : ''; });
+MenuScene.cv.addEventListener('pointerleave', () => { MenuScene.hover = false; MenuScene.hover2 = false; });
+MenuScene.cv.addEventListener('pointerdown', (e) => {
+  if (menuHit(e)) { MenuScene.hover = false; sfx('click'); setState('dino'); }
+  else if (menuHit(e, MenuScene.hit2)) { MenuScene.hover2 = false; sfx('fuse'); setState('snake'); }
+});
 
 
 // ===== Menü-Leerlauf: nach 10 s Untätigkeit spielt Steve ein 2D-Minecraft (alle Texturen aus dem Pack) =====
@@ -8796,9 +8831,123 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('keyup', (e) => { keysDown[e.code] = false; });
 Dino.cv.addEventListener('pointerdown', (e) => { e.preventDefault(); dinoJump(); });
 $('dinoBack').onclick = () => setState('menu');
+
+// --- Creeper-Snake: Kopf = Creeper-Gesicht, Körper = Creeper-Haut, Futter = Schießpulver, Hindernisse = TNT (alles aus dem Pack) ---
+const Snake = { cv: $('snakeCv'), raf: 0, last: 0, st: null, hi: 0, tiles: null, touch: null };
+try { Snake.hi = +localStorage.getItem('voxelcraft_snake') || 0; } catch (e) { /* egal */ }
+const SN = { C: 20, R: 14, CS: 30, TOP: 40 };
+function snakeTiles() {
+  if (Snake.tiles) return Snake.tiles;
+  const I = (n) => ATLAS.images[n], cr = I('entity/creeper/creeper'), moss = I('block/moss_block'), tnt = I('block/tnt_side'), gp = I('item/gunpowder'), ap = I('item/apple');
+  if (!cr || !moss || !tnt || !gp || !ap) return null;
+  const full = (im, dark) => atCrop(im, [0, 0, im.width, im.height], false, dark);
+  const white = (c) => { const w = document.createElement('canvas'); w.width = c.width; w.height = c.height; const x = w.getContext('2d'); x.drawImage(c, 0, 0); x.globalCompositeOperation = 'source-atop'; x.fillStyle = 'rgba(255,255,255,0.8)'; x.fillRect(0, 0, w.width, w.height); return w; };
+  const t = { bg0: full(moss), bg1: full(moss, 0.16), head: atCrop(cr, [8, 8, 8, 8]), b0: atCrop(cr, [20, 20, 8, 8]), b1: atCrop(cr, [20, 20, 8, 8], false, 0.22), tnt: full(tnt), gp: full(gp), ap: full(ap) };
+  t.headW = white(t.head); t.b0W = white(t.b0); t.b1W = white(t.b1);
+  return (Snake.tiles = t);
+}
+function snakeCell(x, y) { return (Snake.st.body.some((b) => b.x === x && b.y === y)) || Snake.st.tnt.some((b) => b.x === x && b.y === y) || (Snake.st.food && Snake.st.food.x === x && Snake.st.food.y === y) || (Snake.st.bonus && Snake.st.bonus.x === x && Snake.st.bonus.y === y); }
+function snakeRand(far) {                                                     // freies Feld (optional: weit weg vom Kopf)
+  const s = Snake.st, h = s.body[0];
+  for (let i = 0; i < 300; i++) {
+    const x = (Math.random() * SN.C) | 0, y = (Math.random() * SN.R) | 0;
+    if (!snakeCell(x, y) && (!far || Math.abs(x - h.x) + Math.abs(y - h.y) >= 6)) return { x, y };
+  }
+  return null;
+}
+function snakeReset() {
+  Snake.st = { body: [{ x: 6, y: 7 }, { x: 5, y: 7 }, { x: 4, y: 7 }], dir: { x: 1, y: 0 }, q: [], acc: 0, score: 0, grow: 0, food: null, bonus: null, tnt: [], eaten: 0, dead: false, deadT: 0, started: false, t: 0, parts: [], newHi: false };
+  Snake.st.food = snakeRand();
+}
+function snakeStart() { if (Snake.raf) return; snakeReset(); Snake.last = performance.now(); Snake.raf = requestAnimationFrame(snakeFrame); }
+function snakeStop() { if (Snake.raf) { cancelAnimationFrame(Snake.raf); Snake.raf = 0; } }
+function snakeDir(dx, dy) {
+  const s = Snake.st; if (!s) return;
+  if (s.dead) return;
+  const last = s.q.length ? s.q[s.q.length - 1] : s.dir;
+  if ((dx === last.x && dy === last.y) || (dx === -last.x && dy === -last.y)) return;
+  s.started = true; if (s.q.length < 2) s.q.push({ x: dx, y: dy });
+}
+function snakeDie() {
+  const s = Snake.st; s.dead = true; s.deadT = 0; sfx('explode');
+  const h = s.body[0], T = snakeTiles();
+  for (let i = 0; i < 50; i++) { const a = Math.random() * 6.283, v = 80 + Math.random() * 280; s.parts.push({ x: (h.x + 0.5) * SN.CS, y: SN.TOP + (h.y + 0.5) * SN.CS, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 60, life: 0.7 + Math.random() * 0.6, c: i % 3 === 0 ? '#e8ffe0' : i % 3 === 1 ? '#3f8a2e' : '#5fbf48', sz: 4 + Math.random() * 6 }); }
+  if (s.score > Snake.hi) { Snake.hi = s.score; s.newHi = true; try { localStorage.setItem('voxelcraft_snake', String(Snake.hi)); } catch (e) { /* egal */ } }
+}
+function snakeStep() {
+  const s = Snake.st; if (s.q.length) s.dir = s.q.shift();
+  const h = s.body[0], n = { x: h.x + s.dir.x, y: h.y + s.dir.y }, keep = s.grow > 0 ? s.body.length : s.body.length - 1;   // beim Wachsen bleibt der Schwanz stehen
+  if (n.x < 0 || n.y < 0 || n.x >= SN.C || n.y >= SN.R || s.tnt.some((b) => b.x === n.x && b.y === n.y) || s.body.slice(0, keep).some((b) => b.x === n.x && b.y === n.y)) { snakeDie(); return; }
+  s.body.unshift(n);
+  if (s.grow > 0) s.grow--; else s.body.pop();
+  if (s.food && s.food.x === n.x && s.food.y === n.y) {
+    s.score++; s.grow++; s.eaten++; sfx('eat');
+    s.food = snakeRand();
+    if (s.eaten % 4 === 0 && !s.bonus) { const b = snakeRand(); if (b) s.bonus = { x: b.x, y: b.y, t: 7 }; }
+    if (s.eaten % 3 === 0 && s.tnt.length < 12) { const b = snakeRand(true); if (b) s.tnt.push(b); }
+  } else if (s.bonus && s.bonus.x === n.x && s.bonus.y === n.y) { s.score += 5; s.grow += 2; s.bonus = null; sfx('pop'); }
+}
+function snakeFrame(now) {
+  Snake.raf = requestAnimationFrame(snakeFrame);
+  const dt = Math.min(0.05, (now - Snake.last) / 1000); Snake.last = now;
+  const s = Snake.st, T = snakeTiles(), cv = Snake.cv, ctx = cv.getContext('2d'), CS = SN.CS, TOP = SN.TOP; if (!T) return;
+  s.t += dt;
+  if (s.dead) s.deadT += dt;
+  else if (s.started) {
+    s.acc += dt; const step = Math.max(0.072, 0.15 - s.score * 0.0028);
+    while (s.acc >= step && !s.dead) { s.acc -= step; snakeStep(); }
+    if (s.bonus) { s.bonus.t -= dt; if (s.bonus.t <= 0) s.bonus = null; }
+  }
+  for (const p of s.parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 600 * dt; p.life -= dt; }
+  s.parts = s.parts.filter((p) => p.life > 0);
+  ctx.imageSmoothingEnabled = false; ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.fillStyle = '#111'; ctx.fillRect(0, 0, cv.width, TOP);
+  for (let y = 0; y < SN.R; y++) for (let x = 0; x < SN.C; x++) ctx.drawImage((x + y) & 1 ? T.bg1 : T.bg0, x * CS, TOP + y * CS, CS, CS);
+  for (const b of s.tnt) ctx.drawImage(T.tnt, b.x * CS, TOP + b.y * CS, CS, CS);
+  const pulse = 1 + Math.sin(s.t * 6) * 0.06;
+  const drawItem = (img, c, sc) => { const w = CS * sc; ctx.drawImage(img, c.x * CS + (CS - w) / 2, TOP + c.y * CS + (CS - w) / 2, w, w); };
+  if (s.food) drawItem(T.gp, s.food, 0.9 * pulse);
+  if (s.bonus && (s.bonus.t > 2 || Math.floor(s.t * 8) % 2 === 0)) drawItem(T.ap, s.bonus, 1 * pulse);
+  const flash = s.dead && s.deadT < 0.5 && Math.floor(s.deadT * 14) % 2 === 0;
+  if (!s.dead || s.deadT < 0.5 || true) {
+    for (let i = s.body.length - 1; i >= 0; i--) {
+      const b = s.body[i], x = b.x * CS, y = TOP + b.y * CS;
+      if (s.dead && s.deadT > 0.35 && i === 0) continue;                    // Kopf ist explodiert
+      if (i === 0) ctx.drawImage(flash ? T.headW : T.head, x - 1, y - 1, CS + 2, CS + 2);
+      else ctx.drawImage(flash ? (i & 1 ? T.b1W : T.b0W) : (i & 1 ? T.b1 : T.b0), x + 2, y + 2, CS - 4, CS - 4);
+    }
+  }
+  for (const p of s.parts) { ctx.globalAlpha = Math.min(1, p.life * 2); ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, p.sz, p.sz); }
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 20px monospace'; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  ctx.fillText('PUNKTE ' + String(s.score).padStart(3, '0'), 14, TOP / 2 + 1);
+  ctx.textAlign = 'right'; ctx.fillStyle = '#8f8'; ctx.fillText('REKORD ' + String(Snake.hi).padStart(3, '0'), cv.width - 14, TOP / 2 + 1);
+  ctx.textAlign = 'center';
+  const msg = (big, small, col) => { ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, TOP + SN.R * CS / 2 - 52, cv.width, 104); ctx.fillStyle = col; ctx.font = 'bold 34px monospace'; ctx.fillText(big, cv.width / 2, TOP + SN.R * CS / 2 - 14); ctx.fillStyle = '#fff'; ctx.font = '16px monospace'; ctx.fillText(small, cv.width / 2, TOP + SN.R * CS / 2 + 26); };
+  if (s.dead && s.deadT > 0.5) msg(s.newHi ? 'BUMM! Neuer Rekord: ' + s.score : 'BUMM! ' + s.score + ' Punkte', 'Leertaste / Tippen = nochmal', s.newHi ? '#ffe45c' : '#ff7b6b');
+  else if (!s.started) msg('Creeper-Snake', 'Pfeiltasten / WASD / Wischen zum Starten', '#8f8');
+}
+document.addEventListener('keydown', (e) => {
+  if (state !== 'snake') return;
+  const k = e.code;
+  if (k === 'Escape') { setState('menu'); return; }
+  const map = { ArrowUp: [0, -1], KeyW: [0, -1], ArrowDown: [0, 1], KeyS: [0, 1], ArrowLeft: [-1, 0], KeyA: [-1, 0], ArrowRight: [1, 0], KeyD: [1, 0] };
+  if (map[k]) { e.preventDefault(); snakeDir(map[k][0], map[k][1]); }
+  else if ((k === 'Space' || k === 'Enter') && Snake.st) { e.preventDefault(); if (Snake.st.dead && Snake.st.deadT > 0.5) snakeReset(); }
+});
+Snake.cv.addEventListener('pointerdown', (e) => { e.preventDefault(); const s = Snake.st; if (s && s.dead) { if (s.deadT > 0.5) snakeReset(); return; } Snake.touch = { x: e.clientX, y: e.clientY }; try { Snake.cv.setPointerCapture(e.pointerId); } catch (err) { /* egal */ } });
+Snake.cv.addEventListener('pointermove', (e) => {
+  const t = Snake.touch; if (!t) return;
+  const dx = e.clientX - t.x, dy = e.clientY - t.y; if (Math.hypot(dx, dy) < 22) return;
+  if (Math.abs(dx) > Math.abs(dy)) snakeDir(dx > 0 ? 1 : -1, 0); else snakeDir(0, dy > 0 ? 1 : -1);
+  Snake.touch = { x: e.clientX, y: e.clientY };
+});
+const snakeUp = () => { Snake.touch = null; };
+Snake.cv.addEventListener('pointerup', snakeUp); Snake.cv.addEventListener('pointercancel', snakeUp);
+$('snakeBack').onclick = () => setState('menu');
 ATLAS.onReady(() => { if (state === 'menu' && !MenuScene.raf) menuSceneSync('menu'); });
 
-window.__vc = { atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+window.__vc = { Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>
