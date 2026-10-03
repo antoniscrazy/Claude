@@ -105,6 +105,14 @@ input[type=text]:focus,select:focus{border-color:#8fd06a}
 .eopt small{display:block;color:#bba7e6}
 .eopt.no{opacity:.45;cursor:not-allowed;filter:grayscale(.5)}
 .eopt:not(.no):hover{background:#51397f}
+#boss{position:absolute;left:50%;top:10px;transform:translateX(-50%);width:min(420px,70vw);text-align:center;color:#fff;font:bold 15px 'Courier New',monospace;text-shadow:1px 1px #000;z-index:5}
+#boss .bb{height:10px;background:rgba(0,0,0,.7);border:2px solid #111;margin-top:3px}
+#boss i{display:block;height:100%;width:100%;background:linear-gradient(#e66bff,#8a2bd6);transition:width .2s}
+#credits{background:#000;color:#e8e8e8;overflow:hidden;z-index:80}
+#credits .roll{position:absolute;left:50%;transform:translateX(-50%);width:min(560px,90vw);text-align:center;line-height:1.9;font-size:18px;animation:roll 38s linear forwards;top:100%}
+#credits h1{color:#cf9bff;font-size:34px;margin:30px 0}
+#credits small{color:#9aa;display:block}
+@keyframes roll{to{top:-170%}}
 #totemFx{position:fixed;inset:0;z-index:60;pointer-events:none;display:none;align-items:center;justify-content:center}
 #totemFx img{width:min(46vh,70vw);image-rendering:pixelated;filter:drop-shadow(0 0 20px #ffe066);animation:totempop 1.3s ease-out forwards}
 @keyframes totempop{0%{transform:scale(.2) rotate(-12deg);opacity:0}25%{transform:scale(1.15) rotate(4deg);opacity:1}70%{transform:scale(1) rotate(-2deg);opacity:1}100%{transform:scale(1.6);opacity:0}}
@@ -476,6 +484,8 @@ body.touch #modeTag{display:none}
    </div>
   </div>
 </div>
+<div id="boss" class="hidden"><div id="bossName">Enderdrache</div><div class="bb"><i id="bossFill"></i></div></div>
+<div id="credits" class="overlay hidden"><div class="roll" id="creditsRoll"></div><button class="btn" id="creditsBtn" type="button" style="position:absolute;bottom:20px;right:20px;width:auto">Überspringen ➜</button></div>
 <div id="totemFx"><img id="totemImg" alt=""></div>
 <div id="cursorItem" class="hidden"></div>
 <button class="btn hidden" id="invDrop" type="button" style="position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:41;width:auto;padding:8px 18px">Item fallen lassen</button>
@@ -647,8 +657,6 @@ add('glowstone', 'Leuchtstein', allSides('glowstone'), { emit: true, light: 14, 
 add('sea_lantern', 'Seelaterne', allSides('sea_lantern'), { emit: true, light: 14, hard: 0.6, tab: 'deko' });
 add('shroomlight', 'Pilzlicht', allSides('shroomlight'), { emit: true, light: 12, hard: 0.6, tab: 'deko' });
 add('lamp', 'Redstone-Lampe', allSides('redstone_lamp'), { hard: 0.6, tab: 'redstone', rs: { k: 'lamp', on: false } });
-add('lamp_on', 'Redstone-Lampe', allSides('redstone_lamp_on'), { emit: true, light: 14, hard: 0.6, rs: { k: 'lamp', on: true } });
-BLOCKS[ID.lamp_on].drop = ID.lamp;
 add('tnt', 'TNT', sides('tnt_side', 'tnt_top', 'tnt_bottom'), { hard: 0.1, tab: 'deko' });
 const PLANTS = [['short_grass', 'Gras', TINT_GRASS, 0], ['fern', 'Farn', TINT_GRASS, 0], ['dead_bush', 'Toter Busch', null, 0],
   ['dandelion', 'Löwenzahn'], ['poppy', 'Mohn'], ['blue_orchid', 'Blaue Orchidee'], ['allium', 'Zierlauch'], ['azure_bluet', 'Porzellansternchen'],
@@ -781,15 +789,6 @@ add('bed', 'Bett', [tile('bed_side', { src: 'block/oak_planks' }), tile('bed_sid
 add('enchanting_table', 'Zaubertisch', sides('enchanting_table_side', 'enchanting_table_top', 'enchanting_table_bottom'),
   merge(PICK1, { opaque: false, hard: 4, aabbs: [[0, 0, 0, 1, 0.75, 1]], boxes: [box([0, 0, 0, 1, 0.75, 1])], tab: 'deko' }));
 
-// --- Schienen: 6 Formen (Nord-Süd, Ost-West, 4 Kurven); Form wird beim Platzieren automatisch gewählt ---
-const RAIL_IDS = {};
-['ns', 'ew', 'ne', 'se', 'sw', 'nw'].forEach((sh) => {
-  const curve = sh !== 'ns' && sh !== 'ew';
-  const t = curve ? tile('rail_c_' + sh, { src: 'block/rail_corner', rot: { ne: 0, se: 1, sw: 2, nw: 3 }[sh] }) : tile('rail_s_' + sh, { src: 'block/rail', rot: sh === 'ew' ? 1 : 0 });
-  RAIL_IDS[sh] = add(sh === 'ns' ? 'rail' : 'rail_' + sh, 'Schiene', [t, t, t, t, t, t],
-    { solid: false, opaque: false, hard: 0.7, tool: 'pickaxe', need: 0, aabbs: [[0, 0, 0, 1, 0.1, 1]], boxes: [box([0, 0, 0, 1, 0.0625, 1], [0, 1, 3, 4, 5])], rail: { shape: sh }, flat: t, support: 'below', tab: sh === 'ns' ? 'deko' : undefined });
-});
-Object.values(RAIL_IDS).forEach((id) => { BLOCKS[id].drop = RAIL_IDS.ns; });
 
 
 // --- Stufen und Platten (Familien) ---
@@ -1034,6 +1033,46 @@ BLOCKS[WATER].drop = 0; BLOCKS[ID.lava].drop = 0; BLOCKS[ID.bedrock].drop = 0;
   for (let d = 0; d < 4; d++) base.wallIds.push(add(k + '_wall_' + d, de, base.tex.slice(), { solid: false, opaque: false, torch: true, emit: true, light: base.light, hard: 0.05, wallDir: d, drop: ID[k] }));
 });
 
+
+// ---------- NETHER-Erweiterung: Blöcke (am Ende angehängt) ----------
+add('nether_quartz_ore', 'Nether-Quarzerz', allSides('nether_quartz_ore'), { hard: 3, tab: 'natur' });
+add('nether_gold_ore', 'Nether-Golderz', allSides('nether_gold_ore'), { hard: 3, tab: 'natur' });
+const PORTAL_IDS = [];
+for (let d = 0; d < 2; d++) {                                        // d=0: Portalfläche in der X-Y-Ebene (Blick nach Z), d=1: in der Z-Y-Ebene
+  const pb = d === 0 ? [0, 0, 6 / 16, 1, 1, 10 / 16] : [6 / 16, 0, 0, 10 / 16, 1, 1];
+  PORTAL_IDS.push(add('nether_portal_' + d, 'Netherportal', allSides('nether_portal'), { solid: false, opaque: false, trans: true, hard: 0.1, emit: true, light: 11, boxes: [box(pb)], sel: [pb], aabbs: [pb], portal: d, drop: 0, samecull: true, tab: d === 0 ? 'natur' : undefined, flat: tile('nether_portal') }));
+}
+ID.nether_portal = PORTAL_IDS[0];
+// ---------- BACKROOMS-Erweiterung: Blöcke (nur dort zu finden, nicht craftbar; Texturen sind selbst gezeichnet: genBackroomsImages) ----------
+PALETTE.backrooms = []; TAB_NAMES.backrooms = 'Backrooms';
+add('br_wallpaper', 'Gelbe Tapete', allSides('gen_wallpaper'), { hard: 1.2, tab: 'backrooms' });
+add('br_carpet', 'Feuchter Teppich', allSides('gen_carpet'), { hard: 0.5, tab: 'backrooms' });
+add('br_ceiling', 'Deckenplatte', allSides('gen_ceiling'), { hard: 0.9, tab: 'backrooms' });
+add('br_light', 'Neonlicht', allSides('gen_light'), { hard: 0.5, emit: true, light: 15, tab: 'backrooms' });
+add('br_concrete', 'Brummender Beton', allSides('gen_concrete'), { hard: 2.5, tab: 'backrooms' });
+add('br_wallpaper_stain', 'Fleckige Tapete', allSides('gen_wallpaper_stain'), { hard: 1.2, tab: 'backrooms' });
+add('br_tile', 'Poolfliesen', allSides('gen_tile'), { hard: 1.2, tab: 'backrooms' });
+add('br_garage_floor', 'Garagenboden', allSides('gen_garage_floor'), { hard: 2, tab: 'backrooms' });
+add('br_garage_wall', 'Garagenwand', allSides('gen_garage_wall'), { hard: 2, tab: 'backrooms' });
+add('br_garage_line_h', 'Parkmarkierung', allSides('gen_garage_line_h'), { hard: 2, tab: 'backrooms' });
+add('br_garage_line_v', 'Parkmarkierung (quer)', allSides('gen_garage_line_v'), { hard: 2, tab: 'backrooms' });
+add('br_exit', 'Notausgang', allSides('gen_exit'), { hard: 1, emit: true, light: 9, backExit: true, tab: 'backrooms' });
+add('br_crate', 'Vorratskiste', allSides('gen_crate'), { hard: 1.2, container: 27, loot: { dir: 0, kind: 'backrooms' }, drop: 0, tab: 'backrooms' });
+BLOCKS[ID.br_crate].drop = CHEST_IDS[0];
+if (nextId >= 4000) throw new Error('Zu viele Blöcke');
+
+// ---------- Redstone, Schienen, Ende: Blöcke (am Ende angehängt, damit alte IDs gültig bleiben) ----------
+add('lamp_on', 'Redstone-Lampe', allSides('redstone_lamp_on'), { emit: true, light: 14, hard: 0.6, rs: { k: 'lamp', on: true } });
+BLOCKS[ID.lamp_on].drop = ID.lamp;
+// --- Schienen: 6 Formen (Nord-Süd, Ost-West, 4 Kurven); Form wird beim Platzieren automatisch gewählt ---
+const RAIL_IDS = {};
+['ns', 'ew', 'ne', 'se', 'sw', 'nw'].forEach((sh) => {
+  const curve = sh !== 'ns' && sh !== 'ew';
+  const t = curve ? tile('rail_c_' + sh, { src: 'block/rail_corner', rot: { ne: 0, se: 1, sw: 2, nw: 3 }[sh] }) : tile('rail_s_' + sh, { src: 'block/rail', rot: sh === 'ew' ? 1 : 0 });
+  RAIL_IDS[sh] = add(sh === 'ns' ? 'rail' : 'rail_' + sh, 'Schiene', [t, t, t, t, t, t],
+    { solid: false, opaque: false, hard: 0.7, tool: 'pickaxe', need: 0, aabbs: [[0, 0, 0, 1, 0.1, 1]], boxes: [box([0, 0, 0, 1, 0.0625, 1], [0, 1, 3, 4, 5])], rail: { shape: sh }, flat: t, support: 'below', tab: sh === 'ns' ? 'deko' : undefined });
+});
+Object.values(RAIL_IDS).forEach((id) => { BLOCKS[id].drop = RAIL_IDS.ns; });
 // ===== Redstone: Blöcke (Zustände stecken in den Block-IDs) =====
 const FN = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];               // Flächenrichtungen: +X, -X, +Y, -Y, +Z, -Z
 function boxToFace(b, f) {                                            // Quader aus dem "Boden-Rahmen" (oben = +Y) auf Fläche f drehen (oben = FN[f])
@@ -1099,12 +1138,7 @@ const PRAIL_IDS = { ns: [], ew: [] };
 }));
 ['ns', 'ew'].forEach((sh) => PRAIL_IDS[sh].forEach((id) => { BLOCKS[id].drop = PRAIL_IDS.ns[0]; }));
 BLOCKS[ID.tnt].rs = { k: 'tnt' }; if (ID.redstone_block !== undefined) { BLOCKS[ID.redstone_block].rs = { k: 'block' }; BLOCKS[ID.redstone_block].tab = BLOCKS[ID.redstone_block].tab || 'redstone'; }
-
 // ===== Das Ende: Blöcke =====
-add('end_stone', 'Endstein', allSides('end_stone'), merge(PICK1, { hard: 3, tab: 'stein' }));
-add('end_stone_bricks', 'Endsteinziegel', allSides('end_stone_bricks'), merge(PICK1, { hard: 3, tab: 'stein' }));
-add('purpur_block', 'Purpurblock', allSides('purpur_block'), merge(PICK1, { hard: 1.5, tab: 'stein' }));
-add('purpur_pillar', 'Purpursäule', sides('purpur_pillar', 'purpur_pillar_top'), merge(PICK1, { hard: 1.5, tab: 'stein' }));
 const ENDF_IDS = [];
 {
   const eb = [[0, 0, 0, 1, 0.8125, 1]], side = tile('endf_side', { src: 'block/end_portal_frame_side' }), bot = tile('end_stone');
@@ -1116,33 +1150,6 @@ const ENDF_IDS = [];
 const END_PORTAL_ID = add('end_portal', 'Endportal', allSides(tile('end_portal_gen', { src: 'block/obsidian', endp: true })),
   { solid: false, opaque: false, hard: Infinity, emit: true, light: 8, aabbs: [[0, 0, 0, 1, 0.75, 1]], boxes: [box([0, 0, 0, 1, 0.75, 1], [0, 1, 3, 4, 5])], endPortal: true, drop: 0 });
 add('dragon_egg', 'Drachenei', allSides('dragon_egg'), { opaque: false, hard: 3, aabbs: [[0.1875, 0, 0.1875, 0.8125, 0.95, 0.8125]], boxes: [box([0.1875, 0, 0.1875, 0.8125, 0.95, 0.8125])], emit: true, light: 3, tab: 'deko' });
-// ---------- NETHER-Erweiterung: Blöcke (am Ende angehängt) ----------
-add('nether_quartz_ore', 'Nether-Quarzerz', allSides('nether_quartz_ore'), { hard: 3, tab: 'natur' });
-add('nether_gold_ore', 'Nether-Golderz', allSides('nether_gold_ore'), { hard: 3, tab: 'natur' });
-const PORTAL_IDS = [];
-for (let d = 0; d < 2; d++) {                                        // d=0: Portalfläche in der X-Y-Ebene (Blick nach Z), d=1: in der Z-Y-Ebene
-  const pb = d === 0 ? [0, 0, 6 / 16, 1, 1, 10 / 16] : [6 / 16, 0, 0, 10 / 16, 1, 1];
-  PORTAL_IDS.push(add('nether_portal_' + d, 'Netherportal', allSides('nether_portal'), { solid: false, opaque: false, trans: true, hard: 0.1, emit: true, light: 11, boxes: [box(pb)], sel: [pb], aabbs: [pb], portal: d, drop: 0, samecull: true, tab: d === 0 ? 'natur' : undefined, flat: tile('nether_portal') }));
-}
-ID.nether_portal = PORTAL_IDS[0];
-// ---------- BACKROOMS-Erweiterung: Blöcke (nur dort zu finden, nicht craftbar; Texturen sind selbst gezeichnet: genBackroomsImages) ----------
-PALETTE.backrooms = []; TAB_NAMES.backrooms = 'Backrooms';
-add('br_wallpaper', 'Gelbe Tapete', allSides('gen_wallpaper'), { hard: 1.2, tab: 'backrooms' });
-add('br_carpet', 'Feuchter Teppich', allSides('gen_carpet'), { hard: 0.5, tab: 'backrooms' });
-add('br_ceiling', 'Deckenplatte', allSides('gen_ceiling'), { hard: 0.9, tab: 'backrooms' });
-add('br_light', 'Neonlicht', allSides('gen_light'), { hard: 0.5, emit: true, light: 15, tab: 'backrooms' });
-add('br_concrete', 'Brummender Beton', allSides('gen_concrete'), { hard: 2.5, tab: 'backrooms' });
-add('br_wallpaper_stain', 'Fleckige Tapete', allSides('gen_wallpaper_stain'), { hard: 1.2, tab: 'backrooms' });
-add('br_tile', 'Poolfliesen', allSides('gen_tile'), { hard: 1.2, tab: 'backrooms' });
-add('br_garage_floor', 'Garagenboden', allSides('gen_garage_floor'), { hard: 2, tab: 'backrooms' });
-add('br_garage_wall', 'Garagenwand', allSides('gen_garage_wall'), { hard: 2, tab: 'backrooms' });
-add('br_garage_line_h', 'Parkmarkierung', allSides('gen_garage_line_h'), { hard: 2, tab: 'backrooms' });
-add('br_garage_line_v', 'Parkmarkierung (quer)', allSides('gen_garage_line_v'), { hard: 2, tab: 'backrooms' });
-add('br_exit', 'Notausgang', allSides('gen_exit'), { hard: 1, emit: true, light: 9, backExit: true, tab: 'backrooms' });
-add('br_crate', 'Vorratskiste', allSides('gen_crate'), { hard: 1.2, container: 27, loot: { dir: 0, kind: 'backrooms' }, drop: 0, tab: 'backrooms' });
-BLOCKS[ID.br_crate].drop = CHEST_IDS[0];
-if (nextId >= 4000) throw new Error('Zu viele Blöcke');
-
 // ---------- Items (Nicht-Blöcke, IDs ab 1000) ----------
 const ITEM_BASE = 5000;
 let nextItem = ITEM_BASE;
@@ -1179,9 +1186,6 @@ item('raw_iron', 'Roheisen', 'raw_iron'); item('raw_gold', 'Rohgold', 'raw_gold'
 item('iron_ingot', 'Eisenbarren', 'iron_ingot'); item('gold_ingot', 'Goldbarren', 'gold_ingot'); item('copper_ingot', 'Kupferbarren', 'copper_ingot');
 item('diamond', 'Diamant', 'diamond'); item('emerald', 'Smaragd', 'emerald');
 item('lapis', 'Lapislazuli', 'lapis_lazuli'); item('redstone', 'Redstone-Staub', 'redstone');
-item('totem_of_undying', 'Totem der Unsterblichkeit', 'totem_of_undying', { stack: 1 });
-DUST_IDS.forEach((a) => a.forEach((id) => { BLOCKS[id].drop = IID.redstone; }));
-item('saddle', 'Sattel', 'saddle', { stack: 1 }); item('ender_pearl', 'Enderperle', 'ender_pearl', { stack: 16, pearl: true }); item('ender_eye', 'Ender-Auge', 'ender_eye', { eye: true }); item('oak_boat', 'Boot', 'oak_boat', { stack: 1, boat: true }); item('minecart', 'Lore', 'minecart', { stack: 1, cart: true });
 item('flint', 'Feuerstein', 'flint'); item('gunpowder', 'Schwarzpulver', 'gunpowder'); item('string', 'Faden', 'string');
 item('feather', 'Feder', 'feather'); item('leather', 'Leder', 'leather'); item('bone', 'Knochen', 'bone'); item('arrow', 'Pfeil', 'arrow');
 // Nahrung (food = Hungerpunkte von 20)
@@ -1252,6 +1256,11 @@ TIER_DE.push('Netherit');
 item('blaze_rod', 'Lohenrute', 'blaze_rod', { fuel: 24 }); item('blaze_powder', 'Lohenstaub', 'blaze_powder'); item('ghast_tear', 'Ghast-Träne', 'ghast_tear');
 item('almond_water', 'Mandelwasser', 'gen_almond_water', { food: 6, always: true, stack: 16, effects: [['regeneration', 10, 0]] });
 
+// ---------- Redstone / Fahrzeuge / Ende: Items (angehängt) ----------
+item('totem_of_undying', 'Totem der Unsterblichkeit', 'totem_of_undying', { stack: 1 });
+item('saddle', 'Sattel', 'saddle', { stack: 1 }); item('ender_pearl', 'Enderperle', 'ender_pearl', { stack: 16, pearl: true }); item('ender_eye', 'Ender-Auge', 'ender_eye', { eye: true });
+item('oak_boat', 'Boot', 'oak_boat', { stack: 1, boat: true }); item('minecart', 'Lore', 'minecart', { stack: 1, cart: true });
+DUST_IDS.forEach((a) => a.forEach((id) => { BLOCKS[id].drop = IID.redstone; }));
 // ---------- Abbau: passendes Werkzeug und benötigte Stufe (0 Hand, 1 Holz, 2 Stein, 3 Eisen, 4 Diamant) ----------
 const setMine = (id, tool, need) => { BLOCKS[id].tool = tool; BLOCKS[id].need = need; };
 [GRASS, DIRT, SAND, SNOW].forEach((id) => setMine(id, 'shovel', 0));
@@ -1578,6 +1587,13 @@ function getIcon(id) {
     }
   } else {
     const b = BLOCKS[id];
+    if (b.rs && ['lever', 'button', 'plate', 'hopper'].includes(b.rs.k)) {                      // selbst gezeichnete Symbole
+      const f = (c, x, y, w, h) => { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); };
+      if (b.rs.k === 'lever') { f('#6b6b6b', 8, 22, 16, 6); f('#8c8c8c', 8, 22, 16, 2); f('#7a5a2e', 14, 7, 4, 16); f('#a07a3f', 14, 7, 4, 3); }
+      else if (b.rs.k === 'button') { f('#6b6b6b', 10, 14, 12, 8); f('#8c8c8c', 10, 14, 12, 3); f('#4b4b4b', 10, 20, 12, 2); }
+      else if (b.rs.k === 'plate') { f('#6b6b6b', 5, 18, 22, 5); f('#8c8c8c', 5, 18, 22, 2); f('#4b4b4b', 5, 22, 22, 1); }
+      else { f('#4a4a4f', 4, 6, 24, 6); f('#2a2a2e', 7, 8, 18, 3); f('#5b5b61', 9, 12, 14, 8); f('#707078', 12, 20, 8, 6); f('#4a4a4f', 14, 26, 4, 3); }
+    } else
     if (b.shapeIcon && SHAPE_ICONS[b.shapeIcon]) {
       const [sx, sy, sw, sh] = src(b.flat);
       SHAPE_ICONS[b.shapeIcon].forEach(([x, y, w, h]) => ctx.drawImage(A, sx + x / 32 * sw, sy + y / 32 * sh, w / 32 * sw, h / 32 * sh, x, y, w, h));
@@ -1630,7 +1646,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-03.11';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-04.1';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
 const isDryBiome = (b) => b === BIOME_DESERT || b === BIOME_MESA || b === BIOME_NETHER || b === BIOME_BACKROOMS || b === BIOME_END;
 // Baumdichte je Biom (alt = Welten vor den neuen Biomen, neu = ab GEN2_START)
@@ -3180,6 +3196,7 @@ function blockSfx(kind, id, x, y, z) {
 }
 // Mob-Stimmen
 const VOICES = {
+  ender_dragon: { idle: () => { tone(90, 50, 1.4, 'sawtooth', 0.22); tone(180, 80, 1.2, 'sawtooth', 0.12); noise(1.1, 500, 'lowpass', 0.2); }, hurt: () => { tone(160, 70, 0.6, 'sawtooth', 0.2); noise(0.5, 700, 'bandpass', 0.2); }, die: () => { tone(120, 30, 2.4, 'sawtooth', 0.25); noise(2, 400, 'lowpass', 0.3); } },
   enderman: { idle: () => { tone(300, 160, 0.4, 'sawtooth', 0.05); noise(0.3, 900, 'bandpass', 0.05); }, hurt: () => { tone(900, 200, 0.3, 'sawtooth', 0.12); noise(0.2, 2500, 'bandpass', 0.12); }, die: () => tone(400, 60, 0.7, 'sawtooth', 0.14), angry: () => { tone(120, 700, 0.5, 'sawtooth', 0.12); noise(0.4, 3000, 'highpass', 0.12); } },
   horse: { idle: () => { tone(520, 700, 0.25, 'sawtooth', 0.08); later(() => tone(700, 400, 0.4, 'sawtooth', 0.08), 200); noise(0.3, 1800, 'bandpass', 0.05); }, hurt: () => { tone(800, 500, 0.3, 'sawtooth', 0.12); noise(0.2, 1500, 'bandpass', 0.1); }, die: () => tone(600, 120, 0.7, 'sawtooth', 0.13) },
   pig: { idle: () => { tone(250, 160, 0.11, 'square', 0.1); later(() => tone(225, 150, 0.14, 'square', 0.1), 140); }, hurt: () => tone(520, 260, 0.2, 'square', 0.14), die: () => tone(380, 70, 0.5, 'square', 0.14) },
@@ -4557,6 +4574,36 @@ const unpackItems = (arr) => arr.map((s) => { if (!(s && validId(s[0]))) return 
 
 
 // ===== Das Ende: Reise, Portalrahmen, Festung, Perlen & Augen =====
+
+function endVictory(d) {                                                // Enderdrache besiegt: Portal, Ei, Erfahrung
+  spawnParticles(d.p.x - 0.5, d.p.y, d.p.z - 0.5, new THREE.Color(0.9, 0.4, 1), 80, 8, 4); spawnParticles(d.p.x - 0.5, d.p.y, d.p.z - 0.5, new THREE.Color(1, 1, 0.8), 50, 6, 3); sfx('explode');
+  const T = END.TOP; for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) if (dx || dz) world.setBlock(dx, T + 1, dz, END_PORTAL_ID, false);
+  world.setBlock(0, T + 5, 0, ID.dragon_egg, false);
+  spawnOrbs(0.5, T + 6, 0.5, 500); achGive('dragon'); toast('Der Enderdrache wurde besiegt!');
+  const msg = 'Der Enderdrache wurde besiegt!'; if (mp.on) { mpSend('chat', { n: '*', t: msg }); } chatSys(msg);
+}
+let endT = 0;
+function updateEnd(dt) {
+  const boss = $('boss');
+  if (!world || world.dim !== 3) { if (!boss.classList.contains('hidden')) boss.classList.add('hidden'); return; }
+  const dr = mobs.find((m) => m.type === 'ender_dragon' && m.hp > 0);
+  boss.classList.toggle('hidden', !dr); if (dr) $('bossFill').style.width = Math.max(0, dr.hp / dr.T.hp * 100) + '%';
+  endT -= dt; if (endT > 0 || (mp.on && !isHost())) return; endT = 1;
+  if (endKilled()) return;
+  if (!dr && !mobs.some((m) => m.type === 'ender_dragon')) { const D = new Mob('ender_dragon', 0.5, 50, 40.5); D.yaw = Math.PI; mobs.push(D); }
+  END_PILLARS.forEach((pl, i) => {
+    if (endDead.has(i)) return;
+    if (!mobs.some((m) => m.type === 'end_crystal' && Math.abs(m.p.x - (pl.x + 0.5)) < 1.5 && Math.abs(m.p.z - (pl.z + 0.5)) < 1.5)) { if (!world.getChunk(pl.x >> 4, pl.z >> 4)) return; const c = new Mob('end_crystal', pl.x + 0.5, pl.top + 2, pl.z + 0.5); c.pillar = i; mobs.push(c); }
+  });
+}
+const CREDITS = ['<h1>Das Ende</h1>', 'Du hast den Enderdrachen besiegt.', '<small>Der Himmel über der Insel wird wieder still …</small>', '&nbsp;', '<h1>VOXELCRAFT</h1>', 'Ein Minecraft-ähnliches Spiel im Browser', '<small>Texturen aus dem Texturpaket des Spielers</small>', '&nbsp;', 'Welt · Nether · Backrooms · Das Ende', 'Redstone · Kolben · Loren · Boote · Pferde', 'Erfahrung · Verzauberungen · Totem', '&nbsp;', '<small>Spielidee &amp; Tests</small>', 'Du', '&nbsp;', '<small>Programmierung</small>', 'Claude', '&nbsp;', '<h1>Danke fürs Spielen!</h1>'];
+function showCredits(done) {
+  $('creditsRoll').innerHTML = CREDITS.map((l) => '<div>' + l + '</div>').join(''); const el = $('credits'), roll = $('creditsRoll');
+  roll.style.animation = 'none'; void roll.offsetWidth; roll.style.animation = ''; el.classList.remove('hidden'); setState('pause');
+  let closed = false; const close = () => { if (closed) return; closed = true; el.classList.add('hidden'); done(); };
+  $('creditsBtn').onclick = close; setTimeout(close, 39000);
+}
+
 const endDead = new Set();                                              // zerstörte Kristalle (Index der Säule)
 const endKilled = () => { if (!world) return false; const e = world.dimData[3].edits.get(ckey(0, 0)); return !!e && e.m.get(1 + ((END.TOP + 1) << 8)) === END_PORTAL_ID; };
 function endArrive() {                                                  // Ankunft: Obsidianplattform sicherstellen
@@ -4564,7 +4611,10 @@ function endArrive() {                                                  // Ankun
   for (let x = END.PX - 2; x <= END.PX + 2; x++) for (let z = END.PZ - 2; z <= END.PZ + 2; z++) { world.setBlock(x, END.PY, z, ID.obsidian, false); for (let y = END.PY + 1; y <= END.PY + 4; y++) if (world.getBlock(x, y, z) !== AIR) world.setBlock(x, y, z, AIR, false); }
   P.p.set(END.PX + 0.5, END.PY + 1, END.PZ + 0.5); P.yaw = Math.PI / 2; P.pitch = 0.1; P.fallPeak = P.p.y; achGive('end');
 }
-function endLeave() { enterDimension(0, P.spawn.x, P.spawn.y, P.spawn.z, { exact: true, out: true }); }
+function endLeave() {
+  if (endKilled() && !P.creditsSeen) { P.creditsSeen = true; showCredits(() => enterDimension(0, P.spawn.x, P.spawn.y, P.spawn.z, { exact: true, out: true })); return; }
+  enterDimension(0, P.spawn.x, P.spawn.y, P.spawn.z, { exact: true, out: true });
+}
 const FRAME_RING = [[-2, -1], [-2, 0], [-2, 1], [2, -1], [2, 0], [2, 1], [-1, -2], [0, -2], [1, -2], [-1, 2], [0, 2], [1, 2]];
 function endFrameAt(x, y, z) { const b = world.getBlock(x, y, z); return b > 0 && BLOCKS[b].endFrame !== undefined ? (BLOCKS[b].endFrame ? 2 : 1) : 0; }
 function tryEndPortal(fx, fy, fz) {
@@ -5481,7 +5531,7 @@ ATLAS.onReady(() => {
   MT.rabbit0 = mk('entity/rabbit/brown'); MT.rabbit1 = mk('entity/rabbit/white'); MT.rabbit2 = mk('entity/rabbit/black');
   MT.piglin = mk('entity/piglin/piglin'); MT.zombified_piglin = mk('entity/piglin/zombified_piglin'); MT.wither_skeleton = mk('entity/skeleton/wither_skeleton'); MT.magma_cube = mk('entity/slime/magmacube');
   MT.blaze = mk('entity/blaze'); MT.ghast = mk('entity/ghast/ghast'); MT.ghastShoot = mk('entity/ghast/ghast_shooting'); MT.hoglin = mk('entity/hoglin/hoglin'); MT.strider = mk('entity/strider/strider'); MT.striderCold = mk('entity/strider/strider_cold');
-  MT.enderman = mk('entity/enderman/enderman'); MT.endermanEyes = mk('entity/enderman/enderman_eyes'); MT.slime = mk('entity/slime/slime'); MT.bat = mk('entity/bat'); MT.villager = mk('entity/villager/villager');
+  MT.crystal = mk('entity/end_crystal/end_crystal'); MT.dragon = mk('entity/enderdragon/dragon'); MT.enderman = mk('entity/enderman/enderman'); MT.endermanEyes = mk('entity/enderman/enderman_eyes'); MT.slime = mk('entity/slime/slime'); MT.bat = mk('entity/bat'); MT.villager = mk('entity/villager/villager');
   ['white', 'creamy', 'chestnut', 'brown', 'black', 'gray', 'darkbrown'].forEach((c, i) => { MT['horse' + i] = mk('entity/horse/horse_' + c); }); MT.horseSaddle = mk('entity/equipment/horse_saddle/saddle');
   VILLAGER_JOBS.forEach((j, i) => { MT['vp' + i] = mk('entity/villager/profession/' + j.key); });
 });
@@ -5514,6 +5564,8 @@ const MOBTYPES = {
   br_starrer: { de: 'Starrer', hw: 0.3, h: 2.5, hp: 30, speed: 6.2, kind: 'hostile', ai: 'starrerAI', dmg: 7, loot: [['almond_water', 0, 1, 0.5], ['br_ceiling', 0, 2, 0.5], ['br_concrete', 0, 2, 0.4]] },
   horse: { de: 'Pferd', hw: 0.6, h: 1.6, hp: 30, speed: 2.2, kind: 'passive', ai: 'horseAI', loot: [['leather', 0, 2, 1]] },
   enderman: { de: 'Enderman', hw: 0.3, h: 2.9, hp: 40, speed: 3.2, kind: 'hostile', ai: 'endermanAI', dmg: 7, loot: [['ender_pearl', 0, 1, 0.6]] },
+  end_crystal: { de: 'Endkristall', hw: 0.5, h: 1.8, hp: 1, speed: 0, kind: 'passive', ai: 'crystalAI', keep: true, loot: [] },
+  ender_dragon: { de: 'Enderdrache', hw: 3, h: 3.5, hp: 200, speed: 14, kind: 'hostile', ai: 'dragonAI', fly: true, noclip: true, keep: true, big: true, dmg: 8, loot: [] },
   villager: { de: 'Dorfbewohner', hw: 0.3, h: 1.95, hp: 20, speed: 1.0, kind: 'passive', ai: 'villagerAI', keep: true, loot: [] },
 };
 const isSlime = (t) => t === 'slime' || t === 'magma_cube';
@@ -5638,6 +5690,35 @@ function buildMobModel(type, mats, tint, ex) {
     part(boxGeo(8, 6, 7, 21, 0, 64, 32), m, 0, 10, 2.5);
     for (const [x, z] of [[-1.5, -7], [1.5, -7], [-1.5, 4], [1.5, 4]]) legs.push(limb(boxGeo(2, 8, 2, 0, 18, 64, 32), m, x, 8, z, 4));
     X.tail = limb(boxGeo(2, 8, 2, 9, 18, 64, 32), m, 0, 12, -8, 4); X.tail.rotation.x = 1.75;
+
+  } else if (type === 'end_crystal') {
+    const m = mk('crystal'); mats[mats.length - 1].tint = [1.6, 1.6, 1.6];
+    const sp = new THREE.Group(); sp.position.y = px(30); sp.scale.setScalar(1.7); g.add(sp); X.crystal = sp;
+    const o = new THREE.Mesh(boxGeo(8, 8, 8, 0, 0, 128, 64, 1.2), m), i = new THREE.Mesh(boxGeo(8, 8, 8, 32, 0, 128, 64), m); i.scale.setScalar(0.72); i.rotation.set(0.6, 0.6, 0); sp.add(o, i);
+    part(boxGeo(12, 4, 12, 0, 16, 128, 64), m, 0, 2, 0).scale.setScalar(1.7); X.crystalIn = i;
+  } else if (type === 'ender_dragon') {
+    const m = mk('dragon'); m.side = THREE.DoubleSide; mats[mats.length - 1].tint = [3.4, 3.4, 3.4]; X.dragon = true;
+    const T = 256, root = mcg(0, 0, 0), wpv = [], tips = [];
+    const body = mcg(0, 4, 8, 0, 0, 0, root); mcb(body, m, 24, 24, 64, 0, 0, T, T, -12, 0, -16); for (const z of [-10, 10, 30]) mcb(body, m, 2, 6, 12, 220, 53, T, T, -1, -6, z);
+    X.neck = []; for (let i = 0; i < 5; i++) { const n = mcg(0, 6 - i * 2.2, -16 - i * 9.5, 0, 0, 0, root); mcb(n, m, 10, 10, 10, 192, 104, T, T, -5, -5, -5); mcb(n, m, 2, 4, 6, 48, 0, T, T, -1, -9, -3); X.neck.push(n); }
+    const head = mcg(0, -4.5, -66, 0, 0, 0, root); X.head = head;
+    mcb(head, m, 16, 16, 16, 112, 30, T, T, -8, -8, -10); mcb(head, m, 12, 5, 16, 176, 44, T, T, -6, -1, -24); mcb(head, m, 2, 4, 6, 0, 0, T, T, -5, -12, -4); mcb(head, m, 2, 4, 6, 0, 0, T, T, 3, -12, -4);
+    mcb(head, m, 2, 2, 4, 112, 0, T, T, -5, -3, -22); mcb(head, m, 2, 2, 4, 112, 0, T, T, 3, -3, -22);
+    const jaw = mcg(0, 4, -8, 0.18, 0, 0, head); mcb(jaw, m, 12, 4, 16, 176, 65, T, T, -6, 0, -16);
+    X.tail = []; for (let i = 0; i < 10; i++) { const t = mcg(0, 8 + i * 0.7, 62 + i * 9, 0, 0, 0, root); const q = 1 - i * 0.05; t.scale.setScalar(q); mcb(t, m, 10, 10, 10, 192, 104, T, T, -5, -5, -5); mcb(t, m, 2, 4, 6, 48, 0, T, T, -1, -9, -3); X.tail.push(t); }
+    for (const sd of [-1, 1]) {
+      const w = mcg(sd * 12, 5, 2, 0, 0, 0, root); if (sd > 0) w.scale.x = -1;
+      mcb(w, m, 56, 8, 8, 112, 88, T, T, -56, -4, -4);
+      const ms = new THREE.Mesh(new THREE.PlaneGeometry(56 / 16, 56 / 16), m); ms.rotation.x = -Math.PI / 2; ms.position.set(-28 / 16, 0, -30 / 16); { const uv = ms.geometry.attributes.uv; uv.setXY(0, 0, 1 - 88 / T); uv.setXY(1, 56 / T, 1 - 88 / T); uv.setXY(2, 0, 1 - 144 / T); uv.setXY(3, 56 / T, 1 - 144 / T); } w.add(ms);
+      const tp = mcg(-56, 0, 0, 0, 0, 0, w); mcb(tp, m, 56, 4, 4, 112, 136, T, T, -56, -2, -2);
+      const ms2 = new THREE.Mesh(new THREE.PlaneGeometry(56 / 16, 56 / 16), m); ms2.rotation.x = -Math.PI / 2; ms2.position.set(-28 / 16, 0, -30 / 16); { const uv = ms2.geometry.attributes.uv; uv.setXY(0, 0, 1 - 144 / T); uv.setXY(1, 56 / T, 1 - 144 / T); uv.setXY(2, 0, 1 - 200 / T); uv.setXY(3, 56 / T, 1 - 200 / T); } tp.add(ms2);
+      wpv.push(w); tips.push(tp);
+    }
+    X.wingPv = wpv; X.wingTips = tips;
+    for (const sd of [-1, 1]) {
+      const fl = mcg(sd * 12, 20, -8, 0, 0, 0, root); mcb(fl, m, 8, 24, 8, 112, 104, T, T, -4, -4, -4); mcb(fl, m, 6, 24, 6, 226, 138, T, T, -3, 18, -3); mcb(fl, m, 8, 4, 16, 144, 104, T, T, -4, 38, -12);
+      const hl = mcg(sd * 16, 16, 34, 0, 0, 0, root); mcb(hl, m, 16, 32, 16, 0, 0, T, T, -8, -4, -8); mcb(hl, m, 12, 32, 12, 196, 0, T, T, -6, 24, -6); mcb(hl, m, 18, 6, 24, 112, 0, T, T, -9, 54, -20);
+    }
   } else if (type === 'enderman') {
     const m = mk('enderman'), me = mk('endermanEyes'); mats[mats.length - 1].tint = [3, 3, 3];
     part(boxGeo(8, 12, 4, 32, 16, 64, 32), m, 0, 32, 0);
@@ -5811,7 +5892,7 @@ class Mob {
     if (isSlime(type)) { const sz = Math.max(1, ex | 0); this.hw = 0.26 * sz; this.h = 0.52 * sz; this.hp = 4 * sz; this.size = sz; }
     this.yaw = Math.random() * Math.PI * 2; this.timer = 0; this.moving = false; this.walk = 0;
     this.flash = 0; this.cd = 0; this.panic = 0; this.angry = 0; this.fuse = 0; this.shootCd = 1 + Math.random() * 2; this.strafe = Math.random() < 0.5 ? 1 : -1;
-    this.mats = [];
+    this.mats = []; if (type === 'ender_dragon' || type === 'end_crystal') this.noDespawn = true;
     const tint = type === 'sheep' ? SHEEP_TINTS[ex & 15] : null;
     this.model = buildMobModel(type, this.mats, tint, ex);
     mobGroup.add(this.model.g);
@@ -5864,9 +5945,10 @@ class Mob {
   }
   hit(dmg, fx, fz) {
     if (this.remote) { this.flash = 0.25; mobSay(this.type, 'hurt', this.p.x, this.p.y, this.p.z); mpSend('mobhit', { id: this.mid, dmg, fx, fz }); return; }       // der Host verrechnet den Schaden
+    if (this.type === 'ender_dragon') dmg *= (this.dr && this.dr.ph === 'perch') ? 1 : 0.55;
     this.hp -= dmg; this.flash = 0.25; if (this.hp > 0) mobSay(this.type, 'hurt', this.p.x, this.p.y, this.p.z);
     const dx = this.p.x - fx, dz = this.p.z - fz, l = Math.hypot(dx, dz) || 1;
-    this.v.x = dx / l * 5; this.v.z = dz / l * 5; this.v.y = 4.5;
+    if (!this.T.big && this.type !== 'end_crystal') { this.v.x = dx / l * 5; this.v.z = dz / l * 5; this.v.y = 4.5; }
     if (this.type === 'wolf' && !this.tame) { this.angry = 40; this.syncEx(); }
     else if (this.kind === 'passive') { this.panic = 4; this.yaw = Math.atan2(dx, dz); }
     if (this.type === 'spider') this.angry = 25;
@@ -5874,6 +5956,8 @@ class Mob {
     if (this.type === 'enderman') { this.angry = 90; if (Math.random() < 0.4) this.tele(Math.random() < 0.5); }
   }
   die() {
+    if (this.type === 'end_crystal') { endDead.add(this.pillar | 0); explode(this.p.x, this.p.y + 1, this.p.z, 3); return; }
+    if (this.type === 'ender_dragon') { endVictory(this); return; }
     if (!isCreative()) for (const [key, min, max, chance] of this.T.loot) {
       const lb = this.lootL || 0;
       if (Math.random() > Math.min(1, chance * (1 + 0.3 * lb)) || (isSlime(this.type) && this.size > 1)) continue;
@@ -5961,6 +6045,49 @@ class Mob {
     }
     if (this.localRideStop) return 0;
     return this.wander(dt, this.tame ? 0.5 : 1);
+  }
+
+  crystalAI(dt) { this.moving = false; this.v.x = this.v.z = 0; this.beamT = (this.beamT || 0) - dt; if (this.beamT <= 0) { this.beamT = 0.12; const d = mobs.find((m) => m.type === 'ender_dragon' && m.hp > 0); if (d && Math.hypot(d.p.x - this.p.x, d.p.z - this.p.z) < 60) { const k = Math.random(), x = this.p.x + (d.p.x - this.p.x) * k, y = this.p.y + 1.5 + (d.p.y + 1.5 - this.p.y - 1.5) * k, z = this.p.z + (d.p.z - this.p.z) * k; emitFx(x, y, z, new THREE.Color(1, 0.4, 0.9), 0, 0, 0, 0.25, 0, 1.2); } } return 0; }
+  dragonAI(dt, pl) {
+    const D = this.dr || (this.dr = { ph: 'circle', t: 0, a: Math.random() * 6.28, cd: 7, ph0: 0, hit: 0, breath: 0, fb: 0, heal: 0, roar: 4 });
+    D.t += dt; D.ph0 += dt; D.hit -= dt; D.heal -= dt; D.roar -= dt; D.fb -= dt; D.cd -= dt;
+    if (D.heal <= 0) { D.heal = 1; let n = 0; for (const m of mobs) if (m.type === 'end_crystal' && m.hp > 0) n++; if (n && this.hp < this.T.hp && this.hp > 0) this.hp = Math.min(this.T.hp, this.hp + 2 * n); D.n = n; }
+    if (D.roar <= 0) { D.roar = 7 + Math.random() * 6; mobSay('ender_dragon', 'idle', this.p.x, this.p.y, this.p.z); }
+    const steer = (tx, ty, tz, rate, spdMul) => {
+      const dx = tx - this.p.x, dz = tz - this.p.z, want = Math.atan2(dx, dz), dy = Math.atan2(Math.sin(want - this.yaw), Math.cos(want - this.yaw));
+      this.yaw += Math.sign(dy) * Math.min(Math.abs(dy), rate * dt); this.flyTy = clamp((ty - this.p.y) * 1.3, -9, 9); this.moving = true; return this.speed * spdMul;
+    };
+    const near = pl.dist < 6 && Math.abs(pl.dy) < 5 && state === 'play' && !isCreative();
+    if (near && D.hit <= 0) { D.hit = 1.6; this.strike(this.T.dmg, { dx: pl.dx, dz: pl.dz, dist: pl.dist }); P.v.y = Math.max(P.v.y, 6); }
+    switch (D.ph) {
+      case 'circle': {
+        D.a += dt * 0.26; const R = 26 + Math.sin(D.t * 0.31) * 6, alt = 47 + Math.sin(D.t * 0.43) * 8, spd = steer(Math.cos(D.a + 0.7) * R, alt, Math.sin(D.a + 0.7) * R, 1.5, 1);
+        if (D.cd <= 0) { const r = Math.random(), left = D.n === undefined ? 10 : D.n; D.ph = left === 0 && r < 0.6 ? 'perch' : r < 0.32 ? 'perch' : r < 0.64 ? 'charge' : 'strafe'; D.ph0 = 0; if (D.ph === 'strafe') D.fb = 0.5; }
+        return spd;
+      }
+      case 'strafe': {
+        const spd = steer(Math.cos(D.a) * 30, 46, Math.sin(D.a) * 30, 1.6, 0.8); D.a += dt * 0.3;
+        if (D.fb <= 0 && state === 'play') { D.fb = 0.85; shootFireball(this.p.x, this.p.y + 1, this.p.z, pl.dx + this.p.x, P.p.y + 1, pl.dz + this.p.z, 'ghast'); }
+        if (D.ph0 > 6) { D.ph = 'circle'; D.cd = 9 + Math.random() * 6; }
+        return spd;
+      }
+      case 'charge': {
+        const spd = steer(this.p.x + pl.dx, P.p.y + 1, this.p.z + pl.dz, 2.2, 1.35);
+        if ((pl.dist < 5 && D.ph0 > 1) || D.ph0 > 6.5) { D.ph = 'circle'; D.cd = 8 + Math.random() * 6; }
+        return spd;
+      }
+      case 'perch': {
+        const tx = 0, tz = 0, ty = END.TOP + 6, dist = Math.hypot(tx - this.p.x, tz - this.p.z);
+        if (dist > 5 && !D.landed) return steer(tx, dist > 20 ? 40 : ty + 5, tz, 1.7, 0.9);
+        D.landed = true; D.perchT = (D.perchT || 0) + dt; this.flyTy = clamp((ty - this.p.y) * 1.2, -5, 5); this.moving = dist > 1.5;
+        if (this.moving) { const want = Math.atan2(tx - this.p.x, tz - this.p.z); this.yaw = want; }
+        D.breath -= dt;
+        if (D.breath <= 0) { D.breath = 0.5; spawnParticles(this.p.x - 0.5 + Math.sin(this.yaw) * 4, this.p.y - 0.5, this.p.z - 0.5 + Math.cos(this.yaw) * 4, new THREE.Color(0.8, 0.25, 1), 22, 3, 2); if (state === 'play' && !isCreative() && Math.hypot(P.p.x - this.p.x, P.p.z - this.p.z) < 9 && Math.abs(P.p.y - this.p.y) < 6) hurt(3, true); }
+        if (D.perchT > 9) { D.ph = 'circle'; D.landed = false; D.perchT = 0; D.cd = 10 + Math.random() * 5; }
+        return this.moving ? this.speed * 0.3 : 0;
+      }
+    }
+    return 0;
   }
   wolfAI(dt, pl) {
     this.cd -= dt;
@@ -6136,6 +6263,12 @@ class Mob {
   animExtras(dt) {                                                                 // reine Darstellung (Flügel, Schwanz, Hüpfen)
     const X = this.model.X, g = this.model.g;
     if (this.moving && (this.stepSnd = (this.stepSnd || 0) - dt) <= 0) { this.stepSnd = 0.38 + Math.random() * 0.12; if (((SND.mob[this.type] && SND.mob[this.type].step) || (VOICES[this.type] && VOICES[this.type].step)) && (this.p.x - P.p.x) ** 2 + (this.p.z - P.p.z) ** 2 < 196 && !(this.T.fly)) mobSay(this.type, 'step', this.p.x, this.p.y, this.p.z); }
+    if (X.crystal) { this.age2 = (this.age2 || 0) + dt; X.crystal.rotation.y = this.age2 * 1.4; X.crystal.position.y = 30 / 16 + Math.sin(this.age2 * 2.2) * 0.09; X.crystalIn.rotation.y = -this.age2 * 2.2; }
+    if (X.dragon) {
+      this.age2 = (this.age2 || 0) + dt; const f = this.dr && this.dr.ph === 'perch' ? 0.25 : 1, a = Math.sin(this.age2 * 2.3) * 0.55 * f;
+      X.wingPv.forEach((w, i) => { w.rotation.z = (i ? -1 : 1) * (a + 0.1) * -1; w.userData.tipRef = X.wingTips[i]; X.wingTips[i].rotation.z = (i ? -1 : 1) * (Math.sin(this.age2 * 2.3 - 0.9) * 0.5 * f) * -1; });
+      X.neck.forEach((n, i) => { n.rotation.x = Math.sin(this.age2 * 1.3 - i * 0.4) * 0.04; }); X.tail.forEach((t, i) => { t.position.x = Math.sin(this.age2 * 1.1 - i * 0.5) * i * 0.012; });
+    }
     if (this.type === 'bat') { this.walk += dt * 16; const a = Math.sin(this.walk) * 0.9; X.wings.forEach((pv) => { pv.rotation.z = a; pv.userData.tip.rotation.z = a * 0.6; }); }
     else if (this.type === 'blaze') {
       const age = performance.now() / 50, R = X.rods; let f = age * Math.PI * -0.1;
@@ -6262,7 +6395,7 @@ class Mob {
     else if (this.T.fly) this.v.y += (this.flyTy - this.v.y) * Math.min(1, 3 * dt);
     else if (inWater) { this.v.y = Math.min(this.v.y + 22 * dt, 2.2); this.v.y *= 1 - Math.min(1, 2 * dt); }
     else this.v.y = Math.max(this.v.y - 30 * dt, -50);
-    moveEntity(w, this, dt);
+    if (this.T.noclip) { this.p.addScaledVector(this.v, dt); this.onGround = false; this.hitH = false; } else moveEntity(w, this, dt);
     if (this.hitH && this.onGround && this.moving && !this.T.fly && !isSlime(this.type) && this.type !== 'rabbit') this.v.y = 8.4;
     if (this.kind === 'passive' && !this.T.fly && this.hitH && this.timer > 1 && this.panic <= 0) this.yaw += Math.PI * (0.5 + Math.random());
     if (this.moving) this.walk += dt * 8 * Math.min(1.6, Math.abs(spd) / this.speed);
@@ -6797,7 +6930,7 @@ function simTick(dt) {
     saveTimer += dt; if (saveTimer > 45) { saveTimer = 0; saveGame(); }
   } else if (simOnly && state !== 'dead') { if (P.ride) updatePlayerRide(dt); else updatePlayerIdle(dt); updateEffects(dt); }
   if (mp.on) gameTime = mpGameTime();
-  if (live || simOnly) { updateMobs(dt); updateDrops(dt); updateOrbs(dt); updateVehicles(dt); rsTick(dt); updatePrimed(dt); updateArrows(dt); updateFallers(dt); tickGrowth(dt); P.bowCd -= dt; mpTick(dt); updateWeather(dt); updateThrown(dt); }
+  if (live || simOnly) { updateMobs(dt); updateDrops(dt); updateOrbs(dt); updateVehicles(dt); rsTick(dt); updateEnd(dt); updatePrimed(dt); updateArrows(dt); updateFallers(dt); tickGrowth(dt); P.bowCd -= dt; mpTick(dt); updateWeather(dt); updateThrown(dt); }
   if (live) { updateFishing(dt); updateMinimap(dt); updateStructs(dt); updateEating(dt); }
   else if (simOnly) updateStructs(dt);
   world.update(P.p.x, P.p.z, 5, 7);
@@ -9939,7 +10072,7 @@ Snake.cv.addEventListener('pointerup', snakeUp); Snake.cv.addEventListener('poin
 $('snakeBack').onclick = () => setState('menu');
 ATLAS.onReady(() => { if (state === 'menu' && !MenuScene.raf) menuSceneSync('menu'); });
 
-window.__vc = { startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, placeVehicle, mountVehicle, dismountVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+window.__vc = { endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, placeVehicle, mountVehicle, dismountVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>
