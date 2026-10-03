@@ -62,6 +62,9 @@ MOBS = {
     'ghast': ('ghast', {'idle': 'moan', 'hurt': 'scream', 'die': 'death', 'fireball': 'fireball4', 'charge': 'charge'}),
     'strider': ('strider', {'idle': 'idle', 'hurt': 'hurt', 'die': 'death', 'step': 'step', 'steplava': 'step_lava'}),
     'magma_cube': ('magmacube', {'hurt': 'small', 'die': 'small', 'step': 'jump'}),
+    'br_hound': ('wolf', {'idle': 'growl', 'hurt': 'hurt', 'die': 'death', 'step': 'step', 'angry': 'bark'}),
+    'br_entity': ('endermen', {'idle': 'idle', 'hurt': 'hit', 'die': 'death', 'angry': 'scream', 'stare': 'stare'}),
+    'br_starrer': ('stray', {'idle': 'idle', 'hurt': 'hurt', 'die': 'death', 'step': 'step'}),
     'wither_skeleton': ('wither_skeleton', {'idle': 'idle', 'hurt': 'hurt', 'die': 'death', 'step': 'step'}),
 }
 # Sonstige Ereignisse -> Gruppe
