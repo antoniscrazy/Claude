@@ -1486,7 +1486,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms'];
-const GAME_VER = '2026-10-03.8';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-03.9';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
 const isDryBiome = (b) => b === BIOME_DESERT || b === BIOME_MESA || b === BIOME_NETHER || b === BIOME_BACKROOMS;
 // Baumdichte je Biom (alt = Welten vor den neuen Biomen, neu = ab GEN2_START)
@@ -8418,7 +8418,7 @@ function atMobAdd(type, x) {
 const atDayP = () => ((AT.w.t / 150) + 0.04) % 1;
 const atNight = () => { const p = atDayP(); return p < 0.55 ? 0 : p < 0.66 ? (p - 0.55) / 0.11 : p < 0.9 ? 1 : 1 - (p - 0.9) / 0.1; };
 // --- Steves Verhalten ---
-function atFindTree(st) { for (let d = 3; d < 38; d++) { const tx = Math.floor(st.x) + d; if (atTreeAt(tx) && atBlock(tx, atHeight(tx) + 1) === 'log') return tx; } return null; }
+function atFindTree(st) { for (let d = 3; d < 38; d++) { const tx = Math.floor(st.x) + d; if (atTreeAt(tx) && atBlock(tx, atHeight(tx) + 1) === 'log' && Math.abs(atHeight(tx) - (Math.floor(st.y) - 1)) <= 2) return tx; } return null; }      // nur Bäume auf erreichbarer Höhe
 function atFlat(x0, n) { const h = atHeight(x0); for (let i = 1; i < n; i++) if (atHeight(x0 + i) !== h) return false; return true; }
 function atFindFlat(st) { for (let d = 3; d < 40; d++) { const x0 = Math.floor(st.x) + d; if (atFlat(x0, 7) && !atTreeAt(x0) && !atTreeAt(x0 + 3) && !atTreeAt(x0 + 6)) return x0; } return null; }
 function atNearestMob(st, pred, range) { let best = null, bd = range; for (const m of AT.w.mobs) { if (m.hp <= 0 || !pred(m)) continue; const d = Math.abs(m.x - st.x); if (d < bd && Math.abs(m.y - st.y) < 5) { bd = d; best = m; } } return best; }
@@ -8432,13 +8432,18 @@ function atPlanDig() {                                                       // 
   for (let k = 0; k < D + 1; k++) { cells.push([x, y]); x++; y++; }
   return cells;
 }
+function atPlanUp() {                                                       // Treppe nach oben bis zur Oberfläche
+  const st = AT.w.st; let x = Math.floor(st.x) + 1, y = Math.floor(st.y); const cells = [];
+  for (let k = 0; k < 60; k++) { cells.push([x, y]); if (y >= atHeight(x)) break; x++; y++; }
+  return cells;
+}
 function atUpdateSteve(dt) {
   const A = AT.w, st = A.st; st.t += dt; st.inv -= dt;
   st.food = Math.max(0, st.food - dt * 0.12); if (st.hurt > 0) st.hurt -= dt; if (st.swing > 0) st.swing -= dt; if (st.eat > 0) st.eat -= dt;
   if (st.hp < 20 && st.food > 14) st.hp = Math.min(20, st.hp + dt * 0.6);
   let want = 0, sprint = 2.7;
   // Priorität 1: Gegner in der Nähe
-  const foe = atNearestMob(st, (m) => m.hostile, st.state === 'fight' ? 9 : 6);
+  const foe = atNearestMob(st, (m) => m.hostile && !(m.ignore > A.t), st.state === 'fight' ? 9 : 6);
   if (foe && st.state !== 'fight' && st.state !== 'emote') { st.prev = st.state === 'build' || st.state === 'mine' ? null : st.state; atStartState(st, 'fight', { target: foe }); st.sel = 0; }
   switch (st.state) {
     case 'emote':                                                             // streckt sich, schaut sich um, dann geht's los
@@ -8447,6 +8452,9 @@ function atUpdateSteve(dt) {
       break;
     case 'walk': {
       st.dir = 1; want = sprint; st.sel = 0;
+      if (st.y < atHeight(Math.floor(st.x)) - 0.4 && !st.upTried) { st.upTried = true; st.plan = atPlanUp(); atStartState(st, 'mine', { i: 0, dt: 0, phase: 'dig' }); break; }   // noch unter der Erde: nach oben graben
+      if (st.y >= atHeight(Math.floor(st.x)) - 0.4) st.upTried = false;
+      if (st.food < 8 && A.inv.food < 1) { const pm = atNearestMob(st, (m) => !m.hostile, 14); if (pm) { st.prev = 'walk'; atStartState(st, 'fight', { target: pm }); break; } }
       if (st.food < 11 && A.inv.food > 0) { atStartState(st, 'eat'); break; }
       if (st.t > st.until) {
         const tree = atFindTree(st), flat = atFindFlat(st), r = Math.random();
@@ -8510,7 +8518,8 @@ function atUpdateSteve(dt) {
     }
     case 'fight': {
       const m = st.target; st.sel = 0;
-      if (!m || m.hp <= 0 || Math.abs(m.x - st.x) > 11) { const back = st.prev || 'walk'; atStartState(st, back === 'fight' ? 'walk' : back === 'toTree' || back === 'chop' || back === 'eat' ? 'walk' : back, { until: 4 + Math.random() * 5 }); break; }
+      if (m && st.t > 14) m.ignore = A.t + 25;                                  // unerreichbar: eine Weile ignorieren
+      if (!m || m.hp <= 0 || Math.abs(m.x - st.x) > 11 || st.t > 14) { const back = st.prev || 'walk'; atStartState(st, back === 'fight' ? 'walk' : back === 'toTree' || back === 'chop' || back === 'eat' ? 'walk' : back, { until: 4 + Math.random() * 5 }); break; }
       const dx = m.x - st.x; st.dir = Math.sign(dx) || 1;
       if (Math.abs(dx) > 1.25) want = Math.sign(dx) * 3.2; else {
         st.dt = (st.dt || 0) - dt;
@@ -8531,6 +8540,9 @@ function atUpdateSteve(dt) {
       if (st.t > 1.5) { st.food = Math.min(20, st.food + 7); A.inv.food = Math.max(0, A.inv.food - 1); atStartState(st, 'walk', { until: 5 }); }
       break;
   }
+  // Festhängen? Kommt Steve in 18 s nicht 1,5 Blöcke voran, gräbt er sich eine Treppe zur Oberfläche
+  if (st.bestX === undefined || st.x > st.bestX + 1.5) { st.bestX = st.x; st.bestT = A.t; }
+  else if (A.t - st.bestT > 18 && !['mine', 'build', 'fight', 'eat', 'emote'].includes(st.state)) { st.bestT = A.t; st.plan = atPlanUp(); atStartState(st, 'mine', { i: 0, dt: 0, phase: 'dig' }); }
   atMove(st, dt, want * st.dir, 0.28, 1.8);
   if (st.blocked && want !== 0 && (st.state === 'walk' || st.state === 'toTree' || st.state === 'build')) {            // läuft gegen eine Wand
     st.blockT = (st.blockT || 0) + dt;
@@ -8773,7 +8785,7 @@ Dino.cv.addEventListener('pointerdown', (e) => { e.preventDefault(); dinoJump();
 $('dinoBack').onclick = () => setState('menu');
 ATLAS.onReady(() => { if (state === 'menu' && !MenuScene.raf) menuSceneSync('menu'); });
 
-window.__vc = { AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+window.__vc = { atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>
