@@ -1172,6 +1172,7 @@ EXTRA_TEXTURES.push('item/potion_overlay', 'entity/fishing_hook', 'entity/wolf/w
 /*BLOCKDEFS_END*/
 
 // Seed-String -> 32-Bit-Zahl
+const specialSeed = (s) => ({ '67': '67', 'steve': 'steve' })[String(s).trim().toLowerCase()] || null;   // Seed-Eastereggs (siehe TerrainGen.stamp)
 function hashString(s) {
   let h = 1779033703 ^ s.length;
   for (let i = 0; i < s.length; i++) { h = Math.imul(h ^ s.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); }
@@ -1497,7 +1498,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms'];
-const GAME_VER = '2026-10-03.9';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-03.10';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
 const isDryBiome = (b) => b === BIOME_DESERT || b === BIOME_MESA || b === BIOME_NETHER || b === BIOME_BACKROOMS;
 // Baumdichte je Biom (alt = Welten vor den neuen Biomen, neu = ab GEN2_START)
@@ -1514,6 +1515,44 @@ const genH = new Int16Array(PW_GEN * PW_GEN), genB = new Uint8Array(PW_GEN * PW_
 // Alles liegt komplett innerhalb eines Chunks und wird deterministisch aus dem Seed gewürfelt.
 const MESA_BANDS = [ID.terracotta, ID.orange_terracotta, ID.terracotta, ID.yellow_terracotta, ID.red_terracotta, ID.orange_terracotta, ID.white_terracotta, ID.terracotta, ID.brown_terracotta];
 class TerrainGen {
+  // Seed-Eastereggs: "67" = riesige 67 im Boden (+ Aussichtshügel), "steve" = große Steve-Statue. Gelände wird eingeebnet, alles aus Standardblöcken.
+  stampLevel() { if (this.stampY === undefined) { const o = {}; this.column(0, 0, o); this.stampY = Math.max(SEA + 3, Math.min(30, o.h)); } return this.stampY; }   // Höhe der Plattform: Gelände am Ursprung, begrenzt
+  stamp(cx, cz, data, gi0) {
+    const kind = this.special, S = ID, Y0 = this.stampLevel(), BL = 14, x0 = cx * CS, z0 = cz * CS;
+    const R = kind === '67' ? { xa: -28, xb: 28, za: -20, zb: 50 } : { xa: -24, xb: 24, za: -10, zb: 52 };
+    if (x0 + 15 < R.xa - BL || x0 > R.xb + BL || z0 + 15 < R.za - BL || z0 > R.zb + BL) return false;
+    const setb = (wx, y, wz, id) => { const x = wx - x0, z = wz - z0; if (x >= 0 && x < CS && z >= 0 && z < CS && y >= 1 && y < CH) data[x + (z << 4) + (y << 8)] = id; };
+    const G67 = { 6: ['.###.', '#....', '#....', '####.', '#...#', '#...#', '.###.'], 7: ['#####', '....#', '...#.', '..#..', '.#...', '.#...', '.#...'] };
+    const P = { H: S.dark_oak_planks, S: S.jungle_planks, W: S.white_concrete, B: S.blue_concrete, M: S.brown_concrete, T: S.cyan_concrete, P: S.blue_wool, G: S.gray_concrete };
+    const STEVE = ['HHHHHHHH', 'HHHHHHHH', 'HSSSSSSH', 'SSSSSSSS', 'SWBSSBWS', 'SSSMMSSS', 'SSMMMMSS', 'SSSSSSSS'];
+    for (let r = 0; r < 12; r++) STEVE.push(r < 4 ? 'TTTT' + 'TTTTTTTT' + 'TTTT' : 'SSSS' + 'TTTTTTTT' + 'SSSS');
+    STEVE[8] = 'TTTT' + 'TSSSSSST' + 'TTTT';
+    for (let r = 0; r < 12; r++) STEVE.push('....' + (r < 10 ? 'PPPPPPPP' : 'GGGGGGGG') + '....');
+    STEVE.forEach((row, i) => { if (i < 8) STEVE[i] = '....' + row + '....'; });
+    for (let lz = 0; lz < CS; lz++) for (let lx = 0; lx < CS; lx++) {
+      const wx = x0 + lx, wz = z0 + lz, d = Math.max(R.xa - wx, wx - R.xb, R.za - wz, wz - R.zb, 0);
+      if (d > BL) continue;
+      const h = genH[gi0(lx, lz)], t = d / BL, nh = Math.round(Y0 + (h - Y0) * (t * t * (3 - 2 * t))), base = lx + (lz << 4);
+      if (nh > h) for (let y = h + 1; y <= nh; y++) data[base + (y << 8)] = y === nh ? (nh > SEA ? GRASS : SAND) : DIRT;
+      else if (nh < h) { for (let y = nh + 1; y <= h; y++) data[base + (y << 8)] = AIR; data[base + (nh << 8)] = GRASS; }
+      for (let y = Math.max(nh, SEA) + 1; y < CH; y++) data[base + (y << 8)] = AIR;
+      if (d > 0) continue;
+      if (kind === '67') {
+        const gx = wx + 22, row = ((wz + 14) / 4) | 0;                           // 44 × 28 Blöcke, jeder Pixel 4×4
+        if (wz >= -14 && wz <= 13 && gx >= 0 && gx <= 43 && (gx < 20 || gx >= 24)) {
+          const g = gx < 20 ? G67[6] : G67[7], col = (gx < 20 ? gx : gx - 24) / 4 | 0;
+          if (g[row][col] === '#') { setb(wx, Y0, wz, S.yellow_concrete); setb(wx, Y0 - 1, wz, S.yellow_concrete); }
+        }
+        const e = Math.max(Math.abs(wx), Math.abs(wz - 32));                      // Aussichtshügel (Stufen) hinter der 67
+        if (e <= 14) for (let y = Y0 + 1; y <= Y0 + Math.min(14, 15 - e); y++) setb(wx, y, wz, S.cobble);
+      } else if (wx >= -8 && wx <= 7 && wz >= 0 && wz <= 2) {
+        const gx = wx + 8;
+        for (let r = 0; r < 32; r++) { const c = STEVE[r][gx]; if (c !== '.') setb(wx, Y0 + 32 - r, wz, P[c]); }
+      }
+    }
+    this.structOut.length = 0;
+    return true;
+  }
   structures(cx, cz, data, gi0, seed) {
     const S = ID, out = this.structOut = [];
     const sr = hash2(cx, cz, seed + 7001), dr = hash2(cx, cz, seed + 7002), R = (k) => hash2(cx, cz, seed + 7100 + k);
@@ -1794,6 +1833,7 @@ class TerrainGen {
     }
 
     this.structures(cx, cz, data, gi0, seed);
+    if (this.special) this.stamp(cx, cz, data, gi0);
 
     // Spieler-Änderungen anwenden
     if (edits) for (const [idx, id] of edits.m) data[idx] = safeBlock(id);
@@ -1989,6 +2029,7 @@ class World {
     this.seedStr = seedStr; this.seed = hashString(seedStr); this.scene = scene; this.gv = gv || 1;
     // Zwei Dimensionen: 0 Oberwelt, 1 Nether – je eigene Chunks, Änderungen und Generator; this.chunks/edits/gen zeigen auf die aktuelle
     this.dimData = [{ chunks: new Map(), edits: new Map(), structs: new Map(), gen: new TerrainGen(this.seed, this.gv) }, { chunks: new Map(), edits: new Map(), structs: new Map(), gen: new NetherGen(this.seed) }, { chunks: new Map(), edits: new Map(), structs: new Map(), gen: new BackroomsGen(this.seed) }];
+    this.special = specialSeed(seedStr); this.dimData[0].gen.special = this.special;
     this.dim = 0; const D0 = this.dimData[0];
     this.gen = D0.gen;
     this.chunks = D0.chunks; this.edits = D0.edits; this.dirty = new Set(); this.structs = D0.structs;
@@ -5523,6 +5564,7 @@ function respawn() {
 
 // Spawnpunkt: Land in Nähe des Ursprungs, auf festem Untergrund (kein Baum / Wasser)
 function findSpawn() {
+  if (world.special) { const y0 = world.gen.stampLevel(); return world.special === '67' ? { x: 0.5, y: y0 + 15, z: 32.5 } : { x: 0.5, y: y0 + 1, z: 48.5 }; }          // Seed-Easteregg: direkt vor 67 / Steve-Statue
   const g = world.gen, o = {};
   for (let r = 0; r < 400; r += 8) for (let a = 0; a < 8; a++) {
     const x = Math.round(Math.cos(a * Math.PI / 4) * r), z = Math.round(Math.sin(a * Math.PI / 4) * r);
@@ -5561,7 +5603,7 @@ function startGame(opts) {
   const sp = findSpawn();
   if (save && (save.dim === 1 || save.dim === 2)) world.switchDim(save.dim);
   P.spawn.set(sp.x, sp.y, sp.z); P.worldSpawn = new THREE.Vector3(sp.x, sp.y, sp.z); P.bedPos = null; P.portalT = 0; P.portalLock = true; P.sleeping = false; $('sleepOv').classList.add('hidden');
-  P.v.set(0, 0, 0); P.yaw = 0; P.pitch = 0; P.flying = false; P.health = 20; P.hunger = 20; P.exhaust = 0; P.sel = 0; P.hurtT = 0; P.fuel = 0; P.shake = 0;
+  P.v.set(0, 0, 0); P.yaw = 0; P.pitch = (!save && world.special === '67') ? -0.6 : 0; P.flying = false; P.health = 20; P.hunger = 20; P.exhaust = 0; P.sel = 0; P.hurtT = 0; P.fuel = 0; P.shake = 0;
   gameTime = 0.08 * DAY_LEN;
   if (save) {
     P.p.set(save.player.x, save.player.y, save.player.z); P.yaw = save.player.yaw; P.pitch = save.player.pitch; P.flying = !!save.player.flying;
