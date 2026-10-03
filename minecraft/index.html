@@ -1470,7 +1470,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms'];
-const GAME_VER = '2026-10-03.6';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-03.7';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
 const isDryBiome = (b) => b === BIOME_DESERT || b === BIOME_MESA || b === BIOME_NETHER || b === BIOME_BACKROOMS;
 // Baumdichte je Biom (alt = Welten vor den neuen Biomen, neu = ab GEN2_START)
@@ -3503,6 +3503,8 @@ function updateInteraction(dt) {
     } else if (mobTarget) {
       brk = null;
       if (atkCd <= 0) { attackMob(mobTarget); atkCd = 0.45; atkQueue = 0; if (mp.on) mp.swing = true; }
+    } else if (mouse.left && target && world.dim === 2) {                                    // Backrooms: nichts abbauen
+      brLockMsg(); brk = null;
     } else if (mouse.left && target && adminBedrock(target)) {                                  // Admin: Grundgestein abbauen
       if (mouse.leftPressed || creativeCool <= 0) { spawnParticles(target.x, target.y, target.z, ATLAS.colors[target.id] || new THREE.Color(0.2, 0.2, 0.2)); blockSfx('break', target.id); world.setBlock(target.x, target.y, target.z, AIR); handSwing(); creativeCool = 0.3; brk = null; }
     } else if (mouse.left && target && target.y > 0 && BLOCKS[target.id].hard !== Infinity) {
@@ -3643,6 +3645,8 @@ function placeDoor(slot, I) {
   if (!isCreative() && --slot.count <= 0) inv[P.sel] = null;
   refreshHotbar();
 }
+let brMsgT = 0;
+function brLockMsg() { const n = performance.now(); if (n - brMsgT > 2500) { brMsgT = n; toast('In den Backrooms kannst du nichts abbauen oder platzieren'); } }
 function useItem(pressed) {
   if (pressed && mobTarget && !playerTarget && interactMob(mobTarget)) return;
   const slot = inv[P.sel];
@@ -3659,6 +3663,7 @@ function useItem(pressed) {
     if (TB.trap) { toggleTrap(target); return; }
     if (TB.gate) { toggleGate(target); return; }
   }
+  if (world.dim === 2 && I && (I.lighter || I.door || I.key === 'bucket' || I.fills !== undefined || (!I.food && !I.potion && !I.splash && !I.rod && !I.clock && !I.compass && !I.bow && !I.armor && !I.spyglass))) { if (pressed) brLockMsg(); return; }
   if (I) {
     if (I.food) {                                          // Essen: gedrückt halten, bis aufgegessen
       if (pressed && !isCreative() && (P.hunger < 20 || I.always)) startEat(slot);
@@ -3695,6 +3700,7 @@ function useItem(pressed) {
     return;                                                // Werkzeuge & Materialien lassen sich nicht platzieren
   }
   if (!slot || !target || (!target.nx && !target.ny && !target.nz)) return;
+  if (world.dim === 2) { if (pressed) brLockMsg(); return; }                          // Backrooms: nichts platzieren
   const pl = placementFor(slot.id);
   if (!pl) return;
   const x = pl.x, y = pl.y, z = pl.z;
