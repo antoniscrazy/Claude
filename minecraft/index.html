@@ -1498,7 +1498,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms'];
-const GAME_VER = '2026-10-03.10';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-03.11';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
 const isDryBiome = (b) => b === BIOME_DESERT || b === BIOME_MESA || b === BIOME_NETHER || b === BIOME_BACKROOMS;
 // Baumdichte je Biom (alt = Welten vor den neuen Biomen, neu = ab GEN2_START)
@@ -5854,6 +5854,37 @@ try {
   bg.onmessage = () => { if (document.hidden) bgStep(0.1); };
 } catch (e) { /* ohne Worker: nur im sichtbaren Tab */ }
 
+// Ein Simulationsschritt. Mehrspieler: die Welt läuft weiter, auch wenn man pausiert (Pause/Inventar/Chat/Einstellungen/Handel) – wie auf einem echten Server.
+function updatePlayerIdle(dt) {                                      // Spielerphysik ohne Eingaben (Schwerkraft, Wasser, Fallschaden …), solange man pausiert
+  const sk = {}; for (const k in keys) { sk[k] = keys[k]; keys[k] = false; }
+  const tx = touchMove.x, ty = touchMove.y, ts = touchSprint, tn = touchSneak, dw = P.dblW;
+  touchMove.x = touchMove.y = 0; touchSprint = false; touchSneak = false; P.dblW = 0;
+  try { updatePlayer(dt); } finally { for (const k in sk) keys[k] = sk[k]; touchMove.x = tx; touchMove.y = ty; touchSprint = ts; touchSneak = tn; P.dblW = dw; }
+}
+function simTick(dt) {
+  const frozen = mp.on && mp.offline;                                // Internet weg: Mehrspieler-Welt ist angehalten
+  const live = !frozen && state === 'play', simOnly = !frozen && mp.on && (state === 'inv' || state === 'pause' || state === 'chat' || state === 'dead' || state === 'settings' || state === 'trade');
+  if (live) {
+    if (!mp.on && rules.daycycle) gameTime += dt;
+    updateSandBurial(dt); updateGaze(dt); updatePlayer(dt); updateEffects(dt); updatePortal(dt);
+    updateInteraction(dt); ambientTick(dt); musicTick(dt); fxTick(dt); { const bo = $('btnBackOut'); bo.classList.toggle('hidden', !(world.dim === 2 && state === 'play')); }
+    saveTimer += dt; if (saveTimer > 45) { saveTimer = 0; saveGame(); }
+  } else if (simOnly && state !== 'dead') { updatePlayerIdle(dt); updateEffects(dt); }
+  if (mp.on) gameTime = mpGameTime();
+  if (live || simOnly) { updateMobs(dt); updateDrops(dt); updatePrimed(dt); updateArrows(dt); updateFallers(dt); tickGrowth(dt); P.bowCd -= dt; mpTick(dt); updateWeather(dt); updateThrown(dt); }
+  if (live) { updateFishing(dt); updateMinimap(dt); updateStructs(dt); updateEating(dt); }
+  else if (simOnly) updateStructs(dt);
+  world.update(P.p.x, P.p.z, 5, 7);
+}
+// Läuft der Tab im Hintergrund, pausiert der Browser requestAnimationFrame – im Mehrspielermodus (Host-Mobs, Position, Sync) simulieren wir dann per Timer weiter
+let hiddenLast = 0;
+setInterval(() => {
+  if (!document.hidden || !mp.on || !world || state === 'loading' || state === 'menu' || state === 'mpmenu') { hiddenLast = 0; return; }
+  const now = performance.now(); if (!hiddenLast) { hiddenLast = now; return; }
+  let el = Math.min(2, (now - hiddenLast) / 1000); hiddenLast = now;
+  try { while (el > 0.001) { const d = Math.min(0.05, el); el -= d; simTick(d); } } catch (e) { console.error(e); }
+}, 250);
+
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(0.05, (now - last) / 1000); last = now; frameDt = dt;
@@ -5870,18 +5901,7 @@ function frame(now) {
     $('loadBar').style.width = Math.round(have / need * 100) + '%';
     if (have >= need) { P.v.set(0, 0, 0); finishArrival(); resume(); }
   } else {
-    const frozen = mp.on && mp.offline;                                // Internet weg: Mehrspieler-Welt ist angehalten
-    const live = !frozen && state === 'play', simOnly = !frozen && mp.on && (state === 'inv' || state === 'pause' || state === 'chat' || state === 'dead' || state === 'settings' || state === 'trade');
-    if (live) {
-      if (!mp.on && rules.daycycle) gameTime += dt;
-      updateSandBurial(dt); updateGaze(dt); updatePlayer(dt); updateEffects(dt); updatePortal(dt);
-      updateInteraction(dt); ambientTick(dt); musicTick(dt); fxTick(dt); { const bo = $('btnBackOut'); bo.classList.toggle('hidden', !(world.dim === 2 && state === 'play')); }
-      saveTimer += dt; if (saveTimer > 45) { saveTimer = 0; saveGame(); }
-    }
-    if (mp.on) gameTime = mpGameTime();
-    if (live || simOnly) { updateMobs(dt); updateDrops(dt); updatePrimed(dt); updateArrows(dt); updateFallers(dt); tickGrowth(dt); P.bowCd -= dt; mpTick(dt); updateWeather(dt); updateThrown(dt); }
-    if (live) { updateFishing(dt); updateMinimap(dt); updateStructs(dt); updateEating(dt); }
-    world.update(P.p.x, P.p.z, 5, 7);
+    simTick(dt);
   }
   updateParticles(dt); updateClouds(dt);
 
