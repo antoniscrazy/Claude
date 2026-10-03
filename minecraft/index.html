@@ -8540,9 +8540,19 @@ function atUpdateSteve(dt) {
       if (st.t > 1.5) { st.food = Math.min(20, st.food + 7); A.inv.food = Math.max(0, A.inv.food - 1); atStartState(st, 'walk', { until: 5 }); }
       break;
   }
-  // Festhängen? Kommt Steve in 18 s nicht 1,5 Blöcke voran, gräbt er sich eine Treppe zur Oberfläche
-  if (st.bestX === undefined || st.x > st.bestX + 1.5) { st.bestX = st.x; st.bestT = A.t; }
-  else if (A.t - st.bestT > 18 && !['mine', 'build', 'fight', 'eat', 'emote'].includes(st.state)) { st.bestT = A.t; st.plan = atPlanUp(); atStartState(st, 'mine', { i: 0, dt: 0, phase: 'dig' }); }
+  // Festhängen: bewegt sich Steve in 18 s nicht 3 Blöcke weit, gräbt er sich eine Treppe nach oben; nach 35 s hilft ein „Teleport“ mit Rauchwolke
+  if (!st.anchor || Math.hypot(st.x - st.anchor.x, st.y - st.anchor.y) > 3) st.anchor = { x: st.x, y: st.y, t: A.t, soft: false };
+  else if (st.state !== 'emote') {
+    const idle = A.t - st.anchor.t;
+    if (idle > 18 && !st.anchor.soft && !['mine', 'fight', 'eat'].includes(st.state)) { st.anchor.soft = true; st.plan = atPlanUp(); atStartState(st, 'mine', { i: 0, dt: 0, phase: 'dig' }); }
+    else if (idle > 35) {
+      atBurst(st.x, st.y + 1, '#ddd', 14, 4, 0.16);
+      const nx = Math.floor(st.x) + 7, ny = atHeight(nx) + 1;
+      for (let dy = 0; dy < 3; dy++) atSet(nx, ny + dy, null);
+      st.x = nx + 0.5; st.y = ny + 0.01; st.vx = 0; st.vy = 0; st.anchor = null; atBurst(st.x, st.y + 1, '#ddd', 14, 4, 0.16);
+      atStartState(st, 'walk', { until: 4 + Math.random() * 4 });
+    }
+  }
   atMove(st, dt, want * st.dir, 0.28, 1.8);
   if (st.blocked && want !== 0 && (st.state === 'walk' || st.state === 'toTree' || st.state === 'build')) {            // läuft gegen eine Wand
     st.blockT = (st.blockT || 0) + dt;
@@ -8715,7 +8725,7 @@ const Dino = { cv: $('dinoCv'), raf: 0, last: 0, st: null, hi: 0 };
 try { Dino.hi = +localStorage.getItem('voxelcraft_dino') || 0; } catch (e) { /* egal */ }
 function dinoReset() {
   const S = 3;
-  Dino.st = { S, gy: 230, y: 0, vy: 0, onGround: true, t: 0, dist: 0, speed: 330, obst: [], next: 520, dead: false, deadT: 0, night: 0, nightTarget: 0, started: false, cloudX: 0 };
+  Dino.st = { S, gy: 230, y: 0, vy: 0, onGround: true, t: 0, dist: 0, speed: 330, obst: [], next: 760, dead: false, deadT: 0, night: 0, nightTarget: 0, started: false, cloudX: 0 };
 }
 function dinoJump() {
   const d = Dino.st; if (!d) return;
@@ -8736,7 +8746,10 @@ function dinoFrame(now) {
     d.vy -= 2500 * dt * (keysDown.ArrowDown ? 1.9 : 1); d.y += d.vy * dt; if (d.y <= 0) { d.y = 0; d.vy = 0; d.onGround = true; }
     // Kakteen erzeugen: 1–3 breit, 1–2 Blöcke hoch
     d.next -= d.speed * dt;
-    if (d.next <= 0) { const n = 1 + ((Math.random() * 3) | 0), h = Math.random() < 0.35 ? 2 : 1; d.obst.push({ x: W + 40, n, h }); d.next = 420 + Math.random() * 520 + d.speed * 0.35; }
+    if (d.next <= 0) {                                                       // Kakteen: anfangs nur einzelne, niedrige; Breite/Höhe steigen mit dem Punktestand
+      const sc = Math.floor(d.dist / 20), maxN = sc < 120 ? 1 : sc < 350 ? 2 : 3, n = 1 + ((Math.random() * maxN) | 0), h = (sc >= 200 && n <= 2 && Math.random() < 0.35) ? 2 : 1;
+      d.obst.push({ x: W + 40, n, h }); d.next = 400 + Math.random() * 480 + d.speed * 0.55 + n * 60;
+    }
     for (const o of d.obst) o.x -= d.speed * dt;
     d.obst = d.obst.filter((o) => o.x > -200);
     // Kollision (etwas nachsichtig): Steve-Kasten 8×30 Pixel, Kaktus 12 Pixel breit je Block
