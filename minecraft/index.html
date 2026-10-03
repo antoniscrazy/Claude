@@ -1364,7 +1364,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms'];
-const GAME_VER = '2026-10-03.4';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-03.5';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
 const isDryBiome = (b) => b === BIOME_DESERT || b === BIOME_MESA || b === BIOME_NETHER || b === BIOME_BACKROOMS;
 // Baumdichte je Biom (alt = Welten vor den neuen Biomen, neu = ab GEN2_START)
@@ -3770,8 +3770,17 @@ function sandBuried() {                                               // „Komp
   const solid = (b) => b > 0 && BLOCKS[b].solid;                       // … und dicht darüber und darunter (Sand fällt von allein herab, darum darf das Dach auch ein anderer Block sein)
   return solid(world.getBlock(x, y + 2, z)) && solid(world.getBlock(x, y - 1, z));
 }
+function sandOnPlayer() {                                             // Sand ist in Fuß- oder Kopfzelle gefallen (der Spieler würde gleich nach oben herausgeschoben) und ringsum ist genug Sand
+  const x = Math.floor(P.p.x), z = Math.floor(P.p.z), y = Math.floor(P.p.y + 0.05);
+  const isS = (a, b, c) => { const id = world.getBlock(a, b, c); return id === SAND || id === ID.red_sand; };
+  if (!isS(x, y, z) && !isS(x, y + 1, z)) return false;
+  let n = (isS(x, y, z) ? 1 : 0) + (isS(x, y + 1, z) ? 1 : 0) + (isS(x, y + 2, z) ? 1 : 0) + (isS(x, y - 1, z) ? 1 : 0);
+  for (let dy = 0; dy < 2; dy++) for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (isS(x + dx, y + dy, z + dz)) n++;
+  return n >= 5;
+}
 function updateSandBurial(dt) {
   if (!world || world.dim !== 0 || isSpectator() || P.sleeping) { P.sandT = 0; return; }
+  if (sandOnPlayer()) { P.sandT = 0; $('under').style.display = 'none'; enterBackrooms(); return; }
   if (sandBuried()) P.sandT = (P.sandT || 0) + dt; else P.sandT = Math.max(0, (P.sandT || 0) - dt * 2);
   const k = Math.min(1, (P.sandT || 0) / 2.4);
   const u = $('under'); if (k > 0.02) { u.style.display = 'block'; u.style.background = 'rgba(190,160,90,' + (0.35 + 0.6 * k) + ')'; } else if (u.style.background.indexOf('190,160,90') >= 0) u.style.display = 'none';
@@ -5584,8 +5593,8 @@ function frame(now) {
     const live = !frozen && state === 'play', simOnly = !frozen && mp.on && (state === 'inv' || state === 'pause' || state === 'chat' || state === 'dead' || state === 'settings' || state === 'trade');
     if (live) {
       if (!mp.on && rules.daycycle) gameTime += dt;
-      updatePlayer(dt); updateEffects(dt); updatePortal(dt);
-      updateInteraction(dt); ambientTick(dt); musicTick(dt); fxTick(dt); updateSandBurial(dt); { const bo = $('btnBackOut'); bo.classList.toggle('hidden', !(world.dim === 2 && state === 'play')); }
+      updateSandBurial(dt); updatePlayer(dt); updateEffects(dt); updatePortal(dt);
+      updateInteraction(dt); ambientTick(dt); musicTick(dt); fxTick(dt); { const bo = $('btnBackOut'); bo.classList.toggle('hidden', !(world.dim === 2 && state === 'play')); }
       saveTimer += dt; if (saveTimer > 45) { saveTimer = 0; saveGame(); }
     }
     if (mp.on) gameTime = mpGameTime();
