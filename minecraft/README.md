@@ -9,10 +9,12 @@ Ein Minecraft-ähnliches Voxel-Spiel, das komplett im Browser läuft – eine ei
 
 ## Steuerung
 
+Die Steuerung schaltet automatisch zwischen Maus/Tastatur und Touch um (auch auf Touchscreen-Laptops); in den Einstellungen lässt sie sich auf „Maus & Tastatur“ oder „Touch“ festlegen.
+
 | Aktion | Tastatur / Maus | Touch |
 | --- | --- | --- |
 | Bewegen | WASD | Joystick links |
-| Umsehen | Maus | Wischen auf der rechten Fläche |
+| Umsehen | Maus (Klick ins Spiel fängt die Maus) oder Pfeiltasten | Wischen auf der rechten Fläche |
 | Springen / Schwimmen (im Kreativmodus: Doppeltipp = Fliegen an/aus) | Leertaste | ▲-Button (rechts unten) |
 | Schleichen (kein Abstürzen von Kanten) | Shift | Knopf ▼ unter dem Sprung-Knopf (im Flug: halten = sinken) |
 | Sprinten | Strg oder W doppelt tippen | Knopf » links neben ▲ / ▼ (oder Joystick ganz nach vorn) |

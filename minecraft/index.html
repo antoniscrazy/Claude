@@ -380,6 +380,7 @@ body.touch #modeTag{display:none}
     <label class="chk"><input type="checkbox" id="sClouds"> Wolken anzeigen</label>
     <label class="chk"><input type="checkbox" id="sMap"> Minikarte (N)</label>
     <label class="chk"><input type="checkbox" id="sMapBig"> Große Minikarte</label>
+    <label>Steuerung <select id="sTouch"><option value="auto">Automatisch (Maus / Touch)</option><option value="off">Maus &amp; Tastatur</option><option value="on">Touch</option></select></label>
     <label class="chk"><input type="checkbox" id="sMusic"> Hintergrundmusik</label>
     <label class="chk"><input type="checkbox" id="sLoc"> Locator-Leiste (Mitspieler, Bett, Homes)</label>
     <button class="btn" id="btnSettingsBack" type="button" style="margin-top:14px">Fertig</button>
@@ -1348,7 +1349,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether'];
-const GAME_VER = '2026-10-02.15';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-03.1';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
 const isDryBiome = (b) => b === BIOME_DESERT || b === BIOME_MESA || b === BIOME_NETHER;
 // Baumdichte je Biom (alt = Welten vor den neuen Biomen, neu = ab GEN2_START)
@@ -2449,6 +2450,11 @@ function updatePlayer(dt) {
     if (keys.KeyW || keys.KeyA || keys.KeyS || keys.KeyD || keys.Space || keys.ShiftLeft || Math.hypot(touchMove.x, touchMove.y) > 0.3 || env.dayF > 0.6) { wakeUp(); }
     else if (!mp.on && P.sleepT > 2.6) { skipToMorning(); wakeUp(); }
     return;
+  }
+  if (keys.ArrowLeft || keys.ArrowRight || keys.ArrowUp || keys.ArrowDown) {                     // Pfeiltasten drehen die Kamera (Ersatz, falls der Browser die Maus-Sperre verweigert)
+    const r = 2.4 * settings.sens * dt;
+    P.yaw += ((keys.ArrowLeft ? 1 : 0) - (keys.ArrowRight ? 1 : 0)) * r;
+    P.pitch = clamp(P.pitch + ((keys.ArrowUp ? 1 : 0) - (keys.ArrowDown ? 1 : 0)) * r, -Math.PI / 2 + 0.01, Math.PI / 2 - 0.01);
   }
   const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw), rx = Math.cos(P.yaw), rz = -Math.sin(P.yaw);
   const fwd = clamp((keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0) + touchMove.y, -1, 1), str = clamp((keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0) + touchMove.x, -1, 1);
@@ -5030,7 +5036,8 @@ function lockPointer() {
 document.addEventListener('pointerlockchange', () => {
   if (!document.pointerLockElement && state === 'play') setState('pause');
 });
-document.addEventListener('pointerlockerror', () => { if (state === 'play') toast('Klicke ins Spiel, um die Maus zu steuern'); });
+let lockErrN = 0;
+document.addEventListener('pointerlockerror', () => { if (state === 'play') toast(++lockErrN > 1 ? 'Der Browser sperrt die Maus nicht (Vorschau/Frame?). Öffne die Datei direkt im Browser – Pfeiltasten drehen die Kamera.' : 'Klicke ins Spiel, um die Maus zu steuern'); });
 canvas.addEventListener('click', () => { if (state === 'play' && !document.pointerLockElement && !touchMode) lockPointer(); });
 
 function resume() { setState('play'); lockPointer(); }
@@ -5180,11 +5187,21 @@ function resetTouch() {
   keys.Space = false; keys.KeyC = false; mouse.left = false; mouse.right = false;
   document.querySelectorAll('.tbtn.down').forEach((b) => b.classList.remove('down'));
 }
-function enableTouch() {
-  if (touchMode) return;
-  touchMode = true; document.body.classList.add('touch'); updateTouchUI();
+// Touch-Steuerung: Auto (Standard) schaltet je nach letzter Eingabe um – Touchscreen-Laptops/Hybrid-PCs behalten so die Maus-Steuerung; Einstellung „An“/„Aus“ erzwingt einen Modus
+function setTouchMode(on) {
+  if (touchMode === on) return;
+  touchMode = on; document.body.classList.toggle('touch', on);
+  if (!on) { resetTouch(); if (document.pointerLockElement === null && state === 'play') toast('Klicke ins Spiel, um die Maus zu steuern'); }
+  updateTouchUI();
 }
+function enableTouch() { if (settings.touch === 'off') return; setTouchMode(true); }
 window.addEventListener('touchstart', enableTouch, { passive: true });
+function mouseSeen(e) {                                           // echte Maus (keine Touch-Kompatibilitäts-Events): Maus-Steuerung
+  if (e.pointerType !== 'mouse' || touchMode === false || (settings.touch || 'auto') !== 'auto') return;
+  if (e.type === 'pointermove' && !e.movementX && !e.movementY) return;
+  setTouchMode(false);
+}
+window.addEventListener('pointerdown', mouseSeen, true); window.addEventListener('pointermove', mouseSeen, true);
 
 let joyId = null, lookT = null;
 const joy = $('joy'), lookZone = $('lookZone');
@@ -6679,8 +6696,9 @@ cmd(['gamerule', 'regel'], {
    N. EINSTELLUNGEN, WETTER, ANGELN, ERFOLGE, MINIKARTE, SCREENSHOT
 ===================================================================== */
 // ----- Einstellungen (localStorage) -----
-const settings = { fov: 75, sens: 1, volume: 0.5, clouds: true, minimap: true, mapBig: false, locator: true, music: true };
+const settings = { fov: 75, sens: 1, volume: 0.5, clouds: true, minimap: true, mapBig: false, locator: true, music: true, touch: 'auto' };
 try { Object.assign(settings, JSON.parse(localStorage.getItem('voxelcraft_settings') || '{}')); } catch (e) { /* egal */ }
+if (settings.touch === 'on') setTouchMode(true); else if (settings.touch === 'off') setTouchMode(false);
 const saveSettings = () => { try { localStorage.setItem('voxelcraft_settings', JSON.stringify(settings)); } catch (e) { /* egal */ } };
 function applySettings() {
   if (masterGain) masterGain.gain.value = settings.volume;
@@ -6692,7 +6710,7 @@ function applySettings() {
   $('sSens').value = Math.round(settings.sens * 100); $('vSens').textContent = Math.round(settings.sens * 100) + ' %';
   $('sVol').value = Math.round(settings.volume * 100); $('vVol').textContent = Math.round(settings.volume * 100) + ' %';
   $('sDist').value = renderDist; $('vDist').textContent = renderDist + ' Chunks';
-  $('sMusic').checked = settings.music; $('sLoc').checked = settings.locator; $('sClouds').checked = settings.clouds; $('sMap').checked = settings.minimap; $('sMapBig').checked = settings.mapBig;
+  $('sTouch').value = settings.touch || 'auto'; $('sMusic').checked = settings.music; $('sLoc').checked = settings.locator; $('sClouds').checked = settings.clouds; $('sMap').checked = settings.minimap; $('sMapBig').checked = settings.mapBig;
 }
 let settingsFrom = 'pause';
 function openSettings() { settingsFrom = state === 'menu' ? 'menu' : 'pause'; applySettings(); setState('settings'); }
@@ -6708,6 +6726,7 @@ $('sDist').oninput = () => {
 $('sClouds').onchange = () => { settings.clouds = $('sClouds').checked; applySettings(); };
 $('sMap').onchange = () => { settings.minimap = $('sMap').checked; applySettings(); };
 $('sMapBig').onchange = () => { settings.mapBig = $('sMapBig').checked; applySettings(); };
+$('sTouch').onchange = () => { settings.touch = $('sTouch').value; if (settings.touch === 'on') setTouchMode(true); else if (settings.touch === 'off') setTouchMode(false); applySettings(); };
 $('sMusic').onchange = () => { settings.music = $('sMusic').checked; applySettings(); };
 $('sLoc').onchange = () => { settings.locator = $('sLoc').checked; applySettings(); };
 $('btnMenuSettings').onclick = openSettings;
