@@ -42,6 +42,7 @@ def main():
 
     out, anim, missing, total = {}, {}, [], 0
     for n in sorted(names):
+        if '/gen_' in n: continue                                  # selbst gezeichnet (Backrooms), kommt nicht aus dem Pack
         try:
             data = read(n)
         except (KeyError, FileNotFoundError):
