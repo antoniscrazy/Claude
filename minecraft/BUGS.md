@@ -90,3 +90,11 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * ✅ **Wasser fließt höchstens 7 Blöcke weit – auch über Kanten:** fallendes Wasser behielt vorher seine Reichweite nicht, sondern begann unten wieder mit 7 (Treppe/Kante → bis 11 Blöcke). Jetzt behält eine fallende Wassersäule die Stufe von oben; gemessen auf Fläche, Stufen und Fall von 5 Blöcken: höchstens 7. (Lava: 3 in der Oberwelt, 7 im Nether, ebenso begrenzt.)
 * ✅ **Quellblock erkennbar:** Quellen (und Ozeane/Seen) sind jetzt ein **ruhiges, dunkleres Bild ohne Animation** und etwas höher (0,9); fließendes Wasser/Lava ist **heller, bewegt sich schneller** und wird je Stufe flacher (Stufe 7 = 0,76). Die Quelle ist so auf einen Blick vom Fluss zu unterscheiden.
 
+## 2026-10-05.10 – Jahreszeiten & mehr Wetter
+
+* ✨ **Jahreszeiten:** Frühling → Sommer → Herbst → Winter, je 7 Spieltage (ein Jahr = 28 Spieltage = 4 h echte Zeit); neue Welten starten im Frühling. Anzeige oben rechts („🍂 Herbst · Tag 3/7 · Nebel“), Hinweis beim Wechsel. `/season [spring|summer|autumn|winter|auto]` (Cheat) stellt sie fest ein; auf Servern gilt es für alle und wird mit der Welt gespeichert.
+* ✨ **Farben:** Gras und Laub wechseln fließend die Farbe (Frühling frischgrün, Herbst orange/gelb/olivbraun, Winter fahl); Fichten bleiben fast grün.
+* ✨ **Winter:** In allen nicht heißen Biomen (außer Wüste, Mesa, Savanne, Dschungel) schneit es statt zu regnen. **Schneedecke** legt sich auf alle Oberseiten unter freiem Himmel (auch Bäume, Dächer), wächst bei Schneefall, im Winter liegt immer etwas Schnee und er schmilzt im Frühling wieder.
+* ✨ **Wetterlage je Jahreszeit:** Frühling regnerisch, Sommer sonnig mit häufigen Gewittern (Blitze öfter), Herbst viel **Nebel** (neues Wetter, `/weather fog`), Winter Schnee. In **Wüste und Mesa** wird aus Regen ein **Sandsturm** (Sandschleier, Sicht stark eingeschränkt).
+* ✨ **Pflanzen:** wachsen im Frühling schneller (×1,25), im Herbst etwas langsamer, im Winter kaum (×0,3), bei Regen +50 % – nur unter freiem Himmel; unter Dach/Glas (Gewächshaus) normal.
+
