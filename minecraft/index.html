@@ -1681,7 +1681,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.2';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-05.3';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN3_START = 1791118400000;           // Welten/Server ab diesem Zeitpunkt: tiefe Welt (+64 Tiefe), neue Höhlen und Strukturen, Baulimit 256
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
 const isDryBiome = (b) => b === BIOME_DESERT || b === BIOME_MESA || b === BIOME_NETHER || b === BIOME_BACKROOMS || b === BIOME_END;
@@ -8633,7 +8633,113 @@ cmd(['spawn'], { desc: 'Zum Startpunkt', run() { if (world.dim !== 0) { enterDim
 cmd(['backrooms'], { desc: 'Betritt die Backrooms (zurück mit /spawn, Knopf oder Taste B)', cheat: true, run() { if (world.dim === 2) fail('Du bist schon in den Backrooms.'); enterBackrooms(); } });
 cmd(['nether'], { desc: 'Reist ins Nether (Koordinaten /8, mit Portal am Ziel)', cheat: true, run() { if (world.dim === 1) fail('Du bist schon im Nether.'); startDimTravel(); } });
 cmd(['end', 'ende'], { desc: 'Reist ins Ende (zurück mit /spawn)', cheat: true, run() { if (world.dim === 3) fail('Du bist schon im Ende.'); if (world.dim !== 0) fail('Reise zuerst in die Oberwelt (/overworld).'); startEndTravel(); } });
-cmd(['locate', 'orten'], { desc: 'Zeigt die Koordinaten der Festung (Portalraum zum Ende)', cheat: true, run() { const [sx, sz] = strongholdChunkFor(world.seed | 0); chatOk('Festung: x ≈ ' + (sx * 16 + 8) + ', z ≈ ' + (sz * 16 + 8) + '  (Portalraum etwa y 9; Schacht mit Leiter bei x+6)'); } });
+// ----- /locate <biom|struktur>: nächstes Biom oder nächste Struktur suchen -----
+const LOC_BIOMES = [['wiese', BIOME_GRASS, 'Wiese', ['plains', 'grass', 'grasland']], ['wueste', BIOME_DESERT, 'Wüste', ['desert']], ['schnee', BIOME_SNOW, 'Schneelandschaft', ['snow', 'snowy', 'schneelandschaft']],
+  ['wald', BIOME_FOREST, 'Wald', ['forest']], ['birkenwald', BIOME_BIRCH, 'Birkenwald', ['birch_forest', 'birch']], ['dunkler_wald', BIOME_DARK, 'Dunkler Wald', ['dark_forest', 'dark']],
+  ['dschungel', BIOME_JUNGLE, 'Dschungel', ['jungle']], ['savanne', BIOME_SAVANNA, 'Savanne', ['savanna']], ['taiga', BIOME_TAIGA, 'Taiga', []], ['mesa', BIOME_MESA, 'Mesa', ['badlands']],
+  ['sumpf', BIOME_SWAMP, 'Sumpf', ['swamp']], ['kirschhain', BIOME_CHERRY, 'Kirschhain', ['cherry_grove', 'cherry']], ['blumenwiese', BIOME_MEADOW, 'Blumenwiese', ['meadow', 'flower_meadow']]];
+// mode: stronghold | plan (große Struktur je Region) | region (Minenschacht/Festung/Schlucht) | chunk (Struktur wird im Chunk erzeugt und geprüft); deep = nur in tiefen Welten
+const LOC_STRUCTS = [
+  { key: 'festung', de: 'Festung (Portalraum zum Ende)', al: ['stronghold', 'portalraum'], mode: 'stronghold' },
+  { key: 'dorf', de: 'Dorf', al: ['village'], mode: 'plan', kind: 'village', deep: 1 }, { key: 'pyramide', de: 'Wüstenpyramide', al: ['pyramid', 'wuestentempel'], mode: 'plan', kind: 'pyramid', deep: 1 },
+  { key: 'dschungeltempel', de: 'Dschungeltempel', al: ['jungletemple', 'jungle_temple'], mode: 'plan', kind: 'jungletemple', deep: 1 }, { key: 'iglu', de: 'Iglu', al: ['igloo'], mode: 'plan', kind: 'igloo', deep: 1 },
+  { key: 'sumpfhuette', de: 'Sumpfhütte', al: ['swamphut', 'swamp_hut', 'hexenhuette'], mode: 'plan', kind: 'swamphut', deep: 1 }, { key: 'ruinenportal', de: 'Ruinen-Portal', al: ['ruinedportal', 'ruined_portal', 'ruinportal'], mode: 'plan', kind: 'ruinportal', deep: 1 },
+  { key: 'burgruine', de: 'Burgruine', al: ['castle', 'burg'], mode: 'plan', kind: 'castle', deep: 1 }, { key: 'steinkreis', de: 'Steinkreis', al: ['circle', 'stone_circle'], mode: 'plan', kind: 'circle', deep: 1 },
+  { key: 'lager', de: 'Lager', al: ['camp', 'camping'], mode: 'plan', kind: 'camp', deep: 1 }, { key: 'leuchtturm', de: 'Leuchtturm', al: ['lighthouse'], mode: 'plan', kind: 'lighthouse', deep: 1 },
+  { key: 'schiffswrack', de: 'Schiffswrack', al: ['shipwreck', 'wreck', 'wrack'], mode: 'plan', kind: 'wreck', deep: 1 }, { key: 'ozeanruine', de: 'Ozeanruine', al: ['oceanruin', 'ocean_ruin', 'unterwasserruine'], mode: 'plan', kind: 'oceanruin', deep: 1 },
+  { key: 'minenschacht', de: 'Minenschacht', al: ['mineshaft', 'mine'], mode: 'region', deep: 1 }, { key: 'tiefenfestung', de: 'Tiefenfestung', al: ['ancientcity', 'ancient_city', 'halle'], mode: 'region', deep: 1 },
+  { key: 'schlucht', de: 'Schlucht', al: ['ravine', 'canyon'], mode: 'region', deep: 1 },
+  { key: 'geode', de: 'Amethyst-Geode', al: ['amethyst', 'amethystgeode'], mode: 'chunk', deep: 1 }, { key: 'fossil', de: 'Fossil', al: [], mode: 'chunk', deep: 1 },
+  { key: 'pruefkammer', de: 'Prüfkammer (Kupfer)', al: ['trial', 'trialchamber', 'trial_chamber'], mode: 'chunk', deep: 1 },
+  { key: 'verlies', de: 'Verlies (Monsterkäfig)', al: ['dungeon'], mode: 'chunk' }, { key: 'huette', de: 'Hütte', al: ['cabin', 'haus'], mode: 'chunk' },
+  { key: 'brunnen', de: 'Brunnen', al: ['well'], mode: 'chunk' }, { key: 'wachturm', de: 'Wachturm', al: ['tower', 'turm'], mode: 'chunk' },
+];
+const locNorm = (t) => String(t || '').toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss').replace(/[\s-]+/g, '_').replace(/^_+|_+$/g, '');
+const locBiomeList = () => LOC_BIOMES.filter((b) => world.gv >= 2 || b[1] === BIOME_GRASS || b[1] === BIOME_DESERT || b[1] === BIOME_SNOW);
+const locStructList = () => LOC_STRUCTS.filter((q) => !q.deep || world.gv >= 3);
+function locFind(arg) {
+  const k = locNorm(arg);
+  const b = LOC_BIOMES.find((q) => q[0] === k || q[3].includes(k) || locNorm(q[2]) === k); if (b) return { type: 'biome', b };
+  const t = LOC_STRUCTS.find((q) => q.key === k || q.al.includes(k) || locNorm(q.de) === k); return t ? { type: 'struct', t } : null;
+}
+const locDir = (dx, dz) => ['Osten', 'Südosten', 'Süden', 'Südwesten', 'Westen', 'Nordwesten', 'Norden', 'Nordosten'][((Math.round(Math.atan2(dz, dx) / (Math.PI / 4)) % 8) + 8) % 8];
+function locBiome(biomeId, maxR) {                                             // Ringsuche um die Spielerposition
+  const px = Math.floor(P.p.x), pz = Math.floor(P.p.z), g = world.gen;
+  if (g.biomeAt(px, pz) === biomeId) return { x: px, z: pz, here: true };
+  for (let r = 24; r <= maxR; r += 24) {
+    const n = Math.max(8, Math.ceil(2 * Math.PI * r / 24)); let best = null;
+    for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, x = Math.round(px + Math.cos(a) * r), z = Math.round(pz + Math.sin(a) * r); if (g.biomeAt(x, z) === biomeId) { const d = Math.hypot(x - px, z - pz); if (!best || d < best.d) best = { x, z, d }; } }
+    if (best) {                                                                  // zur Grenze hin verfeinern (näheste Stelle auf dem Strahl)
+      let lo = 0, hi = r; const dx = best.x - px, dz = best.z - pz;
+      for (let k = 0; k < 6; k++) { const m = (lo + hi) / 2, x = Math.round(px + dx * m / r), z = Math.round(pz + dz * m / r); if (g.biomeAt(x, z) === biomeId) hi = m; else lo = m; }
+      return { x: Math.round(px + dx * hi / r), z: Math.round(pz + dz * hi / r) };
+    }
+  }
+  return null;
+}
+function locStruct(t) {
+  const px = P.p.x, pz = P.p.z, seed = world.seed | 0, yo = world.yo, dist = (x, z) => Math.hypot(x - px, z - pz);
+  if (t.mode === 'stronghold') { const [sx, sz] = strongholdChunkFor(seed); return { x: sx * 16 + 8, z: sz * 16 + 8, y: 9 + yo }; }
+  const g = world.gen, base = g.base || g, pcx = Math.floor(px / 16), pcz = Math.floor(pz / 16);
+  let best = null; const take = (x, z, y) => { const d = dist(x, z); if (!best || d < best.d) best = { x: Math.round(x), z: Math.round(z), y, d }; };
+  if (t.mode === 'plan') {                                                       // Regionen à 6×6 Chunks, von innen nach außen
+    const rx0 = Math.floor(pcx / 6), rz0 = Math.floor(pcz / 6);
+    for (let r = 0; r <= 26; r++) {
+      for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) { if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue; const P2 = base.plan(rx0 + dx, rz0 + dz); if (P2 && P2.kind === t.kind) take(P2.x, P2.z, P2.y + yo); }
+      if (best && best.d < (r + 1) * 96 - 96) break;
+    }
+  } else if (t.key === 'minenschacht' || t.key === 'tiefenfestung' || t.key === 'schlucht') {
+    const sz = t.key === 'minenschacht' ? 128 : t.key === 'tiefenfestung' ? 160 : 160, rx0 = Math.floor(px / sz), rz0 = Math.floor(pz / sz);
+    for (let r = 0; r <= 18; r++) {
+      for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) { if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue;
+        if (t.key === 'minenschacht') { const M = g.mine(rx0 + dx, rz0 + dz); if (M) take(M.x, M.z, M.y); }
+        else if (t.key === 'tiefenfestung') { const H = g.hallPlan(rx0 + dx, rz0 + dz); if (H) take(H.x, H.z, H.y); }
+        else for (const pts of g.ravines(Math.floor((rx0 + dx) * sz / 160), Math.floor((rz0 + dz) * sz / 160))) for (const q of pts) take(q[0], q[1], Math.round(q[3])); }
+      if (best && best.d < (r + 1) * sz - sz) break;
+    }
+  } else {                                                                       // Chunk-Strukturen: Vorfilter per Zufallswert, dann Chunk erzeugen und prüfen
+    const pre = {
+      geode: (cx, cz) => hash2(cx, cz, seed + 9300) < 0.07, fossil: (cx, cz) => hash2(cx, cz, seed + 9900) < 0.045, pruefkammer: (cx, cz) => { const r = hash2(cx, cz, seed + 9900); return r >= 0.045 && r < 0.058; },
+      verlies: (cx, cz) => hash2(cx, cz, seed + 7002) < 0.04 || (world.gv >= 3 && (() => { const r = hash2(cx, cz, seed + 9900); return r >= 0.058 && r < 0.1; })()),
+      huette: (cx, cz) => hash2(cx, cz, seed + 7001) < 0.036, brunnen: (cx, cz) => { const r = hash2(cx, cz, seed + 7001); return r >= 0.036 && r < 0.056; }, wachturm: (cx, cz) => { const r = hash2(cx, cz, seed + 7001); return r >= 0.056 && r < 0.066; },
+    }[t.key], kind = { huette: 'cabin', brunnen: 'well', wachturm: 'tower', verlies: 'dungeon', pruefkammer: 'trial' }[t.key];
+    for (let r = 0; r <= 160; r++) {
+      for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue; const cx = pcx + dx, cz = pcz + dz; if (!pre(cx, cz)) continue;
+        if (t.key === 'geode') take(cx * 16 + 8, cz * 16 + 8, 14 + ((hash2(cx, cz, seed + 9301) * 34) | 0));
+        else if (t.key === 'fossil') take(cx * 16 + 8, cz * 16 + 8, 18 + ((hash2(cx, cz, seed + 9903) * 28) | 0));
+        else { world.gen.generate(cx, cz, null); const st = (world.gen.structOut || []).find((q) => q.kind === kind); if (st) take(st.x, st.z, st.y); }
+      }
+      if (best && best.d < (r + 1) * 16 - 16) break;
+    }
+  }
+  return best;
+}
+cmd(['locate', 'orten'], {
+  desc: 'Sucht das nächste Biom oder die nächste Struktur: /locate <biom|struktur>', cheat: true, args: [T.opt('ziel', [], true)],
+  argsFor() { return [T.opt('ziel', locBiomeList().map((b) => [b[0], 'Biom: ' + b[2]]).concat(locStructList().map((q) => [q.key, 'Struktur: ' + q.de])), true)]; },
+  run(a) {
+    if (world.dim !== 0) fail('Biome und Strukturen kannst du nur in der Oberwelt suchen.');
+    if (!a[0]) {
+      chatAdd(null, 'Benutzung: /locate <biom|struktur>  (Tab zeigt alle Namen)', 'sys');
+      chatAdd(null, 'Biome: ' + locBiomeList().map((b) => b[0]).join(', '), 'sys');
+      chatAdd(null, 'Strukturen: ' + locStructList().map((q) => q.key).join(', '), 'sys'); return;
+    }
+    const f = locFind(a[0]); if (!f) fail('Unbekanntes Biom oder unbekannte Struktur „' + a[0] + '“. /locate ohne Namen zeigt die Liste.');
+    const px = P.p.x, pz = P.p.z; let res, name;
+    if (f.type === 'biome') {
+      if (!locBiomeList().includes(f.b)) fail('Das Biom „' + f.b[2] + '“ gibt es in dieser (älteren) Welt nicht.');
+      name = f.b[2] + ' (Biom)'; res = locBiome(f.b[1], 4000);
+    } else {
+      if (f.t.deep && world.gv < 3) fail('„' + f.t.de + '“ gibt es nur in tiefen Welten (neu angelegte Welten/Server).');
+      name = f.t.de; res = locStruct(f.t);
+    }
+    if (!res) { chatErr('„' + name + '“ nicht in der Nähe gefunden (Suchradius ' + (f.type === 'biome' ? '4000' : 'ca. 2500') + ' Blöcke).'); return; }
+    const d = Math.round(Math.hypot(res.x - px, res.z - pz)), y = res.y !== undefined && res.y !== null ? ' y ≈ ' + Math.round(res.y) + ',' : '';
+    if (res.here) chatOk('Du bist schon in diesem Biom: ' + name + '.');
+    else chatOk('Nächstes: ' + name + ' – x ≈ ' + res.x + ',' + y + ' z ≈ ' + res.z + '  (' + d + ' Blöcke nach ' + locDir(res.x - px, res.z - pz) + ')   → /tp ' + res.x + ' ' + (res.y !== undefined && res.y !== null ? Math.round(res.y) + 2 : '~') + ' ' + res.z);
+  },
+});
 cmd(['overworld', 'oberwelt'], { desc: 'Reist zurück in die Oberwelt (Koordinaten x8, mit Portal am Ziel)', cheat: true, run() { if (world.dim === 0) fail('Du bist schon in der Oberwelt.'); startDimTravel(); } });
 cmd(['setspawn', 'spawnpoint'], {
   desc: 'Setzt deinen Wiederbelebungspunkt hierher',
