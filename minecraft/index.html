@@ -1654,7 +1654,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-04.3';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-04.4';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
 const isDryBiome = (b) => b === BIOME_DESERT || b === BIOME_MESA || b === BIOME_NETHER || b === BIOME_BACKROOMS || b === BIOME_END;
 // Baumdichte je Biom (alt = Welten vor den neuen Biomen, neu = ab GEN2_START)
@@ -4404,7 +4404,7 @@ let pendingArrival = null, portalBuilding = false;
 function clearDimEntities() { clearMobs(); clearDrops(); clearPrimed(); clearArrows(); clearFallers(); clearThrown(); clearOrbs(); }
 function enterDimension(td, x, y, z, opt) {
   if (!world) return;
-  wakeUp(); if (world.dim === 0 && td !== 0) vehStash = vehicles.map((v) => [v.type, +v.p.x.toFixed(2), +v.p.y.toFixed(2), +v.p.z.toFixed(2), +v.yaw.toFixed(2)]); clearDimEntities();
+  wakeUp(); if (world.dim === 0 && td !== 0) vehStash = vehicles.filter((v) => !v.puppet).map((v) => [v.type, +v.p.x.toFixed(2), +v.p.y.toFixed(2), +v.p.z.toFixed(2), +v.yaw.toFixed(2)]); clearDimEntities();
   world.switchDim(td); P.p.set(x, y === null ? 40 : y, z); P.v.set(0, 0, 0); P.portalT = 0; P.portalLock = true; P.fallPeak = P.p.y;
   pendingArrival = opt || {}; mp.lastDim = -1;
   setState('loading');
@@ -4755,7 +4755,7 @@ class Vehicle {
   constructor(type, x, y, z, yaw) {
     this.type = type; this.p = new THREE.Vector3(x, y, z); this.v = new THREE.Vector3(); this.yaw = yaw || 0; this.hw = type === 'boat' ? 0.7 : 0.45; this.h = type === 'boat' ? 0.5 : 0.7;
     this.onGround = false; this.hitH = false; this.rider = false; this.model = buildVehModel(type); vehGroup.add(this.model); this.age = 0;
-    this.speed = 0; this.heading = 0; this.u = 0; this.cell = null; this.railed = false;
+    this.speed = 0; this.heading = 0; this.u = 0; this.cell = null; this.railed = false; this.puppet = false; this.id = mp.on ? mp.id + '-v' + (++mp.vehSeq) : null;
     if (type === 'cart') { const r = railAt(Math.floor(x), Math.floor(y + 0.05), Math.floor(z)); if (r) { this.railed = true; this.cell = { x: Math.floor(x), y: Math.floor(y + 0.05), z: Math.floor(z) }; this.heading = RAIL_ENDS[r.shape][0]; this.yaw = this.heading % 2 ? Math.PI / 2 : 0; this.p.set(this.cell.x + 0.5, this.cell.y + 0.0625, this.cell.z + 0.5); } }
   }
   dispose() { vehGroup.remove(this.model); }
@@ -4818,8 +4818,17 @@ class Vehicle {
     if (this.speed > 0.5 && (this.snd = (this.snd || 0) - dt) <= 0) { this.snd = 0.35; sfxAt('step', this.p.x, this.p.y, this.p.z); }
   }
   reverse() { const d = { x: RDX[this.heading], z: RDZ[this.heading] }; this.cell = { x: this.cell.x + d.x, y: this.cell.y, z: this.cell.z + d.z }; this.u = this.u >= 1 ? 0 : 1 - this.u; this.heading = (this.heading + 2) % 4; }
+  adopt() {                                                            // Besitz übernehmen (Puppe wird echtes Fahrzeug)
+    this.puppet = false; this.v.set(0, 0, 0); this.speed = 0; this.u = 0; this.railed = false;
+    if (this.type === 'cart') { const cx = Math.floor(this.p.x), cy = Math.floor(this.p.y + 0.05), cz = Math.floor(this.p.z), r = railAt(cx, cy, cz); if (r) { this.railed = true; this.cell = { x: cx, y: cy, z: cz }; this.heading = RAIL_ENDS[r.shape][0]; this.p.set(cx + 0.5, cy + 0.0625, cz + 0.5); } }
+  }
   update(dt) {
     this.age += dt;
+    if (this.puppet) {                                                  // Mehrspieler: Fahrzeug eines anderen – nur Darstellung
+      if (performance.now() - this.rxAt > 3500) return false;
+      const k = Math.min(1, dt * 10); this.p.lerp(this.tp, this.p.distanceTo(this.tp) > 6 ? 1 : k); let dy = this.tyaw - this.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); this.yaw += dy * k;
+      this.model.position.copy(this.p); this.model.rotation.y = this.yaw - Math.PI / 2; return true;
+    }
     const bx = Math.floor(this.p.x), bz = Math.floor(this.p.z); if (!world.getChunk(bx >> 4, bz >> 4)) return true;
     if (this.type === 'boat') this.updateBoat(dt); else this.updateCart(dt);
     if (this.p.y < -10) return false;
@@ -4831,6 +4840,8 @@ function placeVehicle(type, x, y, z) { const v = new Vehicle(type, x, y, z, type
 function pickupVehicle(v) {
   if (P.ride === v) return;
   const i = vehicles.indexOf(v); if (i < 0) return;
+  if (v.puppet) { mpSend('vehpick', { i: v.id, to: v.owner }); v.dispose(); vehicles.splice(i, 1); sfx('break'); return; }          // der Besitzer lässt das Item fallen
+  if (mp.on && v.id) mpSend('vehgone', { i: v.id });
   v.dispose(); vehicles.splice(i, 1);
   if (!isCreative()) spawnDrop(v.type === 'boat' ? IID.oak_boat : IID.minecart, 1, v.p.x, v.p.y + 0.4, v.p.z, { dur: undefined });
   sfx('break');
@@ -4841,7 +4852,8 @@ function mountMob(m) {
   if (!m.tame) { m.buck = 2.6; toast('Das Pferd bockt – halte durch!'); } else toast('Pferd: WASD reiten · Leertaste springen · Strg schneller · Shift absteigen');
 }
 function mountVehicle(v) {
-  if (P.ride || v.rider) return; P.ride = v; v.rider = true; P.rideT = 0.4; wakeUp();
+  if (P.ride || v.rider) return;
+  if (v.puppet) { if (v.riderName) { toast(v.riderName + ' sitzt schon drin'); return; } mpSend('vehown', { i: v.id }); v.adopt(); } P.ride = v; v.rider = true; P.rideT = 0.4; wakeUp();
   toast(v.type === 'boat' ? 'Boot: W/S fahren · A/D lenken · Shift = aussteigen' : 'Lore: W gibt Gas · S bremst · Shift = aussteigen');
 }
 function dismountVehicle() {
@@ -4872,6 +4884,7 @@ function raycastVeh(o, d, maxD) {
   return best ? { v: best, dist: bt } : null;
 }
 function updateVehicles(dt) {
+  if (mp.on) { mp.vehT -= dt; if (mp.vehT <= 0) { mp.vehT = 0.2; for (const v of vehicles) if (!v.puppet && v.id) mpSend('veh', { i: v.id, t: v.type, x: r2(v.p.x), y: r2(v.p.y), z: r2(v.p.z), yw: r2(v.yaw), r: v.rider ? mp.name : '' }); } }
   const l = lerp(0.4, 1, env.dayF); Object.values(vehMats).forEach((m) => m.color.setScalar(l));
   for (let i = vehicles.length - 1; i >= 0; i--) {
     const v = vehicles[i];
@@ -4882,6 +4895,11 @@ function updateVehicles(dt) {
     }
   }
   seatPlayer();
+}
+function mpVehRecv(p, from) {
+  let v = vehicles.find((q) => q.id === p.i);
+  if (!v) { v = new Vehicle(p.t, p.x, p.y, p.z, p.yw); v.id = p.i; v.puppet = true; v.owner = from; vehicles.push(v); }
+  if (v.puppet) { v.tp = v.tp || new THREE.Vector3(); v.tp.set(p.x, p.y, p.z); v.tyaw = p.yw; v.rxAt = performance.now(); v.riderName = p.r || ''; v.owner = from; }
 }
 function clearVehicles() { vehicles.forEach((v) => v.dispose()); vehicles.length = 0; if (P.ride && P.ride.riderP) P.ride.riderP = false; P.ride = null; }
 
@@ -6087,7 +6105,7 @@ class Mob {
     }
     const D = this.dr || (this.dr = { ph: 'circle', t: 0, a: Math.random() * 6.28, cd: 7, ph0: 0, hit: 0, breath: 0, fb: 0, heal: 0, roar: 4 });
     D.t += dt; D.ph0 += dt; D.hit -= dt; D.heal -= dt; D.roar -= dt; D.fb -= dt; D.cd -= dt;
-    if (D.heal <= 0) { D.heal = 1; let n = 0; for (const m of mobs) if (m.type === 'end_crystal' && m.hp > 0) n++; if (n && this.hp < this.T.hp && this.hp > 0) this.hp = Math.min(this.T.hp, this.hp + 2 * n); D.n = n; }
+    if (D.heal <= 0) { D.heal = 1; let n = 0; for (const m of mobs) if (m.type === 'end_crystal' && m.hp > 0) n++; if (n && this.hp < this.T.hp && this.hp > 0) this.hp = Math.min(this.T.hp, this.hp + Math.min(3, 0.5 + 0.25 * n)); D.n = n; }
     if (D.roar <= 0) { D.roar = 7 + Math.random() * 6; mobSay('ender_dragon', 'idle', this.p.x, this.p.y, this.p.z); }
     const steer = (tx, ty, tz, rate, spdMul) => {
       const dx = tx - this.p.x, dz = tz - this.p.z, want = Math.atan2(dx, dz), dy = Math.atan2(Math.sin(want - this.yaw), Math.cos(want - this.yaw));
@@ -6745,7 +6763,7 @@ function saveGame() {
   const data = {
     v: 1, gv: world.gv, seed: world.seedStr, mode, dist: renderDist,
     player: { x: P.p.x, y: P.p.y, z: P.p.z, yaw: P.yaw, pitch: P.pitch, flying: P.flying },
-    health: P.health, hunger: P.hunger, time: gameTime, sel: P.sel, xpL: P.xpL, xpP: P.xpP, vehs: world.dim === 0 ? vehicles.map((v) => [v.type, +v.p.x.toFixed(2), +v.p.y.toFixed(2), +v.p.z.toFixed(2), +v.yaw.toFixed(2)]) : (vehStash || []),
+    health: P.health, hunger: P.hunger, time: gameTime, sel: P.sel, xpL: P.xpL, xpP: P.xpP, vehs: world.dim === 0 ? vehicles.filter((v) => !v.puppet).map((v) => [v.type, +v.p.x.toFixed(2), +v.p.y.toFixed(2), +v.p.z.toFixed(2), +v.yaw.toFixed(2)]) : (vehStash || []),
     inv: packItems(inv), fuel: P.fuel, armor: packItems(armor), spawn: [P.spawn.x, P.spawn.y, P.spawn.z], bed: P.bedPos,
     containers: Object.fromEntries([...containers].map(([k, v]) => [k, packItems(v)])),
     edits: world.serializeEdits(0), edits1: world.serializeEdits(1), edits2: world.serializeEdits(2), edits3: world.serializeEdits(3), dim: world.dim, endDead: [...endDead],
@@ -7083,7 +7101,7 @@ const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/
 const mp = {
   rateMul: 1, rateAt: 0, out: [], posPend: null, posKey: '', posAt: 0, on: false, room: null, name: '', token: '', backend: 'online', db: null, net: null, id: '', roomInfo: null, mode: 'survival',
   players: new Map(),            // id -> RemotePlayer
-  pending: [], dbQueue: [], sendT: 0, blockT: 0, dbT: 0, mobT: 0, saveT: 0, skew: 0, epoch: 0, freeze: null, sleepCount: 0, joinedAt: 0, offline: false, admin: false, dropSeq: 0, mobSeq: 0,
+  pending: [], dbQueue: [], sendT: 0, blockT: 0, dbT: 0, mobT: 0, saveT: 0, skew: 0, epoch: 0, freeze: null, sleepCount: 0, joinedAt: 0, offline: false, admin: false, dropSeq: 0, mobSeq: 0, vehSeq: 0, vehT: 0,
   mobsById: new Map(), chat: [], skinCache: new Map(), lastHit: null, swing: false, tab: false, wasHost: true, myFace: '', owner: null, ops: new Set(),
 };
 
@@ -7466,6 +7484,7 @@ function mpSend(e, p) {
   if (e === 'pos') { mp.posPend = p; return; }                       // nur der neueste Positionsstand zählt
   const dm = world ? world.dim : 0;
   if (e === 'mobs') { const i = mp.out.findIndex((q) => q[0] === 'mobs'); if (i >= 0) { mp.out[i] = [e, p, dm]; return; } }
+  if (e === 'veh') { const i = mp.out.findIndex((q) => q[0] === 'veh' && q[1].i === p.i); if (i >= 0) { mp.out[i] = [e, p, dm]; return; } }
   mp.out.push([e, p, dm]);                                          // 3. Eintrag: Dimension, in der das Ereignis passiert ist
 }
 // Sendeintervall: Gesamtlast bleibt bei ca. 40 Nachrichten/s für den ganzen Server (Limit ab ~100/s), egal ob 2 oder 15 Spieler.
@@ -8994,7 +9013,7 @@ function renderTabList() {
 }
 
 // --- Empfang ---
-const DIM_EVENTS = new Set(['drop', 'dropgone', 'tnt', 'explode', 'arrow', 'fall', 'throw', 'splash', 'bolt', 'mobs']);
+const DIM_EVENTS = new Set(['veh', 'vehgone', 'drop', 'dropgone', 'tnt', 'explode', 'arrow', 'fall', 'throw', 'splash', 'bolt', 'mobs']);
 function mpVersionWarn(rp, what) {                                         // höchstens eine Warnung pro Spieler und Sitzung
   if (rp.verWarned) return; rp.verWarned = true;
   chatAdd(null, '⚠ ' + rp.name + ' nutzt eine ' + what + ' – deshalb sieht er eine andere Welt und kann dich nicht sehen. Er braucht die neueste index.html!', 'err');
@@ -9088,6 +9107,10 @@ const mpHandlers = {
         break;
       case 'mobs': if (!isHost()) mpApplyMobs(p.m); break;
       case 'mobuse': { if (!isHost()) break; const m = mp.mobsById.get(p.id); if (m && !m.remote) m.interact(p.act, p.by); break; }
+      case 'veh': mpVehRecv(p, from); break;
+      case 'vehgone': { const i = vehicles.findIndex((q) => q.id === p.i && q.puppet); if (i >= 0) { vehicles[i].dispose(); vehicles.splice(i, 1); } break; }
+      case 'vehpick': { const v = vehicles.find((q) => q.id === p.i && !q.puppet); if (v && p.to === mp.id) pickupVehicle(v); break; }
+      case 'vehown': { const v = vehicles.find((q) => q.id === p.i && !q.puppet); if (v) { if (P.ride === v) dismountVehicle(); v.puppet = true; v.owner = from; v.tp = v.p.clone(); v.tyaw = v.yaw; v.rxAt = performance.now(); v.riderName = ''; } break; }
       case 'mobride': { if (!isHost()) break; const m = mp.mobsById.get(p.id); if (m && !m.remote) { m.p.set(p.x, p.y, p.z); m.yaw = p.yw; m.v.set(0, 0, 0); m.timer = 1; m.moving = false; m.rideUntil = performance.now() + 600; } break; }
       case 'mobhit': { if (!isHost()) break; const m = mp.mobsById.get(p.id); if (m) m.hit(p.dmg, p.fx, p.fz); break; }
       case 'drop': spawnDrop(p.i, p.n, p.x, p.y, p.z, { did: p.d, dur: p.u, ench: p.e, vx: p.vx, vy: p.vy, vz: p.vz, remote: true }); break;
@@ -10125,7 +10148,7 @@ Snake.cv.addEventListener('pointerup', snakeUp); Snake.cv.addEventListener('poin
 $('snakeBack').onclick = () => setState('menu');
 ATLAS.onReady(() => { if (state === 'menu' && !MenuScene.raf) menuSceneSync('menu'); });
 
-window.__vc = { openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, placeVehicle, mountVehicle, dismountVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+window.__vc = { openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>
