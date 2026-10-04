@@ -1,4 +1,4 @@
-# VOXELCRAFT – Bug-Liste (Stand 2026-10-04.4)
+# VOXELCRAFT – Bug-Liste (Stand 2026-10-04.5)
 
 Gefunden durch Fuzz-/Monkey-Tests (Zufallsklicks, Tastenhagel), Zwei-Spieler-Tests im Multiplayer und Code-Durchsicht.
 Status: ✅ behoben · 🟡 offen (klein / kosmetisch) · 🔴 offen (spürbar)
@@ -14,9 +14,9 @@ Status: ✅ behoben · 🟡 offen (klein / kosmetisch) · 🔴 offen (spürbar)
 | M5 | Redstone (Hebel, Lampen, Kolben, Trichter+Truhe) zwischen zwei Spielern | ✅ getestet, synchron |
 | M6 | Pferde reiten durch einen Nicht-Host | ✅ getestet (`mobride`) |
 | M7 | Ende: Spieler in verschiedenen Dimensionen sehen sich nicht / Mobs vermischen sich | ✅ getestet, getrennt |
-| M8 | Drachen-Animationsphase (Kreisen/Angriff/Landung) wird bei Nicht-Hosts nur aus der Position abgeleitet → Animationen leicht verzögert | 🟡 offen |
-| M9 | Gezähmte Pferde/Wölfe und Fahrzeuge anderer Spieler bleiben nicht gespeichert, wenn der Besitzer/Host den Raum verlässt | 🟡 offen |
-| M10 | Supabase: `dev_console_part2.sql` muss einmalig im Supabase-SQL-Editor ausgeführt werden; Realtime-Zugriff auf `voxelcraft-actions` ungeprüft; 15-Spieler-Last nicht real getestet | 🔴 offen (Einrichtung, kein Code) |
+| M8 | Drachen-Animationsphase (Kreisen/Angriff/Landung) kam bei Mitspielern nur verzögert an | ✅ Phase, Landung, Brüllen und Feuerball-Timer werden jetzt mitgesendet (getestet: charge/perch/strafe) |
+| M9 | Gezähmte Pferde/Wölfe und Fahrzeuge gingen verloren, wenn Besitzer/Host den Raum verließ | ✅ werden im Spielerstand gespeichert und beim Beitritt (bzw. Dimensionswechsel) wiederhergestellt; weit entfernte Fahrzeuge kommen als Item ins Inventar |
+| M10 | Supabase: `dev_console_part2.sql` muss einmalig im SQL-Editor des Spiel-Projekts (`wzagswxluqpfzksoqsca`) ausgeführt werden; Realtime-Zugriff auf `voxelcraft-actions` und 15-Spieler-Last ungeprüft | 🔴 offen – nur du kannst das: das Spiel-Projekt liegt nicht in dem Supabase-Konto, auf das ich Zugriff habe, und von hier erreiche ich keine Websockets |
 
 ## Einzelspieler / Allgemein
 
@@ -36,8 +36,8 @@ Status: ✅ behoben · 🟡 offen (klein / kosmetisch) · 🔴 offen (spürbar)
 | B12 | Fehlende Sounds `portal`, `step` | ✅ |
 | B13 | Block-/Item-IDs verschoben sich beim Einfügen neuer Blöcke (alte Saves kaputt) | ✅ neue IDs nur noch hinten angehängt, ID-Check = 0 Abweichungen |
 | B14 | Enderdrache heilte durch Kristalle viel zu stark (2 HP/s je Kristall) | ✅ jetzt max. 3 HP/s gesamt |
-| B15 | Bücherregal: Verzauber-Stärke ignoriert Luftlücke-Regel | 🟡 offen |
-| B16 | Kein Glitzern (Glint) am gehaltenen verzauberten Item (nur im Inventar) | 🟡 offen |
-| B17 | Flügelmembranen des Drachen wirken von der Seite sehr dünn | 🟡 offen |
+| B15 | Bücherregal: Verzauber-Stärke ignorierte die Luftlücken-Regel | ✅ Regale zählen nur noch, wenn die Zelle dazwischen frei ist (getestet 15 → 13) |
+| B16 | Kein Glitzern am gehaltenen verzauberten Item | ✅ pulsierende violette Überlagerung in der Hand |
+| B17 | Flügelmembranen des Drachen wirkten von der Seite sehr dünn | ✅ Membranen leicht angewinkelt (V-Form) |
 
 Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zuletzt **keine** Konsolenfehler.

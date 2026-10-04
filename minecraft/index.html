@@ -1654,7 +1654,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-04.4';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-04.5';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
 const isDryBiome = (b) => b === BIOME_DESERT || b === BIOME_MESA || b === BIOME_NETHER || b === BIOME_BACKROOMS || b === BIOME_END;
 // Baumdichte je Biom (alt = Welten vor den neuen Biomen, neu = ab GEN2_START)
@@ -4504,7 +4504,7 @@ function finishArrival() {
   if (a.backrooms) { placeInBackrooms(P.p.x, P.p.z); achGive('backrooms'); }
   if (a.end) endArrive();
   if (a.backrooms || a.out) setTimeout(() => backFlash(false), 350);
-  P.fallPeak = P.p.y; mp.lastDim = -1;
+  P.fallPeak = P.p.y; mp.lastDim = -1; if (mp.on && mp.petQueue) setTimeout(mpRestorePets, 1500);
 }
 function updatePortal(dt) {
   const fx = $('portalFx');
@@ -5011,7 +5011,7 @@ function lootFor(id, held) {                                                    
 let enchOpen = false, enchSeed = 1; const enchSlots = [null, null];
 function enchPower(x, y, z) {
   let n = 0;
-  for (let dx = -2; dx <= 2; dx++) for (let dz = -2; dz <= 2; dz++) { if (Math.max(Math.abs(dx), Math.abs(dz)) !== 2) continue; for (let dy = 0; dy <= 1; dy++) if (world.getBlock(x + dx, y + dy, z + dz) === ID.bookshelf) n++; }
+  for (let dx = -2; dx <= 2; dx++) for (let dz = -2; dz <= 2; dz++) { if (Math.max(Math.abs(dx), Math.abs(dz)) !== 2) continue; for (let dy = 0; dy <= 1; dy++) if (world.getBlock(x + dx, y + dy, z + dz) === ID.bookshelf && world.getBlock(x + Math.trunc(dx / 2), y + dy, z + Math.trunc(dz / 2)) === AIR) n++; }
   return Math.min(15, n);
 }
 function enchOptions() {
@@ -5753,9 +5753,9 @@ function buildMobModel(type, mats, tint, ex) {
     for (const sd of [-1, 1]) {
       const w = mcg(sd * 12, 5, 2, 0, 0, 0, root); if (sd > 0) w.scale.x = -1;
       mcb(w, m, 56, 8, 8, 112, 88, T, T, -56, -4, -4);
-      const ms = new THREE.Mesh(new THREE.PlaneGeometry(56 / 16, 56 / 16), m); ms.rotation.x = -Math.PI / 2; ms.position.set(-28 / 16, 0, -30 / 16); { const uv = ms.geometry.attributes.uv; uv.setXY(0, 0, 1 - 88 / T); uv.setXY(1, 56 / T, 1 - 88 / T); uv.setXY(2, 0, 1 - 144 / T); uv.setXY(3, 56 / T, 1 - 144 / T); } w.add(ms);
+      const ms = new THREE.Mesh(new THREE.PlaneGeometry(56 / 16, 56 / 16), m); ms.rotation.x = -Math.PI / 2 + 0.2; ms.position.set(-28 / 16, 0, -30 / 16); { const uv = ms.geometry.attributes.uv; uv.setXY(0, 0, 1 - 88 / T); uv.setXY(1, 56 / T, 1 - 88 / T); uv.setXY(2, 0, 1 - 144 / T); uv.setXY(3, 56 / T, 1 - 144 / T); } w.add(ms);
       const tp = mcg(-56, 0, 0, 0, 0, 0, w); mcb(tp, m, 56, 4, 4, 112, 136, T, T, -56, -2, -2);
-      const ms2 = new THREE.Mesh(new THREE.PlaneGeometry(56 / 16, 56 / 16), m); ms2.rotation.x = -Math.PI / 2; ms2.position.set(-28 / 16, 0, -30 / 16); { const uv = ms2.geometry.attributes.uv; uv.setXY(0, 0, 1 - 144 / T); uv.setXY(1, 56 / T, 1 - 144 / T); uv.setXY(2, 0, 1 - 200 / T); uv.setXY(3, 56 / T, 1 - 200 / T); } tp.add(ms2);
+      const ms2 = new THREE.Mesh(new THREE.PlaneGeometry(56 / 16, 56 / 16), m); ms2.rotation.x = -Math.PI / 2 + 0.24; ms2.position.set(-28 / 16, 0, -30 / 16); { const uv = ms2.geometry.attributes.uv; uv.setXY(0, 0, 1 - 144 / T); uv.setXY(1, 56 / T, 1 - 144 / T); uv.setXY(2, 0, 1 - 200 / T); uv.setXY(3, 56 / T, 1 - 200 / T); } tp.add(ms2);
       wpv.push(w); tips.push(tp);
     }
     X.wingPv = wpv; X.wingTips = tips;
@@ -8725,7 +8725,8 @@ function cubeGeo(id) {
   g.setAttribute('color', new THREE.BufferAttribute(col, 3)); cubeGeos.set(id, g); return g;
 }
 const handUsesSprite = (B) => B.plant || B.torch || B.flat !== undefined || B.shapeIcon || B.ladder !== undefined || B.door || B.support || B.trap || B.gate;
-function buildHandItem(id) {
+function buildHandItem(id, ench) {
+  hand.glint = null;
   while (itemPivot.children.length) itemPivot.remove(itemPivot.children[0]);
   itemPivot.rotation.set(0, 0, 0); itemPivot.position.set(0, 0, 0); itemPivot.scale.setScalar(1);
   if (!id || !ATLAS.ready) return;
@@ -8743,6 +8744,10 @@ function buildHandItem(id) {
       if (B.aabbs) { let y0 = 1, y1 = 0; for (const a of B.aabbs) { y0 = Math.min(y0, a[1]); y1 = Math.max(y1, a[4]); } m.scale.y = Math.max(0.2, y1 - y0); }
       itemPivot.add(m); itemPivot.scale.setScalar(0.22); itemPivot.rotation.set(0.2, 0.62, 0); itemPivot.position.set(0.0, 0.2, -0.05);
     }
+  }  if (ench) {                                                               // Verzauberungs-Glitzern: pulsierende violette Überlagerung
+    const gm = new THREE.MeshBasicMaterial({ vertexColors: true, color: 0x9a52ff, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false });
+    for (const m of itemPivot.children.slice()) { const o = new THREE.Mesh(m.geometry, gm); o.scale.copy(m.scale).multiplyScalar(1.03); o.position.copy(m.position); o.rotation.copy(m.rotation); itemPivot.add(o); }
+    hand.glint = gm;
   }
 }
 function refreshHandArm() {
@@ -8764,7 +8769,9 @@ function updateHand(dt) {
   hand.visible = show && !zoom && state !== 'dead' && !isSpectator();
   if (!hand.visible) return;
   if (handSkinDirty || !armMesh) refreshHandArm();
-  if (id !== hand.id) { hand.id = id; hand.raise = 0; buildHandItem(id); }
+  const eh = !!(held && held.ench && Object.keys(held.ench).length);
+  if (id !== hand.id || eh !== hand.eh) { if (id !== hand.id) hand.raise = 0; hand.id = id; hand.eh = eh; buildHandItem(id, eh); }
+  if (hand.glint) { hand.glintT = (hand.glintT || 0) + dt; hand.glint.opacity = 0.3 + 0.3 * Math.sin(hand.glintT * 3.2); hand.glint.color.setHSL(0.74 + 0.04 * Math.sin(hand.glintT * 1.7), 1, 0.62); }
   hand.raise = Math.min(1, hand.raise + dt * 4.5);
   if (hand.swing > 0) hand.swing = Math.max(0, hand.swing - dt * 3.8);
   const spd = state === 'play' && P.onGround && !P.flying ? Math.hypot(P.v.x, P.v.z) : 0;
@@ -9013,7 +9020,7 @@ function renderTabList() {
 }
 
 // --- Empfang ---
-const DIM_EVENTS = new Set(['veh', 'vehgone', 'drop', 'dropgone', 'tnt', 'explode', 'arrow', 'fall', 'throw', 'splash', 'bolt', 'mobs']);
+const DIM_EVENTS = new Set(['petspawn', 'veh', 'vehgone', 'drop', 'dropgone', 'tnt', 'explode', 'arrow', 'fall', 'throw', 'splash', 'bolt', 'mobs']);
 function mpVersionWarn(rp, what) {                                         // höchstens eine Warnung pro Spieler und Sitzung
   if (rp.verWarned) return; rp.verWarned = true;
   chatAdd(null, '⚠ ' + rp.name + ' nutzt eine ' + what + ' – deshalb sieht er eine andere Welt und kann dich nicht sehen. Er braucht die neueste index.html!', 'err');
@@ -9108,6 +9115,7 @@ const mpHandlers = {
       case 'mobs': if (!isHost()) mpApplyMobs(p.m); break;
       case 'mobuse': { if (!isHost()) break; const m = mp.mobsById.get(p.id); if (m && !m.remote) m.interact(p.act, p.by); break; }
       case 'veh': mpVehRecv(p, from); break;
+      case 'petspawn': { if (!isHost() || !p || !Array.isArray(p.e)) break; const o = mp.players.get(from); if (o) mpPetSpawn(o.name, p.e, +p.x, +p.y, +p.z); break; }
       case 'vehgone': { const i = vehicles.findIndex((q) => q.id === p.i && q.puppet); if (i >= 0) { vehicles[i].dispose(); vehicles.splice(i, 1); } break; }
       case 'vehpick': { const v = vehicles.find((q) => q.id === p.i && !q.puppet); if (v && p.to === mp.id) pickupVehicle(v); break; }
       case 'vehown': { const v = vehicles.find((q) => q.id === p.i && !q.puppet); if (v) { if (P.ride === v) dismountVehicle(); v.puppet = true; v.owner = from; v.tp = v.p.clone(); v.tyaw = v.yaw; v.rxAt = performance.now(); v.riderName = ''; } break; }
@@ -9136,13 +9144,45 @@ function mpArrowHit(pos, vel) {                            // eigener Pfeil trif
 }
 
 // --- Mobs: der Host simuliert, alle anderen sehen "Puppen" ---
+const DRAGON_PH = ['circle', 'strafe', 'charge', 'perch'];
+// --- Haustiere (gezähmte Wölfe/Pferde) und Fahrzeuge bleiben im Spielerstand erhalten ---
+// Gespeichert werden: lebende eigene Tiere/Fahrzeuge der aktuellen Dimension + noch nicht wiederhergestellte Einträge anderer Dimensionen.
+function mpPetData() {
+  const dm = world ? world.dim : 0, me = myName();
+  const pets = mobs.filter((m) => m.owner === me && m.tame && (m.type === 'wolf' || m.type === 'horse') && m.hp > 0 && !m.dead).slice(0, 12)
+    .map((m) => [m.mid, m.type, r2(m.p.x), r2(m.p.y), r2(m.p.z), m.ex | 0, m.hp, dm]);
+  const veh = vehicles.filter((v) => !v.puppet).slice(0, 12).map((v) => [v.type, r2(v.p.x), r2(v.p.y), r2(v.p.z), r2(v.yaw), dm]);
+  const q = mp.petQueue || { pets: [], veh: [] };
+  return { pets: pets.concat(q.pets).slice(0, 24), veh: veh.concat(q.veh).slice(0, 24) };
+}
+function mpPetSpawn(owner, e, px, py, pz) {                                  // nur der Host: Tier mit Besitzer erzeugen
+  const [mid, type, , , , ex, hp] = e;
+  if ((type !== 'wolf' && type !== 'horse') || (mid && mp.mobsById.has(mid)) || !isFinite(px + py + pz)) return;
+  if (mobs.filter((m) => m.owner === owner && m.tame).length >= 24) return;
+  const m = new Mob(type, px, py, pz, undefined, ex | 0); m.tame = true; m.owner = owner; m.hp = clamp(+hp || m.T.hp, 1, m.T.hp); m.syncEx(); mobs.push(m);
+}
+function mpRestorePets() {
+  const q = mp.petQueue; if (!mp.on || !q || !world || state === 'dead') return;
+  const dm = world.dim, keepP = [], keepV = [], me = myName();
+  for (const e of q.pets) {
+    if ((e[7] | 0) !== dm) { keepP.push(e); continue; }
+    const far = Math.hypot(e[2] - P.p.x, e[4] - P.p.z) > 40, px = far ? P.p.x + 1.5 : e[2], py = far ? P.p.y + 0.5 : e[3], pz = far ? P.p.z + 1.5 : e[4];
+    if (isHost()) mpPetSpawn(me, e, px, py, pz); else mpSend('petspawn', { e, x: px, y: py, z: pz });
+  }
+  for (const e of q.veh) {
+    if ((e[5] | 0) !== dm) { keepV.push(e); continue; }
+    if (Math.hypot(e[1] - P.p.x, e[3] - P.p.z) <= 48) vehicles.push(new Vehicle(e[0], e[1], e[2], e[3], e[4]));
+    else addItem(e[0] === 'boat' ? IID.oak_boat : IID.minecart, 1);
+  }
+  mp.petQueue = { pets: keepP, veh: keepV };
+}
 function mpSendMobs() {
-  const list = mobs.filter((m) => !m.remote).map((m) => [m.mid, m.type, r2(m.p.x), r2(m.p.y), r2(m.p.z), r2(m.yaw), m.hp, r2(m.fuse || 0), m.moving ? 1 : 0, m.flash > 0 ? 1 : 0, m.ex, m.owner]);
+  const list = mobs.filter((m) => !m.remote).map((m) => [m.mid, m.type, r2(m.p.x), r2(m.p.y), r2(m.p.z), r2(m.yaw), m.hp, r2(m.fuse || 0), m.moving ? 1 : 0, m.flash > 0 ? 1 : 0, m.ex, m.owner, m.type === 'ender_dragon' && m.dr ? [DRAGON_PH.indexOf(m.dr.ph), m.dr.landed ? 1 : 0, m.dr.roar === undefined ? -1 : r2(m.dr.roar), m.dr.fb === undefined ? -1 : r2(m.dr.fb), m.tgt ? r2(m.tgt.x) : 0, m.tgt ? r2(m.tgt.z) : 0] : 0]);
   mpSend('mobs', { m: list });
 }
 function mpApplyMobs(list) {
   const seen = new Set();
-  for (const [mid, type, x, y, z, yaw, hp, fuse, mv, fl, ex, owner] of list) {
+  for (const [mid, type, x, y, z, yaw, hp, fuse, mv, fl, ex, owner, dg] of list) {
     if (!MOBTYPES[type]) continue;
     seen.add(mid);
     let m = mp.mobsById.get(mid);
@@ -9153,13 +9193,14 @@ function mpApplyMobs(list) {
     m.target.set(x, y, z); m.tyaw = yaw; m.hp = hp; m.fuse = fuse; m.moving = !!mv; if (fl) m.flash = 0.15;
     if (ex !== undefined && m.ex !== ex) { m.ex = ex; m.applyEx(); }
     if (owner !== undefined) { if (owner && owner === mp.name && m.owner !== owner && m.type === 'wolf') achGive('wolf'); m.owner = owner; }
+    if (dg && dg.length) { m.dr = { ph: DRAGON_PH[dg[0]] || 'circle', landed: !!dg[1], roar: dg[2] < 0 ? undefined : dg[2], fb: dg[3] < 0 ? undefined : dg[3] }; m.tgt = { x: dg[4], z: dg[5] }; }   // Animationsphase des Drachen für Mitspieler
   }
   for (const [mid, m] of [...mp.mobsById]) if (!seen.has(mid)) { const i = mobs.indexOf(m); if (i >= 0) mobs.splice(i, 1); m.dispose(); mp.mobsById.delete(mid); }
 }
 
 // --- Zustand speichern / laden ---
 const mpStateData = () => ({ dim: world ? world.dim : 0, inv: packItems(inv), armor: packItems(armor), hp: P.health, hunger: P.hunger, xpL: P.xpL, xpP: P.xpP, pos: [P.p.x, P.p.y, P.p.z], yaw: P.yaw, pitch: P.pitch,
-  sel: P.sel, fuel: P.fuel, spawn: [P.spawn.x, P.spawn.y, P.spawn.z], bed: P.bedPos });
+  sel: P.sel, fuel: P.fuel, spawn: [P.spawn.x, P.spawn.y, P.spawn.z], bed: P.bedPos, ...mpPetData() });
 function applyMpState(d) {
   if (!d) return;
   try {
@@ -9204,6 +9245,8 @@ async function mpJoin(cfg) {
   mp.mySkinCv = await skinCanvas(cfg.skin, cfg.slim); mp.myFace = skinFaceDataURL(mp.mySkinCv, 32); handSkinDirty = true;
   startGame({ seed: info.seed, mode: info.mode, dist: cfg.dist, gv: (info.epoch_ms || 0) >= GEN2_START ? 2 : 1, mp: true, mpEdits: edits, mpContainers: conts, mpState: state });
   mp.on = true; mp.wasHost = isHost(); mp.mode = info.mode;
+  mp.petQueue = state && (Array.isArray(state.pets) || Array.isArray(state.veh)) ? { pets: (state.pets || []).filter(Array.isArray).slice(0, 24), veh: (state.veh || []).filter(Array.isArray).slice(0, 24) } : { pets: [], veh: [] };
+  setTimeout(mpRestorePets, 4500);
   world.onEdit = mpQueueBlock; $('btnQuit').textContent = 'Verlassen';
   $('chat').innerHTML = ''; $('mpinfo').classList.remove('hidden'); mpStatusHud();
   await mp.net.join(cfg.room, { id: mp.id, meta: { name: cfg.name, joinedAt: mp.joinedAt, v: GAME_VER } }, mpHandlers);
@@ -9217,6 +9260,7 @@ async function mpLeave() {
   try { await mp.net.leave(); } catch (e) { /* egal */ }
   mp.players.forEach((p) => p.dispose()); mp.players.clear(); mp.mobsById.clear();
   if (world) world.onEdit = null;
+  mp.petQueue = null;
   $('mpinfo').classList.add('hidden'); $('tablist').classList.add('hidden'); mp.tab = false; mp.owner = null; mp.ops = new Set();
 }
 
@@ -10148,7 +10192,7 @@ Snake.cv.addEventListener('pointerup', snakeUp); Snake.cv.addEventListener('poin
 $('snakeBack').onclick = () => setState('menu');
 ATLAS.onReady(() => { if (state === 'menu' && !MenuScene.raf) menuSceneSync('menu'); });
 
-window.__vc = { openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+window.__vc = { openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>
