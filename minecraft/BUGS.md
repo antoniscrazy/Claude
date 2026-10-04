@@ -77,3 +77,11 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * ✅ Nether-Decke bebaubar (bis y 127).
 * ✅ Endportal nach dem Drachen: ganzer 5×5-Brunnen statt nur 3×3 (24 Portalblöcke).
 * ✅ Abspann: richtiger Dialog zweier Stimmen über „die Spielenden“ (nicht mehr „Du“), Laufzeit richtet sich nach der Textlänge.
+
+## 2026-10-05.8
+
+* ✅ **Mobs laufen nicht mehr gegen Wände:** neue Navigation für alle Mobs (Oberwelt, Nether, Ende, Backrooms). Verfolger (Zombies, Husks, Skelette, Spinnen, Creeper, Piglins, Hoglins, Wölfe, Endermen, Backrooms-Hunde, Lächler, Starrer, Entität) planen per **A\*-Wegsuche** (bis 30 Blöcke Radius, 1 Block hinaufspringen, bis 3 Blöcke hinunter, keine Ecken schneiden, Wasser kostet mehr, Lava wird gemieden) einen Weg um Wände, Mauern und U-Taschen herum; fliegende Mobs (Lächler) suchen den Weg in ihrer Höhe. Ist das Ziel unerreichbar, laufen sie so nah wie möglich heran. Die Suche läuft höchstens 2× pro Frame und nur für Verfolger (gemessen: ≤ 15 ms im schlimmsten Fall, im Schnitt ≈ 1 ms), alle anderen weichen nur lokal aus.
+* ✅ **Lokales Ausweichen für alle:** Tiere, Wanderer, Fledermäuse, Blazes, Ghasts usw. prüfen vor jedem Schritt Wand, Abgrund (> 3 Blöcke) und Lava und drehen dann zur freien Seite statt stumpf in die Wand zu laufen; Festhängen wird erkannt (neuer Weg bzw. Richtungswechsel).
+* ✅ Mobs springen vor 1-Block-Stufen zuverlässiger (Sprung mit kurzem Anschub nach vorn; auch bei niedriger Bildrate).
+* ✅ **Dev-Konsole: Spielerdaten eines ganzen Servers** exportieren (Datei `.vcs` oder Code `VCS1:…`), in einen anderen Server importieren oder mit einem Klick auf einen anderen Server übertragen („fehlende Spieler neu anlegen“ optional); Warnung, wenn betroffene Spieler gerade online sind; Fehlerbericht pro Spieler. Position/Spawn/Dimension auf dem Zielserver bleiben.
+

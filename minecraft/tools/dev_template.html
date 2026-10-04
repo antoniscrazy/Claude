@@ -260,6 +260,13 @@ function renderRoom() {
     '<div class="row"><button class="btn sm" id="btnNotice" type="button">📢 Nachricht an alle senden</button><button class="btn red sm" id="btnRestart" type="button">🔄 Server neustarten (Spieler werden getrennt)</button></div></div>' +
     '<h2>Gerade online</h2><div class="panel">' + (on.map((n) => '<div>' + faceHtml(n) + '<span class="dot on"></span>' + esc(n) + verTag(r.id, n) + '</div>').join('') || '<span class="dim">Niemand.</span>') + '</div>' +
     '<h2>Spielerdaten (' + roomData.states.length + ')</h2>' +
+    '<div class="panel"><b>Alle Spielerdaten des Servers</b><div class="dim">Exportiert die Daten aller ' + roomData.states.length + ' Spieler dieses Servers auf einmal und überträgt sie auf einen anderen Server (gleiche Namen = gleiche Personen). Inventar, Rüstung, Erfahrung, Leben/Hunger und Haustiere werden übernommen; Position, Spawn und Dimension bleiben.</div>' +
+    '<div class="row"><button class="btn sm" id="svFile" type="button">📤 Alle als Datei</button><button class="btn sm" id="svCopy" type="button">📋 Alle als Code</button>' +
+    '<select id="svTarget">' + ov.rooms.filter((q) => q.id !== r.id).map((q) => '<option value="' + esc(q.id) + '">' + esc(q.id) + '</option>').join('') + '</select><button class="btn sm" id="svTransfer" type="button">➡ Alle auf diesen Server übertragen</button>' +
+    '<label><input type="checkbox" id="svCreate" checked> fehlende Spieler neu anlegen</label></div>' +
+    '<div class="row"><input type="file" id="svImpFile" accept=".vcs,.txt,text/plain"></div>' +
+    '<textarea id="svCode" rows="2" spellcheck="false" placeholder="VCS1:… Server-Code einfügen (alle Spieler importieren)" style="width:100%;box-sizing:border-box;font:12px monospace"></textarea>' +
+    '<div class="dim" id="svPrev"></div><div class="row"><button class="btn sm" id="svImport" type="button">📥 Alle importieren</button></div></div>' +
     roomData.states.map((s) => { const d = s.data || {}, p = d.pos || [0, 0, 0];
       return '<div class="panel"><div class="top">' + faceHtml(s.name) + '<b>' + esc(s.name) + '</b>' + (on.includes(s.name) ? '<span class="tag on">online</span>' : '') +
         '<span class="dim">gespeichert ' + ago(s.updated_at) + '</span><span class="sp"></span><button class="btn red sm" data-delstate="' + esc(s.name) + '" type="button">Daten löschen</button></div>' +
@@ -284,6 +291,10 @@ function renderRoom() {
   el.querySelectorAll('[data-transfer]').forEach((b) => { b.onclick = () => { const sel = el.querySelector('select[data-tsel="' + b.dataset.transfer.replace(/"/g, '\\"') + '"]'); if (sel && sel.value) transferState(b.dataset.transfer, sel.value); }; });
   $('impFile').onchange = async () => { const f = $('impFile').files[0]; $('impFile').value = ''; if (f) { if (f.size > 700000) return toast('Datei zu groß'); $('impCode').value = (await f.text()).trim(); toast('Datei geladen – jetzt „Importieren“'); } };
   $('btnImport').onclick = importState;
+  $('svFile').onclick = () => exportServer('file'); $('svCopy').onclick = () => exportServer('code');
+  $('svTransfer').onclick = () => { const t = $('svTarget').value; if (t) transferServer(t); else toast('Es gibt keinen anderen Server.'); };
+  $('svImpFile').onchange = async () => { const f = $('svImpFile').files[0]; $('svImpFile').value = ''; if (f) { if (f.size > 8000000) return toast('Datei zu groß'); $('svCode').value = (await f.text()).trim(); previewBulk(); toast('Datei geladen – jetzt „Alle importieren“'); } };
+  $('svCode').oninput = previewBulk; $('svImport').onclick = importServer;
   el.querySelectorAll('[data-delc]').forEach((b) => { b.onclick = () => delContainer(b.dataset.delc); });
   el.querySelectorAll('[data-del]').forEach((b) => { b.onclick = () => delSlot(b.dataset.del); });
 }
@@ -327,27 +338,29 @@ async function deletePlayer(name) {
 
 // ---------- Spielerdaten-Transfer ----------
 // Format „VCP1:“ + Z|P (gzip / unkomprimiert) + Base64url(JSON) + „.“ + Prüfsumme – kompatibel mit Datei (.vcp) und Zwischenablage.
-const PD_MAGIC = 'VCP1:', PD_FIELDS = ['inv', 'armor', 'hp', 'hunger', 'xpL', 'xpP', 'sel', 'fuel'];
+const PD_MAGIC = 'VCP1:', SV_MAGIC = 'VCS1:', PD_FIELDS = ['inv', 'armor', 'hp', 'hunger', 'xpL', 'xpP', 'sel', 'fuel'];
 const pdHash = (str) => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(16).padStart(8, '0'); };
 const pdB64 = (u8) => { let s = ''; for (let i = 0; i < u8.length; i += 8192) s += String.fromCharCode.apply(null, u8.subarray(i, i + 8192)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
 const pdUnB64 = (t) => { const s = atob(t.replace(/-/g, '+').replace(/_/g, '/')), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; };
 async function pdStream(u8, Ctor) { const st = new Blob([u8]).stream().pipeThrough(new Ctor('gzip')); return new Uint8Array(await new Response(st).arrayBuffer()); }
-async function pdPack(obj) {
+async function pdPack(obj, magic) {
   const raw = new TextEncoder().encode(JSON.stringify(obj)); let flag = 'P', body = raw;
   if (typeof CompressionStream !== 'undefined') { try { body = await pdStream(raw, CompressionStream); flag = 'Z'; } catch (e) { body = raw; flag = 'P'; } }
-  const b = pdB64(body); return PD_MAGIC + flag + b + '.' + pdHash(b);
+  const b = pdB64(body); return (magic || PD_MAGIC) + flag + b + '.' + pdHash(b);
 }
-async function pdUnpack(code) {
+async function pdUnpack(code, want) {                                // want: 'player' (Standard) | 'server' | 'any'
   code = String(code || '').replace(/\s+/g, '');
-  if (!code.startsWith(PD_MAGIC)) throw new Error('Das ist kein Spielerdatencode (VCP1:…).');
+  const magic = code.startsWith(PD_MAGIC) ? PD_MAGIC : code.startsWith(SV_MAGIC) ? SV_MAGIC : null;
+  if (!magic) throw new Error('Das ist kein Spielerdatencode (VCP1:… / VCS1:…).');
   const dot = code.lastIndexOf('.'); if (dot < 0) throw new Error('Der Code ist unvollständig.');
-  const flag = code[PD_MAGIC.length], b = code.slice(PD_MAGIC.length + 1, dot);
+  const flag = code[magic.length], b = code.slice(magic.length + 1, dot);
   if (pdHash(b) !== code.slice(dot + 1)) throw new Error('Der Code ist beschädigt (Prüfsumme) – vollständig kopiert?');
   let u8 = pdUnB64(b);
   if (flag === 'Z') { if (typeof DecompressionStream === 'undefined') throw new Error('Dieser Browser kann den komprimierten Code nicht lesen.'); u8 = await pdStream(u8, DecompressionStream); }
   else if (flag !== 'P') throw new Error('Unbekanntes Codeformat.');
   const o = JSON.parse(new TextDecoder().decode(u8));
-  if (!o || o.vc !== 'player') throw new Error('Das sind keine Spielerdaten.');
+  if (!o || (o.vc !== 'player' && o.vc !== 'server')) throw new Error('Das sind keine Spielerdaten.');
+  if ((want || 'player') !== 'any' && o.vc !== (want || 'player')) throw new Error(o.vc === 'server' ? 'Das ist ein Code für einen ganzen Server (VCS1) – bitte unter „Alle Spielerdaten des Servers“ importieren.' : 'Das ist der Code eines einzelnen Spielers (VCP1) – bitte unter „Spielerdaten importieren“ einfügen.');
   return o;
 }
 function pdStacks(list, n) {
@@ -403,6 +416,55 @@ async function transferState(name, target) {
     await writeState(target, nn, pdIntoState(ex ? ex.data : null, pdFromState(name, s.data || {})));
     toast('Übertragen: ' + name + ' → ' + nn + ' auf „' + target + '“');
   } catch (e) { toast(e.message); }
+}
+// ---------- Ganzer Server: alle Spielerdaten exportieren / importieren / auf einen anderen Server übertragen ----------
+function svFromRoom() {
+  const o = { vc: 'server', v: 1, from: curRoom, t: Date.now(), players: {} };
+  for (const s of roomData.states) o.players[s.name] = pdFromState(s.name, s.data || {});
+  return o;
+}
+async function exportServer(how) {
+  const n = roomData.states.length; if (!n) return toast('Auf diesem Server gibt es noch keine Spielerdaten.');
+  const code = await pdPack(svFromRoom(), SV_MAGIC);
+  if (how === 'code') { try { await navigator.clipboard.writeText(code); toast('Code für ' + n + ' Spieler kopiert (' + code.length + ' Zeichen)'); } catch (e) { prompt('Code kopieren (Strg+C):', code); } return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([code], { type: 'text/plain' }));
+  a.download = 'voxelcraft-server-' + curRoom.replace(/[^\w.-]+/g, '_') + '.vcs'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 3000); toast('Datei mit ' + n + ' Spielern gespeichert');
+}
+async function bulkApply(target, bundle, create) {                    // schreibt alle Spieler des Pakets nach „target“; gibt {ok, skipped, failed[]} zurück
+  const names = Object.keys(bundle.players || {}), tr = await rpc('vc_dev_room', { p_room: target }), res = { ok: 0, skipped: [], failed: [] };
+  const online = onlineIn(target).filter((n) => names.includes(n));
+  if (online.length && !confirm('Auf „' + target + '“ sind gerade online: ' + online.join(', ') + '.\nIhr Spiel würde die übertragenen Daten beim nächsten Speichern wieder überschreiben. Trotzdem fortfahren?')) return null;
+  let i = 0;
+  for (const name of names) {
+    i++; toast('Übertrage ' + i + '/' + names.length + ': ' + name + ' …');
+    const ex = tr.states.find((x) => x.name === name);
+    if (!ex && !create) { res.skipped.push(name); continue; }
+    try { await writeState(target, name, pdIntoState(ex ? ex.data : null, bundle.players[name])); res.ok++; }
+    catch (e) { res.failed.push(name + ': ' + e.message); if (/part3|fehlen noch|noch keine Daten/.test(e.message) && res.failed.length >= 3) break; }
+  }
+  return res;
+}
+function bulkReport(res, target) {
+  if (!res) return;
+  toast('„' + target + '“: ' + res.ok + ' Spieler übernommen' + (res.skipped.length ? ', ' + res.skipped.length + ' übersprungen (dort keine Daten)' : '') + (res.failed.length ? ', ' + res.failed.length + ' Fehler' : ''));
+  if (res.failed.length) alert('Nicht übertragen:\n' + res.failed.slice(0, 12).join('\n'));
+}
+async function transferServer(target) {
+  if (!roomData.states.length) return toast('Auf diesem Server gibt es noch keine Spielerdaten.');
+  const create = $('svCreate').checked, n = roomData.states.length;
+  if (!confirm('Die Spielerdaten aller ' + n + ' Spieler von „' + curRoom + '“ auf „' + target + '“ übertragen?\nInventar, Rüstung, Erfahrung, Leben/Hunger und Haustiere werden ersetzt; Position, Spawn und Dimension dort bleiben.' + (create ? '' : '\nNur Spieler, die dort schon Daten haben.'))) return;
+  try { const res = await bulkApply(target, svFromRoom(), create); bulkReport(res, target); } catch (e) { toast(e.message); }
+}
+async function previewBulk() {
+  const box = $('svPrev'), txt = $('svCode').value.trim(); if (!txt) { box.textContent = ''; return null; }
+  try { const o = await pdUnpack(txt, 'server'), n = Object.keys(o.players || {}); box.innerHTML = '✔ Server „' + esc(o.from || '?') + '“ · ' + n.length + ' Spieler: ' + esc(n.slice(0, 20).join(', ')) + (n.length > 20 ? ' …' : ''); return o; }
+  catch (e) { box.textContent = '✖ ' + e.message; return null; }
+}
+async function importServer() {
+  const o = await previewBulk(); if (!o) return toast('Bitte einen gültigen Server-Code (VCS1:…) einfügen.');
+  const n = Object.keys(o.players || {}).length, create = $('svCreate').checked;
+  if (!confirm('Die Spielerdaten von ' + n + ' Spielern (Server „' + (o.from || '?') + '“) auf „' + curRoom + '“ importieren?\nVorhandenes Inventar dieser Spieler wird ersetzt.' + (create ? '' : '\nNur Spieler, die hier schon Daten haben.'))) return;
+  try { const res = await bulkApply(curRoom, o, create); bulkReport(res, curRoom); if (res) await loadRoom(curRoom, true); } catch (e) { toast(e.message); }
 }
 async function importState() {
   const name = $('impName').value.trim(); if (!name) return toast('Bitte einen Spielernamen eintragen.');

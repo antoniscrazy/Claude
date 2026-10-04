@@ -1696,7 +1696,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.7';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-05.8';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN4_START = 1791122621000;           // ab hier: weiche Gelände-Übergänge, Flusstäler, mehr Relief
 const GEN3_START = 1791118400000;           // Welten/Server ab diesem Zeitpunkt: tiefe Welt (+64 Tiefe), neue Höhlen und Strukturen, Baulimit 256
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
@@ -6756,6 +6756,81 @@ function viewedBy(m) {
   return false;
 }
 
+// ===== Mob-Navigation: A*-Wegsuche um Hindernisse + lokales Ausweichen (nur der Host simuliert Mobs) =====
+const NAV = { budget: 2, R: 30, MAXN: 1100 };
+let navFrame = 0;
+const navSolid = (w, x, y, z) => { const b = w.getBlock(x, y, z); return b === -1 || (b > 0 && BLOCKS[b].solid); };
+const navColClear = (w, x, y, z, H) => { for (let k = 0; k < H; k++) if (navSolid(w, x, y + k, z)) return false; return true; };
+function navPath(w, m, gx, gy, gz) {                                     // Zellenpfad (Weltkoordinaten der Zellmitten) oder null
+  const H = Math.max(1, Math.ceil(m.h - 1e-3)), fly = !!m.T.fly, lavaOk = !!(m.T.fire || m.T.lava);
+  const sx = Math.floor(m.p.x), sy = Math.floor(m.p.y + 0.05), sz = Math.floor(m.p.z), R = NAV.R;
+  if (Math.abs(gx - sx) > R || Math.abs(gz - sz) > R) { const k = R / Math.max(Math.abs(gx - sx), Math.abs(gz - sz)); gx = sx + Math.round((gx - sx) * k); gz = sz + Math.round((gz - sz) * k); }
+  const key = (x, y, z) => ((x - sx + 64) * 128 + (z - sz + 64)) * 256 + (y - sy + 128);
+  const hf = (x, y, z) => { const a = Math.abs(x - gx), b = Math.abs(z - gz); return Math.max(a, b) + 0.41 * Math.min(a, b) + (fly ? 0 : Math.abs(y - gy) * 0.5); };
+  const ok = (x, y, z) => {                                                // darf der Mob hier stehen?
+    if (y < 1 || y + H >= CH) return false;
+    if (!navColClear(w, x, y, z, H)) return false;
+    const f = w.getBlock(x, y - 1, z), fb = w.getBlock(x, y, z);
+    if (!lavaOk && (LQ[fb] === 2 || LQ[f] === 2 || LQ[w.getBlock(x, y + 1, z)] === 2)) return false;
+    if (fly) return true;
+    return f === -1 || (f > 0 && (BLOCKS[f].solid || LQ[f] === 1)) || LQ[fb] === 1;
+  };
+  const open = [], g = new Map(), par = new Map(), closed = new Set();
+  const push = (n) => { open.push(n); let i = open.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (open[p].f <= n.f) break; open[i] = open[p]; i = p; } open[i] = n; };
+  const pop = () => { const top = open[0], last = open.pop(); if (open.length) { let i = 0; for (;;) { let c = i * 2 + 1; if (c >= open.length) break; if (c + 1 < open.length && open[c + 1].f < open[c].f) c++; if (open[c].f >= last.f) break; open[i] = open[c]; i = c; } open[i] = last; } return top; };
+  const k0 = key(sx, sy, sz); g.set(k0, 0); push({ x: sx, y: sy, z: sz, f: hf(sx, sy, sz), k: k0 });
+  let best = null, bh = Infinity, n = 0, goal = null;
+  const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+  while (open.length && n < NAV.MAXN) {
+    const c = pop(); if (closed.has(c.k)) continue; closed.add(c.k); n++;
+    const h = hf(c.x, c.y, c.z);
+    if (h < bh) { bh = h; best = c; }
+    if (Math.abs(c.x - gx) <= 1 && Math.abs(c.z - gz) <= 1 && (fly || Math.abs(c.y - gy) <= 2)) { goal = c; break; }
+    const gc = g.get(c.k);
+    for (const [dx, dz] of DIRS) {
+      const nx = c.x + dx, nz = c.z + dz;
+      if (Math.abs(nx - sx) > R || Math.abs(nz - sz) > R) continue;
+      if (dx && dz && (!navColClear(w, c.x + dx, c.y, c.z, H) || !navColClear(w, c.x, c.y, c.z + dz, H))) continue;           // Ecken nicht schneiden
+      let ny = null;
+      if (fly) { if (ok(nx, c.y, nz)) ny = c.y; }
+      else if (ok(nx, c.y, nz)) ny = c.y;
+      else if (ok(nx, c.y + 1, nz) && navColClear(w, c.x, c.y + H, c.z, 1) && !(dx && dz)) ny = c.y + 1;                       // 1 Block hinaufspringen
+      else { for (let d = 1; d <= 3; d++) { if (ok(nx, c.y - d, nz)) { ny = c.y - d; break; } if (navSolid(w, nx, c.y - d, nz)) break; } }   // bis 3 Blöcke hinunter
+      if (ny === null) continue;
+      const nk = key(nx, ny, nz); if (closed.has(nk)) continue;
+      const wet = !fly && LQ[w.getBlock(nx, ny, nz)] === 1 ? 2 : 0;
+      const cost = gc + (dx && dz ? 1.41 : 1) + wet + (ny !== c.y ? 0.6 : 0);
+      const og = g.get(nk); if (og !== undefined && og <= cost) continue;
+      g.set(nk, cost); par.set(nk, c.k); push({ x: nx, y: ny, z: nz, f: cost + hf(nx, ny, nz) * 1.05, k: nk });
+    }
+  }
+  const end = goal || best; if (!end || end.k === k0) return null;
+  const out = []; let ck = end.k, cur = end;
+  const byKey = new Map(); // Pfad rekonstruieren über die Eltern-Schlüssel
+  for (let guard = 0; guard < 2000 && ck !== k0; guard++) {
+    const yk = ck % 256 - 128 + sy, zk = ((ck / 256) | 0) % 128 - 64 + sz, xk = ((ck / 256 / 128) | 0) - 64 + sx;
+    out.push([xk + 0.5, yk, zk + 0.5]); ck = par.get(ck); if (ck === undefined) break;
+  }
+  out.reverse(); return { pts: out, full: !!goal };
+}
+function navBlocked(w, m, dir, ground) {                                  // läuft der Mob in dieser Richtung gegen Wand / Klippe / Lava?
+  const sx = Math.sin(dir), sz = Math.cos(dir), La = m.hw + 0.5 + Math.min(0.5, Math.abs(m.speed) * 0.08);
+  for (let i = 1; i <= 2; i++) {
+    const d = La * i / 2, qx = m.p.x + sx * d, qz = m.p.z + sz * d;
+    if (boxCollides(w, qx, m.p.y + 0.05, qz, m.hw, m.h)) {
+      if (!ground) return true;
+      if (!m.onGround) { if (m.v.y > 0.5 || m.hopBoost > 0) continue; return true; }                  // im Sprung: nicht ausweichen
+      if (boxCollides(w, qx, m.p.y + 1.05, qz, m.hw, m.h) || boxCollides(w, m.p.x, m.p.y + 1.05, m.p.z, m.hw, m.h)) return true;      // nur 1 Block hoch springbar
+      continue;
+    }
+    if (ground) {
+      if (m.onGround && !m.T.lava && !boxCollides(w, qx, m.p.y - 3, qz, m.hw * 0.8, 3.05) && !(LQ[w.getBlock(Math.floor(qx), Math.floor(m.p.y - 0.5), Math.floor(qz))] === 1)) return true;                               // Abgrund > 3 Blöcke
+    }
+    if (!m.T.fire && !m.T.lava) { const bx = Math.floor(qx), bz = Math.floor(qz), by = Math.floor(m.p.y); if (LQ[w.getBlock(bx, by, bz)] === 2 || (ground && LQ[w.getBlock(bx, by - 1, bz)] === 2)) return true; }
+  }
+  return false;
+}
+
 class Mob {
   constructor(type, x, y, z, mid, ex) {
     const T = MOBTYPES[type];
@@ -6866,6 +6941,63 @@ class Mob {
     if (!this.tgt.name) { hurt(dmg); sfx('hit'); P.v.x += pl.dx / (pl.dist || 1) * 5; P.v.z += pl.dz / (pl.dist || 1) * 5; P.v.y = Math.max(P.v.y, 4); }
     else mpSend('hit', { to: this.tgt.name, dmg, fx: this.p.x, fz: this.p.z, by: this.T.de });
   }
+  // --- Navigation: Zielwege (A*) und Ausweichen vor Wänden, Klippen und Lava ---
+  navigate(dt, spd) {
+    const w = world, fly = !!this.T.fly, fwd = spd > 0;
+    // Festhängen erkennen (will laufen, kommt aber nicht voran)
+    this.stuckT = (this.stuckT || 0) + dt;
+    if (this.stuckT >= 0.5) {
+      const mv = Math.hypot(this.p.x - (this.sx0 === undefined ? this.p.x : this.sx0), this.p.z - (this.sz0 === undefined ? this.p.z : this.sz0));
+      this.stuckN = this.moving && Math.abs(spd) > 0.3 && mv < 0.12 * Math.abs(spd) * 0.5 ? (this.stuckN || 0) + 1 : 0;
+      this.sx0 = this.p.x; this.sz0 = this.p.z; this.stuckT = 0;
+      if (this.stuckN >= 2) { this.navT = 0; this.navForce = 3; this.avoidT = 0; this.stuckN = 0; this.navPts = null; if (!this.goal) this.yaw += (Math.random() < 0.5 ? 1 : -1) * (1.6 + Math.random() * 1.2); }
+    }
+    let dir = this.moveYaw === null ? this.yaw : this.moveYaw, routed = false;
+    const g = this.goal;
+    if (g && fwd && this.moveYaw === null && !this.noNav) {
+      const dist = Math.hypot(g.x - this.p.x, g.z - this.p.z);
+      this.navT = (this.navT || 0) - dt; this.navForce = (this.navForce || 0) - dt;
+      if (dist > 1.6) {
+        const gy = g.y === undefined ? this.p.y : g.y;
+        const direct = this.navForce <= 0 && !navBlocked(w, this, dir, !fly) && lineClear(this.p.x, this.p.y + 0.5, this.p.z, g.x, gy + 0.5, g.z) && lineClear(this.p.x, this.p.y + Math.min(1.5, this.h - 0.1), this.p.z, g.x, gy + Math.min(1.5, this.h - 0.1), g.z);
+        if (direct) this.navPts = null;
+        else {
+          if ((this.navT <= 0 || !this.navPts) && navFrame < NAV.budget) {
+            navFrame++; this.navT = 0.6 + Math.random() * 0.4;
+            const r = navPath(w, this, Math.floor(g.x), Math.floor(gy + 0.05), Math.floor(g.z));
+            this.navPts = r ? r.pts : null; this.navI = 0;
+            if (!r || !r.full) this.navT = 1.6;
+          }
+          const P2 = this.navPts;
+          if (P2) {
+            while (this.navI < P2.length - 1 && Math.hypot(P2[this.navI][0] - this.p.x, P2[this.navI][2] - this.p.z) < 0.5) this.navI++;
+            const q = P2[this.navI];
+            if (q) { dir = Math.atan2(q[0] - this.p.x, q[2] - this.p.z); routed = true; if (this.navI >= P2.length - 1 && Math.hypot(q[0] - this.p.x, q[2] - this.p.z) < 0.5) this.navPts = null; }
+          }
+        }
+      } else this.navPts = null;
+    } else this.navPts = null;
+    // lokales Ausweichen
+    const mvDir = fwd ? dir : dir + Math.PI, ground = !fly;
+    let out = dir;
+    this.avoidT = (this.avoidT || 0) - dt;
+    if (this.avoidT > 0 && !routed) {
+      const c = mvDir + this.avoidOff;
+      if (!navBlocked(w, this, c, ground)) out = fwd ? c : c - Math.PI; else this.avoidT = 0;
+    }
+    if (out === dir && navBlocked(w, this, mvDir, ground)) {
+      const side = this.avoidSide || (this.avoidSide = Math.random() < 0.5 ? 1 : -1);
+      let pick = null;
+      for (const a of [0.6, 1.2, 1.9, 2.5, 3.1]) {
+        for (const sg of [side, -side]) { if (!navBlocked(w, this, mvDir + sg * a, ground)) { pick = sg * a; break; } }
+        if (pick !== null) break;
+      }
+      if (pick !== null) { this.avoidOff = pick; this.avoidT = routed ? 0.25 : 0.6; out = fwd ? mvDir + pick : mvDir + pick - Math.PI; if (Math.abs(pick) > 1.5 && Math.random() < 0.3) this.avoidSide = -side; }
+    }
+    if (out !== (this.moveYaw === null ? this.yaw : this.moveYaw)) {
+      if (this.moveYaw === null) this.yaw = out; else this.moveYaw = out;
+    }
+  }
   // --- KI der neuen Mobs (geben die Sollgeschwindigkeit zurück) ---
   wander(dt, mul) {
     this.timer -= dt;
@@ -6892,7 +7024,7 @@ class Mob {
     if (LQ[w.getBlock(Math.floor(this.p.x), Math.floor(this.p.y + 0.5), Math.floor(this.p.z))] === 1) { this.hp -= dt * 3; this.flash = 0.1; if (Math.random() < dt * 3) this.tele(false); }
     if (hunting && !(this.angry > 0) && !this.remote && state === 'play' && !isCreative() && pl.dist < 48 && lookCone(P.p.x, P.p.y + EYE, P.p.z, P.yaw, P.pitch, this.p.x, this.p.y + 2.6, this.p.z, 48)) { this.angry = 90; mobSay('enderman', 'angry', this.p.x, this.p.y, this.p.z); }
     if (this.angry > 0 && hunting) {
-      this.angry -= dt; this.yaw = Math.atan2(pl.dx, pl.dz); this.moving = pl.dist > 1.2;
+      this.angry -= dt; this.yaw = Math.atan2(pl.dx, pl.dz); this.goal = this.tgt; this.moving = pl.dist > 1.2;
       if (pl.dist < 2 && Math.abs(pl.dy) < 2 && this.cd <= 0) { this.cd = 1.1; this.strike(this.T.dmg, pl); }
       if (this.teleT <= 0) { this.teleT = 3 + Math.random() * 4; if (pl.dist > 7 || Math.random() < 0.3) this.tele(true); }
       return this.moving ? this.speed * 1.9 : 0;
@@ -6989,14 +7121,14 @@ class Mob {
         if (d < bd && (!os || (m.p.x - os.x) ** 2 + (m.p.z - os.z) ** 2 < 225)) { bd = d; tm = m; }
       }
       if (tm) {
-        const dx = tm.p.x - this.p.x, dz = tm.p.z - this.p.z, dist = Math.hypot(dx, dz); this.yaw = Math.atan2(dx, dz); this.moving = dist > 1.1;
+        const dx = tm.p.x - this.p.x, dz = tm.p.z - this.p.z, dist = Math.hypot(dx, dz); this.yaw = Math.atan2(dx, dz); this.goal = tm.p; this.moving = dist > 1.1;
         if (dist < 1.5 && this.cd <= 0) { this.cd = 1; tm.hit(4, this.p.x, this.p.z); sfxAt('hit', this.p.x, this.p.y, this.p.z); }
         return this.moving ? this.speed * 1.6 : 0;
       }
       if (os) {
         const dx = os.x - this.p.x, dz = os.z - this.p.z, dist = Math.hypot(dx, dz);
         if (dist > 24 && this.onGround) { this.p.set(os.x + (Math.random() - 0.5) * 3, os.y + 0.5, os.z + (Math.random() - 0.5) * 3); this.v.set(0, 0, 0); return 0; }
-        if (dist > 4.5) { this.yaw = Math.atan2(dx, dz); this.moving = true; return this.speed * (dist > 10 ? 2 : 1.3); }
+        if (dist > 4.5) { this.yaw = Math.atan2(dx, dz); this.goal = os; this.moving = true; return this.speed * (dist > 10 ? 2 : 1.3); }
         this.moving = false; return 0;
       }
       return this.wander(dt, 0.6);
@@ -7004,7 +7136,7 @@ class Mob {
     if (this.angry > 0) {                                                          // verärgert: greift den nächsten Spieler an
       this.angry -= dt; if (this.angry <= 0) this.syncEx();
       if (pl.dist < 25 && !isCreative()) {
-        this.yaw = Math.atan2(pl.dx, pl.dz); this.moving = pl.dist > 1.1;
+        this.yaw = Math.atan2(pl.dx, pl.dz); this.goal = this.tgt; this.moving = pl.dist > 1.1;
         if (pl.dist < 1.4 && Math.abs(pl.dy) < 1.6 && this.cd <= 0) { this.cd = 1; this.strike(4, pl); }
         return this.moving ? this.speed * 1.5 : 0;
       }
@@ -7097,7 +7229,7 @@ class Mob {
   entityAI(dt, pl, hunting) {                                                      // Die Entität: folgt langsam, blinzelt (teleportiert) hinter einen
     this.cd -= dt; this.tpCd = (this.tpCd === undefined ? 4 : this.tpCd) - dt;
     if (!(hunting && pl.dist < 56)) return this.wander(dt, 0.6);
-    this.yaw = Math.atan2(pl.dx, pl.dz);
+    this.yaw = Math.atan2(pl.dx, pl.dz); this.goal = this.tgt;
     if (this.tpCd <= 0 && pl.dist > 7) { this.tpCd = this.blink() ? 7 + Math.random() * 5 : 1.5; }
     this.moving = pl.dist > this.hw + 0.8;
     if (pl.dist < this.hw + 1.2 && Math.abs(pl.dy) < 2.2 && this.cd <= 0) { this.cd = 1.2; this.strike(this.T.dmg, pl); }
@@ -7123,7 +7255,7 @@ class Mob {
       if (this.hitH) this.yaw += Math.PI * (0.6 + Math.random() * 0.8);
       return this.moving ? this.speed * 0.4 : 0;
     }
-    this.yaw = Math.atan2(pl.dx, pl.dz);
+    this.yaw = Math.atan2(pl.dx, pl.dz); this.goal = this.tgt;
     this.flyTy = clamp((this.tgt.y + 1.0 - this.p.y) * 1.5, -2, 2);
     if (this.p.y + this.h > BR.FY + 3.6) this.flyTy = Math.min(this.flyTy, -1);
     if (pl.dist > 1.9) { this.moving = true; return this.speed; }
@@ -7136,15 +7268,15 @@ class Mob {
     if (!(hunting && pl.dist < 60)) { this.moving = false; return 0; }
     this.frozen = viewedBy(this);
     if (this.frozen) { this.moving = false; return 0; }
-    this.yaw = Math.atan2(pl.dx, pl.dz); this.moving = pl.dist > this.hw + 0.6;
+    this.yaw = Math.atan2(pl.dx, pl.dz); this.goal = this.tgt; this.moving = pl.dist > this.hw + 0.6;
     if (pl.dist < this.hw + 1.0 && Math.abs(pl.dy) < 2 && this.cd <= 0) { this.cd = 1.0; this.strike(this.T.dmg, pl); }
     return this.moving ? this.speed : 0;
   }
   villagerAI(dt, pl) {
-    if (!this.home) this.home = { x: this.p.x, z: this.p.z };
+    if (!this.home) this.home = { x: this.p.x, y: this.p.y, z: this.p.z };
     const hd = Math.hypot(this.p.x - this.home.x, this.p.z - this.home.z);
     if (pl.dist < 3.2 && !isCreative()) { this.yaw = Math.atan2(pl.dx, pl.dz); this.moving = false; return 0; }   // schaut den Spieler an
-    if (hd > 9) { this.yaw = Math.atan2(this.home.x - this.p.x, this.home.z - this.p.z); this.moving = true; return this.speed; }
+    if (hd > 9) { this.yaw = Math.atan2(this.home.x - this.p.x, this.home.z - this.p.z); this.goal = this.home; this.moving = true; return this.speed; }
     return this.wander(dt, 0.7);
   }
   animExtras(dt) {                                                                 // reine Darstellung (Flügel, Schwanz, Hüpfen)
@@ -7226,7 +7358,7 @@ class Mob {
     const w = world, cx = Math.floor(this.p.x) >> 4, cz = Math.floor(this.p.z) >> 4;
     if (!w.getChunk(cx, cz)) return;
     let spd = 0;
-    this.moveYaw = null;
+    this.moveYaw = null; this.goal = null;
     const hunting = this.kind === 'hostile' && (mp.on || (!isCreative() && state === 'play'));      // Mehrspieler: ob jemand im Überleben ist, prüft toPlayer() je Spieler
     const pl = this.toPlayer();
     if (this.T.ai) {
@@ -7237,7 +7369,7 @@ class Mob {
       if (this.panic > 0) { this.panic -= dt; this.moving = true; }
       if (this.moving) spd = this.speed * (this.panic > 0 ? 1.8 : 1);
     } else if (hunting && pl.dist < 30 && !(this.type === 'piglin' && !this.tgt.name && armor.some((a) => a && /^golden_/.test(ITEMS[a.id].key)))) {      // Piglins greifen niemanden mit Goldrüstung an
-      const face = () => { this.yaw = Math.atan2(pl.dx, pl.dz); };
+      const face = () => { this.yaw = Math.atan2(pl.dx, pl.dz); this.goal = this.tgt; };
       this.cd -= dt;
       if (MELEE.has(this.type)) {
         if (!this.noticed) { this.noticed = true; mobSay(this.type, 'angry', this.p.x, this.p.y, this.p.z); }
@@ -7283,9 +7415,11 @@ class Mob {
     if (this.T.burn && env.dayF > 0.7 && w.skyExposed(Math.floor(this.p.x), Math.floor(this.p.y + 1), Math.floor(this.p.z))) { this.hp -= dt * 2; this.flash = 0.1; }
     if (LQ[w.getBlock(Math.floor(this.p.x), Math.floor(this.p.y + 0.3), Math.floor(this.p.z))] === 2 && !this.T.fire) { this.hp -= dt * 6; this.flash = 0.1; }
 
+    if (spd !== 0 && !this.T.noclip && !this.riderP && this.type !== 'ender_dragon' && this.type !== 'end_crystal' && this.type !== 'strider') this.navigate(dt, spd);
     const my = this.moveYaw === null ? this.yaw : this.moveYaw;
     const tx = Math.sin(my) * spd, tz = Math.cos(my) * spd;
-    const k = Math.min(1, (this.onGround ? 10 : 3) * dt);
+    this.hopBoost = (this.hopBoost || 0) - dt;
+    const k = Math.min(1, (this.onGround || this.hopBoost > 0 ? 10 : 3) * dt);
     this.v.x += (tx - this.v.x) * k; this.v.z += (tz - this.v.z) * k;
     const inWater = LQ[w.getBlock(Math.floor(this.p.x), Math.floor(this.p.y + 0.4), Math.floor(this.p.z))] === 1;
     let onLava = false;
@@ -7298,7 +7432,7 @@ class Mob {
     else if (inWater) { this.v.y = Math.min(this.v.y + 22 * dt, 2.2); this.v.y *= 1 - Math.min(1, 2 * dt); }
     else this.v.y = Math.max(this.v.y - 30 * dt, -50);
     if (this.T.noclip) { this.p.addScaledVector(this.v, dt); this.onGround = false; this.hitH = false; } else moveEntity(w, this, dt);
-    if (this.hitH && this.onGround && this.moving && !this.T.fly && !isSlime(this.type) && this.type !== 'rabbit') this.v.y = 8.4;
+    if (this.hitH && this.onGround && this.moving && !this.T.fly && !isSlime(this.type) && this.type !== 'rabbit') { this.v.y = 9; this.hopBoost = 0.45; }
     if (this.kind === 'passive' && !this.T.fly && this.hitH && this.timer > 1 && this.panic <= 0) this.yaw += Math.PI * (0.5 + Math.random());
     if (this.moving) this.walk += dt * 8 * Math.min(1.6, Math.abs(spd) / this.speed);
     // Animation
@@ -7348,6 +7482,7 @@ function raycastMobs(o, d, max) {
 let spawnT = 0;
 function nearestSpotDist(x, z) { let bd = Infinity; for (const sp of allPlayerSpots()) bd = Math.min(bd, Math.hypot(sp.x - x, sp.z - z)); return bd; }
 function updateMobs(dt) {
+  navFrame = 0;
   const light = lerp(0.42, 1, env.dayF);
   if (isHost() && rules.mobspawn) { spawnT -= dt; if (spawnT <= 0) { spawnT = 1.4; trySpawnMob(); } }
   for (let i = mobs.length - 1; i >= 0; i--) {
@@ -11150,7 +11285,7 @@ Snake.cv.addEventListener('pointerup', snakeUp); Snake.cv.addEventListener('poin
 $('snakeBack').onclick = () => setState('menu');
 ATLAS.onReady(() => { if (state === 'menu' && !MenuScene.raf) menuSceneSync('menu'); });
 
-window.__vc = { openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+window.__vc = { navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>
