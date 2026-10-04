@@ -1175,12 +1175,24 @@ CAVEPLANT('cave_vines', 'Höhlenranken', 'cave_vines_plant');
 CAVEPLANT('cave_vines_lit', 'Leuchtbeeren-Ranken', 'cave_vines_plant_lit', { light: 6 });
 CAVEPLANT('glow_lichen', 'Leuchtflechte', 'glow_lichen', { light: 7 });
 // --- Beutetruhen für die neuen Strukturen (angehängt) ---
-['mine', 'temple', 'ship', 'ruin', 'castle', 'deep', 'camp', 'trial'].forEach((kind) => {
+['mine', 'temple', 'ship', 'ruin', 'castle', 'deep', 'camp', 'trial', 'portal'].forEach((kind) => {
   LOOT_CHEST_IDS[kind] = [];
   for (let d = 0; d < 4; d++) {
     const id = add('loot_' + kind + '_' + d, 'Beutetruhe', facingTex(chestTile('front'), chestTile('side'), chestTile('top'), chestTile('bottom'), d),
       { hard: 2.5, tool: 'axe', need: 0, container: 27, loot: { dir: d, kind }, drop: 0 });
     LOOT_CHEST_IDS[kind].push(id); BLOCKS[id].drop = CHEST_IDS[0];
+  }
+});
+// --- Fließende Flüssigkeiten (angehängt): Stufen 1–7 und „fallend“ (9); die Quelle ist Stufe 8 (WATER / lava) ---
+const LQ = new Uint8Array(4096), LVL = new Uint8Array(4096), LIQH = new Float32Array(4096).fill(1);       // Art (1 Wasser, 2 Lava), Stufe, Höhe
+const FLW = [], FLL = [];
+[[WATER, FLW, 1, 'water', 'Wasser'], [ID.lava, FLL, 2, 'lava', 'Lava']].forEach(([src, arr, fam, key, de]) => {
+  LQ[src] = fam; LVL[src] = 8; LIQH[src] = 0.875; arr[8] = src;
+  for (const lv of [1, 2, 3, 4, 5, 6, 7, 9]) {
+    const o = { solid: false, opaque: false, hard: Infinity, liquid: true, samecull: true, drop: 0 };
+    if (fam === 1) o.trans = true; else { o.lava = true; o.emit = true; o.light = 11; }
+    const id = add(key + '_f' + lv, de + ' (fließend)', BLOCKS[src].tex, o);
+    arr[lv] = id; LQ[id] = fam; LVL[id] = lv; LIQH[id] = lv === 9 ? 1 : 0.1 + 0.11 * lv;
   }
 });
 // ---------- Items (Nicht-Blöcke, IDs ab 1000) ----------
@@ -1681,7 +1693,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.5';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-05.6';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN4_START = 1791122621000;           // ab hier: weiche Gelände-Übergänge, Flusstäler, mehr Relief
 const GEN3_START = 1791118400000;           // Welten/Server ab diesem Zeitpunkt: tiefe Welt (+64 Tiefe), neue Höhlen und Strukturen, Baulimit 256
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
@@ -1702,6 +1714,7 @@ const MESA_BANDS = [ID.terracotta, ID.orange_terracotta, ID.terracotta, ID.yello
 function strongholdChunkFor(seed) { const sd = seed | 0, a = hash2(1, 7, sd) * Math.PI * 2, d = 520 + hash2(5, 3, sd + 17) * 380; return [Math.round(Math.cos(a) * d / 16), Math.round(Math.sin(a) * d / 16)]; }
 // ===== Bauplan-Funktionen der großen Strukturen (tiefe Welten). c = Kontext (put/fill/…), P = Plan, rng = fester Zufall des Plans =====
 const WOOLS = ['white_wool', 'orange_wool', 'magenta_wool', 'light_blue_wool', 'yellow_wool', 'lime_wool', 'pink_wool', 'cyan_wool', 'purple_wool', 'blue_wool', 'red_wool', 'green_wool'];
+const FL_BL = 12;                                                      // Breite der Gelände-Rampe um Strukturen
 const FLATTEN = { village: [19, 13], castle: [15, 15], pyramid: [13, 13], jungletemple: [9, 10], igloo: [6, 6], ruinportal: [5, 5], circle: [9, 9], camp: [7, 7], lighthouse: [7, 7] };
 const STRUCT_BUILDERS = {
   village(c, P, rng) {
@@ -1795,13 +1808,18 @@ const STRUCT_BUILDERS = {
   ruinportal(c, P, rng) {
     const S = c.S, y0 = P.y, X = P.x, Z = P.z, alongX = rng() < 0.5;
     c.clear(X - 5, y0 + 1, Z - 5, 11, 9, 11);
-    for (let dz = -3; dz <= 3; dz++) for (let dx = -3; dx <= 3; dx++) { const d = Math.hypot(dx, dz); if (d < 3.4) { const r = hash2(X + dx, Z + dz, P.rs); c.put(X + dx, y0, Z + dz, r < 0.15 ? S.magma : S.netherrack); if (r > 0.85 && d < 2.6) c.put(X + dx, y0 + 1, Z + dz, S.netherrack); } }
+    for (let dz = -3; dz <= 3; dz++) for (let dx = -3; dx <= 3; dx++) { const d = Math.hypot(dx, dz); if (d < 3.4) { const r = hash2(X + dx, Z + dz, P.rs); c.put(X + dx, y0, Z + dz, r < 0.15 ? S.magma : r < 0.22 ? S.crying_obsidian : S.netherrack); if (r > 0.85 && d < 2.6 && (alongX ? Math.abs(dz) > 0 : Math.abs(dx) > 0)) c.put(X + dx, y0 + 1, Z + dz, S.netherrack); } }
+    // Rahmen 4×5: nur Obsidian (so lässt er sich vervollständigen und entzünden); die Ecken fehlen oft (werden nicht gebraucht), dazu zwei Lücken in der Mitte
+    const gap1 = (rng() * 6) | 0, gap2 = (rng() * 6) | 0;
+    const edge = []; for (let v = 1; v <= 3; v++) { edge.push([0, v], [3, v]); } edge.push([1, 0], [2, 0], [1, 4], [2, 4]);
     for (let v = 0; v < 5; v++) for (let u = 0; u < 4; u++) {
       if (!(u === 0 || u === 3 || v === 0 || v === 4)) continue;
-      const r = rng(); if (r > 0.72) continue;
-      const wx = alongX ? X - 2 + u : X, wz = alongX ? Z : Z - 2 + u; c.put(wx, y0 + 1 + v, wz, r < 0.1 ? S.crying_obsidian : S.obsidian);
+      const corner = (u === 0 || u === 3) && (v === 0 || v === 4), idx = edge.findIndex((q) => q[0] === u && q[1] === v);
+      if (corner ? rng() < 0.5 : (idx === gap1 || idx === gap2)) continue;
+      c.put(alongX ? X - 2 + u : X, y0 + 1 + v, alongX ? Z : Z - 2 + u, S.obsidian);
     }
-    c.chest('ruin', X + 3, y0 + 1, Z + 2, 2); c.put(X - 3, y0 + 1, Z - 2, S.netherrack); c.put(X + 2, y0 + 1, Z - 3, S.magma);
+    for (let v = 1; v <= 3; v++) for (let u = 1; u <= 2; u++) c.put(alongX ? X - 2 + u : X, y0 + 1 + v, alongX ? Z : Z - 2 + u, AIR);
+    c.chest('portal', X + 3, y0 + 1, Z + 2, 2); c.put(X - 3, y0 + 1, Z - 2, S.crying_obsidian); c.put(X + 2, y0 + 1, Z - 3, S.magma);
   },
   castle(c, P, rng) {
     const S = c.S, y0 = P.y, X = P.x, Z = P.z, HS = 13;
@@ -1981,6 +1999,14 @@ class TerrainGen {
     }
     this.plans.set(key, P); return P;
   }
+  treeZones(cx, cz) {                                                // Rechtecke [x, z, halbX, halbZ] um große Strukturen (Fußabdruck + Rampe + Baumkrone)
+    const x0 = cx * CS, z0 = cz * CS, rx = Math.floor(cx / 6), rz = Math.floor(cz / 6), out = [];
+    for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+      const P = this.plan(rx + dx, rz + dz); if (!P) continue; const f = FLATTEN[P.kind], hx = f ? f[0] + FL_BL + 4 : P.r + 4, hz = f ? f[1] + FL_BL + 4 : P.r + 4;
+      if (P.x + hx >= x0 - 6 && P.x - hx <= x0 + 22 && P.z + hz >= z0 - 6 && P.z - hz <= z0 + 22) out.push([P.x, P.z, hx, hz]);
+    }
+    return out.length ? out : null;
+  }
   planList(cx, cz) {
     const x0 = cx * CS, z0 = cz * CS, rx = Math.floor(cx / 6), rz = Math.floor(cz / 6), out = [];
     for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) { const P = this.plan(rx + dx, rz + dz); if (P && P.x + P.r >= x0 && P.x - P.r <= x0 + 15 && P.z + P.r >= z0 && P.z - P.r <= z0 + 15) out.push(P); }
@@ -1989,7 +2015,7 @@ class TerrainGen {
   // Gelände rund um eine Struktur sanft angleichen (Rampe statt Klippe): innen eben auf Planhöhe, nach außen fließend ins natürliche Gelände
   flatten(P, cx, cz, data, gi0, Yo) {
     const f = FLATTEN[P.kind]; if (!f) return;
-    const lx0 = cx * CS, lz0 = cz * CS, BL = 15, S = ID;
+    const lx0 = cx * CS, lz0 = cz * CS, BL = FL_BL, S = ID;
     for (let lz = 0; lz < CS; lz++) for (let lx = 0; lx < CS; lx++) {
       const wx = lx0 + lx, wz = lz0 + lz, dx = Math.max(Math.abs(wx - P.x) - f[0], 0), dz = Math.max(Math.abs(wz - P.z) - f[1], 0), d = Math.hypot(dx, dz);
       if (d >= BL) continue;
@@ -2158,7 +2184,7 @@ class TerrainGen {
     }
   }
   constructor(seed, gv) {
-    this.seed = seed >>> 0; this.v2 = gv >= 2; this.big = gv >= 3; this.smooth = gv >= 4; this.Yo = 0;       // smooth: weiche Gelände-Übergänge (ab Version 2026-10-05.5); gv3-Welten behalten ihr Gelände       // big: deutlich höhere Berge (tiefe Welten)
+    this.seed = seed >>> 0; this.v2 = gv >= 2; this.big = gv >= 3; this.smooth = gv >= 4; this.Yo = 0;       // smooth: weiche Gelände-Übergänge (ab Version 2026-10-05.6); gv3-Welten behalten ihr Gelände       // big: deutlich höhere Berge (tiefe Welten)
     this.nA = new Perlin(seed); this.nB = new Perlin(seed + 101); this.nC = new Perlin(seed + 202);
     this.nT = new Perlin(seed + 303); this.nCa = new Perlin(seed + 404); this.nCb = new Perlin(seed + 505);
     this.nU = new Perlin(seed + 606); this.nR = new Perlin(seed + 707);
@@ -2286,7 +2312,8 @@ class TerrainGen {
       for (let y = h + 1; y <= SEA; y++) data[base + (y << 8)] = WATER;
       if (b === BIOME_SNOW && h < SEA) data[base + (SEA << 8)] = S.ice;    // zugefrorene Seen
       // Höhlen: "Spaghetti"-Tunnel als Schnitt zweier 3D-Rauschfelder
-      const ylim = h <= SEA + 1 ? h - 3 : h;
+      let ylim = h <= SEA + 1 ? h - 3 : h;
+      if (this.smooth && h > SEA + 1 && hash2(cx, cz, seed + 5151) > 0.1) ylim = Math.min(h, genH[gi0(lx - 2, lz)], genH[gi0(lx + 2, lz)], genH[gi0(lx, lz - 2)], genH[gi0(lx, lz + 2)]) - 5;       // Tunnel brechen nur in wenigen Chunks (Höhleneingänge) durch die Oberfläche, nie durch Hänge
       for (let y = 3; y < ylim; y++) {
         const a = this.nCa.noise(wx * 0.04, y * 0.07, wz * 0.04), bb = this.nCb.noise(wx * 0.04 + 100.5, y * 0.07 + 50.3, wz * 0.04 + 77.7);
         if (a * a + bb * bb < 0.009) data[base + (y << 8)] = y <= 9 ? S.lava : AIR;
@@ -2324,8 +2351,10 @@ class TerrainGen {
       if (cur === AIR || (mode === 1 && (cur === LEAVES || cur === S.birch_leaves || cur === S.spruce_leaves))) data[i] = id;
     };
     const SPR = [0, 1, 1, 2, 2, 3, 3, 3, 3];
+    const zones = this.smooth ? this.treeZones(cx, cz) : null;                   // Bauplätze großer Strukturen bleiben baumfrei (sonst werden Kronen abgeschnitten)
     for (let tz = -3; tz < CS + 3; tz++) for (let tx = -3; tx < CS + 3; tx++) {
       const gi = gi0(tx, tz), b = genB[gi];
+      if (zones) { const qx = cx * CS + tx, qz = cz * CS + tz; if (zones.some((q) => Math.abs(qx - q[0]) <= q[2] && Math.abs(qz - q[1]) <= q[3])) continue; }
       const TP = (this.v2 ? TREE_P2 : TREE_P1)[b] || 0; if (!TP) continue;
       const wx = cx * CS + tx, wz = cz * CS + tz, hv = hash2(wx, wz, seed);
       if (hv >= TP) continue;
@@ -2550,8 +2579,11 @@ class DeepGen {
     const B = this.base, YO = this.yo, S = ID, seed = this.seed | 0, x0 = cx * CS, z0 = cz * CS, W = PW_GEN, sea = SEA + YO;
     const data = B.generate(cx, cz, null, true);                          // Gelände wie in alten Welten (noch ohne Verschiebung, Strukturen folgen nach den Höhlen)
     const gi0 = (lx, lz) => (lz + PADT) * W + lx + PADT;
-    const hc = new Int16Array(LAYER); let maxTop = 0;
-    for (let lz = 0; lz < CS; lz++) for (let lx = 0; lx < CS; lx++) { const h = genH[gi0(lx, lz)] + YO; hc[lx + (lz << 4)] = h; if (h > maxTop) maxTop = h; }
+    const hc = new Int16Array(LAYER), hmin = new Int16Array(LAYER); let maxTop = 0;
+    for (let lz = 0; lz < CS; lz++) for (let lx = 0; lx < CS; lx++) {
+      const h = genH[gi0(lx, lz)] + YO; hc[lx + (lz << 4)] = h; if (h > maxTop) maxTop = h;
+      let m = h; for (let dz = -3; dz <= 3; dz++) for (let dx = -3; dx <= 3; dx++) { const q = genH[gi0(lx + dx, lz + dz)] + YO; if (q < m) m = q; } hmin[lx + (lz << 4)] = m;       // niedrigste Oberfläche in der Nähe: Höhlen bleiben darunter, Hänge werden nicht angeschnitten
+    }
     const prot = new Uint8Array(LAYER); let anyProt = false;                          // Bauplätze großer Strukturen: dort keine Schluchten, nur tiefe Höhlen
     for (const P of B.planList(cx, cz)) { const f = FLATTEN[P.kind]; if (!f) continue; for (let lz = 0; lz < CS; lz++) for (let lx = 0; lx < CS; lx++) if (Math.abs(x0 + lx - P.x) <= f[0] + 13 && Math.abs(z0 + lz - P.z) <= f[1] + 13) { prot[lx + (lz << 4)] = 1; anyProt = true; } }
     data.copyWithin(YO * LAYER, 0, (CH - YO) * LAYER); data.fill(0, 0, YO * LAYER);   // alles um YO nach oben schieben
@@ -2604,7 +2636,7 @@ class DeepGen {
     const ravPts = [], rcx = Math.floor(cx / 10), rcz = Math.floor(cz / 10);
     for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) for (const pts of this.ravines(rcx + dx, rcz + dz)) for (const q of pts) if (q[0] > x0 - 8 && q[0] < x0 + 24 && q[1] > z0 - 8 && q[1] < z0 + 24) ravPts.push(q);
     for (let lz = 0; lz < CS; lz++) for (let lx = 0; lx < CS; lx++) {
-      const col = lx + (lz << 4), wx = x0 + lx, wz = z0 + lz, h = hc[col], ceil = h <= sea + 1 ? h - 12 : prot[col] ? h - 18 : h - 6, aq = this.nQ.noise(wx / 110 + 3, 1.5, wz / 110) > 0.12 ? 34 + this.nQ.noise(wx / 80, 0.5, wz / 80) * 8 : -1;       // nur in „nassen“ Bereichen stehen Höhlen unter Wasser
+      const col = lx + (lz << 4), wx = x0 + lx, wz = z0 + lz, h = hc[col], ceil = h <= sea + 1 ? h - 12 : prot[col] ? hmin[col] - 18 : hmin[col] - 9, aq = this.nQ.noise(wx / 110 + 3, 1.5, wz / 110) > 0.12 ? 34 + this.nQ.noise(wx / 80, 0.5, wz / 80) * 8 : -1;       // nur in „nassen“ Bereichen stehen Höhlen unter Wasser
       for (let y = 5; y <= ceil; y++) {
         const i = col + (y << 8), cur = data[i];
         if (cur === AIR || cur === BR || cur === WATER || cur === LAVA) continue;
@@ -2633,7 +2665,7 @@ class DeepGen {
     // --- 4. Höhlen-Dekoration: Tropfstein-, Moos- und normale Höhlen (je Spalte unabhängig, daher chunkgrenzen-sicher) ---
     const vineT = [S.cave_vines, S.cave_vines_lit];
     for (let lz = 0; lz < CS; lz++) for (let lx = 0; lx < CS; lx++) {
-      const col = lx + (lz << 4), wx = x0 + lx, wz = z0 + lz, h = hc[col], ceil = h <= sea + 1 ? h - 12 : h - 6, zone = this.nL.noise(wx / 48, 0.5, wz / 48);
+      const col = lx + (lz << 4), wx = x0 + lx, wz = z0 + lz, h = hc[col], ceil = h <= sea + 1 ? h - 12 : hmin[col] - 9, zone = this.nL.noise(wx / 48, 0.5, wz / 48);
       for (let y = 6; y <= ceil; y++) {
         const i = col + (y << 8); if (data[i] !== AIR) continue;
         const fl = ST[data[i - 256]], ce = ST[data[i + 256]]; if (!fl && !ce) continue;
@@ -2916,7 +2948,7 @@ class World {
   switchDim(d) {                                             // Dimension wechseln: aktuelle Chunks verwerfen (Änderungen bleiben in edits), die der anderen werden neu erzeugt
     if (d === this.dim) return;
     for (const c of this.chunks.values()) this.disposeChunk(c);
-    this.chunks.clear(); this.dirty.clear();
+    this.chunks.clear(); this.dirty.clear(); if (typeof fluidReset === 'function') fluidReset();
     const D = this.dimData[d]; this.dim = d; this.gen = D.gen; this.chunks = D.chunks; this.edits = D.edits; this.structs = D.structs;
     this.lcx = NaN; this.lcz = NaN; this.anchors = [];
   }
@@ -2943,6 +2975,7 @@ class World {
       c = new Chunk(cx, cz, this.gen.generate(cx, cz, this.edits.get(k)));
       for (const st of this.gen.structOut || []) if (!this.structs.has(st.key)) this.structs.set(st.key, st);
       this.chunks.set(k, c);
+      if (this.onChunkGen) this.onChunkGen(c);
     }
     return c;
   }
@@ -3326,11 +3359,13 @@ function buildChunkMesh(world, c) {
       if (B.flame) emitCross(bd, x, y, z, B.flame.t, Math.max(0, cellSky(x + 1, y + 1, z + 1)), true, 255, B.flame.s, B.flame.lift);        // Flamme über den Scheiten
       continue;
     }
-    const lowerLiquid = B.liquid && pad[bi + PL] !== id;
+    const lq = LQ[id], lowerLiquid = lq && LQ[pad[bi + PL]] !== lq, myTop = lq ? (lowerLiquid ? LIQH[id] : 1) : 1;
     const emit = B.emit ? 255 : 0;
     for (let f = 0; f < 6; f++) {
       const F = FACES[f], nb = pad[bi + F.off];
-      if (OP[nb] || (nb === id && SAMECULL[id])) continue;
+      if (OP[nb] || (!lq && nb === id && SAMECULL[id])) continue;
+      let nbTop = 0;
+      if (lq && LQ[nb] === lq) { if (f === 2 || f === 3) continue; nbTop = LQ[pad[bi + F.off + PL]] === lq ? 1 : LIQH[nb]; if (nbTop >= myTop - 0.001) continue; }        // gleiche Flüssigkeit daneben: nur der überstehende Teil
       bd.ensure(4);
       const cxp = x + 1 + F.n[0], cyp = y + 1 + F.n[1], czp = z + 1 + F.n[2];
       const [u0, v0, u1, v1] = tileUV(B.tex[f]);
@@ -3355,7 +3390,7 @@ function buildChunkMesh(world, c) {
           s = cellBl(cxp + du * F.u[0] + dv * F.v[0], cyp + du * F.u[1] + dv * F.v[1], czp + du * F.u[2] + dv * F.v[2]); if (s >= 0) { bn++; bs += s; }
         }
         let ry = F.o[1] + a * F.u[1] + b * F.v[1];
-        if (lowerLiquid && ry === 1) ry = 0.875;
+        if (lq) { if (ry === 1) ry = myTop; else if (nbTop && f !== 2 && f !== 3) ry = nbTop; }
         const vi = bd.nv + k;
         bd.pos[vi * 3] = x + F.o[0] + a * F.u[0] + b * F.v[0];
         bd.pos[vi * 3 + 1] = y + ry;
@@ -3633,12 +3668,12 @@ function updatePlayer(dt) {
   const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw), rx = Math.cos(P.yaw), rz = -Math.sin(P.yaw);
   const fwd = clamp((keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0) + touchMove.y, -1, 1), str = clamp((keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0) + touchMove.x, -1, 1);
   const bx = Math.floor(p.x), bz = Math.floor(p.z);
-  P.inWater = w.getBlock(bx, Math.floor(p.y + 0.3), bz) === WATER || w.getBlock(bx, Math.floor(p.y + 1.0), bz) === WATER;
+  P.inWater = LQ[w.getBlock(bx, Math.floor(p.y + 0.3), bz)] === 1 || LQ[w.getBlock(bx, Math.floor(p.y + 1.0), bz)] === 1;
   if (P.inWater && !P.wasInWater && !P.flying) sfx('splash'); P.wasInWater = P.inWater;
-  P.headWater = w.getBlock(bx, Math.floor(p.y + EYE), bz) === WATER;
+  P.headWater = LQ[w.getBlock(bx, Math.floor(p.y + EYE), bz)] === 1;
   const lavaId = ID.lava;
-  P.inLava = w.getBlock(bx, Math.floor(p.y + 0.3), bz) === lavaId || w.getBlock(bx, Math.floor(p.y + 1.0), bz) === lavaId;
-  P.headLava = w.getBlock(bx, Math.floor(p.y + EYE), bz) === lavaId;
+  P.inLava = LQ[w.getBlock(bx, Math.floor(p.y + 0.3), bz)] === 2 || LQ[w.getBlock(bx, Math.floor(p.y + 1.0), bz)] === 2;
+  P.headLava = LQ[w.getBlock(bx, Math.floor(p.y + EYE), bz)] === 2;
   { const l1 = w.getBlock(bx, Math.floor(p.y + 0.4), bz), l2 = w.getBlock(bx, Math.floor(p.y + 1.2), bz); P.onLadder = (l1 > 0 && BLOCKS[l1].climb) || (l2 > 0 && BLOCKS[l2].climb); }
 
   const shift = keys.ShiftLeft || keys.ShiftRight, ctrl = keys.ControlLeft || keys.ControlRight || P.dblW > 0;
@@ -3915,7 +3950,7 @@ function mobSay(type, kind, x, y, z) {
   try {
     if (has) {
       let grp = S[kind];
-      if (kind === 'step' && S.steplava && world.getBlock(Math.floor(x), Math.floor(y - 0.1), Math.floor(z)) === ID.lava) grp = S.steplava;
+      if (kind === 'step' && S.steplava && LQ[world.getBlock(Math.floor(x), Math.floor(y - 0.1), Math.floor(z))] === 2) grp = S.steplava;
       const slimeSz = isSlime(type) ? 1 : 0;
       if (playGroup(grp, kind === 'step' ? 0.5 : kind === 'idle' ? 0.8 : 0.95, kind === 'die' && S.die === S.hurt ? 0.75 : slimeSz ? 0.8 : 0)) return;
     }
@@ -4216,8 +4251,8 @@ class Drop {
     const w = world, bx = Math.floor(this.p.x), by = Math.floor(this.p.y + 0.1), bz = Math.floor(this.p.z);
     if (!w.getChunk(bx >> 4, bz >> 4)) return true;
     const cell = w.getBlock(bx, by, bz);
-    if (cell === ID.lava) return false;
-    if (cell === WATER) { this.v.y = Math.min(this.v.y + 26 * dt, 1.5); this.v.y *= 1 - Math.min(1, 3 * dt); }
+    if (LQ[cell] === 2) return false;
+    if (LQ[cell] === 1) { this.v.y = Math.min(this.v.y + 26 * dt, 1.5); this.v.y *= 1 - Math.min(1, 3 * dt); }
     else this.v.y = Math.max(this.v.y - 22 * dt, -30);
     moveEntity(w, this, dt);
     let pulled = false;
@@ -4693,7 +4728,7 @@ function useItem(pressed) {
     if (I.boat) {
       if (pressed) {
         const wt = raycastBlocks(eyeV, dirV, reach0(), true);
-        if (wt && wt.id === WATER) { placeVehicle('boat', wt.x + 0.5, wt.y + 0.8, wt.z + 0.5); if (!isCreative() && --slot.count <= 0) inv[P.sel] = null; refreshHotbar(); }
+        if (wt && LQ[wt.id] === 1) { placeVehicle('boat', wt.x + 0.5, wt.y + 0.8, wt.z + 0.5); if (!isCreative() && --slot.count <= 0) inv[P.sel] = null; refreshHotbar(); }
         else if (target && (target.nx || target.ny || target.nz)) { placeVehicle('boat', target.x + 0.5 + target.nx * 0.9, target.y + 0.5 + Math.max(0, target.ny), target.z + 0.5 + target.nz * 0.9); if (!isCreative() && --slot.count <= 0) inv[P.sel] = null; refreshHotbar(); }
       }
       return;
@@ -5206,7 +5241,74 @@ function checkSupports(x, y, z, id) {                                // Türen, 
     if (nb > 0 && BLOCKS[nb].wallDir === d && !isSolidId(id)) popBlock(nx, y, nz, true);     // Wandfackeln
   }
 }
+// ===== Flüssigkeiten: Fließen, Ausbreiten, Austrocknen, Wasser + Lava =====
+// Quelle = Stufe 8; fließend Stufe 1–7 (Wasser verliert 1 je Block = 7 Blöcke, Lava in der Oberwelt 2 = 3 Blöcke, im Nether 1); „fallend“ = Stufe 9.
+// Wasser macht aus Lava-Quellen Obsidian, aus fließender Lava Bruchstein; zwei Wasserquellen daneben ergeben eine neue Quelle (unendlich).
+const fluidQ = new Map(), fluidScanQ = []; let fluidClock = 0;
+const FDIR = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+const fluidReset = () => { fluidQ.clear(); fluidScanQ.length = 0; };
+const fluidDelay = (fam) => fam === 1 ? 0.25 : (world.dim === 1 ? 0.45 : 1.2);
+function fluidSched(x, y, z, fam) { const k = x + ',' + y + ',' + z; if (fluidQ.has(k) || fluidQ.size > 30000) return; fluidQ.set(k, fluidClock + fluidDelay(fam)); }
+function fluidTouch(x, y, z) {                                             // ein Block hat sich geändert: ihn und seine Nachbarn prüfen
+  let id = world.getBlock(x, y, z); if (LQ[id]) fluidSched(x, y, z, LQ[id]);
+  for (const [dx, dy, dz] of FN) { id = world.getBlock(x + dx, y + dy, z + dz); if (LQ[id]) fluidSched(x + dx, y + dy, z + dz, LQ[id]); }
+}
+const fluidPass = (b) => b === AIR || (b > 0 && (BLOCKS[b].plant || BLOCKS[b].torch));                      // von Flüssigkeit ersetzbar
+const fluidDown = (b, fam) => b !== -1 && (fluidPass(b) || (LQ[b] === fam ? LVL[b] !== 8 : !!LQ[b]));      // Flüssigkeit würde nach unten weiterfließen
+function fluidInto(x, y, z, lv, fam) {                                    // lv 1–7 oder 9 (fallend)
+  const cur = world.getBlock(x, y, z); if (cur === -1) return;
+  const cf = LQ[cur];
+  if (cf && cf !== fam) { world.setBlock(x, y, z, fam === 1 && LVL[cur] === 8 ? ID.obsidian : ID.cobble, false); return; }       // Wasser trifft Lava (und umgekehrt)
+  if (cf === fam) { const cl = LVL[cur]; if (cl === 8 || cl === 9 || (lv !== 9 && cl >= lv)) return; }
+  else if (!fluidPass(cur)) return;
+  world.setBlock(x, y, z, (fam === 1 ? FLW : FLL)[lv], false);
+}
+function fluidUpdate(x, y, z) {
+  const W = world, id = W.getBlock(x, y, z), fam = LQ[id]; if (!fam) return;
+  const FL = fam === 1 ? FLW : FLL, dec = fam === 1 ? 1 : (W.dim === 1 ? 1 : 2);
+  if (fam === 2) for (const [dx, dy, dz] of [[0, 1, 0], [1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1]]) if (LQ[W.getBlock(x + dx, y + dy, z + dz)] === 1) { W.setBlock(x, y, z, LVL[id] === 8 ? ID.obsidian : ID.cobble, false); return; }
+  let lvl = LVL[id];
+  if (lvl !== 8) {                                                          // Nicht-Quellen: Stufe neu aus der Umgebung bestimmen
+    let nl = 0;
+    if (LQ[W.getBlock(x, y + 1, z)] === fam) nl = 9;
+    else {
+      let src = 0;
+      for (const [dx, dz] of FDIR) {
+        const nb = W.getBlock(x + dx, y, z + dz); if (LQ[nb] !== fam) continue; const nlv = LVL[nb];
+        if (nlv === 8) src++; else if (fluidDown(W.getBlock(x + dx, y - 1, z + dz), fam)) continue;     // fließt selbst nach unten → speist nicht zur Seite
+        const v = (nlv >= 8 ? 8 : nlv) - dec; if (v > nl) nl = v;
+      }
+      if (fam === 1 && src >= 2) { const bl = W.getBlock(x, y - 1, z); if ((bl > 0 && BLOCKS[bl].solid) || (LQ[bl] === 1 && LVL[bl] === 8)) nl = 8; }
+    }
+    if (nl <= 0) { W.setBlock(x, y, z, AIR, false); return; }
+    if (nl !== lvl) { W.setBlock(x, y, z, FL[nl], false); lvl = nl; }
+  }
+  const below = W.getBlock(x, y - 1, z);
+  if (fluidDown(below, fam)) { if (!(LQ[below] === fam && LVL[below] === 9)) fluidInto(x, y - 1, z, 9, fam); return; }
+  const nl2 = (lvl >= 8 ? 8 : lvl) - dec; if (nl2 < 1) return;
+  for (const [dx, dz] of FDIR) fluidInto(x + dx, y, z + dz, nl2, fam);
+}
+function fluidScanChunk(c) {                                               // beim Laden: unruhige Flüssigkeiten (z. B. Wasser über einem Loch) wieder in Gang setzen
+  const d = c.data, wx0 = c.cx * CS, wz0 = c.cz * CS;
+  for (let y = 1; y < c.maxY; y++) for (let i = 0; i < 256; i++) {
+    const id = d[i + (y << 8)], fam = LQ[id]; if (!fam) continue;
+    const lx = i & 15, lz = i >> 4, below = y > 1 ? d[i + ((y - 1) << 8)] : 1; let un = fluidDown(below, fam) && !(LQ[below] === fam);
+    if (!un && (LVL[id] >= 8 ? 8 : LVL[id]) - (fam === 1 || world.dim === 1 ? 1 : 2) >= 1) for (const [dx, dz] of FDIR) { const nx = lx + dx, nz = lz + dz; const nb = nx >= 0 && nx < 16 && nz >= 0 && nz < 16 ? d[nx + (nz << 4) + (y << 8)] : world.getBlock(wx0 + nx, y, wz0 + nz); if (nb !== -1 && fluidPass(nb)) { un = true; break; } }
+    if (un) fluidSched(wx0 + lx, y, wz0 + lz, fam);
+  }
+}
+function updateFluids(dt) {
+  fluidClock += dt;
+  if (fluidScanQ.length && (!mp.on || isHost())) { const c = fluidScanQ.shift(); if (world.chunks.get(ckey(c.cx, c.cz)) === c) fluidScanChunk(c); } else if (fluidScanQ.length) fluidScanQ.length = 0;
+  if (!fluidQ.size) return;
+  let n = 0;
+  for (const [k, due] of fluidQ) {
+    if (due > fluidClock) continue; if (n++ >= 120) break;
+    fluidQ.delete(k); const q = k.split(','); fluidUpdate(+q[0], +q[1], +q[2]);
+  }
+}
 function onBlockChange(x, y, z, id) {
+  fluidTouch(x, y, z);
   rsAround(x, y, z);
   checkSupports(x, y, z, id);
   if (id > 0 && BLOCKS[id].falling) checkFall(x, y, z);
@@ -5440,8 +5542,8 @@ class Vehicle {
   }
   updateBoat(dt) {
     const w = world, c = this.ctl(), cx = Math.floor(this.p.x), cz = Math.floor(this.p.z), fy = Math.floor(this.p.y + 0.15);
-    const inW = w.getBlock(cx, fy, cz) === WATER;
-    if (inW) { let top = fy + 1; while (w.getBlock(cx, top, cz) === WATER && top < fy + 6) top++; this.v.y += ((top - 0.2 - this.p.y) * 9 - this.v.y) * Math.min(1, 6 * dt); }
+    const inW = LQ[w.getBlock(cx, fy, cz)] === 1;
+    if (inW) { let top = fy + 1; while (LQ[w.getBlock(cx, top, cz)] === 1 && top < fy + 6) top++; this.v.y += ((top - 0.2 - this.p.y) * 9 - this.v.y) * Math.min(1, 6 * dt); }
     else this.v.y = Math.max(this.v.y - 22 * dt, -25);
     this.yaw += c.t * 1.9 * dt * (inW ? 1 : 0.3);
     const fx = Math.sin(this.yaw), fz = Math.cos(this.yaw), sp = inW ? (c.f > 0 ? 8 : c.f < 0 ? -2.5 : 0) : 0, k = Math.min(1, (inW ? 2.2 : 0.5) * dt * (c.f ? 2.5 : 1));
@@ -5819,7 +5921,7 @@ function useBucket(slot, I) {
     }
   } else if (target && (target.nx || target.ny || target.nz)) {
     const x = target.x + target.nx, y = target.y + target.ny, z = target.z + target.nz, cur = world.getBlock(x, y, z);
-    if (cur === AIR || cur === WATER || cur === ID.lava || (cur > 0 && BLOCKS[cur].plant)) {
+    if (cur === AIR || LQ[cur] || (cur > 0 && BLOCKS[cur].plant)) {
       world.setBlock(x, y, z, I.fills); inv[P.sel] = newStack(IID.bucket, 1); sfx('place'); refreshHotbar();
     }
   }
@@ -6736,7 +6838,7 @@ class Mob {
   }
   endermanAI(dt, pl, hunting) {
     this.cd -= dt; this.teleT = (this.teleT === undefined ? 4 : this.teleT) - dt; const w = world;
-    if (w.getBlock(Math.floor(this.p.x), Math.floor(this.p.y + 0.5), Math.floor(this.p.z)) === WATER) { this.hp -= dt * 3; this.flash = 0.1; if (Math.random() < dt * 3) this.tele(false); }
+    if (LQ[w.getBlock(Math.floor(this.p.x), Math.floor(this.p.y + 0.5), Math.floor(this.p.z))] === 1) { this.hp -= dt * 3; this.flash = 0.1; if (Math.random() < dt * 3) this.tele(false); }
     if (hunting && !(this.angry > 0) && !this.remote && state === 'play' && !isCreative() && pl.dist < 48 && lookCone(P.p.x, P.p.y + EYE, P.p.z, P.yaw, P.pitch, this.p.x, this.p.y + 2.6, this.p.z, 48)) { this.angry = 90; mobSay('enderman', 'angry', this.p.x, this.p.y, this.p.z); }
     if (this.angry > 0 && hunting) {
       this.angry -= dt; this.yaw = Math.atan2(pl.dx, pl.dz); this.moving = pl.dist > 1.2;
@@ -7034,7 +7136,7 @@ class Mob {
       const tx = this.fuse > 0 ? MT.ghastShoot : MT.ghast; if (X.ghastMat.map !== tx) X.ghastMat.map = tx;
     }
     else if (this.type === 'strider') {
-      const lava = world.getBlock(Math.floor(this.p.x), Math.floor(this.p.y - 0.1), Math.floor(this.p.z)) === ID.lava, tx = lava ? MT.strider : MT.striderCold;
+      const lava = LQ[world.getBlock(Math.floor(this.p.x), Math.floor(this.p.y - 0.1), Math.floor(this.p.z))] === 2, tx = lava ? MT.strider : MT.striderCold;
       if (X.striderMat.map !== tx) X.striderMat.map = tx;
       g.position.y += Math.sin(performance.now() / 600 + this.p.x) * 0.02;
     }
@@ -7128,17 +7230,17 @@ class Mob {
     if (this.poisonT > 0) { this.poisonT -= dt; this.poisonAcc = (this.poisonAcc || 0) + dt; if (this.poisonAcc >= 1) { this.poisonAcc = 0; this.hp -= 1; this.flash = 0.15; } }
     // Tageslicht: Zombies und Skelette brennen
     if (this.T.burn && env.dayF > 0.7 && w.skyExposed(Math.floor(this.p.x), Math.floor(this.p.y + 1), Math.floor(this.p.z))) { this.hp -= dt * 2; this.flash = 0.1; }
-    if (w.getBlock(Math.floor(this.p.x), Math.floor(this.p.y + 0.3), Math.floor(this.p.z)) === ID.lava && !this.T.fire) { this.hp -= dt * 6; this.flash = 0.1; }
+    if (LQ[w.getBlock(Math.floor(this.p.x), Math.floor(this.p.y + 0.3), Math.floor(this.p.z))] === 2 && !this.T.fire) { this.hp -= dt * 6; this.flash = 0.1; }
 
     const my = this.moveYaw === null ? this.yaw : this.moveYaw;
     const tx = Math.sin(my) * spd, tz = Math.cos(my) * spd;
     const k = Math.min(1, (this.onGround ? 10 : 3) * dt);
     this.v.x += (tx - this.v.x) * k; this.v.z += (tz - this.v.z) * k;
-    const inWater = w.getBlock(Math.floor(this.p.x), Math.floor(this.p.y + 0.4), Math.floor(this.p.z)) === WATER;
+    const inWater = LQ[w.getBlock(Math.floor(this.p.x), Math.floor(this.p.y + 0.4), Math.floor(this.p.z))] === 1;
     let onLava = false;
     if (this.T.lava) {                                                         // Schreiter laufen auf Lava
       const lx = Math.floor(this.p.x), lz = Math.floor(this.p.z), ly = Math.floor(this.p.y - 0.1);
-      if (w.getBlock(lx, ly, lz) === ID.lava && this.v.y <= 0.5) { onLava = true; this.v.y = 0; this.p.y = Math.max(this.p.y, ly + 1); this.onGround = true; }
+      if (LQ[w.getBlock(lx, ly, lz)] === 2 && this.v.y <= 0.5) { onLava = true; this.v.y = 0; this.p.y = Math.max(this.p.y, ly + 1); this.onGround = true; }
     }
     if (onLava) { /* kein Fallen */ }
     else if (this.T.fly) this.v.y += (this.flyTy - this.v.y) * Math.min(1, 3 * dt);
@@ -7223,7 +7325,7 @@ function trySpawnNether() {                                              // Neth
   if (roll < 0.1) {                                                        // Schreiter auf der Lava (friedlich)
     if (mobs.filter((m) => m.type === 'strider').length >= 4) return;
     for (let y = Math.min(CH - 3, Math.floor(base.y) + 8); y > 3; y--) {
-      if (world.getBlock(x, y, z) === ID.lava && world.getBlock(x, y + 1, z) === AIR) { mobs.push(new Mob('strider', x + 0.5, y + 1, z + 0.5)); return; }
+      if (LQ[world.getBlock(x, y, z)] === 2 && world.getBlock(x, y + 1, z) === AIR) { mobs.push(new Mob('strider', x + 0.5, y + 1, z + 0.5)); return; }
     }
     return;
   }
@@ -7400,7 +7502,7 @@ function startGame(opts) {
   world = new World(save ? save.seed : opts.seed, scene, save ? (save.gv || 1) : opts.gv || 4);          // Welten ohne gv-Eintrag = alte Biome
   setWorldKeys(world.gv);
   world.setRenderDistance(renderDist);
-  world.onChange = onBlockChange;
+  world.onChange = onBlockChange; fluidReset(); world.onChunkGen = (c) => { if (c.maxY > 1) fluidScanQ.push(c); };
   curWorldKey = opts.mp ? 'mp:' + mp.room : 'sp:' + world.seedStr; loadWorldPrefs();
   P.fx = {}; P.god = false; P.canFly = false; P.speedMul = 1; P.back = null; fxDirty = true; undoBuf = null;
   achLoad(); reelIn(); weather.override = null; weather.rain = weather.thunder = weather.wf = 0; weather.flash = 0; rainMesh.visible = snowMesh.visible = false;
@@ -7682,7 +7784,7 @@ function simTick(dt) {
     saveTimer += dt; if (saveTimer > 45) { saveTimer = 0; saveGame(); }
   } else if (simOnly && state !== 'dead') { if (P.ride) updatePlayerRide(dt); else updatePlayerIdle(dt); updateEffects(dt); }
   if (mp.on) gameTime = mpGameTime();
-  if (live || simOnly) { updateMobs(dt); updateDrops(dt); updateOrbs(dt); updateVehicles(dt); rsTick(dt); updateEnd(dt); updatePrimed(dt); updateArrows(dt); updateFallers(dt); tickGrowth(dt); P.bowCd -= dt; mpTick(dt); updateWeather(dt); updateThrown(dt); }
+  if (live || simOnly) { updateMobs(dt); updateDrops(dt); updateOrbs(dt); updateVehicles(dt); rsTick(dt); updateFluids(dt); updateEnd(dt); updatePrimed(dt); updateArrows(dt); updateFallers(dt); tickGrowth(dt); P.bowCd -= dt; mpTick(dt); updateWeather(dt); updateThrown(dt); }
   if (live) { updateFishing(dt); updateMinimap(dt); updateStructs(dt); updateEating(dt); }
   else if (simOnly) updateStructs(dt);
   world.update(P.p.x, P.p.z, 5, 7);
@@ -9343,7 +9445,7 @@ function useRod(slot) {
     reelIn(); return;
   }
   const t = raycastBlocks(eyeV, dirV, 16, true);
-  if (!t || t.id !== WATER) { toast('Wirf die Angel ins Wasser'); return; }
+  if (!t || LQ[t.id] !== 1) { toast('Wirf die Angel ins Wasser'); return; }
   fishing = { x: t.x + 0.5, y: t.y + 0.88, z: t.z + 0.5, wait: (3 + Math.random() * 9) * (1 - 0.35 * weather.wf), bite: 0, t: 0 };
   hookSprite.visible = lineMesh.visible = true; sfx('place');
 }
@@ -9432,7 +9534,7 @@ function mmColors() {
   mmPal = new Uint8Array(4096 * 3);
   for (let i = 1; i < BLOCKS.length; i++) if (BLOCKS[i]) { const c = ATLAS.colors[i] || new THREE.Color(0.5, 0.5, 0.5); mmPal[i * 3] = c.r * 255; mmPal[i * 3 + 1] = c.g * 255; mmPal[i * 3 + 2] = c.b * 255; }
   const tint = (id, rgb) => { mmPal[id * 3] = rgb[0]; mmPal[id * 3 + 1] = rgb[1]; mmPal[id * 3 + 2] = rgb[2]; };
-  tint(SNOW, [238, 243, 250]); tint(GRASS, [104, 156, 62]); tint(LEAVES, [62, 120, 38]); tint(WATER, [56, 100, 210]);
+  tint(SNOW, [238, 243, 250]); tint(GRASS, [104, 156, 62]); tint(LEAVES, [62, 120, 38]); tint(WATER, [56, 100, 210]); FLW.forEach((id) => { if (id && id !== WATER) tint(id, [56, 100, 210]); });
   WOODS.forEach(([w]) => tint(ID[w + '_leaves'], [66, 118, 48]));
   return mmPal;
 }
@@ -9448,7 +9550,7 @@ function updateMinimap(dt) {
     for (; y > 0; y--) { id = c.data[lx + (lz << 4) + (y << 8)]; if (id && !BLOCKS[id].plant && !BLOCKS[id].torch) break; }
     mmH[i + j * S] = y;
     let r = pal[id * 3], g = pal[id * 3 + 1], b = pal[id * 3 + 2];
-    if (id === WATER) { let d = 0; for (let yy = y - 1; yy > 0 && d < 12; yy--, d++) if (c.data[lx + (lz << 4) + (yy << 8)] !== WATER) break; const k = 1 - d * 0.045; r *= k; g *= k; b *= k; }
+    if (LQ[id] === 1) { let d = 0; for (let yy = y - 1; yy > 0 && d < 12; yy--, d++) if (LQ[c.data[lx + (lz << 4) + (yy << 8)]] !== 1) break; const k = 1 - d * 0.045; r *= k; g *= k; b *= k; }
     else { const h2 = (i > 0 ? mmH[i - 1 + j * S] : y), sh = clamp((y - h2) * 0.09, -0.22, 0.22) + (j > 0 ? clamp((y - mmH[i + (j - 1) * S]) * 0.05, -0.12, 0.12) : 0); r *= 1 + sh; g *= 1 + sh; b *= 1 + sh; }
     data[o] = r; data[o + 1] = g; data[o + 2] = b; data[o + 3] = 255;
   }
@@ -9706,6 +9808,7 @@ Object.assign(LOOT_TABLES, {
   deep: [['diamond', 1, 4, 0.7], ['emerald', 2, 5, 0.6], ['gold_ingot', 3, 8, 0.7], ['golden_apple', 1, 2, 0.4], ['totem_of_undying', 1, 1, 0.15], ['iron_ingot', 3, 8, 0.7], ['diamond_pickaxe', 1, 1, 0.08],
     ['diamond_sword', 1, 1, 0.08], ['diamond_chestplate', 1, 1, 0.05], ['netherite_scrap', 1, 2, 0.08], ['potion_regeneration', 1, 1, 0.3], ['potion_strength', 1, 1, 0.25], ['lapis', 4, 10, 0.5], ['redstone', 4, 10, 0.5], ['saddle', 1, 1, 0.2]],
   camp: [['bread', 1, 4, 0.7], ['cooked_beef', 1, 3, 0.5], ['torch', 3, 9, 0.7], ['coal', 2, 5, 0.5], ['string', 1, 3, 0.4], ['apple', 1, 3, 0.5], ['iron_ingot', 1, 2, 0.3], ['fishing_rod', 1, 1, 0.15], ['compass', 1, 1, 0.1], ['cooked_porkchop', 1, 3, 0.4]],
+  portal: [['obsidian', 4, 8, 1], ['flint_and_steel', 1, 1, 1], ['gold_ingot', 1, 4, 0.7], ['iron_ingot', 1, 3, 0.5], ['golden_apple', 1, 1, 0.2], ['iron_sword', 1, 1, 0.2], ['bread', 1, 3, 0.5]],
   trial: [['diamond', 1, 3, 0.4], ['emerald', 2, 5, 0.6], ['iron_ingot', 3, 7, 0.7], ['gold_ingot', 2, 5, 0.5], ['golden_apple', 1, 1, 0.3], ['potion_strength', 1, 1, 0.3], ['potion_speed', 1, 1, 0.3], ['potion_regeneration', 1, 1, 0.2],
     ['iron_chestplate', 1, 1, 0.15], ['totem_of_undying', 1, 1, 0.1], ['arrow', 8, 20, 0.5], ['bow', 1, 1, 0.2], ['saddle', 1, 1, 0.2]],
 });
@@ -10996,7 +11099,7 @@ Snake.cv.addEventListener('pointerup', snakeUp); Snake.cv.addEventListener('poin
 $('snakeBack').onclick = () => setState('menu');
 ATLAS.onReady(() => { if (state === 'menu' && !MenuScene.raf) menuSceneSync('menu'); });
 
-window.__vc = { openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+window.__vc = { openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>

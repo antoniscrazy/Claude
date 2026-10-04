@@ -1,4 +1,4 @@
-# VOXELCRAFT – Bug-Liste (Stand 2026-10-05.4)
+# VOXELCRAFT – Bug-Liste (Stand 2026-10-05.6)
 
 Gefunden durch Fuzz-/Monkey-Tests (Zufallsklicks, Tastenhagel), Zwei-Spieler-Tests im Multiplayer und Code-Durchsicht.
 Status: ✅ behoben · 🟡 offen (klein / kosmetisch) · 🔴 offen (spürbar)
@@ -62,3 +62,10 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * ✅ Zu viele, viel zu tiefe Schluchten (teils fast bis zum Grundgestein, gefühlt alle 10 m): Schluchten sind jetzt seltener (Wahrscheinlichkeit 55 % → 30 % je Region), nur noch 14–28 Blöcke tief unter der Oberfläche und etwas schmaler. Gemessen: vorher 1,2 % aller Spalten offen bis tief unten, jetzt 0 %.
 * ✅ Freistehende Pfähle aus Kupfer/Planken in Schluchten und Höhlen (Leiterschächte von Prüfkammer, Verlies, Minenschacht, Tiefenfestung): Rückwand und Leiter werden nur noch gebaut, wo wirklich Gestein ist; im Hohlraum entsteht kein Pfahl mehr. 0 schwebende Leitern.
+
+## 2026-10-05.6
+
+* ✅ Löchrige Hänge (schwebende Grasblöcke über Höhlen): Höhlen bleiben jetzt unter der **niedrigsten** Oberfläche der Umgebung (statt unter der eigenen Spaltenhöhe), und die alten Tunnel brechen nur noch in wenigen Chunks als Höhleneingang durch die Oberfläche. Gemessen: Anteil der Oberflächen mit Luft direkt darunter nur noch ≈ 0,8 %.
+* ✅ Bäume an Strukturen wurden abgeschnitten: rund um große Strukturen (Fußabdruck + Rampe + Krone) wachsen keine Bäume mehr.
+* ✅ Ruinen-Portal ließ sich nicht reparieren: Rahmen nur noch aus echtem Obsidian (kein Weinender Obsidian im Rahmen), nur 2–4 Lücken, dazu eine Beutetruhe mit Obsidian und Feuerzeug. Im Test ließ sich jeder Rahmen vervollständigen und entzünden.
+* ✅ **Wasser und Lava fließen** (siehe README): Fließ-Blöcke in 8 Stufen, Fallen, Austrocknen, unendliche Quellen, Obsidian/Bruchstein, Mehrspieler-Sync, Chunk-Scan beim Laden.
