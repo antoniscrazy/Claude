@@ -47,5 +47,5 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * **Baulimit 256** in allen Welten (Nether, Backrooms und Ende bleiben 64 hoch). Meldung „⚠ Baulimit erreicht“ über der Hotbar.
 * **Tiefe Welten** gelten für neue Einzelspieler-Welten und für Server, die **nach** der Veröffentlichung dieser Version angelegt wurden (`GEN3_START`). Ältere Welten/Server bleiben unverändert (Block-IDs und gespeicherte Änderungen bleiben gültig).
 * **Datenbank (Mehrspieler):** Die Tabelle erlaubt y nur von 0 bis 255. Damit Oberwelt (256 hoch) und die anderen Dimensionen Platz haben, steckt die Dimension jetzt im x-Wert (`x + Code·2^27`). Alte Zeilen (Code 0) bleiben lesbar – **keine SQL-Änderung nötig**.
-* Server-/Spieler-Daten-Transfer: Spielerdaten (nicht die Welt) lassen sich als Code/Datei exportieren und importieren.
+* Spielerdaten-Transfer zwischen Servern gibt es nur in der Dev-Konsole (nicht im Spiel).
 * Offen: Supabase-Einrichtung (`dev_console_part2.sql`, Realtime-Zugriff, Last mit 15 Spielern) – weiterhin nur von dir prüfbar.

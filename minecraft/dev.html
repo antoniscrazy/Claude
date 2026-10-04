@@ -263,9 +263,15 @@ function renderRoom() {
     roomData.states.map((s) => { const d = s.data || {}, p = d.pos || [0, 0, 0];
       return '<div class="panel"><div class="top">' + faceHtml(s.name) + '<b>' + esc(s.name) + '</b>' + (on.includes(s.name) ? '<span class="tag on">online</span>' : '') +
         '<span class="dim">gespeichert ' + ago(s.updated_at) + '</span><span class="sp"></span><button class="btn red sm" data-delstate="' + esc(s.name) + '" type="button">Daten löschen</button></div>' +
+        '<div class="row"><button class="btn sm" data-expfile="' + esc(s.name) + '" type="button">📤 Als Datei</button><button class="btn sm" data-expcode="' + esc(s.name) + '" type="button">📋 Code kopieren</button>' +
+        '<select data-tsel="' + esc(s.name) + '">' + ov.rooms.filter((q) => q.id !== r.id).map((q) => '<option value="' + esc(q.id) + '">' + esc(q.id) + '</option>').join('') + '</select><button class="btn sm" data-transfer="' + esc(s.name) + '" type="button">➡ Auf diesen Server übertragen</button></div>' +
         '<div class="row"><span>❤ ' + (d.hp != null ? Math.round(d.hp) : '–') + '/20</span><span>🍗 ' + (d.hunger != null ? Math.round(d.hunger) : '–') + '/20</span><span>📍 ' + p.map((v) => Math.round(v)).join(' / ') + '</span>' + (d.bed ? '<span>🛏 ' + d.bed.join(' / ') + '</span>' : '') + '</div>' +
         '<div class="dim">Inventar (Hover → ✕ entfernt den Eintrag)</div>' + invHtml(d.inv, 'inv:' + esc(s.name)) +
         (d.armor && d.armor.some(Boolean) ? '<div class="dim">Rüstung</div>' + invHtml(d.armor, 'armor:' + esc(s.name)) : '') + '</div>'; }).join('') +
+    '<h2>Spielerdaten importieren</h2><div class="panel"><div class="dim">Code oder Datei aus „📤 Exportieren“ (von diesem oder einem anderen Server). Inventar, Rüstung, Erfahrung, Leben/Hunger und Haustiere werden übernommen; Position, Spawnpunkt und Dimension des Spielers auf diesem Server bleiben.</div>' +
+    '<div class="row"><label>Spielername</label><input id="impName" size="16" placeholder="Name auf diesem Server"><input type="file" id="impFile" accept=".vcp,.txt,text/plain"></div>' +
+    '<textarea id="impCode" rows="3" spellcheck="false" placeholder="VCP1:… Code einfügen" style="width:100%;box-sizing:border-box;font:12px monospace"></textarea>' +
+    '<div class="row"><button class="btn sm" id="btnImport" type="button">📥 Importieren</button></div></div>' +
     '<h2>Container (' + roomData.containers.length + ')</h2><div class="panel scroll"><table><tr><th>Ort</th><th>Inhalt</th><th>Zuletzt</th><th></th></tr>' +
     roomData.containers.map((c) => '<tr><td>' + c.x + ' / ' + c.y + ' / ' + c.z + '</td><td>' + (c.items || []).filter(Boolean).map((s) => esc(itemName(s[0])) + ' ×' + s[1]).join(', ') + '</td><td>' + ago(c.updated_at) + '</td><td><button class="btn red sm" data-delc="' + c.x + ',' + c.y + ',' + c.z + '" type="button">Leeren</button></td></tr>').join('') + '</table></div>' +
     '<h2>Wer hat gebaut?</h2><div class="panel">' + (roomData.builders.map((b) => '<div>' + faceHtml(b.name || '?') + esc(b.name || '—') + ' <span class="dim">' + b.edits + ' Blöcke</span></div>').join('') || '<span class="dim">Noch keine Änderungen.</span>') + '</div>';
@@ -273,6 +279,11 @@ function renderRoom() {
   $('btnSave').onclick = saveRoom; $('btnReset').onclick = resetRoom; $('btnDelRoom').onclick = delRoom;
   $('btnNotice').onclick = () => sendToRoom('notice'); $('btnRestart').onclick = () => { if (confirm('Alle Spieler auf „' + curRoom + '“ speichern lassen und trennen? Sie sehen den Hinweis zum Schließen der Website.')) sendToRoom('restart'); };
   el.querySelectorAll('[data-delstate]').forEach((b) => { b.onclick = () => delState(b.dataset.delstate); });
+  el.querySelectorAll('[data-expfile]').forEach((b) => { b.onclick = () => exportState(b.dataset.expfile, 'file'); });
+  el.querySelectorAll('[data-expcode]').forEach((b) => { b.onclick = () => exportState(b.dataset.expcode, 'code'); });
+  el.querySelectorAll('[data-transfer]').forEach((b) => { b.onclick = () => { const sel = el.querySelector('select[data-tsel="' + b.dataset.transfer.replace(/"/g, '\\"') + '"]'); if (sel && sel.value) transferState(b.dataset.transfer, sel.value); }; });
+  $('impFile').onchange = async () => { const f = $('impFile').files[0]; $('impFile').value = ''; if (f) { if (f.size > 700000) return toast('Datei zu groß'); $('impCode').value = (await f.text()).trim(); toast('Datei geladen – jetzt „Importieren“'); } };
+  $('btnImport').onclick = importState;
   el.querySelectorAll('[data-delc]').forEach((b) => { b.onclick = () => delContainer(b.dataset.delc); });
   el.querySelectorAll('[data-del]').forEach((b) => { b.onclick = () => delSlot(b.dataset.del); });
 }
@@ -312,6 +323,95 @@ async function deletePlayer(name) {
   if (!confirm('Konto „' + name + '“ samt allen Spielerdaten löschen?')) return;
   const rooms = confirm('Auch alle Server löschen, die „' + name + '“ gehören?\nOK = ja, Abbrechen = Server behalten (ohne Besitzer)');
   act('vc_dev_delete_player', { p_name: name, p_delete_rooms: rooms }, 'Konto gelöscht', true);
+}
+
+// ---------- Spielerdaten-Transfer ----------
+// Format „VCP1:“ + Z|P (gzip / unkomprimiert) + Base64url(JSON) + „.“ + Prüfsumme – kompatibel mit Datei (.vcp) und Zwischenablage.
+const PD_MAGIC = 'VCP1:', PD_FIELDS = ['inv', 'armor', 'hp', 'hunger', 'xpL', 'xpP', 'sel', 'fuel'];
+const pdHash = (str) => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(16).padStart(8, '0'); };
+const pdB64 = (u8) => { let s = ''; for (let i = 0; i < u8.length; i += 8192) s += String.fromCharCode.apply(null, u8.subarray(i, i + 8192)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+const pdUnB64 = (t) => { const s = atob(t.replace(/-/g, '+').replace(/_/g, '/')), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; };
+async function pdStream(u8, Ctor) { const st = new Blob([u8]).stream().pipeThrough(new Ctor('gzip')); return new Uint8Array(await new Response(st).arrayBuffer()); }
+async function pdPack(obj) {
+  const raw = new TextEncoder().encode(JSON.stringify(obj)); let flag = 'P', body = raw;
+  if (typeof CompressionStream !== 'undefined') { try { body = await pdStream(raw, CompressionStream); flag = 'Z'; } catch (e) { body = raw; flag = 'P'; } }
+  const b = pdB64(body); return PD_MAGIC + flag + b + '.' + pdHash(b);
+}
+async function pdUnpack(code) {
+  code = String(code || '').replace(/\s+/g, '');
+  if (!code.startsWith(PD_MAGIC)) throw new Error('Das ist kein Spielerdatencode (VCP1:…).');
+  const dot = code.lastIndexOf('.'); if (dot < 0) throw new Error('Der Code ist unvollständig.');
+  const flag = code[PD_MAGIC.length], b = code.slice(PD_MAGIC.length + 1, dot);
+  if (pdHash(b) !== code.slice(dot + 1)) throw new Error('Der Code ist beschädigt (Prüfsumme) – vollständig kopiert?');
+  let u8 = pdUnB64(b);
+  if (flag === 'Z') { if (typeof DecompressionStream === 'undefined') throw new Error('Dieser Browser kann den komprimierten Code nicht lesen.'); u8 = await pdStream(u8, DecompressionStream); }
+  else if (flag !== 'P') throw new Error('Unbekanntes Codeformat.');
+  const o = JSON.parse(new TextDecoder().decode(u8));
+  if (!o || o.vc !== 'player') throw new Error('Das sind keine Spielerdaten.');
+  return o;
+}
+function pdStacks(list, n) {
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const t = Array.isArray(list) ? list[i] : null;
+    if (!Array.isArray(t) || !(t[0] > 0) || !NAMES[t[0]]) { out.push(0); continue; }
+    const o = [t[0] | 0, Math.max(1, Math.min(64, t[1] | 0))];
+    if (t[2] !== undefined || t[3]) o.push(Number.isFinite(+t[2]) ? Math.max(1, Math.min(100000, +t[2])) : 1);
+    if (t[3] && typeof t[3] === 'object') { const e = {}; for (const k in t[3]) if (/^[a-z_]{1,32}$/.test(k)) e[k] = Math.max(1, Math.min(10, t[3][k] | 0)); if (Object.keys(e).length) o.push(e); }
+    out.push(o);
+  }
+  return out;
+}
+function pdFromState(name, d) {
+  const o = { vc: 'player', v: 1, name, from: curRoom, t: Date.now() };
+  for (const k of PD_FIELDS) if (d[k] !== undefined) o[k] = d[k];
+  o.pets = d.pets || []; o.veh = d.veh || []; return o;
+}
+function pdIntoState(existing, o) {                                  // Daten des Spielers auf dem Zielserver: Welt-Teile (Position, Spawn, Dimension) bleiben
+  const t = existing ? JSON.parse(JSON.stringify(existing)) : { dim: 0 }, dim = t.dim || 0;
+  t.inv = pdStacks(o.inv, 36); t.armor = pdStacks(o.armor, 4);
+  if (o.hp != null) t.hp = Math.max(1, Math.min(20, +o.hp || 20)); if (o.hunger != null) t.hunger = Math.max(0, Math.min(20, +o.hunger)); if (o.xpL != null) t.xpL = Math.max(0, Math.min(1000, o.xpL | 0));
+  if (o.xpP != null) t.xpP = Math.max(0, Math.min(0.999, +o.xpP || 0)); if (o.sel != null) t.sel = Math.max(0, Math.min(8, o.sel | 0)); if (o.fuel != null) t.fuel = Math.max(0, +o.fuel || 0);
+  const FAR = 10000000;                                              // Haustiere/Fahrzeuge erscheinen neben dem Spieler (Ort der alten Welt ist hier sinnlos)
+  t.pets = (o.pets || []).filter(Array.isArray).slice(0, 12).map((e) => { const c = e.slice(); c[0] = ''; c[2] = c[3] = c[4] = FAR; c[7] = dim; return c; });
+  t.veh = (o.veh || []).filter(Array.isArray).slice(0, 12).map((e) => { const c = e.slice(); c[1] = c[3] = FAR; c[5] = dim; return c; });
+  return t;
+}
+async function writeState(room, name, data) {                       // Upsert (Teil 3); Fallback: nur vorhandene Einträge aktualisieren
+  try { await rpc('vc_dev_put_state', { p_room: room, p_name: name, p_data: data }); return; }
+  catch (e) {
+    if (!/fehlen noch/.test(e.message)) throw e;
+    const r = await rpc('vc_dev_room', { p_room: room });
+    if (!r.states.some((s) => s.name === name)) throw new Error('Für diesen Spieler gibt es auf „' + room + '“ noch keine Daten. Dafür einmalig supabase/dev_console_part3.sql im Supabase-SQL-Editor ausführen.');
+    await rpc('vc_dev_set_state', { p_room: room, p_name: name, p_data: data });
+  }
+}
+async function exportState(name, how) {
+  const s = roomData.states.find((x) => x.name === name); if (!s) return;
+  const code = await pdPack(pdFromState(name, s.data || {}));
+  if (how === 'code') { try { await navigator.clipboard.writeText(code); toast('Code kopiert (' + code.length + ' Zeichen)'); } catch (e) { prompt('Code kopieren (Strg+C):', code); } return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([code], { type: 'text/plain' }));
+  a.download = 'voxelcraft-' + name.replace(/[^\w.-]+/g, '_') + '-' + curRoom.replace(/[^\w.-]+/g, '_') + '.vcp'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 3000); toast('Datei gespeichert');
+}
+async function transferState(name, target) {
+  const s = roomData.states.find((x) => x.name === name); if (!s) return;
+  const nn = (prompt('Spielername auf „' + target + '“ (gleicher Name = gleiche Person):', name) || '').trim(); if (!nn) return;
+  if (onlineIn(target).includes(nn) && !confirm(nn + ' ist gerade auf „' + target + '“ online – sein Spiel würde die Daten beim nächsten Speichern wieder überschreiben. Trotzdem übertragen?')) return;
+  try {
+    const tr = await rpc('vc_dev_room', { p_room: target }), ex = tr.states.find((x) => x.name === nn);
+    if (!confirm('Spielerdaten von „' + name + '“ (' + curRoom + ') auf „' + nn + '“ (' + target + ') übertragen?\n' + (ex ? 'Das vorhandene Inventar dort wird ersetzt.' : 'Dort gibt es noch keine Daten – ein neuer Eintrag wird angelegt.'))) return;
+    await writeState(target, nn, pdIntoState(ex ? ex.data : null, pdFromState(name, s.data || {})));
+    toast('Übertragen: ' + name + ' → ' + nn + ' auf „' + target + '“');
+  } catch (e) { toast(e.message); }
+}
+async function importState() {
+  const name = $('impName').value.trim(); if (!name) return toast('Bitte einen Spielernamen eintragen.');
+  try {
+    const o = await pdUnpack($('impCode').value), ex = roomData.states.find((x) => x.name === name);
+    if (onlineIn(curRoom).includes(name) && !confirm(name + ' ist gerade online – sein Spiel würde die Daten beim nächsten Speichern überschreiben. Trotzdem importieren?')) return;
+    if (!confirm('Spielerdaten (von „' + (o.name || '?') + '“' + (o.from ? ' / ' + o.from : '') + ') für „' + name + '“ auf „' + curRoom + '“ importieren?' + (ex ? '\nVorhandenes Inventar wird ersetzt.' : '\nNeuer Eintrag.'))) return;
+    await writeState(curRoom, name, pdIntoState(ex ? ex.data : null, o)); toast('Importiert'); await loadRoom(curRoom, true);
+  } catch (e) { toast(e.message); }
 }
 
 // Auto-Login in dieser Browser-Sitzung

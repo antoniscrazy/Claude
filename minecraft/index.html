@@ -283,25 +283,6 @@ body.touch #modeTag{display:none}
 </div>
 
 <!-- Verbindung verloren (Mehrspieler) -->
-<!-- Spielerdaten: Export / Import -->
-<div id="pdata" class="overlay hidden" style="z-index:215;background:rgba(0,0,0,.82)">
-  <div class="panel" style="max-width:580px;width:92vw">
-    <h2>📦 Spielerdaten</h2>
-    <p style="font-size:14px;line-height:1.45;margin:6px 0 10px">Speichere Inventar, Rüstung, Erfahrung, Leben/Hunger, Erfolge und Haustiere als <b>Code</b> oder <b>Datei</b> und lade sie auf einem anderen Server oder in einer anderen Welt wieder.
-      Position und Spawnpunkt gehören zur Welt und werden nicht übertragen.</p>
-    <textarea id="pdText" rows="5" spellcheck="false" placeholder="Hier steht der Code nach „Exportieren“ – oder füge einen Code zum Importieren ein" style="width:100%;box-sizing:border-box;font:12px monospace;background:#111;color:#cfe;border:2px solid #555;padding:6px;resize:vertical"></textarea>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0">
-      <button class="btn" id="pdExport" type="button" style="flex:1 1 40%">⬆ Exportieren</button>
-      <button class="btn" id="pdCopy" type="button" style="flex:1 1 40%">📋 Code kopieren</button>
-      <button class="btn" id="pdSaveFile" type="button" style="flex:1 1 40%">💾 Als Datei speichern</button>
-      <button class="btn" id="pdLoadFile" type="button" style="flex:1 1 40%">📂 Datei laden …</button>
-    </div>
-    <button class="btn" id="pdImport" type="button">⬇ Importieren (Code aus dem Feld)</button>
-    <div id="pdMsg" style="min-height:22px;margin:8px 0;font-size:14px;line-height:1.4"></div>
-    <button class="btn" id="pdClose" type="button">Schließen</button>
-    <input type="file" id="pdFile" accept=".vcp,.txt,text/plain" style="display:none">
-  </div>
-</div>
 <!-- Nachricht der Dev-Konsole (Server-Neustart) -->
 <div id="devMsg" class="overlay hidden" style="z-index:210;background:rgba(0,0,0,.88)">
   <div class="panel" style="max-width:420px;text-align:center">
@@ -416,7 +397,6 @@ body.touch #modeTag{display:none}
     <button class="btn" id="btnSave" type="button">Speichern</button>
     <button class="btn" id="btnSettings" type="button">⚙ Einstellungen</button>
     <button class="btn" id="btnShot" type="button">📷 Screenshot (F2)</button>
-    <button class="btn" id="btnPData" type="button">📦 Spielerdaten (Export / Import)</button>
     <button class="btn" id="btnMute" type="button">Ton an/aus (M)</button>
     <button class="btn" id="btnFull" type="button">Vollbild an/aus</button>
     <button class="btn" id="btnQuit" type="button">Speichern &amp; Beenden</button>
@@ -1701,7 +1681,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.1';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-05.2';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN3_START = 1791118400000;           // Welten/Server ab diesem Zeitpunkt: tiefe Welt (+64 Tiefe), neue Höhlen und Strukturen, Baulimit 256
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
 const isDryBiome = (b) => b === BIOME_DESERT || b === BIOME_MESA || b === BIOME_NETHER || b === BIOME_BACKROOMS || b === BIOME_END;
@@ -8549,87 +8529,6 @@ cmd(['pos', 'coords', 'position'], {
     chatAdd(null, 'Position: ' + x + ' ' + y + ' ' + z + '  ·  Chunk ' + (x >> 4) + ', ' + (z >> 4) + '  ·  Biom: ' + BIOME_NAMES[world.gen.biomeAt(x, z)] + '  ·  Blick nach ' + ['Norden', 'Osten', 'Süden', 'Westen'][facingDir()], 'sys');
   },
 });
-// ===== Spielerdaten: Export / Import (zwischen Servern und Welten übertragbar) =====
-// Format: "VCP1:" + Z|P (gzip / unkomprimiert) + Base64url(JSON) + "." + Prüfsumme. Beim Import wird alles geprüft und begrenzt.
-const PD_MAGIC = 'VCP1:';
-const pdHash = (str) => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(16).padStart(8, '0'); };
-const pdB64 = (u8) => { let s = ''; for (let i = 0; i < u8.length; i += 8192) s += String.fromCharCode.apply(null, u8.subarray(i, i + 8192)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
-const pdUnB64 = (t) => { const s = atob(t.replace(/-/g, '+').replace(/_/g, '/')), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; };
-async function pdStream(u8, Ctor, kind) { const st = new Blob([u8]).stream().pipeThrough(new Ctor(kind)); return new Uint8Array(await new Response(st).arrayBuffer()); }
-async function pdPack(obj) {
-  const raw = new TextEncoder().encode(JSON.stringify(obj));
-  let flag = 'P', body = raw;
-  if (typeof CompressionStream !== 'undefined') { try { body = await pdStream(raw, CompressionStream, 'gzip'); flag = 'Z'; } catch (e) { body = raw; flag = 'P'; } }
-  const b = pdB64(body); return PD_MAGIC + flag + b + '.' + pdHash(b);
-}
-async function pdUnpack(code) {
-  code = String(code || '').replace(/\s+/g, '');
-  if (!code.startsWith(PD_MAGIC)) throw new Error('Das ist kein VOXELCRAFT-Spielerdatencode.');
-  const dot = code.lastIndexOf('.'); if (dot < 0) throw new Error('Der Code ist unvollständig.');
-  const flag = code[PD_MAGIC.length], b = code.slice(PD_MAGIC.length + 1, dot);
-  if (pdHash(b) !== code.slice(dot + 1)) throw new Error('Der Code ist beschädigt (Prüfsumme stimmt nicht) – wurde er vollständig kopiert?');
-  if (b.length > 600000) throw new Error('Der Code ist zu groß.');
-  let u8 = pdUnB64(b);
-  if (flag === 'Z') { if (typeof DecompressionStream === 'undefined') throw new Error('Dein Browser kann diesen komprimierten Code nicht lesen.'); u8 = await pdStream(u8, DecompressionStream, 'gzip'); }
-  else if (flag !== 'P') throw new Error('Unbekanntes Codeformat.');
-  const o = JSON.parse(new TextDecoder().decode(u8));
-  if (!o || o.vc !== 'player') throw new Error('Das sind keine Spielerdaten.');
-  return o;
-}
-function pdCollect() {
-  const o = { vc: 'player', v: 1, ver: GAME_VER, name: mp.on ? mp.name : 'Einzelspieler', t: Date.now(), mode: mp.on ? mp.mode : mode, room: mp.on ? mp.room : null, seed: world ? world.seedStr : null,
-    inv: packItems(inv), armor: packItems(armor), hp: P.health, hunger: P.hunger, xpL: P.xpL, xpP: +(+P.xpP).toFixed(3), sel: P.sel, pos: [P.p.x, P.p.y, P.p.z].map((v) => Math.round(v)), ach: Object.keys(achDone) };
-  if (mp.on) { const d = mpPetData(); o.pets = d.pets; o.veh = d.veh; }
-  return o;
-}
-function pdStacks(list, n) {
-  const out = [];
-  for (let i = 0; i < n; i++) {
-    const t = Array.isArray(list) ? list[i] : null;
-    if (!Array.isArray(t) || !Number.isFinite(+t[0]) || !validId(t[0] | 0)) { out.push(null); continue; }
-    const id = t[0] | 0, o = { id, count: clamp(t[1] | 0, 1, maxStack(id)) }, md = maxDurOf(id);
-    if (md !== undefined) o.dur = clamp(Number(t[2]) || md, 1, md);
-    if (t[3] && typeof t[3] === 'object') { const e = {}; for (const k in t[3]) if (ENCH[k]) e[k] = clamp(t[3][k] | 0, 1, ENCH[k].max); if (Object.keys(e).length) o.ench = e; }
-    out.push(o);
-  }
-  return out;
-}
-function pdCanImport() { return !mp.on || mp.mode === 'creative' || isOp(mp.name); }
-function pdApply(o) {
-  const ni = pdStacks(o.inv, 36), na = pdStacks(o.armor, 4);
-  for (let i = 0; i < 36; i++) inv[i] = ni[i];
-  for (let i = 0; i < 4; i++) armor[i] = na[i];
-  P.health = clamp(+o.hp || 20, 1, 20); P.hunger = clamp(+o.hunger === +o.hunger ? +o.hunger : 20, 0, 20); P.xpL = clamp(o.xpL | 0, 0, 1000); P.xpP = clamp(+o.xpP || 0, 0, 0.999); P.sel = clamp(o.sel | 0, 0, 8);
-  if (Array.isArray(o.ach)) { for (const k of o.ach) if (ACHIEVEMENTS[k] && !achDone[k]) achDone[k] = Date.now(); achSave(); }
-  if (mp.on && (Array.isArray(o.pets) || Array.isArray(o.veh))) {                       // Haustiere/Fahrzeuge erscheinen neben dir (die Position der alten Welt ist hier bedeutungslos)
-    const dm = world.dim, fix = (e, di) => { const c = e.slice(); c[di] = dm; return c; };
-    mp.petQueue = { pets: (o.pets || []).filter(Array.isArray).slice(0, 12).map((e) => { const c = fix(e, 7); c[0] = ''; c[2] = c[3] = c[4] = 1e7; return c; }), veh: (o.veh || []).filter(Array.isArray).slice(0, 12).map((e) => { const c = fix(e, 5); c[1] = c[3] = 1e7; return c; }) };
-    mpRestorePets();
-  }
-  hudStatsDirty = true; refreshHotbar(); updateXpHud(); if (state === 'inv') renderInventory();
-  if (mp.on) mpSaveState(); else saveGame();
-}
-const pdMsg = (t, ok) => { const e = $('pdMsg'); e.textContent = t; e.style.color = ok === false ? '#ff9a8a' : ok ? '#9aff9a' : '#ddd'; };
-function openPData() { if (!world) return; if (state === 'play') setState('pause'); $('pdata').classList.remove('hidden'); pdMsg(''); }
-$('btnPData').onclick = openPData;
-$('pdClose').onclick = () => $('pdata').classList.add('hidden');
-$('pdExport').onclick = async () => { try { $('pdText').value = await pdPack(pdCollect()); $('pdText').select(); pdMsg('Code erzeugt (' + $('pdText').value.length + ' Zeichen) – kopieren oder als Datei speichern.', true); } catch (e) { pdMsg('Export fehlgeschlagen: ' + e.message, false); } };
-$('pdCopy').onclick = async () => { const t = $('pdText').value; if (!t) return pdMsg('Zuerst „Exportieren“ drücken.', false); try { await navigator.clipboard.writeText(t); pdMsg('Code in die Zwischenablage kopiert.', true); } catch (e) { $('pdText').select(); document.execCommand && document.execCommand('copy'); pdMsg('Code markiert – mit Strg+C kopieren.', true); } };
-$('pdSaveFile').onclick = async () => {
-  try { if (!$('pdText').value) $('pdText').value = await pdPack(pdCollect()); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([$('pdText').value], { type: 'text/plain' }));
-    a.download = 'voxelcraft-' + String(mp.on ? mp.name : 'spieler').replace(/[^\w.-]+/g, '_') + '.vcp'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 3000); pdMsg('Datei gespeichert.', true); } catch (e) { pdMsg('Speichern fehlgeschlagen: ' + e.message, false); }
-};
-$('pdLoadFile').onclick = () => $('pdFile').click();
-$('pdFile').onchange = async () => { const f = $('pdFile').files[0]; $('pdFile').value = ''; if (!f) return; if (f.size > 700000) return pdMsg('Die Datei ist zu groß.', false); $('pdText').value = (await f.text()).trim(); pdMsg('Datei geladen – jetzt „Importieren“ drücken.'); };
-$('pdImport').onclick = async () => {
-  try {
-    if (!pdCanImport()) return pdMsg('Auf diesem Überlebens-Server dürfen nur Operatoren Spielerdaten importieren (Schutz vor Schummeln).', false);
-    const o = await pdUnpack($('pdText').value), n = (o.inv || []).filter(Boolean).length + (o.armor || []).filter(Boolean).length;
-    if (!confirm('Spielerdaten von „' + (o.name || '?') + '“ (' + new Date(o.t || 0).toLocaleString() + ', Version ' + (o.ver || '?') + ') importieren?\n' + n + ' Gegenstände, Stufe ' + (o.xpL | 0) + '.\nDein aktuelles Inventar wird ersetzt.')) return;
-    pdApply(o); pdMsg('Spielerdaten importiert: ' + n + ' Gegenstände, Stufe ' + (o.xpL | 0) + '.', true);
-  } catch (e) { pdMsg('Import fehlgeschlagen: ' + e.message, false); }
-};
-cmd(['spielerdaten', 'playerdata', 'pdata'], { desc: 'Spielerdaten exportieren / importieren (Server-Transfer)', run() { openPData(); } });
 cmd(['seed'], { desc: 'Zeigt den Weltseed', run() { chatAdd(null, 'Seed: ' + world.seedStr, 'sys'); } });
 cmd(['fps', 'stats'], {
   desc: 'Zeigt FPS und Weltstatistik',
@@ -10906,7 +10805,7 @@ Snake.cv.addEventListener('pointerup', snakeUp); Snake.cv.addEventListener('poin
 $('snakeBack').onclick = () => setState('menu');
 ATLAS.onReady(() => { if (state === 'menu' && !MenuScene.raf) menuSceneSync('menu'); });
 
-window.__vc = { openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, pdPack, pdUnpack, pdCollect, pdApply, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+window.__vc = { openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>
