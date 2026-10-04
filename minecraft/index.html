@@ -1681,7 +1681,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.4';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-05.5';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN4_START = 1791122621000;           // ab hier: weiche Gelände-Übergänge, Flusstäler, mehr Relief
 const GEN3_START = 1791118400000;           // Welten/Server ab diesem Zeitpunkt: tiefe Welt (+64 Tiefe), neue Höhlen und Strukturen, Baulimit 256
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
@@ -2158,7 +2158,7 @@ class TerrainGen {
     }
   }
   constructor(seed, gv) {
-    this.seed = seed >>> 0; this.v2 = gv >= 2; this.big = gv >= 3; this.smooth = gv >= 4; this.Yo = 0;       // smooth: weiche Gelände-Übergänge (ab Version 2026-10-05.4); gv3-Welten behalten ihr Gelände       // big: deutlich höhere Berge (tiefe Welten)
+    this.seed = seed >>> 0; this.v2 = gv >= 2; this.big = gv >= 3; this.smooth = gv >= 4; this.Yo = 0;       // smooth: weiche Gelände-Übergänge (ab Version 2026-10-05.5); gv3-Welten behalten ihr Gelände       // big: deutlich höhere Berge (tiefe Welten)
     this.nA = new Perlin(seed); this.nB = new Perlin(seed + 101); this.nC = new Perlin(seed + 202);
     this.nT = new Perlin(seed + 303); this.nCa = new Perlin(seed + 404); this.nCb = new Perlin(seed + 505);
     this.nU = new Perlin(seed + 606); this.nR = new Perlin(seed + 707);
@@ -2424,11 +2424,11 @@ class DeepGen {
     const k = rx + ',' + rz; let v = this.rav.get(k); if (v) return v;
     if (this.rav.size > 400) this.rav.clear();
     v = []; const seed = this.seed | 0;
-    if (hash2(rx, rz, seed + 9100) < 0.55) {
+    if (hash2(rx, rz, seed + 9100) < 0.3) {
       const rng = mulberry32((hash2(rx, rz, seed + 9101) * 4294967295) >>> 0);
       let x = (rx + rng()) * 160, z = (rz + rng()) * 160, a = rng() * 6.283;
-      const len = 70 + rng() * 90, w0 = 2.4 + rng() * 2.2, yb = 26 + rng() * 12, pts = [];
-      for (let t = 0; t < len; t += 2) { a += (rng() - 0.5) * 0.2; x += Math.cos(a) * 2; z += Math.sin(a) * 2; pts.push([x, z, w0 * (0.45 + 0.85 * Math.sin(Math.PI * t / len)), yb + Math.sin(t * 0.08) * 3]); }
+      const len = 60 + rng() * 80, w0 = 2.0 + rng() * 1.8, dep = 14 + rng() * 14, pts = [];
+      for (let t = 0; t < len; t += 2) { a += (rng() - 0.5) * 0.2; x += Math.cos(a) * 2; z += Math.sin(a) * 2; pts.push([x, z, w0 * (0.4 + 0.8 * Math.sin(Math.PI * t / len)), dep * (0.55 + 0.45 * Math.sin(Math.PI * t / len)) + Math.sin(t * 0.08) * 2]); }       // [x, z, Breite, Tiefe unter der Oberfläche]
       v.push(pts);
     }
     this.rav.set(k, v); return v;
@@ -2470,11 +2470,16 @@ class DeepGen {
     const inC = (wx, wz) => wx >= lx0 && wx < lx0 + 16 && wz >= lz0 && wz < lz0 + 16;
     const rec = (kind, x, y, z, extra) => { if (inC(x, z)) out.push(Object.assign({ kind, key: x + ',' + y + ',' + z, x, y, z, mobs: [], spawned: false }, extra || {})); };
     const chest = (kind, x, y, z, d) => put(x, y, z, LOOT_CHEST_IDS[kind][d === undefined ? 2 : d]);
-    const B = this.base, YO = this.yo, sea = SEA + YO, oq = {};
+    const B = this.base, YO = this.yo, sea = SEA + YO, oq = {}, gt = (wx, y, wz) => { const x = wx - lx0, z = wz - lz0; return x < 0 || x > 15 || z < 0 || z > 15 || y < 1 || y >= CH ? -1 : data[x + (z << 4) + (y << 8)]; };
     const shaft = (sx, sz, y1, side, backId) => {                      // senkrechter Schacht mit Leiter von y1 bis zur Oberfläche; Rückwand sorgt dafür, dass die Leiter nirgends in der Luft hängt
       B.column(sx, sz, oq); const top = oq.h + YO; if (top <= sea + 1) return;
       const bx = sx + (side === 1 ? 1 : side === 3 ? -1 : 0), bz = sz + (side === 2 ? 1 : side === 0 ? -1 : 0);
-      for (let y = y1; y <= top; y++) { put(sx, y, sz, LADDER_IDS[side]); put(bx, y, bz, backId); }
+      const open = (b) => b !== -1 && !(b > 0 && BLOCKS[b] && BLOCKS[b].solid && !BLOCKS[b].liquid);       // Luft, Wasser, Lava, Pflanzen, Tropfsteine …
+      for (let y = y1; y <= top; y++) {
+        const here = gt(sx, y, sz), back = gt(bx, y, bz);
+        if (open(here) && open(back)) continue;                            // Hohlraum ohne Wand dahinter: keinen freistehenden Pfahl bauen
+        put(sx, y, sz, LADDER_IDS[side]); if (open(back)) put(bx, y, bz, backId);
+      }
       put(sx, top + 1, sz, AIR); put(sx, top + 2, sz, AIR);
     };
     const dbrick = (x, y, z) => { const r = hash2(x * 5 + y, z * 3, seed + 9850); return r < 0.18 ? S.cobbled_deepslate : r < 0.3 ? S.deepslate_tiles : S.deepslate_bricks; };
@@ -2618,7 +2623,7 @@ class DeepGen {
       // Schluchten: oben breit, unten schmal, vom Boden (yb) bis zur Oberfläche
       if (ravPts.length && h > sea + 1 && !prot[col]) for (const q of ravPts) {
         const d = Math.hypot(wx - q[0], wz - q[1]); if (d >= q[2]) continue;
-        const yb = Math.floor(q[3]);
+        const yb = Math.max(10, h - Math.round(q[3]));                          // Schlucht reicht nur ein Stück unter die Oberfläche
         for (let y = yb; y <= h; y++) {
           const f = (y - yb) / Math.max(1, h - yb); if (d > q[2] * (0.3 + 0.7 * f)) continue;
           const i = col + (y << 8), cur = data[i]; if (cur !== BR && cur !== WATER) data[i] = AIR;

@@ -57,3 +57,8 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * ✅ Burgtürme/Bergfried hatten keinen Aufstieg → Leitern mit Loch im Zwischenboden, Eingänge zum Hof.
 * ✅ Sumpfhütte: Treppe zum Boden. Minenschacht, Tiefenfestung, tiefes Verlies, Prüfkammer: Leiterschacht zur Oberfläche.
 * ✅ Wüstentempel/Dschungeltempel: TNT liegt jetzt **direkt unter** der Druckplatte (Platte gibt Strom nur an angrenzende Blöcke) – im Test zündet es beim Draufsteigen.
+
+## 2026-10-05.5 – Schluchten & Schacht-Pfähle
+
+* ✅ Zu viele, viel zu tiefe Schluchten (teils fast bis zum Grundgestein, gefühlt alle 10 m): Schluchten sind jetzt seltener (Wahrscheinlichkeit 55 % → 30 % je Region), nur noch 14–28 Blöcke tief unter der Oberfläche und etwas schmaler. Gemessen: vorher 1,2 % aller Spalten offen bis tief unten, jetzt 0 %.
+* ✅ Freistehende Pfähle aus Kupfer/Planken in Schluchten und Höhlen (Leiterschächte von Prüfkammer, Verlies, Minenschacht, Tiefenfestung): Rückwand und Leiter werden nur noch gebaut, wo wirklich Gestein ist; im Hohlraum entsteht kein Pfahl mehr. 0 schwebende Leitern.
