@@ -85,3 +85,8 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * ✅ Mobs springen vor 1-Block-Stufen zuverlässiger (Sprung mit kurzem Anschub nach vorn; auch bei niedriger Bildrate).
 * ✅ **Dev-Konsole: Spielerdaten eines ganzen Servers** exportieren (Datei `.vcs` oder Code `VCS1:…`), in einen anderen Server importieren oder mit einem Klick auf einen anderen Server übertragen („fehlende Spieler neu anlegen“ optional); Warnung, wenn betroffene Spieler gerade online sind; Fehlerbericht pro Spieler. Position/Spawn/Dimension auf dem Zielserver bleiben.
 
+## 2026-10-05.9
+
+* ✅ **Wasser fließt höchstens 7 Blöcke weit – auch über Kanten:** fallendes Wasser behielt vorher seine Reichweite nicht, sondern begann unten wieder mit 7 (Treppe/Kante → bis 11 Blöcke). Jetzt behält eine fallende Wassersäule die Stufe von oben; gemessen auf Fläche, Stufen und Fall von 5 Blöcken: höchstens 7. (Lava: 3 in der Oberwelt, 7 im Nether, ebenso begrenzt.)
+* ✅ **Quellblock erkennbar:** Quellen (und Ozeane/Seen) sind jetzt ein **ruhiges, dunkleres Bild ohne Animation** und etwas höher (0,9); fließendes Wasser/Lava ist **heller, bewegt sich schneller** und wird je Stufe flacher (Stufe 7 = 0,76). Die Quelle ist so auf einen Blick vom Fluss zu unterscheiden.
+

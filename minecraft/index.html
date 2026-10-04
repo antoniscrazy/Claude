@@ -578,7 +578,7 @@ def(STONE, 'Stein', allSides('stone'), { hard: 2.4, tab: 'stein' });
 def(SAND, 'Sand', allSides('sand'), { hard: 0.5, tab: 'natur' });
 def(WOOD, 'Eichenstamm', sides('oak_log', 'oak_log_top'), { hard: 1.5, tab: 'holz' });
 def(LEAVES, 'Eichenlaub', allSides(tile('oak_leaves', { tint: TINT_FOLIAGE })), { opaque: false, hard: 0.3, tab: 'holz' });
-def(WATER, 'Wasser', allSides(tile('water', { src: 'block/water_still', tint: TINT_WATER })),
+def(WATER, 'Wasser', allSides(tile('water_src', { src: 'block/water_still', tint: TINT_WATER, still: true })),
     { solid: false, opaque: false, trans: true, hard: Infinity, liquid: true, samecull: true, tab: 'natur' });
 def(GLASS, 'Glas', allSides('glass'), { opaque: false, trans: true, hard: 0.4, samecull: true, tab: 'deko' });
 def(PLANKS, 'Eichenbretter', allSides('oak_planks'), { hard: 1.2, tab: 'holz' });
@@ -598,7 +598,7 @@ add('pumpkin', 'Kürbis', sides('pumpkin_side', 'pumpkin_top'), { hard: 1, tab: 
 add('melon', 'Melone', sides('melon_side', 'melon_top'), { hard: 1, tab: 'natur' });
 add('hay', 'Heuballen', sides('hay_block_side', 'hay_block_top'), { hard: 0.5, tab: 'natur' });
 add('sponge', 'Schwamm', allSides('sponge'), { hard: 0.5, tab: 'natur' });
-add('lava', 'Lava', allSides(tile('lava', { src: 'block/lava_still' })),
+add('lava', 'Lava', allSides(tile('lava_src', { src: 'block/lava_still', still: true })),
     { solid: false, opaque: false, hard: Infinity, liquid: true, lava: true, emit: true, light: 11, samecull: true, tab: 'natur' });
 
 // --- Stein ---
@@ -1190,12 +1190,12 @@ CAVEPLANT('glow_lichen', 'Leuchtflechte', 'glow_lichen', { light: 7 });
 const LQ = new Uint8Array(4096), LVL = new Uint8Array(4096), LIQH = new Float32Array(4096).fill(1);       // Art (1 Wasser, 2 Lava), Stufe, Höhe
 const FLW = [], FLL = [];
 [[WATER, FLW, 1, 'water', 'Wasser'], [ID.lava, FLL, 2, 'lava', 'Lava']].forEach(([src, arr, fam, key, de]) => {
-  LQ[src] = fam; LVL[src] = 8; LIQH[src] = 0.875; arr[8] = src;
+  LQ[src] = fam; LVL[src] = 8; LIQH[src] = 0.9; arr[8] = src;
   for (const lv of [1, 2, 3, 4, 5, 6, 7, 9]) {
     const o = { solid: false, opaque: false, hard: Infinity, liquid: true, samecull: true, drop: 0 };
     if (fam === 1) o.trans = true; else { o.lava = true; o.emit = true; o.light = 11; }
-    const id = add(key + '_f' + lv, de + ' (fließend)', BLOCKS[src].tex, o);
-    arr[lv] = id; LQ[id] = fam; LVL[id] = lv; LIQH[id] = lv === 9 ? 1 : 0.1 + 0.11 * lv;
+    const id = add(key + '_f' + lv, de + ' (fließend)', allSides(tile(key + '_flow', fam === 1 ? { src: 'block/water_still', tint: [92, 156, 244], speed: 2.5 } : { src: 'block/lava_still', speed: 2.5 })), o);
+    arr[lv] = id; LQ[id] = fam; LVL[id] = lv; LIQH[id] = lv === 9 ? 1 : 0.06 + 0.1 * lv;
   }
 });
 // ---------- Items (Nicht-Blöcke, IDs ab 1000) ----------
@@ -1478,7 +1478,7 @@ function paintAtlas() {
 // Animation: Kacheln im Atlas werden passend zur .mcmeta-Bildfolge neu gemalt (Wasser, Lava, Magma, Portal, Feuer …)
 function startAtlasAnimation() {
   const list = [];
-  TILE_LIST.forEach((spec, i) => { const a = ANIM[spec.src]; if (a && !spec.overlay) list.push({ i, spec, a, img: null, cur: -1 }); });
+  TILE_LIST.forEach((spec, i) => { const a = ANIM[spec.src]; if (a && !spec.overlay && !spec.still) list.push({ i, spec, a, img: null, cur: -1 }); });
   if (!list.length) return;
   const ctx = ATLAS.canvas.getContext('2d'), tmp = document.createElement('canvas'); tmp.width = tmp.height = TILE; const tc = tmp.getContext('2d', { willReadFrequently: true });
   tc.imageSmoothingEnabled = false;
@@ -1489,7 +1489,7 @@ function startAtlasAnimation() {
       if (document.hidden) return;
       const tick = Math.floor(performance.now() / 50); let dirty = false;
       for (const e of list) {
-        let k = tick % e.total, fi = 0;
+        let k = Math.floor(tick * (e.spec.speed || 1)) % e.total, fi = 0;
         while (k >= e.a.t[fi]) { k -= e.a.t[fi]; fi++; }
         if (fi === e.cur) continue; e.cur = fi;
         const w = e.img.width;
@@ -1696,7 +1696,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.8';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-05.9';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN4_START = 1791122621000;           // ab hier: weiche Gelände-Übergänge, Flusstäler, mehr Relief
 const GEN3_START = 1791118400000;           // Welten/Server ab diesem Zeitpunkt: tiefe Welt (+64 Tiefe), neue Höhlen und Strukturen, Baulimit 256
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
@@ -5258,11 +5258,11 @@ function fluidTouch(x, y, z) {                                             // ei
 }
 const fluidPass = (b) => b === AIR || (b > 0 && (BLOCKS[b].plant || BLOCKS[b].torch));                      // von Flüssigkeit ersetzbar
 const fluidDown = (b, fam) => b !== -1 && (fluidPass(b) || (LQ[b] === fam ? LVL[b] !== 8 : !!LQ[b]));      // Flüssigkeit würde nach unten weiterfließen
-function fluidInto(x, y, z, lv, fam) {                                    // lv 1–7 oder 9 (fallend)
+function fluidInto(x, y, z, lv, fam) {                                    // lv 1–7 (beim Fallen bleibt die Stufe erhalten → Gesamtreichweite höchstens 7)
   const cur = world.getBlock(x, y, z); if (cur === -1) return;
   const cf = LQ[cur];
   if (cf && cf !== fam) { world.setBlock(x, y, z, fam === 1 && LVL[cur] === 8 ? ID.obsidian : ID.cobble, false); return; }       // Wasser trifft Lava (und umgekehrt)
-  if (cf === fam) { const cl = LVL[cur]; if (cl === 8 || cl === 9 || (lv !== 9 && cl >= lv)) return; }
+  if (cf === fam) { let cl = LVL[cur]; if (cl === 9) cl = 7; if (cl === 8 || cl >= lv) return; }
   else if (!fluidPass(cur)) return;
   world.setBlock(x, y, z, (fam === 1 ? FLW : FLL)[lv], false);
 }
@@ -5270,24 +5270,23 @@ function fluidUpdate(x, y, z) {
   const W = world, id = W.getBlock(x, y, z), fam = LQ[id]; if (!fam) return;
   const FL = fam === 1 ? FLW : FLL, dec = fam === 1 ? 1 : (W.dim === 1 ? 1 : 2);
   if (fam === 2) for (const [dx, dy, dz] of [[0, 1, 0], [1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1]]) if (LQ[W.getBlock(x + dx, y + dy, z + dz)] === 1) { W.setBlock(x, y, z, LVL[id] === 8 ? ID.obsidian : ID.cobble, false); return; }
-  let lvl = LVL[id];
+  let lvl = LVL[id] === 9 ? 7 : LVL[id];                                    // alte „fallende“ Zellen zählen als Stufe 7
   if (lvl !== 8) {                                                          // Nicht-Quellen: Stufe neu aus der Umgebung bestimmen
     let nl = 0;
-    if (LQ[W.getBlock(x, y + 1, z)] === fam) nl = 9;
-    else {
-      let src = 0;
-      for (const [dx, dz] of FDIR) {
-        const nb = W.getBlock(x + dx, y, z + dz); if (LQ[nb] !== fam) continue; const nlv = LVL[nb];
-        if (nlv === 8) src++; else if (fluidDown(W.getBlock(x + dx, y - 1, z + dz), fam)) continue;     // fließt selbst nach unten → speist nicht zur Seite
-        const v = (nlv >= 8 ? 8 : nlv) - dec; if (v > nl) nl = v;
-      }
-      if (fam === 1 && src >= 2) { const bl = W.getBlock(x, y - 1, z); if ((bl > 0 && BLOCKS[bl].solid) || (LQ[bl] === 1 && LVL[bl] === 8)) nl = 8; }
+    const ab = W.getBlock(x, y + 1, z);
+    if (LQ[ab] === fam) { const al = LVL[ab]; nl = al >= 8 ? 7 : al; }       // von oben: Stufe bleibt erhalten (eine Quelle speist mit 7)
+    let src = 0;
+    for (const [dx, dz] of FDIR) {
+      const nb = W.getBlock(x + dx, y, z + dz); if (LQ[nb] !== fam) continue; const nlv = LVL[nb];
+      if (nlv === 8) src++; else if (fluidDown(W.getBlock(x + dx, y - 1, z + dz), fam)) continue;     // fließt selbst nach unten → speist nicht zur Seite
+      const v = (nlv >= 8 ? 8 : nlv === 9 ? 7 : nlv) - dec; if (v > nl) nl = v;
     }
+    if (fam === 1 && src >= 2) { const bl = W.getBlock(x, y - 1, z); if ((bl > 0 && BLOCKS[bl].solid) || (LQ[bl] === 1 && LVL[bl] === 8)) nl = 8; }
     if (nl <= 0) { W.setBlock(x, y, z, AIR, false); return; }
-    if (nl !== lvl) { W.setBlock(x, y, z, FL[nl], false); lvl = nl; }
+    if (nl !== lvl || LVL[id] === 9) { W.setBlock(x, y, z, FL[nl], false); lvl = nl; }
   }
   const below = W.getBlock(x, y - 1, z);
-  if (fluidDown(below, fam)) { if (!(LQ[below] === fam && LVL[below] === 9)) fluidInto(x, y - 1, z, 9, fam); return; }
+  if (fluidDown(below, fam)) { fluidInto(x, y - 1, z, lvl >= 8 ? 7 : lvl, fam); return; }
   const nl2 = (lvl >= 8 ? 8 : lvl) - dec; if (nl2 < 1) return;
   for (const [dx, dz] of FDIR) fluidInto(x + dx, y, z + dz, nl2, fam);
 }
