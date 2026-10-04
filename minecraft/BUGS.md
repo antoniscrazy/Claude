@@ -1,4 +1,4 @@
-# VOXELCRAFT – Bug-Liste (Stand 2026-10-05.6)
+# VOXELCRAFT – Bug-Liste (Stand 2026-10-05.7)
 
 Gefunden durch Fuzz-/Monkey-Tests (Zufallsklicks, Tastenhagel), Zwei-Spieler-Tests im Multiplayer und Code-Durchsicht.
 Status: ✅ behoben · 🟡 offen (klein / kosmetisch) · 🔴 offen (spürbar)
@@ -69,3 +69,11 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * ✅ Bäume an Strukturen wurden abgeschnitten: rund um große Strukturen (Fußabdruck + Rampe + Krone) wachsen keine Bäume mehr.
 * ✅ Ruinen-Portal ließ sich nicht reparieren: Rahmen nur noch aus echtem Obsidian (kein Weinender Obsidian im Rahmen), nur 2–4 Lücken, dazu eine Beutetruhe mit Obsidian und Feuerzeug. Im Test ließ sich jeder Rahmen vervollständigen und entzünden.
 * ✅ **Wasser und Lava fließen** (siehe README): Fließ-Blöcke in 8 Stufen, Fallen, Austrocknen, unendliche Quellen, Obsidian/Bruchstein, Mehrspieler-Sync, Chunk-Scan beim Laden.
+
+## 2026-10-05.7
+
+* ✅ Backrooms lassen sich per `/gamerule backrooms false` abschalten (auch Sand-Falle und `/backrooms`).
+* ✅ Enderperlen-Glitch durch Wände: die Landung hob den Spieler vorher bis zu 4 Blöcke an und konnte so hinter die Wand setzen; jetzt wird ein freier Platz auf der Einschlagseite gesucht (freie Sichtlinie zur Perle), Flugschritte sind höchstens 0,2 Blöcke lang (auch bei Lag). Im Test landete die Perle vor der Wand bzw. unter der Decke.
+* ✅ Nether-Decke bebaubar (bis y 127).
+* ✅ Endportal nach dem Drachen: ganzer 5×5-Brunnen statt nur 3×3 (24 Portalblöcke).
+* ✅ Abspann: richtiger Dialog zweier Stimmen über „die Spielenden“ (nicht mehr „Du“), Laufzeit richtet sich nach der Textlänge.

@@ -109,10 +109,13 @@ input[type=text]:focus,select:focus{border-color:#8fd06a}
 #boss .bb{height:10px;background:rgba(0,0,0,.7);border:2px solid #111;margin-top:3px}
 #boss i{display:block;height:100%;width:100%;background:linear-gradient(#e66bff,#8a2bd6);transition:width .2s}
 #credits{background:#000;color:#e8e8e8;overflow:hidden;z-index:80}
-#credits .roll{position:absolute;left:50%;transform:translateX(-50%);width:min(560px,90vw);text-align:center;line-height:1.9;font-size:18px;animation:roll 38s linear forwards;top:100%}
+#credits .roll{position:absolute;left:50%;transform:translateX(-50%);width:min(560px,90vw);text-align:center;line-height:1.9;font-size:18px;top:100%}
 #credits h1{color:#cf9bff;font-size:34px;margin:30px 0}
 #credits small{color:#9aa;display:block}
-@keyframes roll{to{top:-170%}}
+#credits p{margin:14px 0;line-height:1.7}
+#credits .va{color:#9fdcff}
+#credits .vb{color:#ffd9a0}
+@keyframes roll{to{top:var(--re,-170%)}}
 #totemFx{position:fixed;inset:0;z-index:60;pointer-events:none;display:none;align-items:center;justify-content:center}
 #totemFx img{width:min(46vh,70vw);image-rendering:pixelated;filter:drop-shadow(0 0 20px #ffe066);animation:totempop 1.3s ease-out forwards}
 @keyframes totempop{0%{transform:scale(.2) rotate(-12deg);opacity:0}25%{transform:scale(1.15) rotate(4deg);opacity:1}70%{transform:scale(1) rotate(-2deg);opacity:1}100%{transform:scale(1.6);opacity:0}}
@@ -1693,7 +1696,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.6';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-05.7';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN4_START = 1791122621000;           // ab hier: weiche Gelände-Übergänge, Flusstäler, mehr Relief
 const GEN3_START = 1791118400000;           // Welten/Server ab diesem Zeitpunkt: tiefe Welt (+64 Tiefe), neue Höhlen und Strukturen, Baulimit 256
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
@@ -2184,7 +2187,7 @@ class TerrainGen {
     }
   }
   constructor(seed, gv) {
-    this.seed = seed >>> 0; this.v2 = gv >= 2; this.big = gv >= 3; this.smooth = gv >= 4; this.Yo = 0;       // smooth: weiche Gelände-Übergänge (ab Version 2026-10-05.6); gv3-Welten behalten ihr Gelände       // big: deutlich höhere Berge (tiefe Welten)
+    this.seed = seed >>> 0; this.v2 = gv >= 2; this.big = gv >= 3; this.smooth = gv >= 4; this.Yo = 0;       // smooth: weiche Gelände-Übergänge (ab Version 2026-10-05.7); gv3-Welten behalten ihr Gelände       // big: deutlich höhere Berge (tiefe Welten)
     this.nA = new Perlin(seed); this.nB = new Perlin(seed + 101); this.nC = new Perlin(seed + 202);
     this.nT = new Perlin(seed + 303); this.nCa = new Perlin(seed + 404); this.nCb = new Perlin(seed + 505);
     this.nU = new Perlin(seed + 606); this.nR = new Perlin(seed + 707);
@@ -2983,9 +2986,9 @@ class World {
     const c = this.getChunk(cx, cz); if (c) { c.dirty = true; this.dirty.add(c); }
   }
   // silent = Änderung kommt von außen (Netzwerk): kein Echo an den Server, keine Folgeeffekte
-  buildLimit() { return this.dim === 0 ? CH : CHD; }
+  buildLimit() { return this.dim === 0 ? CH : this.dim === 1 ? 128 : CHD; }       // Nether: bis y 127 – also auch oben auf der Decke
   setBlock(x, y, z, id, silent) {
-    if (y < 0 || y >= (this.dim === 0 ? CH : CHD)) return false;
+    if (y < 0 || y >= this.buildLimit()) return false;
     id = safeBlock(id);
     const cx = x >> 4, cz = z >> 4, k = ckey(cx, cz), c = this.chunks.get(k);
     const lx = x & 15, lz = z & 15, idx = lx + (lz << 4) + (y << 8);
@@ -5113,7 +5116,7 @@ function enterDimension(td, x, y, z, opt) {
 let frameDt = 0.016;
 function backFlash(on, ms) { const e = $('backFx'); e.style.transition = 'opacity ' + (on ? 0.25 : 1.2) + 's'; e.style.opacity = on ? 1 : 0; }
 function enterBackrooms() {
-  if (!world || world.dim === 2) return;
+  if (!world || world.dim === 2 || !rules.backrooms) return;
   backFlash(true); sfx('brenter');
   enterDimension(2, P.p.x, BR.FY + 1, P.p.z, { backrooms: true });
 }
@@ -5151,7 +5154,7 @@ function sandOnPlayer() {                                             // Sand is
   return n >= 5;
 }
 function updateSandBurial(dt) {
-  if (!world || world.dim !== 0 || isSpectator() || P.sleeping) { P.sandT = 0; return; }
+  if (!world || world.dim !== 0 || isSpectator() || P.sleeping || !rules.backrooms) { P.sandT = 0; if (!rules.backrooms) $('under').style.display = 'none'; return; }
   if (sandOnPlayer()) { P.sandT = 0; $('under').style.display = 'none'; enterBackrooms(); return; }
   if (sandBuried()) P.sandT = (P.sandT || 0) + dt; else P.sandT = Math.max(0, (P.sandT || 0) - dt * 2);
   const k = Math.min(1, (P.sandT || 0) / 2.4);
@@ -5376,7 +5379,7 @@ const unpackItems = (arr) => arr.map((s) => { if (!(s && validId(s[0]))) return 
 
 function endVictory(d) {                                                // Enderdrache besiegt: Portal, Ei, Erfahrung
   spawnParticles(d.p.x - 0.5, d.p.y, d.p.z - 0.5, new THREE.Color(0.9, 0.4, 1), 80, 8, 4); spawnParticles(d.p.x - 0.5, d.p.y, d.p.z - 0.5, new THREE.Color(1, 1, 0.8), 50, 6, 3); sfx('explode');
-  const T = END.TOP; for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) if (dx || dz) world.setBlock(dx, T + 1, dz, END_PORTAL_ID, false);
+  const T = END.TOP; for (let dx = -2; dx <= 2; dx++) for (let dz = -2; dz <= 2; dz++) if (dx || dz) world.setBlock(dx, T + 1, dz, END_PORTAL_ID, false);          // ganzer Brunnen (5×5) bis auf die Mittelsäule
   world.setBlock(0, T + 5, 0, ID.dragon_egg, false);
   spawnOrbs(0.5, T + 6, 0.5, 500); achGive('dragon'); toast('Der Enderdrache wurde besiegt!');
   const msg = 'Der Enderdrache wurde besiegt!'; if (mp.on) { mpSend('chat', { n: '*', t: msg }); } chatSys(msg);
@@ -5395,12 +5398,44 @@ function updateEnd(dt) {
     if (!mobs.some((m) => m.type === 'end_crystal' && Math.abs(m.p.x - (pl.x + 0.5)) < 1.5 && Math.abs(m.p.z - (pl.z + 0.5)) < 1.5)) { if (!world.getChunk(pl.x >> 4, pl.z >> 4)) return; const c = new Mob('end_crystal', pl.x + 0.5, pl.top + 2, pl.z + 0.5); c.pillar = i; mobs.push(c); }
   });
 }
-const CREDITS = ['<h1>Das Ende</h1>', 'Du hast den Enderdrachen besiegt.', '<small>Der Himmel über der Insel wird wieder still …</small>', '&nbsp;', '<h1>VOXELCRAFT</h1>', 'Ein Minecraft-ähnliches Spiel im Browser', '<small>Texturen aus dem Texturpaket des Spielers</small>', '&nbsp;', 'Welt · Nether · Backrooms · Das Ende', 'Redstone · Kolben · Loren · Boote · Pferde', 'Erfahrung · Verzauberungen · Totem', '&nbsp;', '<small>Spielidee &amp; Tests</small>', 'Du', '&nbsp;', '<small>Programmierung</small>', 'Claude', '&nbsp;', '<h1>Danke fürs Spielen!</h1>'];
+const CREDITS = [
+  '<h1>Das Ende</h1>', '<small>Zwei Stimmen, hoch über der Insel. Der Drache ist gefallen, und der Himmel wird still.</small>', '&nbsp;',
+  '<p class="va">Wen siehst du?</p>',
+  '<p class="vb">Spielende. Sie tragen Namen, aber sie sind mehr als ihre Namen.</p>',
+  '<p class="va">Was tun sie?</p>',
+  '<p class="vb">Sie graben. Sie bauen. Sie fallen, und sie stehen wieder auf.</p>',
+  '<p class="va">Sie haben den Drachen besiegt.</p>',
+  '<p class="vb">Keiner hat es allein getan. Jeder Block, den sie setzten, jede Fackel im Dunkeln, jeder Schritt in die Tiefe gehörte dazu.</p>',
+  '<p class="va">Sie sind so klein unter diesem Himmel.</p>',
+  '<p class="vb">Und trotzdem haben sie sich ihre eigenen Himmel gebaut.</p>',
+  '<p class="va">Glauben sie, dass diese Welt wirklich ist?</p>',
+  '<p class="vb">Solange sie darin spielen, ja. Das genügt.</p>',
+  '<p class="va">Und wenn sie die Augen schließen?</p>',
+  '<p class="vb">Dann träumen sie weiter – von Höhlen, von Lava, vom Licht einer einzigen Fackel in der Nacht.</p>',
+  '<p class="va">Was wollen sie?</p>',
+  '<p class="vb">Entdecken. Erschaffen. Zusammen sein. Manche auf gemeinsamen Servern, viele allein, alle in derselben Welt aus Würfeln.</p>',
+  '<p class="va">Dann sag es ihnen.</p>',
+  '<p class="vb">Euch, die ihr hier gespielt habt und noch spielen werdet: Ihr habt diese Welt verändert, und sie hat euch verändert.</p>',
+  '<p class="va">Sag ihnen, dass sie keine Angst haben müssen.</p>',
+  '<p class="vb">Jede Nacht geht zu Ende. Jede Höhle hat einen Ausgang. Und wer fällt, beginnt von vorn.</p>',
+  '<p class="va">Sag ihnen, dass sie gut gespielt haben.</p>',
+  '<p class="vb">Sie haben gut gespielt. Das Portal steht offen.</p>',
+  '<p class="va">Dann lass sie gehen.</p>',
+  '<p class="vb">Ja. Zurück in die Welt, die sie gebaut haben.</p>',
+  '<p class="va">Atme.</p>', '<p class="vb">Atme wieder. Und spiel weiter.</p>',
+  '&nbsp;', '&nbsp;',
+  '<h1>VOXELCRAFT</h1>', 'Ein Minecraft-ähnliches Spiel im Browser', '<small>Texturen aus dem Texturpaket der Spielerinnen und Spieler</small>', '&nbsp;',
+  'Oberwelt · Tiefe Höhlen · Nether · Backrooms · Das Ende', 'Redstone · Kolben · Loren · Boote · Pferde', 'Erfahrung · Verzauberungen · Totem · fließendes Wasser und Lava', '&nbsp;',
+  '<small>Spielidee &amp; Tests</small>', 'Anton', '<small>und alle, die mitgespielt, getestet und Fehler gemeldet haben</small>', '&nbsp;',
+  '<small>Programmierung</small>', 'Claude', '&nbsp;',
+  '<h1>Danke fürs Spielen!</h1>'];
 function showCredits(done) {
   $('creditsRoll').innerHTML = CREDITS.map((l) => '<div>' + l + '</div>').join(''); const el = $('credits'), roll = $('creditsRoll');
-  roll.style.animation = 'none'; void roll.offsetWidth; roll.style.animation = ''; el.classList.remove('hidden'); setState('pause');
-  let closed = false; const close = () => { if (closed) return; closed = true; el.classList.add('hidden'); done(); };
-  $('creditsBtn').onclick = close; setTimeout(close, 39000);
+  el.classList.remove('hidden'); setState('pause');
+  const h = roll.offsetHeight, dur = Math.max(45, Math.round(h / 26));                      // Lesetempo ca. 26 px/s
+  roll.style.setProperty('--re', -(h + 60) + 'px'); roll.style.animation = 'none'; void roll.offsetWidth; roll.style.animation = 'roll ' + dur + 's linear forwards';
+  let closed = false; const close = () => { if (closed) return; closed = true; clearTimeout(tm); el.classList.add('hidden'); done(); };
+  const tm = setTimeout(close, (dur + 2) * 1000); $('creditsBtn').onclick = close;
 }
 
 const endDead = new Set();                                              // zerstörte Kristalle (Index der Säule)
@@ -5457,20 +5492,36 @@ class Pearl {
   update(dt) {
     this.life -= dt; if (this.life <= 0 || this.p.y < -30) return false;
     this.v.y -= 22 * dt;
-    for (let i = 0; i < 3; i++) {
-      const lx = this.p.x, ly = this.p.y, lz = this.p.z; this.p.addScaledVector(this.v, dt / 3);
+    const steps = Math.max(3, Math.ceil(this.v.length() * dt / 0.2));                               // nie weiter als 0,2 Blöcke pro Schritt – kein Durchfliegen von Wänden
+    for (let i = 0; i < steps; i++) {
+      const lx = this.p.x, ly = this.p.y, lz = this.p.z; this.p.addScaledVector(this.v, dt / steps);
       const b = world.getBlock(Math.floor(this.p.x), Math.floor(this.p.y), Math.floor(this.p.z));
-      if (b > 0 && BLOCKS[b].solid) {
-        let ty = ly; for (let k = 0; k < 8 && boxCollides(world, lx, ty, lz, P.hw, P.h); k++) ty += 0.5;
+      if (b === -1 || (b > 0 && BLOCKS[b].solid)) {
+        const spot = pearlSpot(lx, ly, lz);
+        if (!spot) { toast('Die Enderperle findet keinen freien Platz'); spawnDrop(IID.ender_pearl, 1, lx, ly, lz, {}); return false; }
         spawnParticles(P.p.x - 0.5, P.p.y + 0.5, P.p.z - 0.5, new THREE.Color(0.7, 0.3, 1), 18, 2.5, 0.7);
-        P.p.set(lx, ty, lz); P.v.set(0, 0, 0); P.fallPeak = P.p.y; if (!isCreative()) hurt(5, true);
-        spawnParticles(lx - 0.5, ty + 0.5, lz - 0.5, new THREE.Color(0.7, 0.3, 1), 18, 2.5, 0.7); sfx('pop'); return false;
+        P.p.set(spot[0], spot[1], spot[2]); P.v.set(0, 0, 0); P.fallPeak = P.p.y; if (!isCreative()) hurt(5, true);
+        spawnParticles(spot[0] - 0.5, spot[1] + 0.5, spot[2] - 0.5, new THREE.Color(0.7, 0.3, 1), 18, 2.5, 0.7); sfx('pop'); return false;
       }
     }
     this.mesh.position.copy(this.p);
     if ((this.tr = (this.tr || 0) - dt) <= 0) { this.tr = 0.04; emitFx(this.p.x, this.p.y, this.p.z, new THREE.Color(0.7, 0.3, 1), (Math.random() - 0.5) * 0.4, 0, (Math.random() - 0.5) * 0.4, 0.5, 0, 1); }
     return true;
   }
+}
+// Freier Platz für den Spieler nahe der Aufprallstelle: Körper passt, freie Sichtlinie zur Perle (keine Wand dazwischen), im geladenen Bereich
+function pearlSpot(x, y, z) {
+  const solidAt = (px, py, pz) => { const b = world.getBlock(Math.floor(px), Math.floor(py), Math.floor(pz)); return b === -1 || (b > 0 && BLOCKS[b].solid); };
+  const cands = [];
+  for (let dy = -1; dy <= 1.5; dy += 0.5) for (let dx = -1; dx <= 1; dx += 0.5) for (let dz = -1; dz <= 1; dz += 0.5) cands.push([x + dx, y + dy, z + dz, dx * dx + dy * dy * 0.7 + dz * dz]);
+  cands.sort((a, b) => a[3] - b[3]);
+  for (const [cx, cy, cz] of cands) {
+    if (cy < 1 || cy + P.h >= world.buildLimit() + 2 || boxCollides(world, cx, cy, cz, P.hw, P.h)) continue;
+    let clear = true;
+    for (let k = 1; k <= 8 && clear; k++) { const t = k / 8; if (solidAt(x + (cx - x) * t, y + (cy - y) * t + 0.9, z + (cz - z) * t) && solidAt(x + (cx - x) * t, y + (cy - y) * t + 0.1, z + (cz - z) * t)) clear = false; }
+    if (clear) return [cx, cy, cz];
+  }
+  return null;
 }
 function throwPearl(slot) {
   const cp = Math.cos(P.pitch), dx = -Math.sin(P.yaw) * cp, dy = Math.sin(P.pitch), dz = -Math.cos(P.yaw) * cp, sp = 20;
@@ -8389,14 +8440,14 @@ function updateEffects(dt) {
 }
 
 // ----- Spielregeln (/gamerule, /difficulty) -----
-const rules = { mobspawn: true, daycycle: true, mobgriefing: true, difficulty: 'normal' };
+const rules = { mobspawn: true, daycycle: true, mobgriefing: true, backrooms: true, difficulty: 'normal' };
 const DIFF_MUL = { peaceful: 0, easy: 0.6, normal: 1, hard: 1.5 };
 const DIFF_DE = { peaceful: 'Friedlich', easy: 'Leicht', normal: 'Normal', hard: 'Schwer' };
 let curWorldKey = '';
 const worldKey = () => curWorldKey;
 function loadWorldPrefs() {
   let d = {}; try { d = JSON.parse(localStorage.getItem('voxelcraft_prefs') || '{}')[worldKey()] || {}; } catch (e) { /* egal */ }
-  Object.assign(rules, { mobspawn: true, daycycle: true, mobgriefing: true, difficulty: 'normal' }, d.rules || {});
+  Object.assign(rules, { mobspawn: true, daycycle: true, mobgriefing: true, backrooms: true, difficulty: 'normal' }, d.rules || {});
   P.homes = d.homes || {};
 }
 function saveWorldPrefs() {
@@ -8817,7 +8868,7 @@ cmd(['back', 'zurueck'], {
   run() { if (!P.back) fail('Keine frühere Position gespeichert.'); const b = P.back; tpTo(b[0], b[1], b[2]); chatOk('Zurückteleportiert'); },
 });
 cmd(['spawn'], { desc: 'Zum Startpunkt', run() { if (world.dim !== 0) { enterDimension(0, P.spawn.x, P.spawn.y, P.spawn.z, { exact: true }); chatOk('Zurück in die Oberwelt'); return; } tpTo(P.spawn.x, P.spawn.y, P.spawn.z); chatOk('Zum Startpunkt teleportiert'); } });
-cmd(['backrooms'], { desc: 'Betritt die Backrooms (zurück mit /spawn, Knopf oder Taste B)', cheat: true, run() { if (world.dim === 2) fail('Du bist schon in den Backrooms.'); enterBackrooms(); } });
+cmd(['backrooms'], { desc: 'Betritt die Backrooms (zurück mit /spawn, Knopf oder Taste B)', cheat: true, run() { if (!rules.backrooms) fail('Die Backrooms sind abgeschaltet (/gamerule backrooms true).'); if (world.dim === 2) fail('Du bist schon in den Backrooms.'); enterBackrooms(); } });
 cmd(['nether'], { desc: 'Reist ins Nether (Koordinaten /8, mit Portal am Ziel)', cheat: true, run() { if (world.dim === 1) fail('Du bist schon im Nether.'); startDimTravel(); } });
 cmd(['end', 'ende'], { desc: 'Reist ins Ende (zurück mit /spawn)', cheat: true, run() { if (world.dim === 3) fail('Du bist schon im Ende.'); if (world.dim !== 0) fail('Reise zuerst in die Oberwelt (/overworld).'); startEndTravel(); } });
 // ----- /locate <biom|struktur>: nächstes Biom oder nächste Struktur suchen -----
@@ -9212,10 +9263,10 @@ cmd(['difficulty', 'schwierigkeit'], {
   },
 });
 cmd(['gamerule', 'regel'], {
-  desc: 'Spielregeln: mobspawn, daycycle, mobgriefing (true/false)', cheat: true, args: [T.opt('regel', ['mobspawn', 'daycycle', 'mobgriefing'], true), T.opt('wert', ['true', 'false'], true)],
+  desc: 'Spielregeln: mobspawn, daycycle, mobgriefing, backrooms (true/false)', cheat: true, args: [T.opt('regel', [['mobspawn', 'Mobs erscheinen'], ['daycycle', 'Tag/Nacht läuft'], ['mobgriefing', 'Mobs zerstören Blöcke'], ['backrooms', 'Backrooms (Sand-Falle, /backrooms)']], true), T.opt('wert', ['true', 'false'], true)],
   run(a) {
     if (!a[0]) { chatAdd(null, Object.keys(rules).filter((k) => k !== 'difficulty').map((k) => k + '=' + rules[k]).join('  '), 'sys'); return; }
-    const k = a[0].toLowerCase(); if (!['mobspawn', 'daycycle', 'mobgriefing'].includes(k)) fail('Regeln: mobspawn, daycycle, mobgriefing');
+    const k = a[0].toLowerCase(); if (!['mobspawn', 'daycycle', 'mobgriefing', 'backrooms'].includes(k)) fail('Regeln: mobspawn, daycycle, mobgriefing, backrooms');
     if (a[1] === undefined) { chatAdd(null, k + ' = ' + rules[k], 'sys'); return; }
     if (!['true', 'false'].includes(a[1].toLowerCase())) fail('Wert: true oder false');
     rules[k] = a[1].toLowerCase() === 'true'; saveWorldPrefs(); chatOk(k + ' = ' + rules[k]);
