@@ -1,4 +1,4 @@
-# VOXELCRAFT – Bug-Liste (Stand 2026-10-05.1)
+# VOXELCRAFT – Bug-Liste (Stand 2026-10-05.4)
 
 Gefunden durch Fuzz-/Monkey-Tests (Zufallsklicks, Tastenhagel), Zwei-Spieler-Tests im Multiplayer und Code-Durchsicht.
 Status: ✅ behoben · 🟡 offen (klein / kosmetisch) · 🔴 offen (spürbar)
@@ -49,3 +49,11 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * **Datenbank (Mehrspieler):** Die Tabelle erlaubt y nur von 0 bis 255. Damit Oberwelt (256 hoch) und die anderen Dimensionen Platz haben, steckt die Dimension jetzt im x-Wert (`x + Code·2^27`). Alte Zeilen (Code 0) bleiben lesbar – **keine SQL-Änderung nötig**.
 * Spielerdaten-Transfer zwischen Servern gibt es nur in der Dev-Konsole (nicht im Spiel).
 * Offen: Supabase-Einrichtung (`dev_console_part2.sql`, Realtime-Zugriff, Last mit 15 Spielern) – weiterhin nur von dir prüfbar.
+
+## 2026-10-05.4 – Gelände & Strukturen
+
+* Gelände neuer Welten/Server (ab `GEN4_START`) wird weich gemischt; Welten, die mit 2026-10-05.1–.3 angelegt wurden, behalten ihr Gelände (nur Strukturen sind neu gebaut).
+* ✅ Leitern hingen in der Luft (Festung/Burg): Strukturen werden jetzt **nach** Höhlen und Schluchten gebaut, Leitern haben immer eine Rückwand (geprüft: 0 schwebende Leitern in 3136 Chunks).
+* ✅ Burgtürme/Bergfried hatten keinen Aufstieg → Leitern mit Loch im Zwischenboden, Eingänge zum Hof.
+* ✅ Sumpfhütte: Treppe zum Boden. Minenschacht, Tiefenfestung, tiefes Verlies, Prüfkammer: Leiterschacht zur Oberfläche.
+* ✅ Wüstentempel/Dschungeltempel: TNT liegt jetzt **direkt unter** der Druckplatte (Platte gibt Strom nur an angrenzende Blöcke) – im Test zündet es beim Draufsteigen.

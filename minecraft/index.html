@@ -1681,7 +1681,8 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.3';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-05.4';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GEN4_START = 1791122621000;           // ab hier: weiche Gelände-Übergänge, Flusstäler, mehr Relief
 const GEN3_START = 1791118400000;           // Welten/Server ab diesem Zeitpunkt: tiefe Welt (+64 Tiefe), neue Höhlen und Strukturen, Baulimit 256
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
 const isDryBiome = (b) => b === BIOME_DESERT || b === BIOME_MESA || b === BIOME_NETHER || b === BIOME_BACKROOMS || b === BIOME_END;
@@ -1701,6 +1702,7 @@ const MESA_BANDS = [ID.terracotta, ID.orange_terracotta, ID.terracotta, ID.yello
 function strongholdChunkFor(seed) { const sd = seed | 0, a = hash2(1, 7, sd) * Math.PI * 2, d = 520 + hash2(5, 3, sd + 17) * 380; return [Math.round(Math.cos(a) * d / 16), Math.round(Math.sin(a) * d / 16)]; }
 // ===== Bauplan-Funktionen der großen Strukturen (tiefe Welten). c = Kontext (put/fill/…), P = Plan, rng = fester Zufall des Plans =====
 const WOOLS = ['white_wool', 'orange_wool', 'magenta_wool', 'light_blue_wool', 'yellow_wool', 'lime_wool', 'pink_wool', 'cyan_wool', 'purple_wool', 'blue_wool', 'red_wool', 'green_wool'];
+const FLATTEN = { village: [19, 13], castle: [15, 15], pyramid: [13, 13], jungletemple: [9, 10], igloo: [6, 6], ruinportal: [5, 5], circle: [9, 9], camp: [7, 7], lighthouse: [7, 7] };
 const STRUCT_BUILDERS = {
   village(c, P, rng) {
     const S = c.S, y0 = P.y, X = P.x, Z = P.z, b = P.b;
@@ -1748,8 +1750,7 @@ const STRUCT_BUILDERS = {
     for (let i = 0; i < 12; i++) { const hf = 11 - i; c.fill(X - hf, y0 + i, Z - hf, 2 * hf + 1, 1, 2 * hf + 1, i === 3 || i === 7 ? S.cut_sandstone : S.sandstone); }
     for (let i = 4; i <= 10; i += 3) { const hf = 11 - i; for (let k = -hf; k <= hf; k++) { c.put(X + k, y0 + i, Z - hf, S.orange_terracotta); c.put(X + k, y0 + i, Z + hf, S.orange_terracotta); c.put(X - hf, y0 + i, Z + k, S.orange_terracotta); c.put(X + hf, y0 + i, Z + k, S.orange_terracotta); } }
     c.fill(X - 4, y0 + 1, Z - 4, 9, 5, 9, AIR); c.fill(X - 1, y0 + 1, Z + 4, 3, 3, 8, AIR);
-    c.fill(X - 4, y0, Z - 4, 9, 1, 9, S.cut_sandstone); c.fill(X - 4, y0, Z, 9, 1, 1, S.orange_terracotta); c.fill(X, y0, Z - 4, 1, 1, 9, S.orange_terracotta); c.put(X, y0, Z, S.chiseled_sandstone);
-    c.fill(X - 1, y0 - 3, Z - 1, 3, 2, 3, S.tnt); c.put(X, y0 + 1, Z, PLATE_IDS[0]);
+    c.fill(X - 4, y0, Z - 4, 9, 1, 9, S.cut_sandstone); c.fill(X - 4, y0, Z, 9, 1, 1, S.orange_terracotta); c.fill(X, y0, Z - 4, 1, 1, 9, S.orange_terracotta); c.fill(X - 1, y0 - 2, Z - 1, 3, 2, 3, S.tnt); c.put(X, y0, Z, S.tnt); c.put(X, y0 + 1, Z, PLATE_IDS[0]);       // Platte liegt direkt auf dem TNT
     for (let k = 0; k < 4; k++) { const sx = k & 1 ? 1 : -1, sz = k & 2 ? 1 : -1; c.chest('temple', X + sx * 3, y0 + 1, Z + sz * 3, k); c.put(X + sx * 4, y0 + 1, Z + sz * 4, S.chiseled_sandstone); c.put(X + sx * 4, y0 + 2, Z + sz * 4, S.chiseled_sandstone); }
     for (const [x, z] of [[-4, 0], [4, 0], [0, -4]]) c.put(X + x, y0 + 3, Z + z, S.torch);
     c.rec('pyramid', X, y0 + 1, Z + 2, { mobs: ['husk', 'husk'] });
@@ -1762,7 +1763,7 @@ const STRUCT_BUILDERS = {
     c.fill(X - 4, y0 + 1, Z - 5, 9, 4, 11, AIR); c.fill(X - 3, y0 + 6, Z - 4, 7, 3, 9, AIR); c.fill(X - 1, y0 + 1, Z + 6, 3, 3, 2, AIR);
     c.fill(X - 4, y0, Z - 5, 9, 1, 11, S.mossy_bricks); c.fill(X - 1, y0 + 1, Z - 5, 3, 3, 1, M); c.fill(X - 4, y0 + 1, Z, 3, 3, 1, C); c.fill(X + 2, y0 + 1, Z, 3, 3, 1, C);
     c.chest('temple', X - 3, y0 + 1, Z - 4, 2); c.chest('temple', X + 3, y0 + 1, Z - 4, 2); c.put(X, y0 + 1, Z - 4, S.crafting_table);
-    c.put(X, y0 + 1, Z + 3, PLATE_IDS[0]); c.fill(X, y0 - 2, Z + 3, 1, 2, 1, S.tnt);
+    c.put(X, y0 + 1, Z + 3, PLATE_IDS[0]); c.fill(X, y0 - 2, Z + 3, 1, 3, 1, S.tnt);
     for (const [x, z] of [[-3, 3], [3, 3], [-3, -2], [3, -2]]) c.put(X + x, y0 + 2, Z + z, S.torch);
     c.rec('jungletemple', X, y0 + 1, Z - 1, { mobs: ['zombie', 'zombie', 'spider'] });
   },
@@ -1787,6 +1788,7 @@ const STRUCT_BUILDERS = {
     c.fill(X - 4, y0 + 4, Z - 4, 9, 1, 9, S.dark_oak_slab); c.fill(X - 3, y0 + 4, Z - 3, 7, 1, 7, S.dark_oak_planks);
     for (const [x, z] of [[-3, 0], [3, 0], [0, -3]]) c.put(X + x, y0 + 2, Z + z, GLASS);
     c.put(X, y0 + 1, Z + 3, AIR); c.put(X, y0 + 2, Z + 3, AIR); c.fill(X - 1, y0, Z + 4, 3, 1, 2, S.spruce_planks);
+    for (let k = 0; k < 8; k++) { const zz = Z + 6 + k, topY = y0 - 1 - k; for (let xx = X - 1; xx <= X + 1; xx++) { const g = c.ground(xx, zz); for (let yy = Math.max(g, 0) + 1; yy <= topY; yy++) c.put(xx, yy, zz, S.spruce_planks); } }      // Treppe bis zum Boden
     c.put(X - 2, y0 + 1, Z - 2, S.crafting_table); c.put(X + 2, y0 + 1, Z - 2, S.furnace); c.chest('house', X + 2, y0 + 1, Z + 2, 2); c.put(X - 2, y0 + 1, Z + 2, S.barrel); c.put(X, y0 + 3, Z, LANTERN_IDS.lantern[1]);
     c.rec('swamphut', X, y0 + 1, Z, { mobs: ['skeleton', 'spider'] });
   },
@@ -1810,16 +1812,22 @@ const STRUCT_BUILDERS = {
     for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
       const tx = X + sx * HS, tz = Z + sz * HS, ht = 12 + ((rng() * 4) | 0);
       c.found(tx - 2, tz - 2, 5, 5, y0, S.stone_bricks);
-      for (let y = 1; y <= ht; y++) for (let dz = -2; dz <= 2; dz++) for (let dx = -2; dx <= 2; dx++) { const edge = Math.abs(dx) === 2 || Math.abs(dz) === 2; if (!edge) { c.put(tx + dx, y0 + y, tz + dz, y === 6 ? PLANKS : AIR); continue; } if (c.decay(tx + dx, y, tz + dz, y > ht - 3 ? 0.3 : 0.06)) continue; c.put(tx + dx, y0 + y, tz + dz, c.brick(tx + dx, y, tz + dz)); }
+      for (let y = 1; y <= ht; y++) for (let dz = -2; dz <= 2; dz++) for (let dx = -2; dx <= 2; dx++) {
+        const edge = Math.abs(dx) === 2 || Math.abs(dz) === 2;
+        if (!edge) { c.put(tx + dx, y0 + y, tz + dz, y === 6 && !(dx === 0 && dz === -1) ? PLANKS : AIR); continue; }     // Zwischenboden mit Leiterloch bei (0, -1)
+        if (c.decay(tx + dx, y, tz + dz, y > ht - 3 ? 0.3 : 0.06)) continue; c.put(tx + dx, y0 + y, tz + dz, c.brick(tx + dx, y, tz + dz));
+      }
       for (let dz = -2; dz <= 2; dz++) for (let dx = -2; dx <= 2; dx++) if ((Math.abs(dx) === 2 || Math.abs(dz) === 2) && (dx + dz) % 2 === 0) c.put(tx + dx, y0 + ht + 1, tz + dz, S.stone_bricks);
-      c.put(tx - sx, y0 + 1, tz - sz, S.torch); c.chest('castle', tx - sx, y0 + 7, tz - sz * 1, 2); c.put(tx, y0 + 1, tz + sz * 2, AIR);
+      for (let y = 1; y <= ht; y++) { c.put(tx, y0 + y, tz - 2, c.brick(tx, y, tz - 2)); c.ladder(tx, y0 + y, tz - 1, 0); }       // Leiter an der Nordwand (Wand garantiert)
+      c.put(tx - sx * 2, y0 + 1, tz, AIR); c.put(tx - sx * 2, y0 + 2, tz, AIR);                                                     // Eingang zum Hof
+      c.put(tx + 1, y0 + 1, tz + 1, S.torch); c.chest('castle', tx + 1, y0 + 7, tz + 1, 2);
     }
     // Bergfried
     const kx = X - 5, kz = Z - 11;
     c.clear(kx, y0 + 1, kz, 11, 10, 9); c.hollow(kx, y0, kz, 11, 9, 9, S.stone_bricks, AIR);
     for (let y = 1; y <= 8; y++) for (let x = 0; x < 11; x++) for (let z = 0; z < 9; z++) if ((x === 0 || x === 10 || z === 0 || z === 8) && c.decay(kx + x, y, kz + z, 0.1)) c.put(kx + x, y0 + y, kz + z, c.brick(kx + x, y, kz + z));
-    c.fill(kx + 1, y0 + 5, kz + 1, 9, 1, 7, PLANKS); c.fill(kx + 4, y0 + 5, kz + 3, 3, 1, 3, AIR); for (let y = 1; y <= 5; y++) c.put(kx + 5, y0 + y, kz + 3, LADDER_IDS[0]);
-    c.fill(kx + 5, y0, kz + 8, 1, 3, 1, AIR);
+    c.fill(kx + 1, y0 + 5, kz + 1, 9, 1, 7, PLANKS); c.put(kx + 1, y0 + 5, kz + 4, AIR); for (let y = 1; y <= 5; y++) c.ladder(kx + 1, y0 + y, kz + 4, 3);       // Leiter an der Westwand, Loch im Obergeschoss
+    c.fill(kx + 5, y0 + 1, kz + 8, 1, 2, 1, AIR);
     c.put(kx + 5, y0 + 1, kz + 5, SPAWNER_IDS.skeleton); c.chest('castle', kx + 2, y0 + 1, kz + 2, 2); c.chest('castle', kx + 8, y0 + 6, kz + 2, 2); c.put(kx + 8, y0 + 1, kz + 2, S.furnace);
     for (const [x, z] of [[1, 4], [9, 4], [5, 1]]) c.put(kx + x, y0 + 2, kz + z, S.torch);
     c.rec('castle', kx + 5, y0 + 1, kz + 5, { mobs: ['skeleton', 'skeleton', 'zombie'], spawner: 'skeleton' });
@@ -1894,7 +1902,7 @@ const STRUCT_BUILDERS = {
 class TerrainGen {
   // Seed-Eastereggs: "67" = riesige 67 im Boden (+ Aussichtshügel), "steve" = große Steve-Statue. Gelände wird eingeebnet, alles aus Standardblöcken.
   buildStronghold(data, gi0, seed) {                                  // versiegelter Portalraum 11x11 unter der Erde mit Schacht (Leiter) zur Oberfläche
-    const S = ID, set = (x, y, z, id) => { if (x >= 0 && x < CS && z >= 0 && z < CS && y >= 1 && y < CH) data[x + (z << 4) + (y << 8)] = id; };
+    const S = ID, Yo = this.Yo, set = (x, y, z, id) => { y += Yo; if (x >= 0 && x < CS && z >= 0 && z < CS && y >= 1 && y < CH) data[x + (z << 4) + (y << 8)] = id; };
     const brick = (x, y, z) => { const r = hash2(x * 7 + y, z, seed + 77); return r < 0.16 ? S.mossy_bricks : r < 0.34 ? S.cracked_bricks : S.stone_bricks; };
     const Y0 = 8;
     for (let y = Y0; y <= Y0 + 6; y++) for (let z = 1; z <= 13; z++) for (let x = 1; x <= 13; x++) set(x, y, z, brick(x, y, z));
@@ -1958,7 +1966,7 @@ class TerrainGen {
       if (h < SEA - 3) { if (h > SEA - 24 && pick < 0.8) kind = R(5 + att * 7) < 0.55 ? 'wreck' : 'oceanruin'; }
       else if (h >= SEA + 1 && h <= 95) {
         const hs = [h, H(9, 0), H(-9, 0), H(0, 9), H(0, -9), H(7, 7), H(-7, -7)], flat = Math.max(...hs) - Math.min(...hs);
-        if (flat > 6) continue;
+        if (flat > (this.smooth ? 8 : 6)) continue;
         const coast = [[16, 0], [-16, 0], [0, 16], [0, -16], [12, 12], [-12, -12], [20, 0], [-20, 0], [0, 20], [0, -20]].some(([dx, dz]) => H(dx, dz) < SEA);
         if (b === BIOME_DESERT) kind = pick < 0.34 ? 'pyramid' : pick < 0.62 ? 'village' : pick < 0.72 ? 'ruinportal' : pick < 0.82 ? 'camp' : pick < 0.9 ? 'circle' : null;
         else if (b === BIOME_JUNGLE) kind = pick < 0.42 ? 'jungletemple' : pick < 0.62 ? 'camp' : pick < 0.72 ? 'ruinportal' : pick < 0.82 ? 'circle' : null;
@@ -1978,19 +1986,36 @@ class TerrainGen {
     for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) { const P = this.plan(rx + dx, rz + dz); if (P && P.x + P.r >= x0 && P.x - P.r <= x0 + 15 && P.z + P.r >= z0 && P.z - P.r <= z0 + 15) out.push(P); }
     return out;
   }
+  // Gelände rund um eine Struktur sanft angleichen (Rampe statt Klippe): innen eben auf Planhöhe, nach außen fließend ins natürliche Gelände
+  flatten(P, cx, cz, data, gi0, Yo) {
+    const f = FLATTEN[P.kind]; if (!f) return;
+    const lx0 = cx * CS, lz0 = cz * CS, BL = 15, S = ID;
+    for (let lz = 0; lz < CS; lz++) for (let lx = 0; lx < CS; lx++) {
+      const wx = lx0 + lx, wz = lz0 + lz, dx = Math.max(Math.abs(wx - P.x) - f[0], 0), dz = Math.max(Math.abs(wz - P.z) - f[1], 0), d = Math.hypot(dx, dz);
+      if (d >= BL) continue;
+      const gi = gi0(lx, lz), h0 = genH[gi]; if (h0 <= SEA) continue;
+      const t = d / BL, sm = t * t * (3 - 2 * t), nh = Math.round(P.y + (h0 - P.y) * sm); if (nh === h0) continue;
+      const base = lx + (lz << 4), top = genTop[gi], fillId = (top === GRASS || top === SNOW || top === S.podzol || top === S.coarse_dirt) ? DIRT : top;
+      if (nh > h0) for (let y = h0 + 1; y < nh; y++) data[base + ((y + Yo) << 8)] = fillId;
+      for (let y = Math.max(nh, h0) + 1; y <= Math.max(nh, h0) + 14 && y + Yo < CH; y++) data[base + ((y + Yo) << 8)] = AIR;      // Bäume und Pflanzen auf dem alten Boden entfernen
+      if (nh < h0) for (let y = nh + 1; y <= h0; y++) data[base + ((y + Yo) << 8)] = AIR;
+      data[base + ((nh + Yo) << 8)] = top; genH[gi] = nh;
+    }
+  }
   bigStructures(cx, cz, data, gi0) {
     const list = this.planList(cx, cz); this.structOut = [];
     if (!list.length) return false;
-    const lx0 = cx * CS, lz0 = cz * CS, out = this.structOut, S = ID;
+    const lx0 = cx * CS, lz0 = cz * CS, out = this.structOut, S = ID, Yo = this.Yo;
+    for (const P of list) this.flatten(P, cx, cz, data, gi0, Yo);
     for (const P of list) {
       const rng = mulberry32(P.rs), inC = (wx, wz) => wx >= lx0 && wx < lx0 + 16 && wz >= lz0 && wz < lz0 + 16;
       const c = {
         rng, S, P, inC,
-        put(wx, y, wz, id) { if (wx < lx0 || wx >= lx0 + 16 || wz < lz0 || wz >= lz0 + 16 || y < 1 || y >= CH) return; data[(wx - lx0) + ((wz - lz0) << 4) + (y << 8)] = id; },
-        get(wx, y, wz) { if (!inC(wx, wz) || y < 0 || y >= CH) return -1; return data[(wx - lx0) + ((wz - lz0) << 4) + (y << 8)]; },
+        put(wx, y, wz, id) { y += Yo; if (wx < lx0 || wx >= lx0 + 16 || wz < lz0 || wz >= lz0 + 16 || y < 1 || y >= CH) return; data[(wx - lx0) + ((wz - lz0) << 4) + (y << 8)] = id; },
+        get(wx, y, wz) { y += Yo; if (!inC(wx, wz) || y < 0 || y >= CH) return -1; return data[(wx - lx0) + ((wz - lz0) << 4) + (y << 8)]; },
         fill(ax, ay, az, sx, sy, sz, id) {
           const xa = Math.max(ax, lx0), xb = Math.min(ax + sx - 1, lx0 + 15), za = Math.max(az, lz0), zb = Math.min(az + sz - 1, lz0 + 15);
-          for (let y = Math.max(1, ay); y < ay + sy && y < CH; y++) for (let z = za; z <= zb; z++) for (let x = xa; x <= xb; x++) data[(x - lx0) + ((z - lz0) << 4) + (y << 8)] = id;
+          for (let y = ay; y < ay + sy; y++) { const yy = y + Yo; if (yy < 1 || yy >= CH) continue; for (let z = za; z <= zb; z++) for (let x = xa; x <= xb; x++) data[(x - lx0) + ((z - lz0) << 4) + (yy << 8)] = id; }
         },
         hollow(ax, ay, az, sx, sy, sz, wall, inner) {
           this.fill(ax, ay, az, sx, sy, sz, wall); if (sx > 2 && sy > 2 && sz > 2) this.fill(ax + 1, ay + 1, az + 1, sx - 2, sy - 2, sz - 2, inner === undefined ? AIR : inner);
@@ -1998,11 +2023,12 @@ class TerrainGen {
         clear(ax, ay, az, sx, sy, sz) { this.fill(ax, ay, az, sx, sy, sz, AIR); },
         found(ax, az, sx, sz, top, id) {                                          // Fundament bis zur Geländeoberfläche
           const xa = Math.max(ax, lx0), xb = Math.min(ax + sx - 1, lx0 + 15), za = Math.max(az, lz0), zb = Math.min(az + sz - 1, lz0 + 15);
-          for (let z = za; z <= zb; z++) for (let x = xa; x <= xb; x++) { const h = genH[gi0(x - lx0, z - lz0)]; for (let y = Math.max(1, h - 1); y <= top; y++) data[(x - lx0) + ((z - lz0) << 4) + (y << 8)] = id; }
+          for (let z = za; z <= zb; z++) for (let x = xa; x <= xb; x++) { const h = genH[gi0(x - lx0, z - lz0)]; for (let y = Math.max(1 - Yo, h - 1); y <= top; y++) { const yy = y + Yo; if (yy >= 1 && yy < CH) data[(x - lx0) + ((z - lz0) << 4) + (yy << 8)] = id; } }
         },
         ground(wx, wz) { return inC(wx, wz) ? genH[gi0(wx - lx0, wz - lz0)] : P.y; },
         surf(wx, wz, id) { if (!inC(wx, wz)) return; const h = genH[gi0(wx - lx0, wz - lz0)]; this.put(wx, h, wz, id); this.fill(wx, h + 1, wz, 1, 3, 1, AIR); },
-        rec(kind, x, y, z, extra) { if (inC(x, z)) out.push(Object.assign({ kind, key: x + ',' + y + ',' + z, x, y, z, mobs: [], spawned: false }, extra || {})); },
+        ladder(x, y, z, side) { this.put(x, y, z, LADDER_IDS[side]); },                 // side: Wand, an der die Leiter hängt (0 N, 1 O, 2 S, 3 W)
+        rec(kind, x, y, z, extra) { if (inC(x, z)) out.push(Object.assign({ kind, key: x + ',' + (y + Yo) + ',' + z, x, y: y + Yo, z, mobs: [], spawned: false }, extra || {})); },
         decay(wx, y, wz, p) { return hash2(wx * 7 + y, wz, (this.P.rs | 0) + 31) < p; },
         brick(wx, y, wz) { const r = hash2(wx * 5 + y, wz * 3, (this.P.rs | 0) + 17); return r < 0.2 ? S.mossy_bricks : r < 0.38 ? S.cracked_bricks : S.stone_bricks; },
         chest(kind, x, y, z, d) { this.put(x, y, z, LOOT_CHEST_IDS[kind][d === undefined ? 2 : d]); },
@@ -2018,7 +2044,7 @@ class TerrainGen {
     const S = ID, R = (n) => hash2(cx, cz, seed + 7400 + n), out = this.structOut || (this.structOut = []);
     const lx = 3 + ((R(10) * 10) | 0), lz = 3 + ((R(11) * 10) | 0), gi = gi0(lx, lz), h = genH[gi], b = genB[gi], base = lx + (lz << 4);
     if (h <= SEA + 1 || h > 100) return;
-    const set = (x, y, z, id) => { if (x >= 0 && x < CS && z >= 0 && z < CS && y >= 1 && y < CH) data[x + (z << 4) + (y << 8)] = id; };
+    const Yo = this.Yo, set = (x, y, z, id) => { y += Yo; if (x >= 0 && x < CS && z >= 0 && z < CS && y >= 1 && y < CH) data[x + (z << 4) + (y << 8)] = id; };
     const r = R(0);
     if (r < 0.035 && (b === BIOME_FOREST || b === BIOME_TAIGA || b === BIOME_DARK || b === BIOME_GRASS || b === BIOME_BIRCH)) {            // Findling aus Moos- und Bruchstein
       const rad = 2 + R(1) * 1.6;
@@ -2037,23 +2063,31 @@ class TerrainGen {
     } else if (r < 0.1 && (h === SEA + 2 || h === SEA + 3) && genTop[gi] === SAND) {                                                       // vergrabener Schatz am Strand
       set(lx, h - 3, lz, LOOT_CHEST_IDS.ship[(R(5) * 4) | 0]);
       for (let k = 1; k <= 2; k++) set(lx, h - 3 + k, lz, SAND);
-      out.push({ kind: 'treasure', key: (cx * CS + lx) + ',' + (h - 3) + ',' + (cz * CS + lz), x: cx * CS + lx, y: h - 3, z: cz * CS + lz, mobs: [], spawned: false });
+      out.push({ kind: 'treasure', key: (cx * CS + lx) + ',' + (h - 3 + Yo) + ',' + (cz * CS + lz), x: cx * CS + lx, y: h - 3 + Yo, z: cz * CS + lz, mobs: [], spawned: false });
     } else if (r < 0.115 && (b === BIOME_TAIGA || b === BIOME_FOREST || b === BIOME_DARK || b === BIOME_JUNGLE)) {                          // umgestürzter Baumstamm
       const len = 4 + ((R(6) * 4) | 0), lg = b === BIOME_TAIGA ? S.spruce_log : b === BIOME_DARK ? S.dark_oak_log : b === BIOME_JUNGLE ? S.jungle_log : WOOD;
       for (let k = 0; k < len; k++) set(lx + k - 2, h + 1, lz, lg);
     }
   }
+  // Alle Strukturen eines Chunks bauen. Yo = Höhenversatz (tiefe Welten: das Gelände wurde um Yo angehoben; alle Plan-Höhen bleiben „alt“)
+  placeStructures(cx, cz, data, gi0, Yo) {
+    const seed = this.seed | 0; this.Yo = Yo; this.structOut = [];
+    if (Yo && this.special && cx >= -4 && cx <= 4 && cz >= -4 && cz <= 5) { this.Yo = 0; return; }       // Seed-Easteregg (67 / Steve) nicht überbauen
+    if (this.big) { if (!this.bigStructures(cx, cz, data, gi0)) this.structures(cx, cz, data, gi0, seed); this.extras(cx, cz, data, gi0, seed); } else this.structures(cx, cz, data, gi0, seed);
+    { const sc = strongholdChunkFor(seed); if (cx === sc[0] && cz === sc[1]) this.buildStronghold(data, gi0, seed); }
+    this.Yo = 0;
+  }
   structures(cx, cz, data, gi0, seed) {
     const S = ID, out = this.structOut = [];
     const sr = hash2(cx, cz, seed + 7001), dr = hash2(cx, cz, seed + 7002), R = (k) => hash2(cx, cz, seed + 7100 + k);
-    const setb = (x, y, z, id) => { if (x >= 0 && x < CS && z >= 0 && z < CS && y >= 1 && y < CH) data[x + (z << 4) + (y << 8)] = id; };
+    const Yo = this.Yo, setb = (x, y, z, id) => { y += Yo; if (x >= 0 && x < CS && z >= 0 && z < CS && y >= 1 && y < CH) data[x + (z << 4) + (y << 8)] = id; };
     const fill = (x0, y0, z0, sx, sy, sz, id) => { for (let y = y0; y < y0 + sy; y++) for (let z = z0; z < z0 + sz; z++) for (let x = x0; x < x0 + sx; x++) setb(x, y, z, id); };
-    const rec = (kind, x, y, z, extra) => out.push(Object.assign({ kind, key: (cx * CS + x) + ',' + y + ',' + (cz * CS + z), x: cx * CS + x, y, z: cz * CS + z, mobs: [], spawned: false }, extra || {}));
+    const rec = (kind, x, y, z, extra) => out.push(Object.assign({ kind, key: (cx * CS + x) + ',' + (y + Yo) + ',' + (cz * CS + z), x: cx * CS + x, y: y + Yo, z: cz * CS + z, mobs: [], spawned: false }, extra || {}));
     const H = (x, z) => genH[gi0(x, z)];
     const surface = (ox, oz, sx, sz) => {
       let mn = 999, mx = 0;
       for (let z = oz - 1; z <= oz + sz; z++) for (let x = ox - 1; x <= ox + sx; x++) { const h = H(x, z); if (h < mn) mn = h; if (h > mx) mx = h; }
-      return (mx - mn <= 2 && mn >= SEA + 2 && mx <= 48) ? mx : -1;
+      return (mx - mn <= 2 && mn >= SEA + 2 && mx <= (this.smooth ? 66 : 48)) ? mx : -1;
     };
     const foundation = (ox, oz, sx, sz, base, id) => { for (let z = oz; z < oz + sz; z++) for (let x = ox; x < ox + sx; x++) for (let y = H(x, z) + 1; y <= base; y++) setb(x, y, z, id); };
     const CHEST = (kind, d) => LOOT_CHEST_IDS[kind][d];
@@ -2124,7 +2158,7 @@ class TerrainGen {
     }
   }
   constructor(seed, gv) {
-    this.seed = seed >>> 0; this.v2 = gv >= 2; this.big = gv >= 3;       // big: deutlich höhere Berge (tiefe Welten)
+    this.seed = seed >>> 0; this.v2 = gv >= 2; this.big = gv >= 3; this.smooth = gv >= 4; this.Yo = 0;       // smooth: weiche Gelände-Übergänge (ab Version 2026-10-05.4); gv3-Welten behalten ihr Gelände       // big: deutlich höhere Berge (tiefe Welten)
     this.nA = new Perlin(seed); this.nB = new Perlin(seed + 101); this.nC = new Perlin(seed + 202);
     this.nT = new Perlin(seed + 303); this.nCa = new Perlin(seed + 404); this.nCb = new Perlin(seed + 505);
     this.nU = new Perlin(seed + 606); this.nR = new Perlin(seed + 707);
@@ -2136,7 +2170,43 @@ class TerrainGen {
     return s / m;
   }
   // Höhe, Biom und Oberflächenblöcke einer Weltspalte
+  // ===== Gelände der tiefen Welten: weiche Übergänge – Klima wird leicht verwirbelt, Biom-Höhenformen werden über die Nachbarschaft gemischt,
+  // dazu Flusstäler, größeres Relief (Täler, Hügel, Plateaus, hohe Gebirge) und eine unregelmäßige Schneegrenze =====
+  biomeOf(x, z, h, m) {
+    const t = this.fbm(this.nT, x / 190 + 31.1, z / 190 - 17.9, 2), u = this.fbm(this.nU, x / 170 - 8.2, z / 170 + 44.6, 2), r = this.fbm(this.nR, x / 120 + 3.3, z / 120 + 9.1, 2);
+    if (t > 0.14) return u < -0.1 ? (r > 0.08 ? BIOME_MESA : BIOME_DESERT) : u < 0.12 ? BIOME_SAVANNA : BIOME_JUNGLE;
+    if (t < -0.14) return u < 0.04 ? BIOME_SNOW : BIOME_TAIGA;
+    if (u > 0.26) return h <= SEA + 6 ? BIOME_SWAMP : BIOME_DARK;
+    if (u > 0.1) return r < -0.05 ? BIOME_BIRCH : BIOME_FOREST;
+    if (u > -0.15) return r > 0.28 && m < 0.6 ? BIOME_CHERRY : BIOME_GRASS;
+    return BIOME_MEADOW;
+  }
+  columnBig(x, z, o) {
+    const wxp = x + this.nU.noise(x / 36, 0.7, z / 36) * 12, wzp = z + this.nU.noise(x / 36 + 40, 1.9, z / 36 + 40) * 12;     // verwirbelte Koordinaten für die Klimagrenzen
+    const c = this.fbm(this.nA, x / 260, z / 260, 3), hill = this.fbm(this.nB, x / 70, z / 70, 4), det = this.nB.noise(x / 17, 4.4, z / 17);
+    const mn = this.fbm(this.nC, x / 340 + 9.7, z / 340 - 4.3, 3);
+    let m = clamp((mn + 0.04) / 0.38, 0, 1); m = m * m * (3 - 2 * m);
+    const ridge = clamp(1 - Math.abs(this.fbm(this.nA, x / 90 + 50, z / 90 + 50, 3) * 1.7), 0, 1);
+    let hb = SEA + 4 + c * 17 + hill * 8 + det * 1.4 + m * (12 + ridge * 24 + hill * 8) * 2.6;
+    const rv = Math.abs(this.fbm(this.nR, x / 310 + 7.7, z / 310 - 3.1, 2)), river = (1 - smooth(0.0, 0.055, rv)) * (1 - smooth(0.25, 0.7, m));        // Flusstäler
+    hb = lerp(hb, SEA - 3 - hill * 1.5, river * 0.9);
+    const biome = this.biomeOf(wxp, wzp, hb, m);
+    // Höhenform je Biom, gemittelt über die Nachbarschaft (weiche Übergänge an den Biomgrenzen)
+    const shape = (b, hh) => b === BIOME_MESA ? SEA + 2 + Math.floor((Math.max(hh, SEA + 4) - SEA) / 4) * 4
+      : b === BIOME_SWAMP ? SEA + 0.5 + hill * 3 : b === BIOME_DESERT ? SEA + 3 + (hh - SEA - 3) * 0.6 : (b === BIOME_SAVANNA || b === BIOME_GRASS || b === BIOME_MEADOW) ? SEA + 3 + (hh - SEA - 3) * 0.88 : b === BIOME_JUNGLE ? hh + hill * 3 : hh;
+    let acc = shape(biome, hb) * 0.36, wsum = 0.36;
+    for (const [dx, dz] of [[9, 0], [-9, 0], [0, 9], [0, -9], [6, 6], [-6, -6], [6, -6], [-6, 6]]) { const bn = this.biomeOf(wxp + dx, wzp + dz, hb, m); acc += shape(bn, hb) * 0.08; wsum += 0.08; }
+    const h = Math.floor(clamp(acc / wsum + 0.5, 2, 128));
+    let top, sub;
+    if (biome === BIOME_DESERT) { top = SAND; sub = SAND; } else if (biome === BIOME_MESA) { top = ID.red_sand; sub = ID.red_sand; } else if (biome === BIOME_SNOW) { top = SNOW; sub = DIRT; } else { top = GRASS; sub = DIRT; }
+    const nzs = this.nT.noise(x / 11, 2.2, z / 11);
+    if (m > 0.5 && h > SEA + 14 + nzs * 3) { top = STONE; sub = STONE; }                // felsige Berge
+    if (h >= 66 + nzs * 5 && !isDryBiome(biome)) top = SNOW;                              // unregelmäßige Schneegrenze
+    if (h <= SEA + 1) { top = h >= SEA - 5 ? SAND : DIRT; sub = top === SAND ? SAND : DIRT; }
+    o.h = h; o.biome = biome; o.top = top; o.sub = sub; return o;
+  }
   column(x, z, o) {
+    if (this.smooth) return this.columnBig(x, z, o);
     const c = this.fbm(this.nA, x / 240, z / 240, 3);        // Kontinent: Täler / Seen
     const hill = this.fbm(this.nB, x / 60, z / 60, 4);       // Hügel
     const mn = this.fbm(this.nC, x / 320 + 9.7, z / 320 - 4.3, 3);
@@ -2177,7 +2247,7 @@ class TerrainGen {
   }
   biomeAt(x, z) { return this.column(x, z, this.out).biome; }
 
-  generate(cx, cz, edits) {
+  generate(cx, cz, edits, defer) {                                   // defer: Strukturen nicht bauen (macht DeepGen nach den Höhlen)
     const data = new Uint16Array(CS * CS * CH);
     const o = this.out, W = PW_GEN, seed = this.seed | 0, S = ID;
     let maxH = 0;
@@ -2260,7 +2330,7 @@ class TerrainGen {
       const wx = cx * CS + tx, wz = cz * CS + tz, hv = hash2(wx, wz, seed);
       if (hv >= TP) continue;
       const h = genH[gi], tp = genTop[gi];
-      if (h <= (b === BIOME_SWAMP ? SEA : SEA + 1) || h > 46 || (tp !== GRASS && tp !== SNOW && tp !== S.podzol && tp !== S.coarse_dirt && !(b === BIOME_SWAMP && tp === DIRT))) continue;
+      if (h <= (b === BIOME_SWAMP ? SEA : SEA + 1) || h > (this.smooth ? 64 : 46) || (tp !== GRASS && tp !== SNOW && tp !== S.podzol && tp !== S.coarse_dirt && !(b === BIOME_SWAMP && tp === DIRT))) continue;
       let ok = true;
       for (let dz = -2; dz <= 2 && ok; dz++) for (let dx = -2; dx <= 2; dx++) {
         if ((dx || dz) && hash2(wx + dx, wz + dz, seed) < hv) { ok = false; break; }
@@ -2323,8 +2393,7 @@ class TerrainGen {
       }
     }
 
-    if (this.big) { if (!this.bigStructures(cx, cz, data, gi0)) this.structures(cx, cz, data, gi0, seed); this.extras(cx, cz, data, gi0, seed); } else this.structures(cx, cz, data, gi0, seed);
-    { const sc = strongholdChunkFor(seed); if (cx === sc[0] && cz === sc[1]) this.buildStronghold(data, gi0, seed); }
+    if (!defer) this.placeStructures(cx, cz, data, gi0, 0);
     if (this.special) this.stamp(cx, cz, data, gi0);
 
     // Spieler-Änderungen anwenden
@@ -2394,13 +2463,20 @@ class DeepGen {
     if (hash2(rx, rz, seed + 9800) < 0.4) H = { x: Math.floor(rx * 160 + 30 + hash2(rx, rz, seed + 9801) * 100), z: Math.floor(rz * 160 + 30 + hash2(rx, rz, seed + 9802) * 100), y: 8 + ((hash2(rx, rz, seed + 9803) * 10) | 0), rs: (hash2(rx, rz, seed + 9804) * 4294967295) >>> 0 };
     this.halls.set(k, H); return H;
   }
-  deepStructures(cx, cz, data) {
+  deepStructures(cx, cz, data, hc) {
     const S = ID, seed = this.seed | 0, lx0 = cx * CS, lz0 = cz * CS, out = this.structOut;
     const put = (wx, y, wz, id) => { const x = wx - lx0, z = wz - lz0; if (x < 0 || x > 15 || z < 0 || z > 15 || y < 1 || y >= CH) return; data[x + (z << 4) + (y << 8)] = id; };
     const fill = (ax, ay, az, sx, sy, sz, id) => { const xa = Math.max(ax, lx0), xb = Math.min(ax + sx - 1, lx0 + 15), za = Math.max(az, lz0), zb = Math.min(az + sz - 1, lz0 + 15); for (let y = Math.max(1, ay); y < ay + sy && y < CH; y++) for (let z = za; z <= zb; z++) for (let x = xa; x <= xb; x++) data[(x - lx0) + ((z - lz0) << 4) + (y << 8)] = id; };
     const inC = (wx, wz) => wx >= lx0 && wx < lx0 + 16 && wz >= lz0 && wz < lz0 + 16;
     const rec = (kind, x, y, z, extra) => { if (inC(x, z)) out.push(Object.assign({ kind, key: x + ',' + y + ',' + z, x, y, z, mobs: [], spawned: false }, extra || {})); };
     const chest = (kind, x, y, z, d) => put(x, y, z, LOOT_CHEST_IDS[kind][d === undefined ? 2 : d]);
+    const B = this.base, YO = this.yo, sea = SEA + YO, oq = {};
+    const shaft = (sx, sz, y1, side, backId) => {                      // senkrechter Schacht mit Leiter von y1 bis zur Oberfläche; Rückwand sorgt dafür, dass die Leiter nirgends in der Luft hängt
+      B.column(sx, sz, oq); const top = oq.h + YO; if (top <= sea + 1) return;
+      const bx = sx + (side === 1 ? 1 : side === 3 ? -1 : 0), bz = sz + (side === 2 ? 1 : side === 0 ? -1 : 0);
+      for (let y = y1; y <= top; y++) { put(sx, y, sz, LADDER_IDS[side]); put(bx, y, bz, backId); }
+      put(sx, top + 1, sz, AIR); put(sx, top + 2, sz, AIR);
+    };
     const dbrick = (x, y, z) => { const r = hash2(x * 5 + y, z * 3, seed + 9850); return r < 0.18 ? S.cobbled_deepslate : r < 0.3 ? S.deepslate_tiles : S.deepslate_bricks; };
     // --- Minenschächte ---
     const rx = Math.floor(cx / 8), rz = Math.floor(cz / 8);
@@ -2422,6 +2498,7 @@ class DeepGen {
         }
       }
       for (const ch of M.chests) { put(ch.x, ch.y, ch.z, LOOT_CHEST_IDS.mine[(hash2(ch.x, ch.z, seed + 9713) * 4) | 0]); }
+      { const sg = M.segs[0]; shaft(sg.f - 1, sg.a, M.y, 3, PLANKS); }                 // Ausgang: Leiterschacht am Ende des Hauptgangs
       if (M.spawn) { const sp = M.spawn; fill(sp.x - 1, sp.y, sp.z - 1, 3, 3, 3, S.cobweb); put(sp.x, sp.y, sp.z, SPAWNER_IDS.spider); put(sp.x, sp.y + 1, sp.z, AIR); rec('mineshaft', sp.x, sp.y, sp.z, { mobs: ['spider', 'spider'], spawner: 'spider' }); }
     }
     // --- Tiefenfestungen: große Halle aus Tiefenschiefer mit Sculk, Säulen und Schätzen ---
@@ -2436,7 +2513,7 @@ class DeepGen {
       for (let z = -12; z <= 12; z += 6) for (let x = -12; x <= 12; x += 6) { if (Math.abs(x) <= 2 && Math.abs(z) <= 2) continue; for (let y = 0; y < ht; y++) put(X + x, fy + y, Z + z, y === 0 || y === ht - 1 ? S.chiseled_deepslate : S.polished_deepslate); put(X + x + 1, fy + ht - 1, Z + z, LANTERN_IDS.soul_lantern[1]); }
       for (let z = -2; z <= 2; z++) for (let x = -2; x <= 2; x++) { put(X + x, fy, Z + z, S.polished_deepslate); if (Math.abs(x) === 2 && Math.abs(z) === 2) { put(X + x, fy + 1, Z + z, LOOT_CHEST_IDS.deep[(Math.abs(x + z) & 3)]); } }
       put(X, fy + 1, Z, S.gold_block); put(X, fy + 2, Z, S.soul_lantern || S.sea_lantern);
-      fill(X - 1, fy, Z + 13, 3, 4, 8, AIR); fill(X - 1, fy - 1, Z + 13, 3, 1, 8, S.polished_deepslate);
+      fill(X - 1, fy, Z + 13, 3, 4, 8, AIR); fill(X - 1, fy - 1, Z + 13, 3, 1, 8, S.polished_deepslate); shaft(X, Z + 21, fy, 2, S.deepslate_bricks);        // Eingangstunnel + Leiterschacht nach oben
       for (let i = 0; i < 6; i++) { put(X - 12 + ((hash2(i, H.rs, seed + 9860) * 24) | 0), fy, Z - 12 + ((hash2(H.rs, i, seed + 9861) * 24) | 0), S.sculk); }
       rec('hall', X + 6, fy + 1, Z + 6, { mobs: ['skeleton', 'skeleton', 'zombie', 'zombie'] });
     }
@@ -2455,22 +2532,23 @@ class DeepGen {
       for (let x = 1; x <= 12; x++) { put(bx + x, y + 2, bz, S.copper_grate); }
       put(bx + 6, y + 1, bz + 6, SPAWNER_IDS.zombie); chest('trial', bx + 7, y + 1, bz + 7, 1); chest('trial', bx + 5, y + 1, bz + 5, 3);
       put(bx + 6, y + 1, bz + 7, AIR); put(bx + 6, y + 6, bz + 6, S.sea_lantern);
-      fill(bx, y + 1, bz + 6, 1, 3, 3, AIR);
+      shaft(bx + 12, bz + 6, y + 1, 1, S.copper_block);
       rec('trial', bx + 6, y + 1, bz + 6, { mobs: ['zombie', 'zombie', 'skeleton', 'skeleton'], spawner: 'zombie' });
     } else if (r < 0.1) {                                                         // tiefes Verlies
       const bx = cx * CS + 3, bz = cz * CS + 3, sp = ['zombie', 'skeleton', 'spider'][(hash2(cx, cz, seed + 9904) * 3) | 0];
       for (let yy = 0; yy <= 5; yy++) for (let z = 0; z <= 8; z++) for (let x = 0; x <= 8; x++) { const edge = x === 0 || x === 8 || z === 0 || z === 8 || yy === 0 || yy === 5; put(bx + x, y + yy, bz + z, edge ? (hash2(bx + x, bz + z + yy * 31, seed + 9905) < 0.45 ? S.mossy_cobble : S.cobble) : AIR); }
-      put(bx + 4, y + 1, bz + 4, SPAWNER_IDS[sp]); chest('dungeon', bx + 1, y + 1, bz + 1, 2); chest('dungeon', bx + 7, y + 1, bz + 7, 0); put(bx + 1, y + 3, bz + 7, S.cobweb);
+      put(bx + 4, y + 1, bz + 4, SPAWNER_IDS[sp]); shaft(bx + 7, bz + 4, y + 1, 1, S.cobble); chest('dungeon', bx + 1, y + 1, bz + 1, 2); chest('dungeon', bx + 7, y + 1, bz + 7, 0); put(bx + 1, y + 3, bz + 7, S.cobweb);
       rec('dungeon', bx + 4, y + 1, bz + 4, { mobs: ['zombie', 'skeleton'], spawner: sp });
     }
   }
   generate(cx, cz, edits) {
     const B = this.base, YO = this.yo, S = ID, seed = this.seed | 0, x0 = cx * CS, z0 = cz * CS, W = PW_GEN, sea = SEA + YO;
-    const data = B.generate(cx, cz, null);                                // Gelände wie in alten Welten (noch ohne Verschiebung)
+    const data = B.generate(cx, cz, null, true);                          // Gelände wie in alten Welten (noch ohne Verschiebung, Strukturen folgen nach den Höhlen)
     const gi0 = (lx, lz) => (lz + PADT) * W + lx + PADT;
-    this.structOut = B.structOut.map((st) => Object.assign({}, st, { y: st.y + YO, key: st.x + ',' + (st.y + YO) + ',' + st.z }));
     const hc = new Int16Array(LAYER); let maxTop = 0;
     for (let lz = 0; lz < CS; lz++) for (let lx = 0; lx < CS; lx++) { const h = genH[gi0(lx, lz)] + YO; hc[lx + (lz << 4)] = h; if (h > maxTop) maxTop = h; }
+    const prot = new Uint8Array(LAYER); let anyProt = false;                          // Bauplätze großer Strukturen: dort keine Schluchten, nur tiefe Höhlen
+    for (const P of B.planList(cx, cz)) { const f = FLATTEN[P.kind]; if (!f) continue; for (let lz = 0; lz < CS; lz++) for (let lx = 0; lx < CS; lx++) if (Math.abs(x0 + lx - P.x) <= f[0] + 13 && Math.abs(z0 + lz - P.z) <= f[1] + 13) { prot[lx + (lz << 4)] = 1; anyProt = true; } }
     data.copyWithin(YO * LAYER, 0, (CH - YO) * LAYER); data.fill(0, 0, YO * LAYER);   // alles um YO nach oben schieben
     const DS = S.deepslate, BR = S.bedrock, LAVA = S.lava, ST = this.stoneish;
     // --- 1. Untere Schichten: Grundgestein, Tiefenschiefer/Stein-Grenze, alte Tiefen-Erze entfernen ---
@@ -2521,7 +2599,7 @@ class DeepGen {
     const ravPts = [], rcx = Math.floor(cx / 10), rcz = Math.floor(cz / 10);
     for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) for (const pts of this.ravines(rcx + dx, rcz + dz)) for (const q of pts) if (q[0] > x0 - 8 && q[0] < x0 + 24 && q[1] > z0 - 8 && q[1] < z0 + 24) ravPts.push(q);
     for (let lz = 0; lz < CS; lz++) for (let lx = 0; lx < CS; lx++) {
-      const col = lx + (lz << 4), wx = x0 + lx, wz = z0 + lz, h = hc[col], ceil = h <= sea + 1 ? h - 12 : h - 6, aq = this.nQ.noise(wx / 110 + 3, 1.5, wz / 110) > 0.12 ? 34 + this.nQ.noise(wx / 80, 0.5, wz / 80) * 8 : -1;       // nur in „nassen“ Bereichen stehen Höhlen unter Wasser
+      const col = lx + (lz << 4), wx = x0 + lx, wz = z0 + lz, h = hc[col], ceil = h <= sea + 1 ? h - 12 : prot[col] ? h - 18 : h - 6, aq = this.nQ.noise(wx / 110 + 3, 1.5, wz / 110) > 0.12 ? 34 + this.nQ.noise(wx / 80, 0.5, wz / 80) * 8 : -1;       // nur in „nassen“ Bereichen stehen Höhlen unter Wasser
       for (let y = 5; y <= ceil; y++) {
         const i = col + (y << 8), cur = data[i];
         if (cur === AIR || cur === BR || cur === WATER || cur === LAVA) continue;
@@ -2538,7 +2616,7 @@ class DeepGen {
         if (carve) data[i] = y <= 11 ? LAVA : (y <= aq && y >= 18 ? WATER : AIR);
       }
       // Schluchten: oben breit, unten schmal, vom Boden (yb) bis zur Oberfläche
-      if (ravPts.length && h > sea + 1) for (const q of ravPts) {
+      if (ravPts.length && h > sea + 1 && !prot[col]) for (const q of ravPts) {
         const d = Math.hypot(wx - q[0], wz - q[1]); if (d >= q[2]) continue;
         const yb = Math.floor(q[3]);
         for (let y = yb; y <= h; y++) {
@@ -2584,7 +2662,9 @@ class DeepGen {
         if (data[i] === AIR && data[i - 256] === S.amethyst_block) { const r = hash2(cx * 16 + dx, cz * 16 + dz + dy * 17, seed + 9302); if (r < 0.4) data[i] = r < 0.1 ? S.amethyst_cluster : r < 0.2 ? S.large_amethyst_bud : r < 0.3 ? S.medium_amethyst_bud : S.small_amethyst_bud; }
       }
     }
-    this.deepStructures(cx, cz, data);
+    if (anyProt) for (let col = 0; col < LAYER; col++) if (prot[col]) for (let y = hc[col] - 12; y <= hc[col]; y++) { const i = col + (y << 8), b = data[i]; if (b === AIR || b === WATER || b === LAVA) data[i] = STONE; }   // keine Löcher unter Bauplätzen
+    B.placeStructures(cx, cz, data, gi0, YO); this.structOut = B.structOut.slice();
+    this.deepStructures(cx, cz, data, hc);
     if (edits) for (const [idx, id] of edits.m) data[idx] = safeBlock(id);
     return data;
   }
@@ -7312,7 +7392,7 @@ function startGame(opts) {
   mode = opts.mode; renderDist = opts.dist;
   const save = opts.save;
   if (!opts.mp) { mp.on = false; $('btnQuit').textContent = 'Speichern & Beenden'; }
-  world = new World(save ? save.seed : opts.seed, scene, save ? (save.gv || 1) : opts.gv || 3);          // Welten ohne gv-Eintrag = alte Biome
+  world = new World(save ? save.seed : opts.seed, scene, save ? (save.gv || 1) : opts.gv || 4);          // Welten ohne gv-Eintrag = alte Biome
   setWorldKeys(world.gv);
   world.setRenderDistance(renderDist);
   world.onChange = onBlockChange;
@@ -9962,7 +10042,7 @@ async function mpJoin(cfg) {
   mp.joinedAt = Date.now() + mp.skew; mp.joinT = performance.now(); mp.id = rid();          // Serverzeit statt Uhr des Geräts: alle ordnen die Spieler gleich
   mp.players.forEach((p) => p.dispose()); mp.players.clear(); mp.mobsById.clear(); mp.pending = []; mp.dbQueue = [];
   mp.mySkinCv = await skinCanvas(cfg.skin, cfg.slim); mp.myFace = skinFaceDataURL(mp.mySkinCv, 32); handSkinDirty = true;
-  startGame({ seed: info.seed, mode: info.mode, dist: cfg.dist, gv: (info.epoch_ms || 0) >= GEN3_START ? 3 : (info.epoch_ms || 0) >= GEN2_START ? 2 : 1, mp: true, mpEdits: edits, mpContainers: conts, mpState: state });
+  startGame({ seed: info.seed, mode: info.mode, dist: cfg.dist, gv: (info.epoch_ms || 0) >= GEN4_START ? 4 : (info.epoch_ms || 0) >= GEN3_START ? 3 : (info.epoch_ms || 0) >= GEN2_START ? 2 : 1, mp: true, mpEdits: edits, mpContainers: conts, mpState: state });
   mp.on = true; mp.wasHost = isHost(); mp.mode = info.mode;
   mp.petQueue = state && (Array.isArray(state.pets) || Array.isArray(state.veh)) ? { pets: (state.pets || []).filter(Array.isArray).slice(0, 24), veh: (state.veh || []).filter(Array.isArray).slice(0, 24) } : { pets: [], veh: [] };
   setTimeout(mpRestorePets, 4500);
