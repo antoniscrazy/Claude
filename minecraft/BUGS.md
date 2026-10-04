@@ -1,4 +1,4 @@
-# VOXELCRAFT – Bug-Liste (Stand 2026-10-04.5)
+# VOXELCRAFT – Bug-Liste (Stand 2026-10-05.1)
 
 Gefunden durch Fuzz-/Monkey-Tests (Zufallsklicks, Tastenhagel), Zwei-Spieler-Tests im Multiplayer und Code-Durchsicht.
 Status: ✅ behoben · 🟡 offen (klein / kosmetisch) · 🔴 offen (spürbar)
@@ -41,3 +41,11 @@ Status: ✅ behoben · 🟡 offen (klein / kosmetisch) · 🔴 offen (spürbar)
 | B17 | Flügelmembranen des Drachen wirkten von der Seite sehr dünn | ✅ Membranen leicht angewinkelt (V-Form) |
 
 Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zuletzt **keine** Konsolenfehler.
+
+## Neu in 2026-10-05.1 (Technik-Hinweise)
+
+* **Baulimit 256** in allen Welten (Nether, Backrooms und Ende bleiben 64 hoch). Meldung „⚠ Baulimit erreicht“ über der Hotbar.
+* **Tiefe Welten** gelten für neue Einzelspieler-Welten und für Server, die **nach** der Veröffentlichung dieser Version angelegt wurden (`GEN3_START`). Ältere Welten/Server bleiben unverändert (Block-IDs und gespeicherte Änderungen bleiben gültig).
+* **Datenbank (Mehrspieler):** Die Tabelle erlaubt y nur von 0 bis 255. Damit Oberwelt (256 hoch) und die anderen Dimensionen Platz haben, steckt die Dimension jetzt im x-Wert (`x + Code·2^27`). Alte Zeilen (Code 0) bleiben lesbar – **keine SQL-Änderung nötig**.
+* Server-/Spieler-Daten-Transfer: Spielerdaten (nicht die Welt) lassen sich als Code/Datei exportieren und importieren.
+* Offen: Supabase-Einrichtung (`dev_console_part2.sql`, Realtime-Zugriff, Last mit 15 Spielern) – weiterhin nur von dir prüfbar.
