@@ -149,3 +149,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * ✅ **Emote-Plätze bei vollem Rad änderbar.** Bisher kam man nur über einen leeren ＋-Platz ins Auswahlmenü – waren alle 8 Plätze belegt, ließ sich nichts mehr ändern oder entfernen. Jetzt öffnet im Rad die Taste **E**, der Knopf **„✎ Bearbeiten“** (unten im Rad, auch auf Touch) oder der Befehl **`/emotes`** das Menü. Im Menü: Platz wählen und Emote antippen ersetzt ihn; ist der Emote schon auf einem anderen Platz, **tauschen** beide; **✕** am Platz oder erneutes Antippen der markierten Karte **entfernt** ihn; „Standard wiederherstellen“ setzt Winken/Klatschen/Salto zurück. Der gewählte Platz wird oben im Text benannt. Test: 8 von 8 Plätzen belegt → ersetzen, tauschen, entfernen funktionieren.
 
+## 2026-10-05.21
+
+* ✨ **Neuer Emote „67“** (Nr. 24): beide Hände vorn, Handflächen nach oben, abwechselnd hoch und runter im Takt, dazu leichtes Wippen. Er liegt im Auswahlmenü (nicht im Rad vorbelegt) und wird wie alle anderen mit allen Spielern synchronisiert. Es gibt jetzt 24 Emotes (3 vorbelegt + 21 weitere).
+

@@ -1776,7 +1776,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.20';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-10-05.21';            // Spielversion (nur Anzeige)
 // Mehrspieler-Kompatibilität: NUR wenn sich das Netzwerkformat oder die Welt-Speicherung unverträglich ändert, MP_PROTO erhöhen. Normale Versionen (neue Blöcke, Rezepte, Mobs, Befehle …) vertragen sich untereinander –
 // dafür gibt es keine Warnung mehr. Clients ohne MP_PROTO (vor 2026-10-05.17) gelten ab MP_MIN_VER als kompatibel.
 const MP_PROTO = 1, MP_MIN_VER = '2026-10-05.1';
@@ -8418,6 +8418,9 @@ const EMOTES = [
   { k: 'handstand', de: 'Handstand', ic: '🙃', dur: 3.8, f(t, p, M, o) { const u = EMS.bump(p, .22, .2); o.rx = PI * u; o.c = 0.9; M.armR.rotation.z = -2.95 * u; M.armL.rotation.z = 2.95 * u; M.legR.rotation.z = -(0.15 + 0.12 * Math.sin(t * 6)) * u; M.legL.rotation.z = (0.15 + 0.12 * Math.sin(t * 6 + 1)) * u; o.rz = Math.sin(t * 4) * 0.05 * u; } },
   { k: 'pushup', de: 'Liegestütz', ic: '💪', dur: 4.0, f(t, p, M, o) { const u = EMS.bump(p, .15, .12), th = 0.85 * u, bob = 0.5 - 0.5 * Math.cos(t * 6); o.rx = th; o.py = Math.max(0, 0.675 - 0.99 * Math.cos(th)) + 0.1 * bob * u; M.armR.rotation.x = M.armL.rotation.x = -th; M.headG.rotation.x = -th * 0.8; } },
   { k: 'faint', de: 'Ohnmacht', ic: '😵', dur: 4.2, f(t, p, M, o) { const u = p < 0.3 ? EMS.sm(p / 0.3) : p > 0.84 ? 1 - EMS.sm((p - 0.84) / 0.16) : 1; o.rx = -1.52 * u; o.py = 0.2 * u; M.armR.rotation.z = -1.0 * u + Math.sin(t * 3) * 0.05 * (u > 0.9 ? 1 : 0); M.armL.rotation.z = 1.0 * u; M.headG.rotation.z = 0.2 * u; } },
+  { k: 'sixseven', de: '67', ic: '6️⃣7️⃣', dur: 4.2, f(t, p, M, o) { const u = EMS.bump(p, .1, .1), w = Math.sin(t * 8.5);                // beide Hände vorn, Handflächen nach oben, abwechselnd hoch und runter
+    M.armR.rotation.x = (-1.2 + 0.5 * w) * u; M.armL.rotation.x = (-1.2 - 0.5 * w) * u; M.armR.rotation.y = 0.16 * u; M.armL.rotation.y = -0.16 * u;
+    M.headG.rotation.x = 0.06 * u; M.headG.rotation.z = w * 0.06 * u; o.py = 0.035 * Math.abs(Math.cos(t * 8.5)) * u; M.legR.rotation.x = 0.05 * w * u; M.legL.rotation.x = -0.05 * w * u; } },
 ];
 const EMOTE_DEFAULT = [0, 1, 2, null, null, null, null, null];
 let emoteSlots = (() => { try { const a = JSON.parse(localStorage.getItem('voxelcraft_emotes') || 'null'); if (Array.isArray(a) && a.length === 8) return a.map((v) => (Number.isInteger(v) && EMOTES[v] ? v : null)); } catch (e) { /* egal */ } return EMOTE_DEFAULT.slice(); })();
