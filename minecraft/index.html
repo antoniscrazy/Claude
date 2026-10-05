@@ -1698,7 +1698,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.10';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-05.11';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN4_START = 1791122621000;           // ab hier: weiche Gelände-Übergänge, Flusstäler, mehr Relief
 const GEN3_START = 1791118400000;           // Welten/Server ab diesem Zeitpunkt: tiefe Welt (+64 Tiefe), neue Höhlen und Strukturen, Baulimit 256
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
@@ -8929,7 +8929,17 @@ cmd(['roll', 'dice', 'wuerfel'], {
   },
 });
 cmd(['save'], { desc: 'Speichert die Welt', run() { toast(saveGame() ? (mp.on ? 'In der Cloud gespeichert' : 'Welt gespeichert') : 'Speichern fehlgeschlagen'); chatOk('Gespeichert.'); } });
-cmd(['kill', 'suicide'], { desc: 'Beendet dein Leben', run() { if (state === 'dead') return; P.health = 0; hudStatsDirty = true; die(); } });
+cmd(['kill', 'suicide'], {
+  desc: 'Beendet dein Leben – oder (OPs) das eines Spielers: /kill <spieler>', args: [T.player('spieler', true)],
+  run(a) {
+    if (a[0] && !(mp.on && a[0].toLowerCase() === mp.name.toLowerCase())) {
+      if (!mp.on) fail('Ohne Mitspieler gibt es nur /kill für dich selbst.');
+      if (!canCheat()) fail('Andere Spieler töten dürfen nur Operatoren (OPs).');
+      const t = findPlayer(a[0]); mpSend('rcmd', { to: t.name, c: 'kill', a: [] }); chatOk(t.name + ' wurde getötet.'); return;
+    }
+    if (state === 'dead') return; P.health = 0; hudStatsDirty = true; die();
+  },
+});
 cmd(['me'], {
   desc: 'Aktion im Chat („* Name tut etwas“)', args: [T.text('text')], needs: 1,
   run(a, raw) { const t = (mp.on ? mp.name : 'Du') + ' ' + raw; net('chat', { n: '*', t: '* ' + t }); chatAdd(null, '* ' + t, 'sys'); },
@@ -8992,16 +9002,36 @@ cmd(['nv', 'nachtsicht'], { desc: 'Nachtsicht für 10 Minuten', cheat: true, run
 
 // ----- Teleport -----
 cmd(['tp', 'teleport'], {
-  desc: 'Teleportiert zu Spieler oder Koordinaten (~ = relativ)', needs: 1,
-  args: [T.player('spieler / x'), T.y(), T.z()],
-  argsFor(prev) { return (prev[0] && /^[-~\d.]/.test(prev[0])) ? [T.x(), T.y(), T.z()] : [T.player('spieler / x')]; },
+  desc: 'Teleportiert: /tp <spieler> (zu ihm) · /tp <spieler> zu <spieler2> · /tp <x> <y> <z> (~ = relativ)', needs: 1,
+  args: [T.player('spieler / x'), T.player('zu spieler / y', true), T.player('spieler / z', true)],
+  argsFor(prev) {
+    if (prev[0] && /^[-~\d.]/.test(prev[0])) return [T.x(), T.y(), T.z()];
+    const to = prev[1] && /^(zu|to)$/i.test(prev[1]);
+    return to ? [T.player('spieler'), T.opt('zu', ['zu']), T.player('ziel')] : [T.player('spieler / x'), T.player('ziel (oder „zu“)', true)];
+  },
   run(a) {
-    const isNum = (v) => /^[-~\d.]+$/.test(v);
-    if (a.length === 1 || !isNum(a[0])) {
+    const isNum = (v) => /^[-~\d.]+$/.test(v), me = () => mp.on && mp.name.toLowerCase();
+    a = a.filter((x) => !/^(zu|to|->)$/i.test(x));
+    if (!a.length) fail('Benutzung: /tp <spieler> · /tp <spieler> zu <spieler2> · /tp <x> <y> <z>');
+    const toPlayer = (name) => {                                    // zu einem Spieler reisen (auch in dessen Dimension)
       if (!mp.on) fail('Ohne Mitspieler: /tp <x> <y> <z> oder /tp <x> <z>');
-      const t = findPlayer(a[0]); if (!t.have) fail(t.name + ' ist noch nicht sichtbar.');
+      const t = findPlayer(name); if (!t.have) fail(t.name + ' ist noch nicht sichtbar.');
       if ((t.dim || 0) !== world.dim) { enterDimension(t.dim || 0, t.target.x, t.target.y + 0.1, t.target.z, { exact: true }); chatOk('Zu ' + t.name + ' in die andere Dimension gereist'); return; }
-      tpTo(t.p.x, t.p.y, t.p.z); chatOk('Zu ' + t.name + ' teleportiert'); return;
+      tpTo(t.p.x, t.p.y, t.p.z); chatOk('Zu ' + t.name + ' teleportiert');
+    };
+    if (!isNum(a[0])) {
+      if (a.length === 1 || (me() && a[0].toLowerCase() === me() && a.length === 2)) { toPlayer(a.length === 1 ? a[0] : a[1]); return; }
+      // /tp <spieler> <ziel-spieler>  oder  /tp <spieler> <x> <y> <z>: einen anderen Spieler teleportieren (nur OPs)
+      if (!mp.on) fail('Ohne Mitspieler: /tp <x> <y> <z> oder /tp <x> <z>');
+      if (!canCheat()) fail('Andere Spieler teleportieren dürfen nur Operatoren (OPs).');
+      const who = findPlayer(a[0]);
+      if (isNum(a[1])) {
+        if (a.length < 3) fail('Benutzung: /tp <spieler> <x> <y> <z>');
+        mpSend('rcmd', { to: who.name, c: 'tp', a: a.slice(1, 4) }); chatOk(who.name + ' wird teleportiert'); return;
+      }
+      const dest = a[1].toLowerCase() === me() ? { name: mp.name } : findPlayer(a[1]);
+      if (dest.name === who.name) fail('Spieler und Ziel sind derselbe.');
+      mpSend('rcmd', { to: who.name, c: 'tp', a: [dest.name] }); chatOk(who.name + ' wird zu ' + dest.name + ' teleportiert'); return;
     }
     if (!canCheat()) fail('Koordinaten-Teleport geht in Überlebens-Welten nur zu Spielern.');
     if (a.length === 2) { const x = argCoord(a[0], P.p.x, 'x'), z = argCoord(a[1], P.p.z, 'z'); tpTo(x, surfaceY(x, z) + 0.1, z); chatOk('Teleportiert nach ' + Math.floor(x) + ' ' + Math.floor(z)); return; }
@@ -10409,7 +10439,7 @@ async function mpJoin(cfg) {
   let info;
   if (cfg.create) {
     info = await mp.db.createRoom(cfg.room, cfg.seed, cfg.mode, cfg.name, cfg.token, cfg.pub);
-    if (!info || !info.ok) throw new Error(info && info.error === 'exists' ? 'Diesen Servernamen gibt es schon – nimm einen anderen oder tritt dem Server bei.' : 'Server konnte nicht erstellt werden');
+    if (!info || !info.ok) throw new Error(info && info.error === 'exists' ? 'Diesen Servernamen gibt es schon – nimm einen anderen oder tritt dem Server bei.' : info && info.error === 'create_locked' ? 'Das Erstellen neuer Server ist gesperrt – nur freigegebene Spieler dürfen das. Bestehenden Servern kannst du weiter beitreten.' : 'Server konnte nicht erstellt werden');
   } else {
     info = await mp.db.joinRoom(cfg.room, cfg.name, cfg.token);
     if (!info || !info.ok) throw new Error('Diesen Server gibt es nicht. Prüfe den Namen oder erstelle einen neuen Server.');

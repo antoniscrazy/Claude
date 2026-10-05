@@ -81,10 +81,12 @@ th{color:var(--dim);font-weight:bold}
     <button class="btn on" data-tab="over" type="button">Übersicht</button>
     <button class="btn" data-tab="rooms" type="button">Server</button>
     <button class="btn" data-tab="players" type="button">Konten</button>
+    <button class="btn" data-tab="settings" type="button">Einstellungen</button>
   </div>
   <div id="tab-over"></div>
   <div id="tab-rooms" class="hidden"></div>
   <div id="tab-players" class="hidden"></div>
+  <div id="tab-settings" class="hidden"></div>
   <div id="tab-room" class="hidden"></div>
 </div>
 <div id="toast" class="toast hidden"></div>
@@ -145,7 +147,7 @@ document.querySelectorAll('[data-tab]').forEach((b) => { b.onclick = () => showT
 function showTab(t) {
   curTab = t; curRoom = null;
   document.querySelectorAll('[data-tab]').forEach((b) => b.classList.toggle('on', b.dataset.tab === t));
-  for (const k of ['over', 'rooms', 'players', 'room']) $('tab-' + k).classList.toggle('hidden', k !== t);
+  for (const k of ['over', 'rooms', 'players', 'settings', 'room']) $('tab-' + k).classList.toggle('hidden', k !== t);
   render();
 }
 
@@ -205,7 +207,7 @@ const dt = (iso) => iso ? new Date(iso).toLocaleString('de-DE') : '–';
 
 function render() {
   if (!ov) return;
-  if (curTab === 'over') renderOver(); else if (curTab === 'rooms') renderRooms(); else if (curTab === 'players') renderPlayers(); else if (curTab === 'room') renderRoom();
+  if (curTab === 'over') renderOver(); else if (curTab === 'rooms') renderRooms(); else if (curTab === 'players') renderPlayers(); else if (curTab === 'settings') renderSettings(); else if (curTab === 'room') renderRoom();
   paintFaces(document.body);
 }
 function roomCard(r) {
@@ -238,6 +240,24 @@ function renderPlayers() {
       '</td><td>' + (p.rooms || []).map((r) => '<a class="tag" href="#" data-room="' + esc(r) + '" style="color:var(--blue)">' + esc(r) + '</a>').join('') + '</td><td><button class="btn red sm" data-delp="' + esc(p.name) + '" type="button">Löschen</button></td></tr>').join('') + '</table></div>';
   el.querySelectorAll('a[data-room]').forEach((a) => { a.onclick = (e) => { e.preventDefault(); loadRoom(a.dataset.room); }; });
   el.querySelectorAll('[data-delp]').forEach((b) => { b.onclick = () => deletePlayer(b.dataset.delp); });
+}
+// ---------- Einstellungen: Server-Erstellung sperren (Ausnahmen per Spielername) ----------
+async function renderSettings() {
+  const el = $('tab-settings'); el.innerHTML = '<div class="panel dim">Lade …</div>';
+  let st; try { st = await rpc('vc_dev_get_settings', {}); } catch (e) { el.innerHTML = '<div class="panel">' + esc(/fehlen noch/.test(e.message) ? 'Dafür einmalig supabase/dev_console_part4.sql im Supabase-SQL-Editor ausführen.' : e.message) + '</div>'; return; }
+  if (curTab !== 'settings') return;
+  el.innerHTML = '<h2>Server erstellen</h2><div class="panel">' +
+    '<div class="dim">Ist die Sperre an, kann niemand außer den freigegebenen Spielern einen neuen Server erstellen. Bestehende Server laufen weiter, Beitreten bleibt möglich. Die Freigabe gilt für den Spielernamen (Konto).</div>' +
+    '<div class="row"><label><input type="checkbox" id="stLocked"' + (st.locked ? ' checked' : '') + '> Server-Erstellung für alle gesperrt</label></div>' +
+    '<div class="row"><label>Freigegeben (Komma getrennt)</label><input id="stAllowed" size="40" list="stNames" value="' + esc((st.allowed || []).join(', ')) + '" placeholder="dein Spielername, …"></div>' +
+    '<datalist id="stNames">' + ov.players.map((p) => '<option value="' + esc(p.name) + '">').join('') + '</datalist>' +
+    '<div class="row"><button class="btn sm" id="stSave" type="button">Speichern</button><span class="dim" id="stState">' + (st.locked ? '🔒 Gesperrt' : '🔓 Offen – jeder darf Server erstellen') + '</span></div></div>';
+  $('stSave').onclick = async () => {
+    const names = $('stAllowed').value.split(/[\s,;]+/).map((x) => x.trim()).filter(Boolean), locked = $('stLocked').checked;
+    if (locked && !names.length && !confirm('Niemand ist freigegeben – dann kann auch niemand (du auch nicht) Server erstellen. Trotzdem sperren?')) return;
+    try { await rpc('vc_dev_set_settings', { p_locked: locked, p_allowed: names }); toast(locked ? 'Gesperrt – Ausnahmen: ' + (names.join(', ') || 'keine') : 'Server-Erstellung ist wieder für alle offen'); renderSettings(); }
+    catch (e) { toast(e.code === 'bad_name' ? 'Ungültiger Name (3–16 Zeichen: Buchstaben, Ziffern, _)' : e.message); }
+  };
 }
 function verTag(room, name) {                         // Spielversion aus der Presence (alte Clients haben keine → rot)
   const m = channels.get(room) && channels.get(room).players.get(name), v = m && m.v;

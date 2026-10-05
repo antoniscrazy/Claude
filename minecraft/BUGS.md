@@ -98,3 +98,8 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * ✨ **Wetterlage je Jahreszeit:** Frühling regnerisch, Sommer sonnig mit häufigen Gewittern (Blitze öfter), Herbst viel **Nebel** (neues Wetter, `/weather fog`), Winter Schnee. In **Wüste und Mesa** wird aus Regen ein **Sandsturm** (Sandschleier, Sicht stark eingeschränkt).
 * ✨ **Pflanzen:** wachsen im Frühling schneller (×1,25), im Herbst etwas langsamer, im Winter kaum (×0,3), bei Regen +50 % – nur unter freiem Himmel; unter Dach/Glas (Gewächshaus) normal.
 
+## 2026-10-05.11
+
+* ✨ **/kill <spieler>** (nur OPs; ohne Namen tötet `/kill` weiter dich selbst) und **/tp erweitert:** `/tp <spieler>` (zu ihm), `/tp <spieler> <ziel>` bzw. `/tp <spieler> zu <ziel>` (einen anderen Spieler zu einem Spieler teleportieren) und `/tp <spieler> <x> <y> <z>` – die beiden letzten nur für OPs. Im Test mit zwei Spielern: Teleport über 60 Blöcke, in der „zu“-Schreibweise, per Koordinate, Nicht-OPs werden abgewiesen, unbekannte Namen melden einen Fehler.
+* ✨ **Dev-Konsole → Einstellungen: Server-Erstellung sperren.** Schalter „für alle gesperrt“ plus Liste freigegebener Spielernamen (Ausnahmen, z. B. du). Gesperrte Spieler bekommen beim Erstellen eine klare Meldung, Beitreten bleibt möglich. Dafür einmalig `supabase/dev_console_part4.sql` im Supabase-SQL-Editor ausführen (prüft die Sperre serverseitig in `vc_create_room`, nicht nur im Spiel).
+
