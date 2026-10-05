@@ -1713,7 +1713,16 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.16';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-05.17';            // Spielversion (nur Anzeige)
+// Mehrspieler-Kompatibilität: NUR wenn sich das Netzwerkformat oder die Welt-Speicherung unverträglich ändert, MP_PROTO erhöhen. Normale Versionen (neue Blöcke, Rezepte, Mobs, Befehle …) vertragen sich untereinander –
+// dafür gibt es keine Warnung mehr. Clients ohne MP_PROTO (vor 2026-10-05.17) gelten ab MP_MIN_VER als kompatibel.
+const MP_PROTO = 1, MP_MIN_VER = '2026-10-05.1';
+const verKey = (v) => { const m = /^(\d{4})-(\d{2})-(\d{2})\.(\d+)$/.exec(String(v || '')); return m ? ((+m[1] * 100 + +m[2]) * 100 + +m[3]) * 1000 + +m[4] : 0; };
+function mpCompat(meta) {                                                       // null = verträglich, sonst Text, warum nicht
+  if (!meta) return null;
+  if (meta.pv !== undefined) return meta.pv === MP_PROTO ? null : meta.pv < MP_PROTO ? 'ältere Netzwerk-Version (' + (meta.v || '?') + ')' : 'neuere Netzwerk-Version (' + (meta.v || '?') + ') – du brauchst die neueste index.html';
+  return verKey(meta.v) >= verKey(MP_MIN_VER) ? null : meta.v ? 'sehr alte Spielversion (' + meta.v + ')' : null;
+}
 const GEN4_START = 1791122621000;           // ab hier: weiche Gelände-Übergänge, Flusstäler, mehr Relief
 const GEN3_START = 1791118400000;           // Welten/Server ab diesem Zeitpunkt: tiefe Welt (+64 Tiefe), neue Höhlen und Strukturen, Baulimit 256
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
@@ -10365,7 +10374,7 @@ function renderTabList() {
 const DIM_EVENTS = new Set(['petspawn', 'veh', 'vehgone', 'drop', 'dropgone', 'tnt', 'explode', 'arrow', 'fall', 'throw', 'splash', 'bolt', 'mobs']);
 function mpVersionWarn(rp, what) {                                         // höchstens eine Warnung pro Spieler und Sitzung
   if (rp.verWarned) return; rp.verWarned = true;
-  chatAdd(null, '⚠ ' + rp.name + ' nutzt eine ' + what + ' – deshalb sieht er eine andere Welt und kann dich nicht sehen. Er braucht die neueste index.html!', 'err');
+  chatAdd(null, '⚠ ' + rp.name + ' nutzt eine ' + what + ' und sieht dich eventuell nicht richtig. Bitte beide die neueste index.html laden!', 'err');
 }
 const mpHandlers = {
   join(id, meta) {
@@ -10375,7 +10384,7 @@ const mpHandlers = {
       if ((o.joinedAt || 0) <= (meta.joinedAt || 0)) { o.dispose(); mp.players.delete(oid); } else return;
     }
     const rp = new RemotePlayer(id, meta.name, meta.joinedAt); mp.players.set(id, rp); rp.ver = meta.v;
-    if (meta.v && meta.v !== GAME_VER) mpVersionWarn(rp, 'andere Spielversion (' + meta.v + ')');          // nur wenn die Version wirklich gemeldet wurde
+    { const bad = mpCompat(meta); if (bad) mpVersionWarn(rp, bad); }                              // nur bei wirklich unverträglichen Versionen
     chatSys(meta.name + ' ist beigetreten'); achGive('mp'); mpEnsureProfile(rp); mpStatusHud(); if (mp.tab) renderTabList();
     if (isHost()) {                                                    // der Host bringt Neulinge auf den aktuellen Stand (Uhrzeit, Regeln, Wetter)
       const o = weather.override && gameTime < weather.override.until ? weather.override : null;
@@ -10403,7 +10412,7 @@ const mpHandlers = {
       case 'pos': {
         let rp = mp.players.get(from);
         if (!rp) { mpHandlers.join(from, { name: p.n, joinedAt: p.j }); rp = mp.players.get(from); if (!rp) return; }
-        if (!viaBatch) mpVersionWarn(rp, 'alte Spielversion');                       // neue Versionen senden alles gebündelt – ein Einzelpaket heißt: alter Client
+        if (!viaBatch && rp.ver === undefined && !rp.verWarned) mpVersionWarn(rp, 'sehr alte Spielversion');       // nur wenn keine Version gemeldet wurde und ein Einzelpaket kommt (sehr alter Client)
         if (p.pq !== undefined) (mp.pendPr = mp.pendPr || new Map()).set(from, { t: p.pq, at: performance.now() });          // Ping-Anfrage: bei der nächsten Gelegenheit zurückschicken
         if (Array.isArray(p.pr)) for (const [id, t, hold] of p.pr) if (id === mp.id && typeof t === 'number') {                // Antwort auf meine Anfrage
           const r = Math.max(0, performance.now() - t - (Number(hold) || 0)); rp.rtt = rp.rtt === undefined ? r : rp.rtt * 0.6 + r * 0.4;
@@ -10592,7 +10601,7 @@ async function mpJoin(cfg) {
   setTimeout(mpRestorePets, 4500);
   world.onEdit = mpQueueBlock; $('btnQuit').textContent = 'Verlassen';
   $('chat').innerHTML = ''; $('mpinfo').classList.remove('hidden'); mpStatusHud();
-  await mp.net.join(cfg.room, { id: mp.id, meta: { name: cfg.name, joinedAt: mp.joinedAt, v: GAME_VER } }, mpHandlers);
+  await mp.net.join(cfg.room, { id: mp.id, meta: { name: cfg.name, joinedAt: mp.joinedAt, v: GAME_VER, pv: MP_PROTO } }, mpHandlers);
   chatSys('Willkommen auf „' + cfg.room + '“' + (mp.owner ? ' (Besitzer: ' + mp.owner + ')' : '') + '! T = Chat, Tab = Spielerliste, /help = Befehle' + (isOp(mp.name) ? ' – du bist Operator' : ''));
 }
 async function mpLeave() {
@@ -11535,7 +11544,7 @@ Snake.cv.addEventListener('pointerup', snakeUp); Snake.cv.addEventListener('poin
 $('snakeBack').onclick = () => setState('menu');
 ATLAS.onReady(() => { if (state === 'menu' && !MenuScene.raf) menuSceneSync('menu'); });
 
-window.__vc = { missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+window.__vc = { mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>
