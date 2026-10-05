@@ -1698,7 +1698,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.12';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-05.13';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN4_START = 1791122621000;           // ab hier: weiche Gelände-Übergänge, Flusstäler, mehr Relief
 const GEN3_START = 1791118400000;           // Welten/Server ab diesem Zeitpunkt: tiefe Welt (+64 Tiefe), neue Höhlen und Strukturen, Baulimit 256
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
@@ -5203,12 +5203,21 @@ function placeAtPortal(tx, tz) {
     let [x, y, z] = best; while (portalDir(x, y - 1, z) >= 0) y--;
     P.p.set(x + 0.5, y, z + 0.5); return;
   }
-  const x = Math.floor(tx), z = Math.floor(tz); for (let dx = -2; dx <= 2; dx += 2) world.ensureChunk((x + dx) >> 4, z >> 4);
+  let x = Math.floor(tx), z = Math.floor(tz);
+  for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) world.ensureChunk((x >> 4) + dx, (z >> 4) + dz);
   let by = -1;
   if (world.dim === 0) { for (let y = CH - 2; y > 1; y--) { const b = world.getBlock(x, y, z); if (b > 0 && BLOCKS[b].solid && !BLOCKS[b].liquid && b !== LEAVES) { by = y + 1; break; } } if (by < SEA + world.yo + 1) by = SEA + world.yo + 1; }
-  else {                                                                // Nether: festen Boden suchen (nicht über Lava), sonst Plattform in 30
-    for (let y = 16; y < CH - 8; y++) { const d = world.getBlock(x, y - 1, z); if (world.getBlock(x, y, z) === AIR && world.getBlock(x, y + 1, z) === AIR && d > 0 && BLOCKS[d].solid && !BLOCKS[d].liquid) { by = y; break; } }
-    if (by < 0) by = 30;
+  else {                                                                // Nether: IM Nether landen – fester Boden unter der Decke (nicht über Lava, nie auf dem Dach)
+    const roof = CHD - 1, floorAt = (fx, fz) => {
+      for (let y = 17; y < roof - 8; y++) { const d = world.getBlock(fx, y - 1, fz); if (world.getBlock(fx, y, fz) === AIR && world.getBlock(fx, y + 1, fz) === AIR && world.getBlock(fx, y + 2, fz) === AIR && d > 0 && BLOCKS[d].solid && !BLOCKS[d].liquid) return y; }
+      return -1;
+    };
+    outer: for (let r = 0; r <= 14; r++) for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) {
+      if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue;
+      const fx = Math.floor(tx) + dx, fz = Math.floor(tz) + dz; if (!world.getChunk(fx >> 4, fz >> 4)) continue;
+      const y = floorAt(fx, fz); if (y > 0) { x = fx; z = fz; by = y; break outer; }
+    }
+    if (by < 0) by = 30;                                                // nichts Passendes: Höhle in den Fels schlagen (buildPortalAt räumt frei)
   }
   buildPortalAt(x, by, z); P.p.set(x + 1.0, by + 1, z + 0.5);
 }

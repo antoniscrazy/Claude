@@ -107,3 +107,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * ✅ **Treffer-Rotfärbung bei Spielern:** wer einen anderen Spieler schlägt oder mit dem Pfeil trifft, sieht ihn kurz (0,3 s) rot aufleuchten wie bei Mobs; auch alle anderen Spieler sehen den Treffer. Nur Haut/Körper werden rot, **Rüstung und gehaltenes Item bleiben unverändert**; das Aufleuchten kommt bei jedem Treffer, egal wie viel die Rüstung abfängt.
 
+## 2026-10-05.13
+
+* ✅ **Nether: Ankunft nie mehr auf der Decke.** Die Suche nach festem Boden lief bis weit über die Decke hinaus und fand in Säulen aus massivem Netherrack die Luft **über** dem Grundgestein-Dach (Test: 2 von 14 Portal-Ankünften landeten auf y 65). Jetzt wird nur unter der Decke gesucht (y 17 bis Decke − 8, nicht über Lava) und bei einer Säule ohne freien Platz in bis zu 14 Blöcken Umkreis die nächste mit Boden genommen; gibt es keine, wird eine Höhle in den Fels geschlagen. Test: 0 von 14 auf dem Dach. Gilt für Portale und `/nether`.
+
