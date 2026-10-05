@@ -115,3 +115,13 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * ✅ **Rückweg durch das Portal führt wieder zum Ausgangsportal.** Vorher wurde nur über umgerechnete Koordinaten (÷8 / ×8) das „nächste“ Portal im Umkreis von 22 Blöcken gesucht – lag das Gegenportal wegen der Rundung oder einer verschobenen Nether-Landung weiter weg, entstand ein neues Portal bzw. man kam an einem fremden Portal heraus (Test: 2 von 6 Rückwegen landeten 55 und 180 Blöcke vom Ausgangsportal entfernt). Jetzt merkt sich das Spiel jedes benutzte Portalpaar (je Welt gespeichert) und führt auf dem Rückweg genau zum verknüpften Portal; ist es zerstört, wird wie bisher gesucht (Umkreis 32) bzw. ein neues gebaut. Test: 6 von 6 Rückwegen kommen am Ausgangsportal heraus.
 
+## 2026-10-05.15 – Alles herstellbar
+
+* ✨ **Neue Handwerks-Reiter „Farben“ und „Stein“** und rund 220 neue Rezepte. Geprüft per Skript: jeder Block und jedes Item, das sich weder herstellen noch in der Welt (Oberwelt/Nether/Ende) finden, aus Blöcken/Monstern/Truhen/Händlern/Angeln gewinnen lässt, hatte kein Rezept – jetzt haben alle eins (außer Netherportal und Drachenei, die einzigartig bleiben; Erze, Biom- und Naturblöcke findet man weiterhin im Gelände).
+* ✨ **16 Farbstoffe** (eigene Items mit Texturen): aus Blumen (Löwenzahn, Mohn, Tulpe, Orchidee, Zierlauch, Porzellansternchen, Margerite, Kornblume, Maiglöckchen), Knochenmehl, Lapislazuli, Kohle, Kaktus (Ofen) und durch Mischen (z. B. Rot + Gelb = Orange).
+* ✨ **Färben:** Wolle, Terrakotta (8×), Glas (8×), Betonpulver (4 Sand + 4 Kies + Farbstoff = 8), Kerzen. **Betonpulver wird zu Beton, sobald es Wasser berührt** (auch beim Fallen in Wasser) – oder per Rezept mit Wassereimer (der leere Eimer kommt zurück).
+* ✨ **Holz:** entrindete Stämme, Planken der Sonderhölzer (Mangrove, Blasseiche, Karmesin, Wirr, Bambus), Sonderstämme (Stamm + Farbstoff), Bambusmosaik.
+* ✨ **Stein & Co.:** polierte/geschliffene/gemeißelte Varianten (Diorit, Granit, Andesit, Tuff, Basalt, Schwarzstein, Sandstein, Quarz, Kupfer, Endstein, Purpur, Ziegel, Lehm), Moos- und Rissvarianten, geglätteter Sandstein/Basalt (Ofen), Ozeanstein (Prismarin), Schlamm, Packeis/Blaueis, Roheisen-/Rohgold-/Rohkupferblöcke, oxidierte Kupferblöcke (mit Knochenmehl), Kupferlampe, Leitstein.
+* ✨ **Sonderblöcke:** Schleim-, Honig-, Waben-Block, Bienenstock/-nest, Zielscheibe, Notenblock, Plattenspieler, Bogenbauer-/Schmiede-/Kartentisch, Pilze und Pilzblöcke, Netherwarzenblöcke, Pilzlicht, Froschlichter, Blasses Moos, Harzblock, Zuckerrohr (Knochenmehl + Samen), Getöntes Glas, Endportalrahmen u. a.
+* Hinweis: Bei Blöcken, die es in Minecraft nur als Weltgenerierung gibt (Sonderhölzer, Froschlichter …), sind die Rezepte spieleigene Ersatzrezepte.
+

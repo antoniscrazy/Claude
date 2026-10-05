@@ -1310,6 +1310,10 @@ item('totem_of_undying', 'Totem der Unsterblichkeit', 'totem_of_undying', { stac
 item('saddle', 'Sattel', 'saddle', { stack: 1 }); item('ender_pearl', 'Enderperle', 'ender_pearl', { stack: 16, pearl: true }); item('ender_eye', 'Ender-Auge', 'ender_eye', { eye: true });
 item('oak_boat', 'Boot', 'oak_boat', { stack: 1, boat: true }); item('minecart', 'Lore', 'minecart', { stack: 1, cart: true });
 DUST_IDS.forEach((a) => a.forEach((id) => { BLOCKS[id].drop = IID.redstone; }));
+// ---------- Farbstoffe (angehängt): 16 Farben, eigene Texturen ----------
+const DYE_RGB = { white: [240, 240, 240], orange: [249, 128, 29], magenta: [199, 78, 189], light_blue: [58, 179, 218], yellow: [254, 216, 61], lime: [128, 199, 31], pink: [243, 139, 170], gray: [71, 79, 82],
+  light_gray: [157, 157, 151], cyan: [22, 156, 156], purple: [137, 50, 184], blue: [60, 68, 170], brown: [131, 84, 50], green: [94, 124, 22], red: [176, 46, 38], black: [29, 29, 33] };
+COLORS.forEach(([c, de]) => item('dye_' + c, 'Farbstoff: ' + de, 'gen_dye_' + c));
 PALETTE.items = PALETTE.items.filter((i) => i !== IID.almond_water);
 // ---------- Abbau: passendes Werkzeug und benötigte Stufe (0 Hand, 1 Holz, 2 Stein, 3 Eisen, 4 Diamant) ----------
 const setMine = (id, tool, need) => { BLOCKS[id].tool = tool; BLOCKS[id].need = need; };
@@ -1549,6 +1553,17 @@ function genBackroomsImages() {
     px(6, 10, '#7a5a1c'); px(8, 10, '#7a5a1c'); px(9, 10, '#7a5a1c'); px(5, 7, '#ffffff'); px(5, 8, '#ffffff');
     I['item/gen_almond_water'] = c;
   }
+  for (const [ck] of COLORS) {                                         // Farbstoff-Beutel
+    const c = brCanvas(16, 16), x = c.getContext('2d'), col = DYE_RGB[ck];
+    for (let yy = 3; yy <= 14; yy++) for (let xx = 3; xx <= 12; xx++) {
+      const dx = (xx - 7.5) / 4.6, dy = (yy - 9) / 5.6, r2 = dx * dx + dy * dy; if (r2 > 1) continue;
+      const k = r2 > 0.72 ? 0.62 : (xx + yy < 13 ? 1.15 : 0.9), cl = col.map((v) => Math.max(0, Math.min(255, Math.round(v * k))));
+      x.fillStyle = 'rgb(' + cl.join(',') + ')'; x.fillRect(xx, yy, 1, 1);
+    }
+    x.fillStyle = 'rgba(255,255,255,0.55)'; x.fillRect(5, 6, 2, 1); x.fillRect(5, 7, 1, 1);
+    x.fillStyle = '#6b4f2a'; x.fillRect(6, 2, 4, 2); x.fillStyle = '#8a6a3a'; x.fillRect(6, 2, 4, 1);
+    I['item/gen_dye_' + ck] = c;
+  }
 }
 
 // Mob-Texturen der Backrooms-Monster (alle selbst gezeichnet; UV-Layout wie boxGeo: rechts, vorn, links, hinten, oben, unten)
@@ -1698,7 +1713,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.14';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-05.15';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN4_START = 1791122621000;           // ab hier: weiche Gelände-Übergänge, Flusstäler, mehr Relief
 const GEN3_START = 1791118400000;           // Welten/Server ab diesem Zeitpunkt: tiefe Welt (+64 Tiefe), neue Höhlen und Strukturen, Baulimit 256
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
@@ -5361,7 +5376,13 @@ function updateFluids(dt) {
     fluidQ.delete(k); const q = k.split(','); fluidUpdate(+q[0], +q[1], +q[2]);
   }
 }
+const POWDER2CONC = {};
+function concreteCheck(x, y, z, id) {                                  // Betonpulver wird nass → Beton
+  if (id > 0 && POWDER2CONC[id] !== undefined) { for (const [dx, dy, dz] of FN) if (LQ[world.getBlock(x + dx, y + dy, z + dz)] === 1) { world.setBlock(x, y, z, POWDER2CONC[id], false); return; } }
+  else if (LQ[id] === 1) for (const [dx, dy, dz] of FN) { const n = world.getBlock(x + dx, y + dy, z + dz); if (POWDER2CONC[n] !== undefined) world.setBlock(x + dx, y + dy, z + dz, POWDER2CONC[n], false); }
+}
 function onBlockChange(x, y, z, id) {
+  concreteCheck(x, y, z, id);
   fluidTouch(x, y, z);
   rsAround(x, y, z);
   checkSupports(x, y, z, id);
@@ -6215,7 +6236,74 @@ recipe('Bauen', IID.netherite_ingot, 1, [[IID.netherite_scrap, 4], [IID.gold_ing
 recipe('Bauen', ID.netherite_block, 1, [[IID.netherite_ingot, 9]], 'table'); recipe('Bauen', IID.netherite_ingot, 9, [[ID.netherite_block, 1]]);
 ['sword', 'pickaxe', 'axe', 'shovel', 'hoe'].forEach((t) => recipe('Werkzeug', IID['netherite_' + t], 1, [[IID['diamond_' + t], 1], [IID.netherite_ingot, 1]], 'table'));
 ['helmet', 'chestplate', 'leggings', 'boots'].forEach((t) => recipe('Rüstung', IID['netherite_' + t], 1, [[IID['diamond_' + t], 1], [IID.netherite_ingot, 1]], 'table'));
-const CRAFT_CATS = ['Holz', 'Werkzeug', 'Rüstung', 'Bauen', 'Redstone', 'Bauteile', 'Stufen', 'Nahrung', 'Tränke', 'Ofen'];
+// ===== Alles herstellbar: Farbstoffe, Färben, Holz, Stein, Natur- und Sonderblöcke =====
+const missingRecipeKeys = [];
+const RK_ALIAS = { dirt: DIRT, stone: STONE, moss_block: ID.moss, hay_bale: ID.hay, chiseled_stone_bricks: ID.chiseled_bricks, mossy_stone_bricks: ID.mossy_bricks, cracked_stone_bricks: ID.cracked_bricks };
+const RK = (k) => { const v = RK_ALIAS[k] !== undefined ? RK_ALIAS[k] : ID[k] !== undefined ? ID[k] : IID[k]; if (v === undefined) missingRecipeKeys.push(k); return v; };
+const rc = (cat, out, n, ins, st, ret) => {
+  const o = typeof out === 'string' ? RK(out) : out;
+  const ii = ins.map(([sp, c]) => [typeof sp === 'string' && !TAG[sp] ? RK(sp) : sp, c]);
+  if (o === undefined || ii.some(([sp]) => sp === undefined)) return;
+  const r = { cat, out: o, n, ins: ii, st: st || 'hand' }; if (ret) r.ret = ret.map(([k, c]) => [RK(k), c]);
+  RECIPES.push(r);
+};
+// --- Farbstoffe ---
+rc('Farben', 'dye_white', 1, [['bone_meal', 1]]); rc('Farben', 'dye_blue', 1, [['lapis', 1]]); rc('Farben', 'dye_black', 1, [['coal', 1]]); rc('Farben', 'dye_green', 1, [['cactus', 1]], 'furnace');
+[['dandelion', 'yellow'], ['poppy', 'red'], ['red_tulip', 'red'], ['blue_orchid', 'light_blue'], ['allium', 'magenta'], ['azure_bluet', 'light_gray'], ['oxeye_daisy', 'light_gray'], ['cornflower', 'blue'], ['lily_of_the_valley', 'white']]
+  .forEach(([fl, c]) => rc('Farben', 'dye_' + c, 1, [[fl, 1]]));
+[['orange', 'red', 'yellow'], ['pink', 'red', 'white'], ['lime', 'green', 'white'], ['gray', 'black', 'white'], ['light_gray', 'gray', 'white'], ['cyan', 'blue', 'green'], ['purple', 'blue', 'red'],
+ ['magenta', 'purple', 'pink'], ['light_blue', 'blue', 'white'], ['brown', 'red', 'green'], ['green', 'blue', 'yellow']].forEach(([o, a, b]) => rc('Farben', 'dye_' + o, 2, [['dye_' + a, 1], ['dye_' + b, 1]]));
+// --- Färben ---
+COLORS.forEach(([c]) => {
+  const dy = 'dye_' + c;
+  if (c !== 'white') rc('Farben', c + '_wool', 1, [['wool', 1], [dy, 1]]);
+  rc('Farben', c + '_terracotta', 8, [['terracotta', 8], [dy, 1]]);
+  rc('Farben', c + '_glass', 8, [[GLASS, 8], [dy, 1]]);
+  rc('Farben', c + '_powder', 8, [['sand', 4], ['gravel', 4], [dy, 1]]);
+  rc('Farben', c + '_concrete', 1, [[c + '_powder', 1], ['water_bucket', 1]], 'hand', [['bucket', 1]]);
+  rc('Farben', c + '_candle', 1, [['candle', 1], [dy, 1]]);
+});
+COLORS.forEach(([c]) => { if (ID[c + '_powder'] && ID[c + '_concrete']) POWDER2CONC[ID[c + '_powder']] = ID[c + '_concrete']; });
+rc('Farben', 'tinted_glass', 2, [[GLASS, 2], ['amethyst_block', 1]], 'table');
+// --- Holz ---
+Object.keys(STRIP).forEach((l) => rc('Holz', STRIP[l], 1, [[+l, 1]]));
+[['mangrove_log', 'mangrove_planks'], ['pale_oak_log', 'pale_oak_planks'], ['crimson_stem', 'crimson_planks'], ['warped_stem', 'warped_planks'], ['bamboo_block', 'bamboo_planks']].forEach(([l, p]) => rc('Holz', p, 4, [[l, 1]]));
+rc('Holz', 'bamboo_mosaic', 1, [['bamboo_planks', 2]]);
+[['mangrove_log', 'brown'], ['pale_oak_log', 'white'], ['crimson_stem', 'red'], ['warped_stem', 'cyan']].forEach(([l, c]) => rc('Holz', l, 1, [['logs', 1], ['dye_' + c, 1]]));
+rc('Holz', 'bamboo_block', 1, [['sugar_cane', 9]]);
+// --- Stein, Ziegel, Metall ---
+[['polished_diorite', 'diorite', 4], ['polished_granite', 'granite', 4], ['polished_andesite', 'andesite', 4], ['polished_tuff', 'tuff', 4], ['tuff_bricks', 'polished_tuff', 4], ['polished_basalt', 'basalt', 4],
+ ['polished_blackstone', 'blackstone', 4], ['polished_blackstone_bricks', 'polished_blackstone', 4], ['end_stone_bricks', 'end_stone', 4], ['cut_sandstone', 'sandstone', 4], ['red_sandstone', 'red_sand', 4],
+ ['cut_red_sandstone', 'red_sandstone', 4], ['quartz_bricks', 'quartz', 4], ['mud_bricks', 'packed_mud', 4], ['resin_bricks', 'resin_block', 4], ['cut_copper', 'copper_block', 4], ['exposed_cut_copper', 'exposed_copper', 4],
+ ['weathered_cut_copper', 'weathered_copper', 4], ['oxidized_cut_copper', 'oxidized_copper', 4], ['copper_grate', 'copper_block', 4], ['coarse_dirt', 'dirt', 4], ['prismarine_plain', 'stone', 4], ['prismarine', 'prismarine_plain', 4]]
+  .forEach(([o, i, n]) => rc('Stein', o, n, [[i, o === 'coarse_dirt' || o === 'prismarine_plain' ? 2 : 4]].concat(o === 'coarse_dirt' ? [['gravel', 2]] : o === 'prismarine_plain' ? [['lapis', 1]] : []), 'hand'));
+[['chiseled_stone_bricks', 'stone_bricks', 2], ['chiseled_sandstone', 'cut_sandstone', 2], ['chiseled_tuff', 'polished_tuff', 2], ['chiseled_blackstone', 'polished_blackstone', 2],
+ ['chiseled_quartz', 'quartz', 2], ['quartz_pillar', 'quartz', 2], ['purpur_pillar', 'purpur', 2], ['chiseled_deepslate', 'deepslate_bricks', 2], ['chiseled_copper', 'cut_copper', 2], ['smooth_stone', 'stone', 1]].forEach(([o, i, n]) => rc('Stein', o, 1, [[i, n]]));
+rc('Stein', 'cracked_stone_bricks', 1, [['stone_bricks', 1]], 'furnace'); rc('Stein', 'smooth_sandstone', 1, [['sandstone', 1]], 'furnace'); 
+rc('Stein', 'smooth_basalt', 1, [['basalt', 1]], 'furnace');
+rc('Stein', 'mossy_cobble', 1, [['cobble', 1], ['moss_block', 1]]); rc('Stein', 'mossy_stone_bricks', 1, [['stone_bricks', 1], ['moss_block', 1]]);
+rc('Stein', 'gilded_blackstone', 1, [['polished_blackstone', 1], ['gold_nugget', 4]]); rc('Stein', 'purpur', 4, [['end_stone_bricks', 4], ['dye_magenta', 1]]);
+rc('Stein', 'dark_prismarine', 8, [['prismarine_plain', 8], ['dye_black', 1]]);
+rc('Stein', 'mud', 1, [['dirt', 1], ['water_bucket', 1]], 'hand', [['bucket', 1]]); rc('Stein', 'packed_mud', 1, [['mud', 1], ['wheat', 1]]);
+rc('Stein', 'resin_block', 1, [['clay', 4], ['dye_orange', 1]]); rc('Stein', 'lodestone', 1, [['chiseled_stone_bricks', 8], ['netherite_ingot', 1]], 'table');
+rc('Stein', 'packed_ice', 1, [['ice', 9]]); rc('Stein', 'blue_ice', 1, [['packed_ice', 9]]); rc('Stein', 'sponge', 1, [['hay_bale', 1], ['dye_yellow', 1]]); rc('Stein', 'hay_bale', 1, [['wheat', 9]]);
+[['raw_iron', 'raw_iron_block'], ['raw_gold', 'raw_gold_block'], ['raw_copper', 'raw_copper_block']].forEach(([i, b]) => { rc('Stein', b, 1, [[i, 9]], 'table'); rc('Stein', i, 9, [[b, 1]]); });
+rc('Stein', 'exposed_copper', 1, [['copper_block', 1], ['bone_meal', 1]]); rc('Stein', 'weathered_copper', 1, [['exposed_copper', 1], ['bone_meal', 1]]); rc('Stein', 'oxidized_copper', 1, [['weathered_copper', 1], ['bone_meal', 1]]);
+rc('Stein', 'copper_bulb', 4, [['copper_block', 3], ['blaze_rod', 1], ['redstone', 1]], 'table');
+// --- Natur- und Sonderblöcke ---
+rc('Bauen', 'sugar_cane', 2, [['bone_meal', 1], ['wheat_seeds', 1]]);
+rc('Bauen', 'slime_block', 1, [['slime_ball', 9]]); rc('Bauen', 'slime_ball', 9, [['slime_block', 1]]); rc('Bauen', 'honeycomb_block', 1, [['sugar', 4], ['dye_yellow', 1]]);
+rc('Bauen', 'honey_block', 1, [['honeycomb_block', 2], ['sugar', 2]]); rc('Bauen', 'beehive', 1, [['planks', 6], ['honeycomb_block', 3]], 'table'); rc('Bauen', 'bee_nest', 1, [['beehive', 1], ['honeycomb_block', 1]]);
+rc('Bauen', 'target', 1, [['redstone', 4], ['hay_bale', 1]], 'table'); rc('Bauen', 'note_block', 1, [['planks', 8], ['redstone', 1]], 'table'); rc('Bauen', 'jukebox', 1, [['planks', 8], ['diamond', 1]], 'table');
+rc('Bauen', 'fletching_table', 1, [['flint', 2], ['planks', 4]], 'table'); rc('Bauen', 'smithing_table', 1, [['iron_ingot', 2], ['planks', 4]], 'table'); rc('Bauen', 'cartography_table', 1, [['paper', 2], ['planks', 4]], 'table');
+rc('Bauen', 'barrel_decor', 1, [['barrel', 1]]); rc('Bauen', 'dried_kelp_block', 1, [['sugar_cane', 4], ['dye_green', 1]]); rc('Bauen', 'budding_amethyst', 1, [['amethyst_block', 4], ['lapis', 1]], 'table');
+rc('Bauen', 'brown_mushroom', 1, [['bone_meal', 1], ['dye_brown', 1]]); rc('Bauen', 'red_mushroom', 1, [['bone_meal', 1], ['dye_red', 1]]);
+rc('Bauen', 'red_mushroom_block', 1, [['red_mushroom', 4]]); rc('Bauen', 'brown_mushroom_block', 1, [['brown_mushroom', 4]]); rc('Bauen', 'mushroom_stem', 2, [['red_mushroom', 1], ['brown_mushroom', 1]]);
+rc('Bauen', 'nether_wart_block', 1, [['netherrack', 4], ['dye_red', 1]]); rc('Bauen', 'warped_wart_block', 1, [['netherrack', 4], ['dye_cyan', 1]]); rc('Bauen', 'shroomlight', 1, [['glowstone', 1], ['nether_wart_block', 1]]);
+rc('Bauen', 'pale_moss', 1, [['moss_block', 1], ['dye_white', 1]]);
+rc('Bauen', 'ochre_froglight', 1, [['glowstone', 1], ['dye_yellow', 1]]); rc('Bauen', 'verdant_froglight', 1, [['glowstone', 1], ['dye_green', 1]]); rc('Bauen', 'pearlescent_froglight', 1, [['glowstone', 1], ['dye_pink', 1]]);
+rc('Bauen', 'end_portal_frame_0', 1, [['end_stone_bricks', 4], ['ender_eye', 1]], 'table');
+const CRAFT_CATS = ['Holz', 'Werkzeug', 'Rüstung', 'Bauen', 'Stein', 'Farben', 'Redstone', 'Bauteile', 'Stufen', 'Nahrung', 'Tränke', 'Ofen'];
 
 const countItem = (spec) => inv.reduce((n, s) => n + (s && matchIng(spec, s.id) ? s.count : 0), 0);
 function takeItem(spec, n) {
@@ -6251,6 +6339,7 @@ function craft(r) {
   if (craftBlock(r, stations())) return;
   if (r.st === 'furnace' && !useFuel()) return;
   r.ins.forEach(([spec, n]) => takeItem(spec, n));
+  if (r.ret) r.ret.forEach(([id, n]) => { const l = addItem(id, n); if (l > 0) spawnDrop(id, l, P.p.x, P.p.y + 1, P.p.z); });         // z. B. der leere Eimer
   const left = addItem(r.out, r.n);
   if (left > 0) spawnDrop(r.out, left, P.p.x, P.p.y + 1, P.p.z);
   if (r.st === 'furnace') addXP(1);
@@ -6381,7 +6470,7 @@ function renderCraft() {
     const row = document.createElement('div'); row.className = 'rec ' + (why ? 'no' : 'can');
     const out = itemName(r.out) + (r.n > 1 ? ' ×' + r.n : '');
     row.innerHTML = '<img src="' + getIcon(r.out) + '"><div><b>' + out + '</b><br><small>' + r.ins.map(([sp, n]) => n + '× ' + ingName(sp)).join(', ') + '</small>' +
-      (why ? '<br><small class="why">' + why + '</small>' : '') + '</div>';
+      (r.ret ? '<br><small>(Eimer kommt zurück)</small>' : '') + (why ? '<br><small class="why">' + why + '</small>' : '') + '</div>';
     row.addEventListener('pointerdown', (e) => { e.preventDefault(); craft(r); });
     list.appendChild(row);
   });
@@ -11441,7 +11530,7 @@ Snake.cv.addEventListener('pointerup', snakeUp); Snake.cv.addEventListener('poin
 $('snakeBack').onclick = () => setState('menu');
 ATLAS.onReady(() => { if (state === 'menu' && !MenuScene.raf) menuSceneSync('menu'); });
 
-window.__vc = { attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+window.__vc = { missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>
