@@ -1698,7 +1698,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.13';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-05.14';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN4_START = 1791122621000;           // ab hier: weiche Gelände-Übergänge, Flusstäler, mehr Relief
 const GEN3_START = 1791118400000;           // Welten/Server ab diesem Zeitpunkt: tiefe Welt (+64 Tiefe), neue Höhlen und Strukturen, Baulimit 256
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
@@ -5179,9 +5179,28 @@ function startEndTravel() {
   if (world.dim !== 0) return;
   enterDimension(3, END.PX + 0.5, END.PY + 1, END.PZ + 0.5, { end: true });
 }
+// Portal-Verknüpfung: wer durch ein Portal reist, kommt auf dem Rückweg am selben Portal wieder heraus (auch wenn das Gegenportal weit vom Umrechnungspunkt entfernt liegt)
+let portalLinks = {};                                                  // "dim:x,y,z" (unterste Portalzelle) → [Ziel-Dimension, x, y, z]
+const linkKey = (dim, id) => dim + ':' + id.join(',');
+function portalCompId(x, y, z) {                                       // Kennung eines Portals = seine unterste Zelle (y, dann x, dann z)
+  if (portalDir(x, y, z) < 0) return null;
+  const seen = new Set(), q = [[x, y, z]]; let best = null;
+  while (q.length && seen.size < 90) {
+    const [a, b, c] = q.pop(), k = a + ',' + b + ',' + c; if (seen.has(k) || portalDir(a, b, c) < 0) continue; seen.add(k);
+    if (!best || b < best[1] || (b === best[1] && (a < best[0] || (a === best[0] && c < best[2])))) best = [a, b, c];
+    q.push([a + 1, b, c], [a - 1, b, c], [a, b + 1, c], [a, b - 1, c], [a, b, c + 1], [a, b, c - 1]);
+  }
+  return best;
+}
+function playerPortalId() {
+  const x = Math.floor(P.p.x), z = Math.floor(P.p.z);
+  return portalCompId(x, Math.floor(P.p.y + 0.2), z) || portalCompId(x, Math.floor(P.p.y + 1.2), z);
+}
 function startDimTravel() {
-  const td = world.dim === 0 ? 1 : 0, k = td === 1 ? 1 / 8 : 8;
-  enterDimension(td, Math.floor(P.p.x * k) + 0.5, null, Math.floor(P.p.z * k) + 0.5, { portal: true });
+  const td = world.dim === 0 ? 1 : 0, k = td === 1 ? 1 / 8 : 8, tx = Math.floor(P.p.x * k) + 0.5, tz = Math.floor(P.p.z * k) + 0.5;
+  const id = playerPortalId(), from = id ? { dim: world.dim, id } : null, L = id ? portalLinks[linkKey(world.dim, id)] : null;
+  if (L && L[0] === td) enterDimension(td, L[1] + 0.5, L[2], L[3] + 0.5, { portal: true, from, link: L, tx, tz });
+  else enterDimension(td, tx, null, tz, { portal: true, from });
 }
 function buildPortalAt(bx, by, bz) {                                    // Obsidianrahmen (4x5) entlang X mit Portal innen; Luft davor/dahinter
   portalBuilding = true;
@@ -5195,7 +5214,7 @@ function buildPortalAt(bx, by, bz) {                                    // Obsid
 }
 function placeAtPortal(tx, tz) {
   let best = null, bd = 1e9;
-  for (let dz = -22; dz <= 22; dz++) for (let dx = -22; dx <= 22; dx++) {
+  for (let dz = -32; dz <= 32; dz++) for (let dx = -32; dx <= 32; dx++) {
     const x = Math.floor(tx) + dx, z = Math.floor(tz) + dz; if (!world.getChunk(x >> 4, z >> 4)) continue;
     for (let y = 1; y < CH - 1; y++) if (portalDir(x, y, z) >= 0) { const d2 = dx * dx + dz * dz + (y - 30) * (y - 30) * 0.01; if (d2 < bd) { bd = d2; best = [x, y, z]; } }
   }
@@ -5225,7 +5244,18 @@ let vehStash = null;                                                  // Fahrzeu
 function finishArrival() {
   const a = pendingArrival; pendingArrival = null; if (!a) return;
   if (world.dim === 0 && vehStash) { vehStash.forEach((q) => { try { vehicles.push(new Vehicle(q[0], q[1], q[2], q[3], q[4])); } catch (e) { /* egal */ } }); vehStash = null; }
-  if (a.portal) { placeAtPortal(P.p.x, P.p.z); if (world.dim === 1) achGive('nether'); }
+  if (a.portal) {
+    let done = false;
+    if (a.link) {                                                       // verknüpftes Portal noch vorhanden? Dann genau dort herauskommen
+      const lx = a.link[1], ly = a.link[2], lz = a.link[3];
+      for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) world.ensureChunk((lx >> 4) + dx, (lz >> 4) + dz);
+      if (portalDir(lx, ly, lz) >= 0) { P.p.set(lx + 0.5, ly, lz + 0.5); done = true; }
+    }
+    if (!done) placeAtPortal(a.link ? a.tx : P.p.x, a.link ? a.tz : P.p.z);
+    const here = playerPortalId();
+    if (a.from && here) { portalLinks[linkKey(a.from.dim, a.from.id)] = [world.dim, ...here]; portalLinks[linkKey(world.dim, here)] = [a.from.dim, ...a.from.id]; saveWorldPrefs(); }
+    if (world.dim === 1) achGive('nether');
+  }
   if (a.backrooms) { placeInBackrooms(P.p.x, P.p.z); achGive('backrooms'); }
   if (a.end) endArrive();
   if (a.backrooms || a.out) setTimeout(() => backFlash(false), 350);
@@ -8605,12 +8635,12 @@ const worldKey = () => curWorldKey;
 function loadWorldPrefs() {
   let d = {}; try { d = JSON.parse(localStorage.getItem('voxelcraft_prefs') || '{}')[worldKey()] || {}; } catch (e) { /* egal */ }
   Object.assign(rules, { mobspawn: true, daycycle: true, mobgriefing: true, backrooms: true, season: 'auto', difficulty: 'normal' }, d.rules || {});
-  P.homes = d.homes || {};
+  P.homes = d.homes || {}; portalLinks = d.links || {};
 }
 function saveWorldPrefs() {
   try {
     const all = JSON.parse(localStorage.getItem('voxelcraft_prefs') || '{}');
-    all[worldKey()] = { rules: Object.assign({}, rules), homes: P.homes };
+    all[worldKey()] = { rules: Object.assign({}, rules), homes: P.homes, links: portalLinks };
     localStorage.setItem('voxelcraft_prefs', JSON.stringify(all));
   } catch (e) { /* egal */ }
 }

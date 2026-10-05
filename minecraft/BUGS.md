@@ -111,3 +111,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * ✅ **Nether: Ankunft nie mehr auf der Decke.** Die Suche nach festem Boden lief bis weit über die Decke hinaus und fand in Säulen aus massivem Netherrack die Luft **über** dem Grundgestein-Dach (Test: 2 von 14 Portal-Ankünften landeten auf y 65). Jetzt wird nur unter der Decke gesucht (y 17 bis Decke − 8, nicht über Lava) und bei einer Säule ohne freien Platz in bis zu 14 Blöcken Umkreis die nächste mit Boden genommen; gibt es keine, wird eine Höhle in den Fels geschlagen. Test: 0 von 14 auf dem Dach. Gilt für Portale und `/nether`.
 
+## 2026-10-05.14
+
+* ✅ **Rückweg durch das Portal führt wieder zum Ausgangsportal.** Vorher wurde nur über umgerechnete Koordinaten (÷8 / ×8) das „nächste“ Portal im Umkreis von 22 Blöcken gesucht – lag das Gegenportal wegen der Rundung oder einer verschobenen Nether-Landung weiter weg, entstand ein neues Portal bzw. man kam an einem fremden Portal heraus (Test: 2 von 6 Rückwegen landeten 55 und 180 Blöcke vom Ausgangsportal entfernt). Jetzt merkt sich das Spiel jedes benutzte Portalpaar (je Welt gespeichert) und führt auf dem Rückweg genau zum verknüpften Portal; ist es zerstört, wird wie bisher gesucht (Umkreis 32) bzw. ein neues gebaut. Test: 6 von 6 Rückwegen kommen am Ausgangsportal heraus.
+
