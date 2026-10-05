@@ -103,3 +103,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * ✨ **/kill <spieler>** (nur OPs; ohne Namen tötet `/kill` weiter dich selbst) und **/tp erweitert:** `/tp <spieler>` (zu ihm), `/tp <spieler> <ziel>` bzw. `/tp <spieler> zu <ziel>` (einen anderen Spieler zu einem Spieler teleportieren) und `/tp <spieler> <x> <y> <z>` – die beiden letzten nur für OPs. Im Test mit zwei Spielern: Teleport über 60 Blöcke, in der „zu“-Schreibweise, per Koordinate, Nicht-OPs werden abgewiesen, unbekannte Namen melden einen Fehler.
 * ✨ **Dev-Konsole → Einstellungen: Server-Erstellung sperren.** Schalter „für alle gesperrt“ plus Liste freigegebener Spielernamen (Ausnahmen, z. B. du). Gesperrte Spieler bekommen beim Erstellen eine klare Meldung, Beitreten bleibt möglich. Dafür einmalig `supabase/dev_console_part4.sql` im Supabase-SQL-Editor ausführen (prüft die Sperre serverseitig in `vc_create_room`, nicht nur im Spiel).
 
+## 2026-10-05.12
+
+* ✅ **Treffer-Rotfärbung bei Spielern:** wer einen anderen Spieler schlägt oder mit dem Pfeil trifft, sieht ihn kurz (0,3 s) rot aufleuchten wie bei Mobs; auch alle anderen Spieler sehen den Treffer. Nur Haut/Körper werden rot, **Rüstung und gehaltenes Item bleiben unverändert**; das Aufleuchten kommt bei jedem Treffer, egal wie viel die Rüstung abfängt.
+
