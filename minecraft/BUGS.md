@@ -145,3 +145,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * ✅ **Emotes geprüft:** alle 23 Animationen einzeln aus zwei Blickwinkeln (von vorn und von der Seite) in je 6 Zeitpunkten angesehen (Winken, Klatschen, Salto, Tanzen, Verbeugung, Jubeln, Salutieren, Nein, Ja, Schulterzucken, Pirouette, Hampelmann, Floss, Roboter, Zombie, Boxen, Tritt, Siegerpose, Nachdenken, Hinsetzen, Handstand, Liegestütz, Ohnmacht). Zusätzlich rechnerisch geprüft: keine ungültigen Werte (NaN) in irgendeinem Bild, Figur steht nach jedem Emote wieder in der Grundstellung. Gefunden und behoben: **Ja** (Daumen hoch) hielt den Arm fast am Körper, **Nachdenken** verdeckte mit der Hand das Gesicht → jetzt Hand am Kinn, Gesicht sichtbar. Vorher schon behoben: Positionsverschiebung der Figur nach Salto/Handstand bei mehrfachem Abspielen.
 
+## 2026-10-05.20
+
+* ✅ **Emote-Plätze bei vollem Rad änderbar.** Bisher kam man nur über einen leeren ＋-Platz ins Auswahlmenü – waren alle 8 Plätze belegt, ließ sich nichts mehr ändern oder entfernen. Jetzt öffnet im Rad die Taste **E**, der Knopf **„✎ Bearbeiten“** (unten im Rad, auch auf Touch) oder der Befehl **`/emotes`** das Menü. Im Menü: Platz wählen und Emote antippen ersetzt ihn; ist der Emote schon auf einem anderen Platz, **tauschen** beide; **✕** am Platz oder erneutes Antippen der markierten Karte **entfernt** ihn; „Standard wiederherstellen“ setzt Winken/Klatschen/Salto zurück. Der gewählte Platz wird oben im Text benannt. Test: 8 von 8 Plätzen belegt → ersetzen, tauschen, entfernen funktionieren.
+

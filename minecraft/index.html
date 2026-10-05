@@ -260,8 +260,14 @@ body.touch #modeTag,body.touch #seasonTag{display:none}
 .ew-center .nm{font-size:clamp(16px,3.2vh,26px);font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-top:2px}
 .ew-center .ht{font-size:clamp(11px,1.9vh,14px);color:#c5cbd8;margin-top:6px;letter-spacing:.5px}
 .ew-cur{position:absolute;left:0;top:0;width:12px;height:12px;margin:-6px;border-radius:50%;background:#fff;box-shadow:0 0 12px #fff,0 0 0 3px rgba(255,255,255,.3);pointer-events:none;opacity:.9}
-.ew-close{position:absolute;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);padding:9px 22px;border-radius:999px;background:rgba(0,0,0,.55);border:2px solid rgba(255,255,255,.4);color:#fff;font:inherit;font-size:15px;display:none}
-body.touch .ew-close{display:block}
+.ew-bar{position:absolute;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:10px}
+.ew-bar button{padding:9px 20px;border-radius:999px;background:rgba(0,0,0,.6);border:2px solid rgba(255,255,255,.4);color:#fff;font:inherit;font-size:15px;cursor:pointer}
+.ew-bar button:hover{background:rgba(70,100,190,.75)}
+.ew-bar .ew-close{display:none}
+body.touch .ew-bar .ew-close{display:block}
+.em-card.cur{border-color:#ffd36a;background:rgba(255,211,106,.16)}
+.em-card.cur::after{content:"Platz – antippen = entfernen";display:block;font-size:10px;color:#ffd36a;margin-top:2px}
+.em-card.used.cur::after{content:"Platz – antippen = entfernen"}
 #tEmote{top:136px}
 #emotes .panel{max-width:760px;max-height:92vh;overflow:auto;background:linear-gradient(180deg,#22283a,#171b28);border-color:#0b0d14;box-shadow:inset 0 0 0 3px #3a4260,0 20px 60px rgba(0,0,0,.6)}
 #emotes h2{display:flex;align-items:center;gap:10px;justify-content:center}
@@ -319,10 +325,11 @@ body.touch .ew-close{display:block}
 <div id="emotes" class="overlay hidden">
   <div class="panel">
     <h2>😀 Emotes</h2>
-    <p class="sub">Tippe einen Platz im Rad an und dann einen Emote. Mit ✕ entfernst du ihn wieder.</p>
+    <p class="sub" id="emSub">Tippe einen Platz im Rad an und dann einen Emote. Mit ✕ entfernst du ihn wieder.</p>
     <div class="em-slots" id="emSlots"></div>
     <div class="em-grid" id="emGrid"></div>
-    <button class="btn" id="btnEmDone" type="button" style="margin-top:16px">Fertig</button>
+    <button class="btn" id="btnEmReset" type="button" style="margin-top:16px">Standard wiederherstellen (Winken, Klatschen, Salto)</button>
+    <button class="btn" id="btnEmDone" type="button">Fertig</button>
   </div>
 </div>
 
@@ -1769,7 +1776,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.19';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-10-05.20';            // Spielversion (nur Anzeige)
 // Mehrspieler-Kompatibilität: NUR wenn sich das Netzwerkformat oder die Welt-Speicherung unverträglich ändert, MP_PROTO erhöhen. Normale Versionen (neue Blöcke, Rezepte, Mobs, Befehle …) vertragen sich untereinander –
 // dafür gibt es keine Warnung mehr. Clients ohne MP_PROTO (vor 2026-10-05.17) gelten ab MP_MIN_VER als kompatibel.
 const MP_PROTO = 1, MP_MIN_VER = '2026-10-05.1';
@@ -8112,6 +8119,7 @@ document.addEventListener('keydown', (e) => {
   if (e.code === 'KeyW' && state === 'play') { const now = performance.now(); if (now - (P.lastW || 0) < 280) P.dblW = 99; P.lastW = now; }
   if (state === 'play') {
     if (e.code.startsWith('Digit')) { const n = parseInt(e.code.slice(5), 10); if (n >= 1 && n <= 9) selectSlot(n - 1); }
+    if (e.code === 'KeyE' && emote.wheel) { e.preventDefault(); openEmoteMenu(emote.sel >= 0 ? emote.sel : 0); return; }                // Emote-Plätze bearbeiten (auch wenn alle belegt sind)
     if (e.code === 'KeyR') { e.preventDefault(); if (emote.wheel && emote.sticky) closeWheel(false); else openWheel(false); }
     if (e.code === 'KeyF') toggleFly();
     if (e.code === 'KeyQ') dropHeld(e.ctrlKey);
@@ -8467,13 +8475,14 @@ const EW_N = 8;
 function ewBuild() {
   const w = $('emoteWheel'); let h = '<div class="ew-wrap"><div class="ew-ring"></div>';
   for (let i = 0; i < EW_N; i++) { const a = i * 2 * PI / EW_N; h += '<div class="ew-slot" data-i="' + i + '" style="--x:' + Math.sin(a).toFixed(4) + ';--y:' + (-Math.cos(a)).toFixed(4) + '"><span></span></div>'; }
-  h += '<div class="ew-center"><div class="ic"></div><div class="nm"></div><div class="ht"></div></div><i class="ew-cur"></i></div><button class="ew-close" type="button">Schließen</button>';
+  h += '<div class="ew-center"><div class="ic"></div><div class="nm"></div><div class="ht"></div></div><i class="ew-cur"></i></div><div class="ew-bar"><button class="ew-edit" type="button">✎ Bearbeiten' + (touchMode ? '' : ' (E)') + '</button><button class="ew-close" type="button">Schließen</button></div>';
   w.innerHTML = h;
   w.querySelectorAll('.ew-slot').forEach((el) => {
     el.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse' && !document.pointerLockElement) { emote.sel = +el.dataset.i; ewPaint(); } });
     el.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); emote.sel = +el.dataset.i; ewPaint(); if (touchMode || !document.pointerLockElement) ewChoose(); });
   });
   w.querySelector('.ew-close').addEventListener('pointerdown', (e) => { e.preventDefault(); closeWheel(false); });
+  w.querySelector('.ew-edit').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); openEmoteMenu(emote.sel >= 0 ? emote.sel : 0); });
   w.addEventListener('pointerdown', (e) => { if (e.target === w && (touchMode || !document.pointerLockElement)) closeWheel(false); });
 }
 function ewPaint() {
@@ -8485,7 +8494,7 @@ function ewPaint() {
   const E = emote.sel >= 0 && emoteSlots[emote.sel] !== null ? EMOTES[emoteSlots[emote.sel]] : null, c = w.querySelector('.ew-center');
   c.querySelector('.ic').textContent = E ? E.ic : emote.sel >= 0 ? '＋' : '😀';
   c.querySelector('.nm').textContent = E ? E.de : emote.sel >= 0 ? 'Emote hinzufügen' : 'Emotes';
-  c.querySelector('.ht').textContent = emote.sel >= 0 ? (touchMode ? 'Antippen' : 'R loslassen oder klicken') : (touchMode ? 'Wähle einen Emote' : 'Maus bewegen, R loslassen');
+  c.querySelector('.ht').textContent = emote.sel >= 0 ? (touchMode ? 'Antippen' : 'R loslassen oder klicken · E = ändern') : (touchMode ? 'Wähle einen Emote' : 'Maus bewegen, R loslassen · E = bearbeiten');
   const cur = w.querySelector('.ew-cur'); cur.style.display = touchMode || !document.pointerLockElement ? 'none' : 'block';
   cur.style.transform = 'translate(' + emote.cx + 'px,' + emote.cy + 'px)';
 }
@@ -8519,6 +8528,8 @@ function openEmoteMenu(slot) {
   emMenuSlot = Math.max(0, slot | 0); setState('emotes'); emRender();
 }
 function emRender() {
+  const cur = emoteSlots[emMenuSlot];
+  $('emSub').textContent = 'Platz ' + (emMenuSlot + 1) + ' ist ausgewählt' + (cur !== null ? ' (' + EMOTES[cur].de + ')' : ' (leer)') + ' – tippe einen Emote, um ihn dort einzusetzen' + (cur !== null ? ', oder ✕ zum Entfernen.' : '.');
   const sl = $('emSlots'); sl.innerHTML = '';
   for (let i = 0; i < EW_N; i++) {
     const id = emoteSlots[i], b = document.createElement('div'); b.className = 'em-slot' + (id !== null ? ' has' : '') + (i === emMenuSlot ? ' sel' : '');
@@ -8528,18 +8539,21 @@ function emRender() {
   }
   const g = $('emGrid'); g.innerHTML = '';
   EMOTES.forEach((E, id) => {
-    const c = document.createElement('button'); c.type = 'button'; c.className = 'em-card' + (emoteSlots.includes(id) ? ' used' : '');
+    const c = document.createElement('button'); c.type = 'button'; c.className = 'em-card' + (emoteSlots.includes(id) ? ' used' : '') + (emoteSlots[emMenuSlot] === id ? ' cur' : '');
     c.innerHTML = '<div class="e">' + E.ic + '</div><div class="n">' + E.de + '</div>';
     c.addEventListener('pointerdown', (e) => {
-      e.preventDefault(); const old = emoteSlots.indexOf(id); if (old >= 0) emoteSlots[old] = null;
+      e.preventDefault();
+      if (emoteSlots[emMenuSlot] === id) { emoteSlots[emMenuSlot] = null; saveEmoteSlots(); emRender(); return; }          // der Emote dieses Platzes: antippen = entfernen
+      const old = emoteSlots.indexOf(id); if (old >= 0) emoteSlots[old] = emoteSlots[emMenuSlot];                         // war er schon woanders: Plätze tauschen
       emoteSlots[emMenuSlot] = id; saveEmoteSlots();
-      const nx = emoteSlots.findIndex((v) => v === null); if (nx >= 0) emMenuSlot = nx;
+      if (old < 0) { const nx = emoteSlots.findIndex((v, i) => v === null && i !== emMenuSlot); if (nx >= 0) emMenuSlot = nx; }
       emRender();
     });
     g.appendChild(c);
   });
 }
 $('btnEmDone').onclick = () => { if (state === 'emotes') resume(); };
+$('btnEmReset').onclick = () => { emoteSlots = EMOTE_DEFAULT.slice(); saveEmoteSlots(); emMenuSlot = 3; emRender(); };
 holdBtn('tEmote', () => { if (state === 'play') { if (emote.wheel) closeWheel(false); else openWheel(true); } }, () => {});
 
 class RemotePlayer {
@@ -10087,6 +10101,7 @@ cmd(['weather', 'wetter'], {
     setWeather(k, a[1] ? argNum(a[1], 'sekunden', 10, 86400) : 900); chatOk('Wetter: ' + WEATHER_DE[k]);
   },
 });
+cmd(['emotes', 'emote'], { desc: 'Öffnet das Emote-Menü (Plätze des Emote-Rads belegen/entfernen) – nur Mehrspieler', mpOnly: true, run() { openEmoteMenu(0); } });
 cmd(['season', 'jahreszeit'], {
   desc: 'Jahreszeit anzeigen oder festlegen: spring, summer, autumn, winter oder auto (nach Spieltagen)', cheat: true, args: [T.opt('jahreszeit', [['auto', 'läuft mit den Spieltagen'], ['spring', 'Frühling'], ['summer', 'Sommer'], ['autumn', 'Herbst'], ['winter', 'Winter']], true)],
   run(a) {
