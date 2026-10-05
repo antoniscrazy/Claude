@@ -1713,7 +1713,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.15';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
+const GAME_VER = '2026-10-05.16';            // Spielversion: Spieler mit anderer Version sehen eine andere Welt / keine anderen Spieler – wird beim Beitritt verglichen
 const GEN4_START = 1791122621000;           // ab hier: weiche Gelände-Übergänge, Flusstäler, mehr Relief
 const GEN3_START = 1791118400000;           // Welten/Server ab diesem Zeitpunkt: tiefe Welt (+64 Tiefe), neue Höhlen und Strukturen, Baulimit 256
 const GEN2_START = 1790873700000;           // Welten/Server, die ab diesem Zeitpunkt angelegt wurden, nutzen die neuen Biome (alte bleiben unverändert)
@@ -6212,9 +6212,9 @@ recipe('Bauen', ID.enchanting_table, 1, [[ID.obsidian, 4], [IID.diamond, 2], [II
 recipe('Redstone', ID.lever_2_0, 1, [[IID.stick, 1], [ID.cobble, 1]]); recipe('Redstone', ID.button_2_0, 1, [[STONE, 1]]); recipe('Redstone', ID.plate_0, 1, [[STONE, 2]]);
 recipe('Redstone', ID.redstone_torch, 1, [[IID.redstone, 1], [IID.stick, 1]]); recipe('Redstone', ID.lamp, 1, [[IID.redstone, 4], [ID.glowstone, 1]], 'table');
 recipe('Redstone', PIS_BASE[0][4][0], 1, [['planks', 3], [ID.cobble, 4], [IID.iron_ingot, 1], [IID.redstone, 1]], 'table'); recipe('Redstone', PIS_BASE[1][4][0], 1, [[PIS_BASE[0][4][0], 1], [IID.slime_ball, 1]], 'table');
-recipe('Redstone', HOP_IDS[0], 1, [[IID.iron_ingot, 5], [CHEST_IDS[0], 1]], 'table'); recipe('Redstone', PRAIL_IDS.ns[0], 6, [[IID.gold_ingot, 6], [IID.stick, 1], [IID.redstone, 1]], 'table');
-recipe('Bauen', IID.saddle, 1, [[IID.leather, 5], [IID.iron_ingot, 1]], 'table'); recipe('Bauen', IID.ender_eye, 1, [[IID.ender_pearl, 1], [IID.blaze_powder, 1]]);
-recipe('Bauen', IID.oak_boat, 1, [['planks', 5]], 'table'); recipe('Bauen', IID.minecart, 1, [[IID.iron_ingot, 5]], 'table'); recipe('Bauen', ID.rail, 16, [[IID.iron_ingot, 6], [IID.stick, 1]], 'table');
+recipe('Redstone', HOP_IDS[0], 1, [[IID.iron_ingot, 5], [CHEST_IDS[0], 1]], 'table'); recipe('Fahrzeuge', PRAIL_IDS.ns[0], 6, [[IID.gold_ingot, 6], [IID.stick, 1], [IID.redstone, 1]]);
+recipe('Fahrzeuge', IID.saddle, 1, [[IID.leather, 5], [IID.iron_ingot, 1]]); recipe('Bauen', IID.ender_eye, 1, [[IID.ender_pearl, 1], [IID.blaze_powder, 1]]);
+recipe('Fahrzeuge', IID.oak_boat, 1, [['planks', 5]]); recipe('Fahrzeuge', IID.minecart, 1, [[IID.iron_ingot, 5]]); recipe('Fahrzeuge', ID.rail, 16, [[IID.iron_ingot, 6], [IID.stick, 1]]);                // Fahrzeuge: überall herstellbar (keine Werkbank nötig)
 recipe('Werkzeug', IID.glass_bottle, 3, [[GLASS, 3]]);
 recipe('Werkzeug', IID.fishing_rod, 1, [[IID.stick, 3], [IID.string, 2]], 'table');
 recipe('Werkzeug', IID.shears, 1, [[IID.iron_ingot, 2]], 'table');
@@ -6303,7 +6303,7 @@ rc('Bauen', 'nether_wart_block', 1, [['netherrack', 4], ['dye_red', 1]]); rc('Ba
 rc('Bauen', 'pale_moss', 1, [['moss_block', 1], ['dye_white', 1]]);
 rc('Bauen', 'ochre_froglight', 1, [['glowstone', 1], ['dye_yellow', 1]]); rc('Bauen', 'verdant_froglight', 1, [['glowstone', 1], ['dye_green', 1]]); rc('Bauen', 'pearlescent_froglight', 1, [['glowstone', 1], ['dye_pink', 1]]);
 rc('Bauen', 'end_portal_frame_0', 1, [['end_stone_bricks', 4], ['ender_eye', 1]], 'table');
-const CRAFT_CATS = ['Holz', 'Werkzeug', 'Rüstung', 'Bauen', 'Stein', 'Farben', 'Redstone', 'Bauteile', 'Stufen', 'Nahrung', 'Tränke', 'Ofen'];
+const CRAFT_CATS = ['Holz', 'Werkzeug', 'Rüstung', 'Bauen', 'Fahrzeuge', 'Stein', 'Farben', 'Redstone', 'Bauteile', 'Stufen', 'Nahrung', 'Tränke', 'Ofen'];
 
 const countItem = (spec) => inv.reduce((n, s) => n + (s && matchIng(spec, s.id) ? s.count : 0), 0);
 function takeItem(spec, n) {
@@ -9021,7 +9021,7 @@ $('chatInput').addEventListener('keydown', (e) => {
 });
 
 /* ---------------- Die Befehle ---------------- */
-const GM_ARGS = [T.opt('modus', [['survival', 'Überleben'], ['creative', 'Kreativ'], ['spectator', 'Zuschauer']])];
+const GM_ARGS = [T.opt('modus', [['survival', 'Überleben'], ['creative', 'Kreativ'], ['spectator', 'Zuschauer']]), T.player('spieler', true)];
 const TIME_PRESETS = { sunrise: 6, day: 7, noon: 12, sunset: 18, night: 20, midnight: 0 };
 
 cmd(['help', 'hilfe', '?'], {
@@ -9096,10 +9096,15 @@ cmd(['night', 'nacht'], { desc: 'Setzt die Zeit auf Nacht', cheat: true, run() {
 
 // ----- Spielmodus, Gesundheit, Bewegung -----
 cmd(['gamemode', 'gm'], {
-  desc: 'Wechselt deinen Spielmodus Überleben/Kreativ/Zuschauer', cheat: true, args: GM_ARGS, needs: 1,
+  desc: 'Wechselt den Spielmodus (Überleben/Kreativ/Zuschauer): /gamemode <modus> [spieler] – ohne Spieler bei dir selbst', cheat: true, args: GM_ARGS, needs: 1,
   run(a) {
     const m = { survival: 'survival', s: 'survival', 0: 'survival', ueberleben: 'survival', creative: 'creative', c: 'creative', 1: 'creative', kreativ: 'creative', spectator: 'spectator', sp: 'spectator', 3: 'spectator', zuschauer: 'spectator' }[norm(a[0])];
     if (!m) fail('Modus: survival (s), creative (c) oder spectator (sp)');
+    if (a[1] && !(mp.on && a[1].toLowerCase() === mp.name.toLowerCase())) {                // bei einem anderen Spieler
+      if (!mp.on) fail('Ohne Mitspieler gilt /gamemode nur für dich selbst.');
+      if (!canCheat()) fail('Den Spielmodus anderer ändern dürfen nur Operatoren (OPs).');
+      const t = findPlayer(a[1]); mpSend('rcmd', { to: t.name, c: 'gamemode', a: [m] }); chatOk('Spielmodus von ' + t.name + ': ' + MODE_DE[m]); return;
+    }
     mode = m; if (!isCreative() && !P.canFly) P.flying = false;
     $('modeTag').textContent = MODE_DE[mode] || 'Überleben'; updateTouchUI(); hudStatsDirty = true;
     if (m === 'spectator') { P.flying = true; setState('play'); } else if (P.noclipOut) P.noclipOut = false;

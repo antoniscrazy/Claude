@@ -125,3 +125,8 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * ✨ **Sonderblöcke:** Schleim-, Honig-, Waben-Block, Bienenstock/-nest, Zielscheibe, Notenblock, Plattenspieler, Bogenbauer-/Schmiede-/Kartentisch, Pilze und Pilzblöcke, Netherwarzenblöcke, Pilzlicht, Froschlichter, Blasses Moos, Harzblock, Zuckerrohr (Knochenmehl + Samen), Getöntes Glas, Endportalrahmen u. a.
 * Hinweis: Bei Blöcken, die es in Minecraft nur als Weltgenerierung gibt (Sonderhölzer, Froschlichter …), sind die Rezepte spieleigene Ersatzrezepte.
 
+## 2026-10-05.16
+
+* ✨ **/gamemode <modus> [spieler]:** ohne Spielernamen wirkt es bei dir selbst, mit Namen bei einem anderen Spieler (nur OPs; `/gamemode creative Bob`, auch `@Bob` geht wie bei allen Befehlen). Im Test mit zwei Spielern: Modus von Bob gesetzt, eigener Modus, Nicht-OP abgewiesen, unbekannter Name und falscher Modus melden Fehler.
+* ✅ **Fahrzeuge:** neuer Handwerks-Reiter „Fahrzeuge“ mit Boot, Lore, Schienen, Antriebsschienen und Sattel – jetzt **ohne Werkbank** herstellbar (vorher musste man Boot/Lore/Schienen an der Werkbank im Reiter „Bauen“ suchen).
+
