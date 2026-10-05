@@ -141,3 +141,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * ✨ **Alle Spieler sehen den Emote** am Spielermodell (eigene Animation je Emote, wird über das Netzwerk synchronisiert). Beim Ausführen schwenkt deine Kamera nach vorn und zeigt **deine eigene Figur** (mit Skin, Rüstung und Item); Bewegen, Springen oder Angreifen bricht den Emote ab.
 * ✅ Die Jahreszeit-Anzeige überdeckte in Mehrspielerwelten die Serverinfo oben rechts → liegt jetzt darunter.
 
+## 2026-10-05.19
+
+* ✅ **Emotes geprüft:** alle 23 Animationen einzeln aus zwei Blickwinkeln (von vorn und von der Seite) in je 6 Zeitpunkten angesehen (Winken, Klatschen, Salto, Tanzen, Verbeugung, Jubeln, Salutieren, Nein, Ja, Schulterzucken, Pirouette, Hampelmann, Floss, Roboter, Zombie, Boxen, Tritt, Siegerpose, Nachdenken, Hinsetzen, Handstand, Liegestütz, Ohnmacht). Zusätzlich rechnerisch geprüft: keine ungültigen Werte (NaN) in irgendeinem Bild, Figur steht nach jedem Emote wieder in der Grundstellung. Gefunden und behoben: **Ja** (Daumen hoch) hielt den Arm fast am Körper, **Nachdenken** verdeckte mit der Hand das Gesicht → jetzt Hand am Kinn, Gesicht sichtbar. Vorher schon behoben: Positionsverschiebung der Figur nach Salto/Handstand bei mehrfachem Abspielen.
+
