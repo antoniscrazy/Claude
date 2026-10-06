@@ -153,3 +153,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * ✨ **Neuer Emote „67“** (Nr. 24): beide Hände vorn, Handflächen nach oben, abwechselnd hoch und runter im Takt, dazu leichtes Wippen. Er liegt im Auswahlmenü (nicht im Rad vorbelegt) und wird wie alle anderen mit allen Spielern synchronisiert. Es gibt jetzt 24 Emotes (3 vorbelegt + 21 weitere).
 
+## 2026-10-05.22
+
+* ✅ **Beim Tod gehen nur noch 50 % der Erfahrung verloren** (vorher blieben nur 40 % der Level, der Fortschritt im Level fiel ganz weg). Berechnet wird jetzt aus allen gesammelten Erfahrungspunkten, die Hälfte bleibt erhalten und wird wieder in Level + Fortschritt umgerechnet. Test: Level 10 (160 Punkte) → Level 6 mit 80 Punkten, Level 30+20 → 707 von 1415, Level 40+100 → 1510 von 3020. Dazu ein Hinweis nach dem Respawn.
+
