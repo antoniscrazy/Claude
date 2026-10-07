@@ -1,4 +1,4 @@
-# VOXELCRAFT – Bug-Liste (Stand 2026-10-05.27)
+# VOXELCRAFT – Bug-Liste (Stand 2026-10-05.28)
 
 Gefunden durch Fuzz-/Monkey-Tests (Zufallsklicks, Tastenhagel), Zwei-Spieler-Tests im Multiplayer und Code-Durchsicht.
 Status: ✅ behoben · 🟡 offen (klein / kosmetisch) · 🔴 offen (spürbar)
@@ -184,3 +184,10 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * ✨ **Leistungsmodus:** schaltet sich **automatisch** ein bei Bauaktionen ab **40 000 Blöcken** (`/fill`, `/sphere`), bei `/explode` ab Stärke 24 und wenn **12 oder mehr TNT gleichzeitig** gezündet sind. Er senkt die Sichtweite auf 3 Chunks, die Auflösung, blendet Wolken/Regen aus und reduziert Partikel und das TNT-Blinken. Nach 8 s Ruhe (keine Bauaktion, kein TNT, Chunks fertig) geht er von selbst aus und stellt deine Sichtweite wieder her (gespeichert wird immer deine eigene Einstellung). Einstellbar unter Einstellungen → „Leistungsmodus“ (Automatisch / Immer an / Aus) oder per `/perf auto|on|off`.
 * Fix: Eine noch laufende große Bauaktion wurde beim Start einer neuen Welt nicht beendet.
 * Getestet: Einzelspieler mit gefälschter Datenbank (Freigabe → unbegrenzt, Entzug → Limit, Cache), 144 000-Block-Fill (Modus an, Sichtweite 3, nach ~13 s wieder aus mit Sichtweite 6), 14 TNT (Modus an), Einstellung „Aus“.
+
+## 2026-10-05.28
+
+* ✨ **Ladebalken bei großen Aktionen:** Oben am Bildschirm erscheint ein Balken mit Prozent für `/fill`/`/sphere` (ab 40 000 Blöcken), für riesige Einzelexplosionen (`/explode`, über 50 000 Felder) und für **TNT-Ketten ab 150 gleichzeitig gezündeten TNT** („💥 TNT-Kette: 1 531 von 1 537 explodiert – 99 %“). Darunter steht, wann zuletzt gespeichert wurde; `/fillstop` bricht alles ab (auch Explosionen).
+* ✅ **Absturzschutz bei TNT:** Explosionen werden bei vielen TNT / riesigem Radius in eine Warteschlange gestellt und zeitverteilt (8 ms pro Bild) abgearbeitet statt alle im selben Bild. Ab 120 gleichzeitig brennenden TNT sind weitere nur noch unsichtbare Zünder (kein Modell, keine Physik); Explosionstöne und Mehrspieler-Meldungen werden gedrosselt. Getestet mit 1 536 TNT in einem Block: lief durch, alles explodiert, kein Fehler.
+* ✨ **Automatisches Speichern:** Beim Start jeder großen Aktion wird die Welt **sofort gesichert**, dann **alle 30 Sekunden** zwischengespeichert und am Ende noch einmal (Einzelspieler: Spielstand, online: Welt + Spielerdaten). Hinweise im Chat („💾 …“).
+* ✅ **Speicher-Fix:** Spielstände speichern Blockänderungen jetzt als Läufe (ein 144 000-Block-Fill: 1,3 MB → 56 KB). Vorher hätte ein riesiger Fill den Browser-Speicher (~5 MB) gesprengt und das Speichern wäre fehlgeschlagen. Alte Spielstände laden weiter. Schlägt Speichern trotzdem fehl, bleibt die alte Sicherung erhalten; ab ~4 MB gibt es eine Warnung. `/undo` gilt jetzt bis 500 000 Blöcke (größere Aktionen sind nicht rückgängig zu machen, um den Arbeitsspeicher zu schonen).

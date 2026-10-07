@@ -1795,7 +1795,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.27';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-10-05.28';            // Spielversion (nur Anzeige)
 // Mehrspieler-Kompatibilität: NUR wenn sich das Netzwerkformat oder die Welt-Speicherung unverträglich ändert, MP_PROTO erhöhen. Normale Versionen (neue Blöcke, Rezepte, Mobs, Befehle …) vertragen sich untereinander –
 // dafür gibt es keine Warnung mehr. Clients ohne MP_PROTO (vor 2026-10-05.17) gelten ab MP_MIN_VER als kompatibel.
 const MP_PROTO = 1, MP_MIN_VER = '2026-10-05.1';
@@ -3217,7 +3217,13 @@ class World {
   serializeEdits(d) {
     const out = {};
     for (const e of this.dimData[d === undefined ? 0 : d].edits.values()) {
-      const arr = []; for (const [i, id] of e.m) arr.push(i, id);
+      const keys = [...e.m.keys()].sort((a, b) => a - b), arr = [];          // Läufe gleicher Blöcke als (index, ~id, anzahl) – riesige Füllungen passen so in den Speicher
+      for (let j = 0; j < keys.length;) {
+        const i = keys[j], id = e.m.get(i); let n = 1;
+        while (j + n < keys.length && keys[j + n] === i + n && e.m.get(keys[j + n]) === id) n++;
+        if (n >= 3) arr.push(i, ~id, n); else for (let t = 0; t < n; t++) arr.push(i + t, id);
+        j += n;
+      }
       out[e.cx + ',' + e.cz] = arr;
     }
     return out;
@@ -3226,7 +3232,7 @@ class World {
     const E = this.dimData[d === undefined ? 0 : d].edits; E.clear();
     for (const key in obj) {
       const [cx, cz] = key.split(',').map(Number), arr = obj[key], m = new Map();
-      for (let i = 0; i < arr.length; i += 2) m.set(arr[i], arr[i + 1]);
+      for (let i = 0; i < arr.length;) { const k = arr[i], v = arr[i + 1]; if (v < 0) { const n = arr[i + 2], id = ~v; for (let t = 0; t < n; t++) m.set(k + t, id); i += 3; } else { m.set(k, v); i += 2; } }
       E.set(ckey(cx, cz), { cx, cz, m });
     }
   }
@@ -4434,13 +4440,16 @@ class PrimedTNT {
     this.remote = !!remote;
     this.p = new THREE.Vector3(x + 0.5, y, z + 0.5); this.v = new THREE.Vector3((Math.random() - 0.5) * 0.6, 3, (Math.random() - 0.5) * 0.6);
     this.hw = 0.49; this.h = 0.98; this.fuse = fuse; this.onGround = false; this.hitH = false;
+    this.lite = primed.length >= 120;                                       // sehr viele TNT: nur noch Zünder ohne Modell und Physik (sonst stürzt der Browser ab)
+    if (this.lite) { this.mesh = this.flash = null; return; }
     this.mesh = new THREE.Mesh(blockBoxGeo(ID.tnt, 0.98), new THREE.MeshBasicMaterial({ map: ATLAS.texture }));
     this.flash = new THREE.Mesh(new THREE.BoxGeometry(1.01, 1.01, 1.01), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.65, depthWrite: false }));
     this.mesh.add(this.flash); scene.add(this.mesh);
   }
-  dispose() { scene.remove(this.mesh); this.mesh.geometry.dispose(); this.mesh.material.dispose(); this.flash.geometry.dispose(); this.flash.material.dispose(); }
+  dispose() { if (!this.mesh) return; scene.remove(this.mesh); this.mesh.geometry.dispose(); this.mesh.material.dispose(); this.flash.geometry.dispose(); this.flash.material.dispose(); }
   update(dt) {
     this.fuse -= dt;
+    if (this.lite) { if (this.fuse <= 0) { if (this.remote) blastEffects(this.p.x, this.p.y + 0.5, this.p.z, 4); else explode(this.p.x, this.p.y + 0.5, this.p.z, 4); return false; } return true; }
     this.v.y = Math.max(this.v.y - 26 * dt, -30);
     moveEntity(world, this, dt);
     const fr = Math.max(0, 1 - (this.onGround ? 8 : 0.5) * dt); this.v.x *= fr; this.v.z *= fr;
@@ -4451,7 +4460,9 @@ class PrimedTNT {
     return true;
   }
 }
+let chainSeen = 0, chainDet = 0, chainBig = false;                      // TNT-Kette: gezündet / schon explodiert (für den Ladebalken)
 function igniteTNT(x, y, z, fuse, remote) {
+  chainSeen++;
   primed.push(new PrimedTNT(x, y, z, fuse, remote)); if (fuse > 1.5) sfxAt('fuse', x, y, z);
   if (!remote) achGive('tnt');
   if (!remote && mp.on) mpSend('tnt', { x, y, z, fuse });
@@ -4459,11 +4470,15 @@ function igniteTNT(x, y, z, fuse, remote) {
 function updatePrimed(dt) { for (let i = primed.length - 1; i >= 0; i--) if (!primed[i].update(dt)) { primed[i].dispose(); primed.splice(i, 1); } }
 function clearPrimed() { primed.forEach((t) => t.dispose()); primed.length = 0; }
 
-// Explosion: zerstört Blöcke (nur beim Auslöser), verletzt Spieler und Mobs, kettet weitere TNT-Blöcke
-function explode(cx, cy, cz, R) {
+// Explosion: zerstört Blöcke (nur beim Auslöser), verletzt Spieler und Mobs, kettet weitere TNT-Blöcke.
+// Normal sofort; bei Ketten mit sehr vielen TNT oder riesigem Radius kommt sie in eine Warteschlange und wird zeitverteilt (mit Ladebalken) abgearbeitet.
+const blastQ = []; let blastCur = null, blastTot = 0, blastDone = 0, blastN = 0, blastSnd = 0;
+const BIG_WORK = 50000;
+function* explodeGen(cx, cy, cz, R, heavy) {
   const r = Math.ceil(R), ox = Math.floor(cx), oy = Math.floor(cy), oz = Math.floor(cz);
-  let dropBudget = 24;
+  let dropBudget = heavy ? 4 : 24, cnt = 0;
   for (let dz = -r; dz <= r; dz++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    if (heavy && ++cnt >= 400) { cnt = 0; yield (dz + r) / (2 * r + 1); }
     const d = Math.sqrt(dx * dx + dy * dy + dz * dz); if (d > R) continue;
     const x = ox + dx, y = oy + dy, z = oz + dz, id = world.getBlock(x, y, z);
     if (id <= 0 || y <= 0) continue;
@@ -4474,12 +4489,29 @@ function explode(cx, cy, cz, R) {
     if (id === ID.tnt) { igniteTNT(x, y, z, 0.3 + Math.random() * 0.9); continue; }
     if (!isCreative() && dropBudget > 0 && Math.random() < 0.3) { dropBudget--; lootFor(id).forEach(([i, n]) => spawnDrop(i, n, x + 0.5, y + 0.5, z + 0.5)); }
   }
-  blastEffects(cx, cy, cz, R);
-  if (mp.on) mpSend('explode', { x: r2(cx), y: r2(cy), z: r2(cz), R });
+  blastEffects(cx, cy, cz, R, heavy);
+  if (mp.on && (!heavy || Math.random() < 0.15)) mpSend('explode', { x: r2(cx), y: r2(cy), z: r2(cz), R });
 }
+function explode(cx, cy, cz, R) {
+  const est = Math.max(1, 4.19 * R * R * R), heavy = blastQ.length > 0 || !!blastCur || primed.length > 40 || (2 * Math.ceil(R) + 1) ** 3 > BIG_WORK;
+  if (!heavy) { chainDet++; for (const _ of explodeGen(cx, cy, cz, R, false)); return; }
+  blastQ.push({ cx, cy, cz, R, est }); blastTot += est;
+  if (blastTot >= BIG_WORK) { perfBoost('große Explosion'); bigBegin(); }
+}
+function stepBlast() {
+  if (!world || state === 'menu' || state === 'loading') return;
+  if (!blastCur && !blastQ.length) { if (blastTot) { if (blastTot >= BIG_WORK) chatOk('Explosionen fertig: ' + fmtN(blastN) + ' Detonation(en)'); blastTot = blastDone = blastN = 0; } return; }
+  const t0 = performance.now();
+  while (performance.now() - t0 < 8) {
+    if (!blastCur) { const q = blastQ.shift(); if (!q) break; blastCur = { g: explodeGen(q.cx, q.cy, q.cz, q.R, true), est: q.est, frac: 0 }; }
+    const it = blastCur.g.next();
+    if (it.done) { blastDone += blastCur.est; blastN++; chainDet++; blastCur = null; } else blastCur.frac = it.value;
+  }
+}
+function blastAbort() { blastQ.length = 0; blastCur = null; blastTot = blastDone = blastN = 0; }
 // Wirkung einer Explosion auf dieses Spiel: Ton, Partikel, Schaden, Rückstoß (läuft bei allen Spielern)
-function blastEffects(cx, cy, cz, R) {
-  sfxAt('explode', cx, cy, cz);
+function blastEffects(cx, cy, cz, R, heavy) {
+  const tn = performance.now(); if (!heavy || tn - blastSnd > 120) { blastSnd = tn; sfxAt('explode', cx, cy, cz); }
   const gray = new THREE.Color(0.32, 0.32, 0.32), fire = new THREE.Color(1, 0.55, 0.1);
   spawnParticles(cx - 0.5, cy - 0.5, cz - 0.5, gray, 26, R * 2, R * 0.8); spawnParticles(cx - 0.5, cy - 0.5, cz - 0.5, fire, 14, R * 2.2, R * 0.6);
   const blast = (px, py, pz, isPlayer, m) => {
@@ -4494,7 +4526,7 @@ function blastEffects(cx, cy, cz, R) {
   };
   blast(P.p.x, P.p.y + 0.9, P.p.z, true);
   if (!mp.on || isHost()) for (const m of mobs.slice()) if (!m.remote) blast(m.p.x, m.p.y + m.h / 2, m.p.z, false, m);
-  for (const t of primed) { const d = Math.hypot(t.p.x - cx, t.p.y - cy, t.p.z - cz); if (d < R * 1.5 && d > 0.1) { t.v.x += (t.p.x - cx) / d * 5; t.v.z += (t.p.z - cz) / d * 5; t.v.y += 3; } }
+  if (primed.length < 60) for (const t of primed) { if (t.lite) continue; const d = Math.hypot(t.p.x - cx, t.p.y - cy, t.p.z - cz); if (d < R * 1.5 && d > 0.1) { t.v.x += (t.p.x - cx) / d * 5; t.v.z += (t.p.z - cz) / d * 5; t.v.y += 3; } }
 }
 
 // ----- Pfeile (Skelette) -----
@@ -7921,7 +7953,7 @@ function findSpawn() {
 function startGame(opts) {
   if (world) { world.dispose(); clearMobs(); clearDrops(); clearPrimed(); clearArrows(); clearFallers(); clearThrown(); clearOrbs(); }
   endDead.clear(); vehStash = null; P.creditsSeen = false; rsQ.clear(); rsTimers.length = 0; rsPrev.clear(); rsHop.clear(); rsBtn.clear(); rsPl.clear(); endT = 0;
-  mode = opts.mode; renderDist = opts.dist; buildJob = null; perfReset();
+  mode = opts.mode; renderDist = opts.dist; buildJob = null; blastAbort(); bigSt.active = false; perfReset();
   const save = opts.save;
   if (!opts.mp) { mp.on = false; $('btnQuit').textContent = 'Speichern & Beenden'; spLoadPolicy(); }
   world = new World(save ? save.seed : opts.seed, scene, save ? (save.gv || 1) : opts.gv || 4);          // Welten ohne gv-Eintrag = alte Biome
@@ -7976,8 +8008,8 @@ function saveGame() {
     containers: Object.fromEntries([...containers].map(([k, v]) => [k, packItems(v)])),
     edits: world.serializeEdits(0), edits1: world.serializeEdits(1), edits2: world.serializeEdits(2), edits3: world.serializeEdits(3), dim: world.dim, endDead: [...endDead],
   };
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); return true; }
-  catch (e) { toast('Speichern fehlgeschlagen (Speicher voll?)'); return false; }
+  try { const txt = JSON.stringify(data); localStorage.setItem(SAVE_KEY, txt); if (txt.length > 4200000) toast('⚠ Spielstand ist sehr groß (' + (txt.length / 1e6).toFixed(1) + ' MB) – der Browser-Speicher ist bald voll'); return true; }
+  catch (e) { toast('Speichern fehlgeschlagen (Speicher voll?) – die alte Sicherung bleibt erhalten'); return false; }
 }
 function readSave() {
   try { const s = localStorage.getItem(SAVE_KEY); return s ? JSON.parse(s) : null; } catch (e) { return null; }
@@ -8245,7 +8277,7 @@ function frame(now) {
     camera.position.x += (Math.random() - 0.5) * P.shake * 0.4; camera.position.y += (Math.random() - 0.5) * P.shake * 0.4;
     camera.rotation.z = (Math.random() - 0.5) * P.shake * 0.08; P.shake = Math.max(0, P.shake - dt * 1.4);
   } else camera.rotation.z = 0;
-  updateEmote(dt); stepBuildJob(); perfTick(dt);
+  updateEmote(dt); stepBuildJob(); stepBlast(); bigTick(); perfTick(dt);
   const sprinting = state === 'play' && P.sprinting;
   const zooming = state === 'play' && mouse.right && inv[P.sel] && inv[P.sel].id >= ITEM_BASE && ITEMS[inv[P.sel].id].spyglass;
   fovCur = lerp(fovCur, zooming ? 14 : sprinting ? settings.fov + 9 : settings.fov, Math.min(1, 8 * dt));
@@ -9871,7 +9903,8 @@ function* sphereGen(ox, oy, oz, r, hollow) {
 function startBuildJob(gen, id, md, filter, total, label) {
   if (buildJob) fail('Es läuft schon eine große Bauaktion (/fillstop bricht sie ab).');
   if (total >= 40000) perfBoost('große Bauaktion (' + fmtN(total) + ' Blöcke)');
-  buildJob = { gen, id, md, filter, total, done: 0, n: 0, skipped: 0, undo: total <= 2000000 ? [] : null, label, t0: performance.now(), toastAt: 0 };
+  bigBegin();                                                             // Welt vorher sichern
+  buildJob = { gen, id, md, filter, total, done: 0, n: 0, skipped: 0, undo: total <= 500000 ? [] : null, label, t0: performance.now(), toastAt: 0 };
   chatOk(label + ' ' + fmtN(total) + ' Blöcke – das läuft im Hintergrund (/fillstop bricht ab).');
 }
 function finishBuildJob(aborted) {
@@ -9895,9 +9928,40 @@ function stepBuildJob() {
       world.setBlock(c.x, c.y, c.z, id); J.n++;
     }
   }
-  if (t0 - J.toastAt > 1000) { J.toastAt = t0; toast(J.label + ' … ' + Math.floor(J.done / J.total * 100) + ' %'); }
 }
-cmd(['fillstop', 'abbrechen'], { desc: 'Bricht eine große Bauaktion (/fill, /sphere) ab', cheat: true, run() { if (!buildJob) fail('Es läuft keine große Bauaktion.'); finishBuildJob(true); } });
+// --- Ladebalken + automatisches Speichern bei großen Aktionen (Bauaktionen, Explosionsketten) ---
+(() => {
+  const st = document.createElement('style');
+  st.textContent = '#bigBar{position:fixed;left:50%;top:46px;transform:translateX(-50%);z-index:35;width:min(460px,86vw);padding:6px 10px 8px;background:rgba(10,10,14,.78);border:2px solid #8a8a96;color:#fff;font:bold 14px "Courier New",monospace;text-shadow:1px 1px #000;pointer-events:none;text-align:center}#bigBar.hidden{display:none}#bigBar .bbt{height:14px;margin:5px 0 3px;background:#26262e;border:2px solid #000;box-shadow:inset 0 0 0 1px #555}#bigBar .bbt i{display:block;height:100%;width:0;background:linear-gradient(#8fe36a,#3fa23a);transition:width .12s linear}#bigBar small{font-weight:normal;font-size:12px;color:#c8c8d0}';
+  document.head.appendChild(st);
+  const el = document.createElement('div'); el.id = 'bigBar'; el.className = 'hidden'; el.innerHTML = '<div class="bbl"></div><div class="bbt"><i></i></div><small></small>';
+  document.body.appendChild(el);
+})();
+const bigSt = { active: false, saveAt: 0, uiAt: 0, saved: 0 };
+function bigSave() {
+  try { if (mp.on) { mpFlushBlocks(); mpSaveState(); bigSt.saved = performance.now(); } else if (saveGame()) bigSt.saved = performance.now(); } catch (e) { /* egal */ }
+  bigSt.saveAt = performance.now();
+}
+function bigBegin() { if (bigSt.active) return; bigSt.active = true; bigSave(); chatSys('💾 Große Aktion: Welt wurde vorher gesichert und wird währenddessen automatisch weiter gespeichert.'); }
+function bigTick() {
+  if (primed.length >= 150) chainBig = true;
+  const quiet = !primed.length && !blastQ.length && !blastCur; if (quiet && !chainBig) chainSeen = chainDet = 0;
+  const bj = buildJob, bq = (blastCur || blastQ.length) && blastTot >= BIG_WORK, tc = chainBig && !quiet, act = !!bj || !!bq || tc, now = performance.now(), el = $('bigBar');
+  if (act && !bigSt.active) bigBegin();
+  if (quiet && chainBig && !bj) { chainBig = false; chainSeen = chainDet = 0; }
+  if (!act) { if (bigSt.active) { bigSt.active = false; bigSave(); chatSys('💾 Welt automatisch gespeichert.'); } if (!el.classList.contains('hidden')) el.classList.add('hidden'); return; }
+  if (now - bigSt.saveAt > 30000) bigSave();                              // alle 30 s zwischenspeichern
+  if (now - bigSt.uiAt < 90) return; bigSt.uiAt = now;
+  let label, pct;
+  if (bj) { label = bj.label + ' ' + fmtN(bj.total) + ' Blöcke'; pct = bj.done / bj.total; }
+  else if (tc && !bq) { label = '💥 TNT-Kette: ' + fmtN(chainDet) + ' von ' + fmtN(chainSeen) + ' explodiert'; pct = chainDet / Math.max(1, chainSeen); }
+  else { const part = blastCur ? blastCur.est * (blastCur.frac || 0) : 0; label = '💥 Explosionen: ' + fmtN(blastN) + ' von ' + fmtN(blastN + blastQ.length + (blastCur ? 1 : 0)); pct = (blastDone + part) / Math.max(1, blastTot); }
+  pct = Math.max(0, Math.min(1, pct));
+  el.classList.remove('hidden'); el.children[0].textContent = label + ' – ' + Math.floor(pct * 100) + ' %'; el.children[1].firstChild.style.width = (pct * 100).toFixed(1) + '%';
+  const ago = bigSt.saved ? Math.round((now - bigSt.saved) / 1000) : -1;
+  el.children[2].textContent = '💾 ' + (ago >= 0 ? 'zuletzt gespeichert vor ' + ago + ' s' : 'Speichern …') + ' · /fillstop bricht ab';
+}
+cmd(['fillstop', 'abbrechen'], { desc: 'Bricht große Aktionen ab (/fill, /sphere, Explosionsketten)', cheat: true, run() { if (!buildJob && !blastQ.length && !blastCur) fail('Es läuft keine große Aktion.'); if (blastQ.length || blastCur) { blastAbort(); chatOk('Explosionen abgebrochen.'); } if (buildJob) finishBuildJob(true); } });
 cmd(['undo', 'rueckgaengig'], {
   desc: 'Macht die letzte Bau-Änderung (/fill, /sphere, /setblock) rückgängig', cheat: true,
   run() { if (!undoBuf || !undoBuf.length) fail('Nichts rückgängig zu machen.'); let n = 0; for (const [x, y, z, old] of undoBuf) { world.setBlock(x, y, z, old); n++; } undoBuf = null; chatOk(n + ' Blöcke wiederhergestellt'); },
@@ -10044,7 +10108,7 @@ function perfTick(dt) {
   if (settings.perf === 'off') { if (perf.on) perfSet(false); return; }
   if (primed.length >= PERF_TNT) perfBoost('viel TNT');
   if (!perf.on) return;
-  const busy = buildJob || primed.length || (world.dirty && world.dirty.size > 6);
+  const busy = buildJob || blastQ.length || blastCur || primed.length || (world.dirty && world.dirty.size > 6);
   perf.idleT = busy ? 0 : perf.idleT + dt;
   if (perf.idleT > 8) perfSet(false);
 }
@@ -12023,7 +12087,7 @@ function showBreakOver() {
 setInterval(() => { classGateCheck(); }, 1000);
 classGateCheck();
 
-window.__vc = { perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+window.__vc = { blastQ, blastInfo: () => ({ tot: blastTot, done: blastDone, n: blastN, cur: !!blastCur }), bigSt, stepBlast, bigTick, perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>
