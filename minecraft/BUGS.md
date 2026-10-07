@@ -1,4 +1,4 @@
-# VOXELCRAFT – Bug-Liste (Stand 2026-10-05.7)
+# VOXELCRAFT – Bug-Liste (Stand 2026-10-05.26)
 
 Gefunden durch Fuzz-/Monkey-Tests (Zufallsklicks, Tastenhagel), Zwei-Spieler-Tests im Multiplayer und Code-Durchsicht.
 Status: ✅ behoben · 🟡 offen (klein / kosmetisch) · 🔴 offen (spürbar)
@@ -169,3 +169,11 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * ✅ **Unterrichts-Abfrage nicht mehr abschaltbar:** Die Einstellung „Unterrichts-Abfrage“ ist entfernt, die Frage kommt immer (auch wenn ein alter Spielstand der Einstellungen etwas anderes gespeichert hat).
 
+
+## 2026-10-05.26
+
+* ✨ **Befehls-Limits aufheben (Dev-Konsole → Einstellungen → „Befehls-Limits“):** Du kannst einzelnen Spielernamen (oder allen) erlauben, die Höchstwerte der Befehle zu überschreiten. Freigegebene Spieler haben dann **kein Limit mehr** bei `/fill` (sonst 40 000 Blöcke), `/sphere` (Radius 20), `/give` (2304), `/summon` (20), `/explode`, `/effect`, `/xp`, Zeit-/Zahlenargumenten usw. – bei allen Befehlen mit Zahlen-Obergrenze (`argNum`) entfällt die Obergrenze (die Untergrenze bleibt). Wirkt nur bei Spielern, die Cheat-Befehle nutzen dürfen.
+* ✨ **Warnschwelle einstellbar** (Standard 100 000, 1 000 – 2 Mrd.): Ab dieser Größe (Blöcke bei `/fill`/`/sphere`) bzw. bei `/explode` Stärke > 24 und `/summon` > 50 Mobs zeigt das Spiel „⚠ Große Aktion: … Gib den Befehl innerhalb von 30 Sekunden noch einmal ein“ – erst der identische zweite Aufruf führt aus.
+* ✨ **Große Bauaktionen laufen zeitverteilt:** `/fill` > 40 000 Blöcke und `/sphere` > Radius 20 werden in kleinen Häppchen (8 ms pro Bild) im Hintergrund gebaut, mit Fortschrittsanzeige in %, **`/fillstop`** bricht ab, `/undo` geht bis 2 Mio. Blöcke. Nicht geladene Chunks werden übersprungen (Hinweis im Chat). Nur eine große Aktion gleichzeitig.
+* Das Limit gilt nur online und nur, solange der Server die Freigabe bestätigt (Abfrage beim Beitritt, danach jede Minute; beim Verlassen zurückgesetzt). Einzelspieler/lokal: weiter mit Limits. Einmalig `supabase/dev_console_part6.sql` im Supabase-SQL-Editor ausführen (setzt Teil 4 voraus).
+* Getestet: gesperrt (alte Fehlermeldungen), freigegeben (125 000-Block-Fill: Warnung → Bestätigung → Fertig nach ~9 s, `/undo`, `/fillstop` mittendrin, Kugel Radius 30, `/give` 5000, `/summon` 60, `/explode` 30) und Dev-Konsole mit Fake-RPCs (speichern, alle, aus, falsche Schwelle, fehlendes SQL).

@@ -1794,7 +1794,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.25';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-10-05.26';            // Spielversion (nur Anzeige)
 // Mehrspieler-Kompatibilität: NUR wenn sich das Netzwerkformat oder die Welt-Speicherung unverträglich ändert, MP_PROTO erhöhen. Normale Versionen (neue Blöcke, Rezepte, Mobs, Befehle …) vertragen sich untereinander –
 // dafür gibt es keine Warnung mehr. Clients ohne MP_PROTO (vor 2026-10-05.17) gelten ab MP_MIN_VER als kompatibel.
 const MP_PROTO = 1, MP_MIN_VER = '2026-10-05.1';
@@ -8242,7 +8242,7 @@ function frame(now) {
     camera.position.x += (Math.random() - 0.5) * P.shake * 0.4; camera.position.y += (Math.random() - 0.5) * P.shake * 0.4;
     camera.rotation.z = (Math.random() - 0.5) * P.shake * 0.08; P.shake = Math.max(0, P.shake - dt * 1.4);
   } else camera.rotation.z = 0;
-  updateEmote(dt);
+  updateEmote(dt); stepBuildJob();
   const sprinting = state === 'play' && P.sprinting;
   const zooming = state === 'play' && mouse.right && inv[P.sel] && inv[P.sel].id >= ITEM_BASE && ITEMS[inv[P.sel].id].spyglass;
   fovCur = lerp(fovCur, zooming ? 14 : sprinting ? settings.fov + 9 : settings.fov, Math.min(1, 8 * dt));
@@ -8789,6 +8789,7 @@ class SupabaseDB {
   async rpc(fn, args) { const { data, error } = await this.sb.rpc(fn, args); if (error) throw new Error(error.message || 'Datenbankfehler'); return data; }
   register(name, token, skin, slim) { return this.rpc('vc_register', { p_name: name, p_token: token, p_skin: skin, p_slim: slim }); }
   accountStatus(name, token) { return this.rpc('vc_account_status', { p_name: name, p_token: token }); }
+  commandPolicy(name, token) { return this.rpc('vc_command_policy', { p_name: name, p_token: token }); }
   createRoom(room, seed, mode, name, token, pub) { return this.rpc('vc_create_room', { p_room: room, p_seed: seed, p_mode: mode, p_name: name, p_token: token, p_public: pub }); }
   joinRoom(room, name, token) { return this.rpc('vc_join_room', { p_room: room, p_name: name, p_token: token }); }
   setOp(room, name, token, target, op) { return this.rpc('vc_set_op', { p_room: room, p_name: name, p_token: token, p_target: target, p_op: op }); }
@@ -8830,6 +8831,7 @@ class LocalNet {
 }
 class LocalDB {
   async accountStatus() { return { ok: true, banned: false }; }
+  async commandPolicy() { return { ok: true, unlimited: false, warn: 100000 }; }
   constructor() { this.key = 'voxelcraft_localdb_v1'; }
   load() { try { return JSON.parse(localStorage.getItem(this.key)) || {}; } catch (e) { return {}; } }
   save(d) { try { localStorage.setItem(this.key, JSON.stringify(d)); } catch (e) { throw new Error('Lokaler Speicher voll'); } }
@@ -9088,10 +9090,20 @@ function resolveItem(q, blockOnly) {
 }
 
 // ----- Argument-Helfer -----
+// Befehls-Limits: freigegebene Spieler (Dev-Konsole → Einstellungen) dürfen die Höchstwerte überschreiten; große Aktionen verlangen eine Bestätigung
+const cmdPolicy = { unlimited: false, warn: 100000 };
+const fmtN = (n) => Math.round(n).toLocaleString('de-DE');
+let cmdConfirm = { sig: '', t: 0 };
+function confirmBig(sig, count, unit) {                              // beim ersten Mal: Warnung; derselbe Befehl innerhalb von 30 s noch einmal = bestätigt
+  if (cmdConfirm.sig === sig && performance.now() - cmdConfirm.t < 30000) { cmdConfirm.sig = ''; return; }
+  cmdConfirm = { sig, t: performance.now() };
+  fail('⚠ Große Aktion: ' + fmtN(count) + ' ' + unit + ' – das kann lange dauern und das Spiel verlangsamen. Gib den Befehl innerhalb von 30 Sekunden noch einmal ein, um fortzufahren.');
+}
 function argNum(v, name, lo, hi, isInt) {
   const n = Number(v);
   if (v === undefined || v === '' || !isFinite(n)) fail('„' + name + '“ muss eine Zahl sein.');
   if (isInt && !Number.isInteger(n)) fail('„' + name + '“ muss eine ganze Zahl sein.');
+  if (cmdPolicy.unlimited) { if (n < lo) fail('„' + name + '“ muss mindestens ' + lo + ' sein.'); return n; }       // freigegeben: keine Obergrenze
   if (n < lo || n > hi) fail('„' + name + '“ muss zwischen ' + lo + ' und ' + hi + ' liegen.');
   return n;
 }
@@ -9693,6 +9705,11 @@ function runRemoteCommand(name, args, by) {                 // Ein OP hat einen 
   try { c.run(args || [], (args || []).join(' ')); chatSys(by + ' hat /' + name + ' ' + (args || []).join(' ') + ' bei dir ausgeführt'); }
   catch (e) { chatErr(e.message); } finally { remoteExec = false; }
 }
+function mpLoadPolicy() {                                               // Befehls-Limits für diesen Spieler holen (Dev-Konsole → Einstellungen)
+  if (!mp.on || !mp.db) return;
+  mp.db.commandPolicy(mp.name, mp.token).then((r) => { if (r && r.ok && mp.on) { cmdPolicy.unlimited = !!r.unlimited; cmdPolicy.warn = Math.max(1000, +r.warn || 100000); } }).catch(() => {});
+}
+setInterval(() => { if (mp.on) mpLoadPolicy(); }, 60000);
 function bannedFromServer(msg) {                                         // Konto wurde gesperrt, während man spielt: speichern ist nicht mehr möglich, Verbindung trennen
   if (!mp.on) return;
   mpLeave().then(() => { mp.on = false; setState('mpmenu'); mpSetStatus('🚫 Dein Konto wurde gesperrt: ' + (msg || 'Dein Konto wurde gesperrt.'), true); });
@@ -9776,7 +9793,7 @@ cmd(['setblock', 'sb'], {
   },
 });
 cmd(['fill'], {
-  desc: 'Füllt einen Quader (bis ' + MAXFILL + ' Blöcke); Modus: replace/hollow/outline/keep', cheat: true, needs: 7,
+  desc: 'Füllt einen Quader (bis ' + MAXFILL + ' Blöcke, mit Freigabe unbegrenzt); Modus: replace/hollow/outline/keep', cheat: true, needs: 7,
   args: [T.x(), T.y(), T.z(), T.x(), T.y(), T.z(), T.block(), T.opt('modus', [['replace', 'nur bestimmten Block ersetzen'], ['hollow', 'nur Hülle, innen Luft'], ['outline', 'nur Hülle'], ['keep', 'nur Luft füllen']], true), T.block('ersetzt', true)],
   argsFor(prev) { return prev[7] === 'replace' ? this.args : this.args.slice(0, 8); },
   run(a) {
@@ -9784,8 +9801,13 @@ cmd(['fill'], {
     const id = resolveItem(a[6], true), md = (a[7] || '').toLowerCase();
     const x0 = Math.min(c[0], c[3]), x1 = Math.max(c[0], c[3]), y0 = Math.max(1, Math.min(c[1], c[4])), y1 = Math.min(CH - 1, Math.max(c[1], c[4])), z0 = Math.min(c[2], c[5]), z1 = Math.max(c[2], c[5]);
     const vol = (x1 - x0 + 1) * (y1 - y0 + 1) * (z1 - z0 + 1);
-    if (vol > MAXFILL) fail('Zu groß: ' + vol + ' Blöcke (max. ' + MAXFILL + ').');
+    if (vol > MAXFILL && !cmdPolicy.unlimited) fail('Zu groß: ' + vol + ' Blöcke (max. ' + MAXFILL + ').');
     if (md && !['replace', 'hollow', 'outline', 'keep'].includes(md)) fail('Modus: replace, hollow, outline oder keep');
+    if (cmdPolicy.unlimited && vol > cmdPolicy.warn) confirmBig('fill ' + a.join(' '), vol, 'Blöcke');
+    if (vol > MAXFILL) {                                                    // freigegeben und groß: zeitverteilt über mehrere Bilder
+      let filter = null; if (md === 'replace') { const f = resolveItem(a[8], true); filter = (b) => b === f; } if (md === 'keep') filter = (b) => b === AIR;
+      startBuildJob(fillGen(x0, x1, y0, y1, z0, z1), id, md, filter, vol, 'Fülle'); return;
+    }
     const cells = [], edge = (x, y, z) => x === x0 || x === x1 || y === y0 || y === y1 || z === z0 || z === z1;
     let filter = null;
     if (md === 'replace') { const f = resolveItem(a[8], true); filter = (b) => b === f; }
@@ -9802,16 +9824,60 @@ cmd(['fill'], {
   },
 });
 cmd(['sphere', 'kugel'], {
-  desc: 'Baut eine Kugel um dich (Radius bis 20)', cheat: true, needs: 2, args: [T.int('radius', false, [3, 5, 10]), T.block(), T.opt('modus', ['hollow', 'solid'], true)],
+  desc: 'Baut eine Kugel um dich (Radius bis 20, mit Freigabe unbegrenzt)', cheat: true, needs: 2, args: [T.int('radius', false, [3, 5, 10]), T.block(), T.opt('modus', ['hollow', 'solid'], true)],
   run(a) {
     const r = argNum(a[0], 'radius', 1, 20, true), id = resolveItem(a[1], true), hollow = (a[2] || '') === 'hollow';
     const ox = Math.floor(P.p.x), oy = Math.floor(P.p.y + 1), oz = Math.floor(P.p.z), cells = [];
+    if (cmdPolicy.unlimited && (4 / 3) * Math.PI * r ** 3 > cmdPolicy.warn) confirmBig('sphere ' + a.join(' '), (4 / 3) * Math.PI * r ** 3, 'Blöcke');
+    if (r > 20) { startBuildJob(sphereGen(ox, oy, oz, r, hollow), id, 'solid', null, (2 * r + 1) ** 3, 'Baue Kugel'); return; }
     for (let dy = -r; dy <= r; dy++) for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) {
       const d = Math.sqrt(dx * dx + dy * dy + dz * dz); if (d > r + 0.3 || (hollow && d < r - 1)) continue; cells.push([ox + dx, oy + dy, oz + dz]);
     }
     chatOk(editBlocks(cells, id) + ' Blöcke gesetzt (/undo macht es rückgängig)');
   },
 });
+// --- Große Bauaktionen (nur mit Freigabe): zeitverteilt, mit Fortschritt und Abbruch ---
+let buildJob = null;
+function* fillGen(x0, x1, y0, y1, z0, z1) {
+  const o = { x: 0, y: 0, z: 0, edge: false };
+  for (let y = y0; y <= y1; y++) for (let z = z0; z <= z1; z++) for (let x = x0; x <= x1; x++) { o.x = x; o.y = y; o.z = z; o.edge = x === x0 || x === x1 || y === y0 || y === y1 || z === z0 || z === z1; yield o; }
+}
+function* sphereGen(ox, oy, oz, r, hollow) {
+  const o = { x: 0, y: 0, z: 0, edge: true }, r2 = (r + 0.3) ** 2, ri = (r - 1) ** 2;
+  for (let dy = -r; dy <= r; dy++) for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) {
+    const d = dx * dx + dy * dy + dz * dz; if (d > r2 || (hollow && d < ri)) { o.x = NaN; yield o; continue; }
+    o.x = ox + dx; o.y = oy + dy; o.z = oz + dz; yield o;
+  }
+}
+function startBuildJob(gen, id, md, filter, total, label) {
+  if (buildJob) fail('Es läuft schon eine große Bauaktion (/fillstop bricht sie ab).');
+  buildJob = { gen, id, md, filter, total, done: 0, n: 0, skipped: 0, undo: total <= 2000000 ? [] : null, label, t0: performance.now(), toastAt: 0 };
+  chatOk(label + ' ' + fmtN(total) + ' Blöcke – das läuft im Hintergrund (/fillstop bricht ab).');
+}
+function finishBuildJob(aborted) {
+  const J = buildJob; buildJob = null; if (!J) return;
+  undoBuf = J.undo && J.undo.length ? J.undo : null;
+  chatOk((aborted ? 'Abgebrochen: ' : 'Fertig: ') + fmtN(J.n) + ' Blöcke geändert in ' + ((performance.now() - J.t0) / 1000).toFixed(1) + ' s' + (J.skipped ? ' (' + fmtN(J.skipped) + ' Felder in nicht geladenen Chunks übersprungen)' : '') + (J.undo ? ' (/undo macht es rückgängig)' : ' (zu groß für /undo)'));
+}
+function stepBuildJob() {
+  const J = buildJob; if (!J || !world || state === 'menu' || state === 'loading') return;
+  const t0 = performance.now();
+  while (performance.now() - t0 < 8) {
+    for (let k = 0; k < 300; k++) {
+      const it = J.gen.next(); if (it.done) { finishBuildJob(false); return; }
+      const c = it.value; J.done++;
+      if (c.x !== c.x) continue;                                          // NaN = außerhalb der Form
+      let id = J.id; if (J.md === 'hollow' && !c.edge) id = AIR; else if (J.md === 'outline' && !c.edge) continue;
+      if (c.y < 1 || c.y >= CH) continue;
+      const cur = world.getBlock(c.x, c.y, c.z); if (cur < 0) { J.skipped++; continue; }
+      if (cur === id || (J.filter && !J.filter(cur)) || (cur > 0 && BLOCKS[cur].hard === Infinity)) continue;
+      if (J.undo) J.undo.push([c.x, c.y, c.z, cur]);
+      world.setBlock(c.x, c.y, c.z, id); J.n++;
+    }
+  }
+  if (t0 - J.toastAt > 1000) { J.toastAt = t0; toast(J.label + ' … ' + Math.floor(J.done / J.total * 100) + ' %'); }
+}
+cmd(['fillstop', 'abbrechen'], { desc: 'Bricht eine große Bauaktion (/fill, /sphere) ab', cheat: true, run() { if (!buildJob) fail('Es läuft keine große Bauaktion.'); finishBuildJob(true); } });
 cmd(['undo', 'rueckgaengig'], {
   desc: 'Macht die letzte Bau-Änderung (/fill, /sphere, /setblock) rückgängig', cheat: true,
   run() { if (!undoBuf || !undoBuf.length) fail('Nichts rückgängig zu machen.'); let n = 0; for (const [x, y, z, old] of undoBuf) { world.setBlock(x, y, z, old); n++; } undoBuf = null; chatOk(n + ' Blöcke wiederhergestellt'); },
@@ -9820,6 +9886,7 @@ cmd(['explode', 'boom'], {
   desc: 'Sprengt dort, wo du hinschaust (Stärke 1–12)', cheat: true, args: [T.num('stärke', true, [3, 4, 8])],
   run(a) {
     const R = a[0] ? argNum(a[0], 'stärke', 1, 12) : 4;
+    if (cmdPolicy.unlimited && R > 24) confirmBig('explode ' + a.join(' '), R, 'Sprengkraft');
     const p = target ? [target.x + 0.5 + (target.nx || 0), target.y + 0.5 + (target.ny || 0), target.z + 0.5 + (target.nz || 0)] : [P.p.x - Math.sin(P.yaw) * 6, P.p.y + 1, P.p.z - Math.cos(P.yaw) * 6];
     explode(p[0], p[1], p[2], R);
   },
@@ -9845,6 +9912,7 @@ cmd(['summon', 'spawnmob'], {
   desc: 'Beschwört Mobs vor dir', cheat: true, needs: 1, args: [T.mob(), T.int('anzahl', true, [1, 3, 5, 10])],
   run(a) {
     const t = findMobType(a[0]), n = a[1] ? argNum(a[1], 'anzahl', 1, 20, true) : 1, sp = spawnPoint();
+    if (cmdPolicy.unlimited && n > 50) confirmBig('summon ' + a.join(' '), n, 'Mobs');
     const c = { k: 'summon', t, n, x: sp[0], y: sp[1], z: sp[2] };
     if (!mp.on || isHost()) hostCommand(c); else mpSend('cmd', c);
     chatOk(n + '× ' + MOBTYPES[t].de + ' beschworen');
@@ -10871,7 +10939,7 @@ async function mpJoin(cfg) {
     let sb2 = null; if (SUPABASE2_URL && SUPABASE2_KEY) { try { sb2 = await sbClient2(12000); } catch (e) { sb2 = null; } }
     mp.db = new SupabaseDB(sb); mp.net = new SupabaseNet(sb, sb2);
   } else { mp.db = new LocalDB(); mp.net = new LocalNet(); }
-  const reg = await mp.db.register(cfg.name, cfg.token, skinToDb(cfg.skin), cfg.slim);
+  cmdPolicy.unlimited = false; const reg = await mp.db.register(cfg.name, cfg.token, skinToDb(cfg.skin), cfg.slim);
   if (reg && reg.error === 'banned') throw new Error('🚫 Dein Konto ist gesperrt: ' + (reg.msg || 'Dein Konto wurde gesperrt.'));
   if (!reg || !reg.ok) throw new Error(reg && reg.error === 'name_taken' ? 'Dieser Name ist bereits vergeben (gehört einem anderen Browser).' : 'Anmeldung fehlgeschlagen');
   let info;
@@ -10892,7 +10960,7 @@ async function mpJoin(cfg) {
   mp.players.forEach((p) => p.dispose()); mp.players.clear(); mp.mobsById.clear(); mp.pending = []; mp.dbQueue = [];
   mp.mySkin = cfg.skin; mp.mySlim = cfg.slim; mp.mySkinCv = await skinCanvas(cfg.skin, cfg.slim); mp.myFace = skinFaceDataURL(mp.mySkinCv, 32); handSkinDirty = true;
   startGame({ seed: info.seed, mode: info.mode, dist: cfg.dist, gv: (info.epoch_ms || 0) >= GEN4_START ? 4 : (info.epoch_ms || 0) >= GEN3_START ? 3 : (info.epoch_ms || 0) >= GEN2_START ? 2 : 1, mp: true, mpEdits: edits, mpContainers: conts, mpState: state });
-  mp.on = true; mp.wasHost = isHost(); mp.mode = info.mode; updateTouchUI();
+  mp.on = true; mp.wasHost = isHost(); mp.mode = info.mode; updateTouchUI(); mpLoadPolicy();
   mp.petQueue = state && (Array.isArray(state.pets) || Array.isArray(state.veh)) ? { pets: (state.pets || []).filter(Array.isArray).slice(0, 24), veh: (state.veh || []).filter(Array.isArray).slice(0, 24) } : { pets: [], veh: [] };
   setTimeout(mpRestorePets, 4500);
   world.onEdit = mpQueueBlock; $('btnQuit').textContent = 'Verlassen';
@@ -10902,6 +10970,7 @@ async function mpJoin(cfg) {
 }
 async function mpLeave() {
   if (!mp.on) return;
+  cmdPolicy.unlimited = false; if (buildJob) finishBuildJob(true);
   try { mpFlush(); } catch (e) { /* egal */ }
   mp.on = false; mp.offline = false; $('netLost').classList.add('hidden'); mp.out = []; mp.posPend = null;
   try { mpFlushBlocks(); await Promise.race([Promise.all([mpFlushDb(), mpSaveState()]), new Promise((r) => setTimeout(r, 2500))]); } catch (e) { /* egal */ }
@@ -11903,7 +11972,7 @@ function showBreakOver() {
 setInterval(() => { classGateCheck(); }, 1000);
 classGateCheck();
 
-window.__vc = { classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+window.__vc = { cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>
