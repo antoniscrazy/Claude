@@ -238,6 +238,23 @@ body.touch #fxbar{right:auto;left:10px;top:calc(18px + var(--mm,128px));text-ali
 #tPause{top:10px}#tInv{top:52px}#tChat{top:94px}
 body.touch #hotbar{pointer-events:auto}
 body.touch #modeTag,body.touch #seasonTag{display:none}
+/* ---------- Unterrichts-Abfrage ---------- */
+#classGate{position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;padding:18px;background:radial-gradient(circle at 50% 30%,#3a2a6b 0,#16122b 70%);color:#fff;text-align:center;overflow:auto}
+#classGate .cg-box{max-width:560px;width:100%;background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.22);border-radius:22px;padding:28px 24px;box-shadow:0 20px 70px rgba(0,0,0,.55);animation:cgPop .35s cubic-bezier(.2,1.3,.4,1)}
+@keyframes cgPop{from{transform:scale(.85) translateY(20px);opacity:0}to{transform:none;opacity:1}}
+#classGate .cg-emoji{font-size:64px;line-height:1.1;animation:cgWob 2.2s ease-in-out infinite}
+@keyframes cgWob{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+#classGate h2{font-size:clamp(22px,5vw,30px);margin:10px 0 10px;text-shadow:none}
+#classGate p{font-size:clamp(15px,3.6vw,18px);line-height:1.5;color:#e4e0f5;margin:8px 0}
+#classGate .cg-time{display:inline-block;margin:6px 0 4px;padding:5px 14px;border-radius:999px;background:rgba(255,255,255,.12);font-weight:700;letter-spacing:.5px}
+#classGate .cg-btns{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+#classGate button{font:inherit;font-size:clamp(15px,3.8vw,18px);padding:13px 16px;border-radius:14px;border:2px solid rgba(255,255,255,.35);color:#fff;cursor:pointer;background:rgba(255,255,255,.1);transition:transform .12s,background .12s}
+#classGate button:hover{transform:translateY(-2px);background:rgba(255,255,255,.2)}
+#classGate button.yes{background:linear-gradient(135deg,#ff9a3c,#e8532b);border-color:#ffd3a0}
+#classGate button.no{background:linear-gradient(135deg,#3fb96f,#1f8a52);border-color:#a8f0c6}
+#classGate .cg-link{background:none;border:none;font-size:13px;color:#b9b0e0;text-decoration:underline;padding:6px;margin-top:6px}
+#classGate .cg-count{font-size:clamp(34px,9vw,52px);font-weight:800;font-variant-numeric:tabular-nums;margin:6px 0}
+
 /* ---------- Emote-Rad (wie das Waffenrad) + Emote-Auswahl ---------- */
 #emoteWheel{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;pointer-events:auto;touch-action:none;
   background:radial-gradient(circle at 50% 50%,rgba(0,0,0,.10) 0,rgba(0,0,0,.62) 78%);--R:min(28vh,170px);--S:min(15.5vh,92px);animation:ewBg .18s ease-out}
@@ -348,6 +365,7 @@ body.touch .ew-bar .ew-close{display:block}
 </div>
 
 <div id="emoteWheel" class="hidden"></div>
+<div id="classGate" class="hidden"></div>
 
 <!-- Verbindung verloren (Mehrspieler) -->
 <!-- Nachricht der Dev-Konsole (Server-Neustart) -->
@@ -505,6 +523,7 @@ body.touch .ew-bar .ew-close{display:block}
     <label>Lautstärke <span id="vVol"></span></label><input id="sVol" type="range" min="0" max="100" step="5">
     <label>Sichtweite <span id="vDist"></span></label><input id="sDist" type="range" min="3" max="12" step="1">
     <label class="chk"><input type="checkbox" id="sClouds"> Wolken anzeigen</label>
+    <label class="chk"><input type="checkbox" id="sClass"> Unterrichts-Abfrage (während der Stunden fragen, ob man spielen darf)</label>
     <label class="chk"><input type="checkbox" id="sMap"> Minikarte (N)</label>
     <label class="chk"><input type="checkbox" id="sMapBig"> Große Minikarte</label>
     <label>Steuerung <select id="sTouch"><option value="auto">Automatisch (Maus / Touch)</option><option value="off">Maus &amp; Tastatur</option><option value="on">Touch</option></select></label>
@@ -1776,7 +1795,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.23';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-10-05.24';            // Spielversion (nur Anzeige)
 // Mehrspieler-Kompatibilität: NUR wenn sich das Netzwerkformat oder die Welt-Speicherung unverträglich ändert, MP_PROTO erhöhen. Normale Versionen (neue Blöcke, Rezepte, Mobs, Befehle …) vertragen sich untereinander –
 // dafür gibt es keine Warnung mehr. Clients ohne MP_PROTO (vor 2026-10-05.17) gelten ab MP_MIN_VER als kompatibel.
 const MP_PROTO = 1, MP_MIN_VER = '2026-10-05.1';
@@ -9880,7 +9899,7 @@ cmd(['gamerule', 'regel'], {
    N. EINSTELLUNGEN, WETTER, ANGELN, ERFOLGE, MINIKARTE, SCREENSHOT
 ===================================================================== */
 // ----- Einstellungen (localStorage) -----
-const settings = { fov: 75, sens: 1, volume: 0.5, clouds: true, minimap: true, mapBig: false, locator: true, music: true, touch: 'auto' };
+const settings = { fov: 75, sens: 1, volume: 0.5, classCheck: true, clouds: true, minimap: true, mapBig: false, locator: true, music: true, touch: 'auto' };
 try { Object.assign(settings, JSON.parse(localStorage.getItem('voxelcraft_settings') || '{}')); } catch (e) { /* egal */ }
 if (settings.touch === 'on') setTouchMode(true); else if (settings.touch === 'off') setTouchMode(false);
 const saveSettings = () => { try { localStorage.setItem('voxelcraft_settings', JSON.stringify(settings)); } catch (e) { /* egal */ } };
@@ -9894,7 +9913,7 @@ function applySettings() {
   $('sSens').value = Math.round(settings.sens * 100); $('vSens').textContent = Math.round(settings.sens * 100) + ' %';
   $('sVol').value = Math.round(settings.volume * 100); $('vVol').textContent = Math.round(settings.volume * 100) + ' %';
   $('sDist').value = renderDist; $('vDist').textContent = renderDist + ' Chunks';
-  $('sTouch').value = settings.touch || 'auto'; $('sMusic').checked = settings.music; $('sLoc').checked = settings.locator; $('sClouds').checked = settings.clouds; $('sMap').checked = settings.minimap; $('sMapBig').checked = settings.mapBig;
+  $('sTouch').value = settings.touch || 'auto'; $('sMusic').checked = settings.music; $('sLoc').checked = settings.locator; $('sClouds').checked = settings.clouds; $('sClass').checked = settings.classCheck !== false; $('sMap').checked = settings.minimap; $('sMapBig').checked = settings.mapBig;
 }
 let settingsFrom = 'pause';
 function openSettings() { settingsFrom = state === 'menu' ? 'menu' : 'pause'; applySettings(); setState('settings'); }
@@ -9908,6 +9927,7 @@ $('sDist').oninput = () => {
   if (world) { world.setRenderDistance(renderDist); uni.fogNear.value = renderDist * CS * 0.55; uni.fogFar.value = renderDist * CS - 6; }
 };
 $('sClouds').onchange = () => { settings.clouds = $('sClouds').checked; applySettings(); };
+$('sClass').onchange = () => { settings.classCheck = $('sClass').checked; saveSettings(); classGateCheck(); };
 $('sMap').onchange = () => { settings.minimap = $('sMap').checked; applySettings(); };
 $('sMapBig').onchange = () => { settings.mapBig = $('sMapBig').checked; applySettings(); };
 $('sTouch').onchange = () => { settings.touch = $('sTouch').value; if (settings.touch === 'on') setTouchMode(true); else if (settings.touch === 'off') setTouchMode(false); applySettings(); };
@@ -11822,7 +11842,70 @@ Snake.cv.addEventListener('pointerup', snakeUp); Snake.cv.addEventListener('poin
 $('snakeBack').onclick = () => setState('menu');
 ATLAS.onReady(() => { if (state === 'menu' && !MenuScene.raf) menuSceneSync('menu'); });
 
-window.__vc = { mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+
+// ===================== Unterrichts-Abfrage: während der Schulstunden (Mo–Fr) erst fragen, ob man wirklich spielen darf =====================
+const CLASS_TIMES = [['07:55', '08:40'], ['08:50', '09:35'], ['09:50', '10:35'], ['10:45', '11:30'], ['12:05', '12:50'], ['12:55', '13:40'], ['13:55', '14:40']];      // Beginn–Ende der Stunden 1–7
+const hm2min = (t) => { const [h, m] = t.split(':'); return +h * 60 + +m; };
+const pad2c = (n) => String(n).padStart(2, '0');
+function classNow(d) {                                               // aktuelle Stunde → { n (1–7), startMin, endMin, secLeft } oder null (Pause / Freizeit / Wochenende)
+  d = d || new Date(); const wd = d.getDay(); if (wd < 1 || wd > 5) return null;
+  const sec = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+  for (let i = 0; i < CLASS_TIMES.length; i++) { const a = hm2min(CLASS_TIMES[i][0]) * 60, b = hm2min(CLASS_TIMES[i][1]) * 60; if (sec >= a && sec < b) return { n: i + 1, start: CLASS_TIMES[i][0], end: CLASS_TIMES[i][1], secLeft: b - sec }; }
+  return null;
+}
+const CLASS_JOKES = [
+  ['🕵️', 'Psst … der Lehrer guckt!', 'Laut Stundenplan läuft gerade Unterricht. Dein Gehirn will Wissen – dein Daumen will Creeper. Wer gewinnt? Willst du wirklich jetzt zocken?'],
+  ['📚', 'Moment mal, Schlauberger!', 'Gerade ist die Zeit, in der man laut Plan „aufpasst“. Minecraft läuft nicht weg – die Klassenarbeit aber auch nicht. Spielst du trotzdem?'],
+  ['😇', 'Bist du sicher, dass du darfst?', 'Das Spiel fragt höflich: Hat dein Lehrer „Ja, spiel ruhig Minecraft“ gesagt – oder nur „Bitte Hefte raus“? Ehrlichkeit zählt!'],
+  ['🚨', 'ALARM: Unterrichtszeit erkannt!', 'Mein Schulglocken-Sensor schlägt aus. Ein gutes Gewissen ist das bessere Texturpaket – willst du wirklich jetzt zocken?'],
+  ['🧠', 'Dein Gehirn meldet sich …', '„Bitte nicht den Lehrer ignorieren“, sagt dein Gehirn. „Ein Level geht noch“, sagt dein Daumen. Auf wen hörst du?'],
+  ['🐷', 'Selbst das Schwein weiß: Jetzt ist Schule!', 'Die Kühe im Spiel dürfen den ganzen Tag chillen. Du nicht. Willst du wirklich jetzt spielen – oder lieber auf die Pause warten?'],
+];
+let classPick = -1, classAskedKey = '', classWait = false, classToastKey = '', classTick = 0;
+const classKey = (c) => new Date().toDateString() + '#' + c.n;
+function classGateCheck() {
+  const g = $('classGate'); if (!g) return;
+  const c = settings.classCheck === false ? null : classNow(), ok = c && sessionStorage.getItem('vc_class_ok') === classKey(c);
+  const inGame = state === 'play' || state === 'chat' || state === 'inv' || state === 'pause' || state === 'dead' || state === 'trade' || state === 'emotes';
+  if (!c || ok) {                                                        // Pause oder schon erlaubt
+    if (classWait && !c) { classWait = false; showBreakOver(); return; }
+    if (!classWait) g.classList.add('hidden');
+    return;
+  }
+  if (inGame && !classWait) {                                            // mitten im Spiel beginnt eine Stunde: nur ein Hinweis, kein Rauswurf
+    if (classToastKey !== classKey(c)) { classToastKey = classKey(c); try { toast('🔔 Die ' + c.n + '. Stunde hat angefangen – Lehrer im Anmarsch? 👀'); } catch (e) { /* egal */ } }
+    return;
+  }
+  if (classWait) { renderWait(c); return; }
+  if (!g.classList.contains('hidden')) return;
+  classAskedKey = classKey(c);
+  if (classPick < 0) classPick = (Math.random() * CLASS_JOKES.length) | 0;
+  const [em, title, text] = CLASS_JOKES[classPick];
+  g.innerHTML = '<div class="cg-box"><div class="cg-emoji">' + em + '</div><h2>' + title + '</h2><div class="cg-time">⏰ ' + c.n + '. Stunde · ' + c.start + ' – ' + c.end + '</div><p>' + text + '</p>' +
+    '<div class="cg-btns"><button class="yes" id="cgYes" type="button">Ja, ich darf das! (Ehrenwort 😇)</button><button class="no" id="cgNo" type="button">Nein, ich bleibe brav und warte auf die Pause 📖</button></div></div>';
+  g.classList.remove('hidden');
+  $('cgYes').onclick = () => { try { sessionStorage.setItem('vc_class_ok', classAskedKey); } catch (e) { /* egal */ } classPick = -1; g.classList.add('hidden'); try { toast('Viel Spaß – und lass dich nicht erwischen 🤫'); } catch (e) { /* egal */ } };
+  $('cgNo').onclick = () => { classWait = true; classPick = -1; renderWait(classNow() || c); };
+}
+function renderWait(c) {
+  const g = $('classGate'), left = c ? c.secLeft : 0, m = Math.floor(left / 60), sc = left % 60;
+  const L = ['Sehr vorbildlich! Dein Lehrer würde dir am liebsten einen Keks geben. 🍪', 'Gute Entscheidung! Bis dahin: Pokerface üben und so tun, als würdest du zuhören. 😎', 'Respekt! Die Pause kommt schneller, als ein Creeper explodiert. 💥', 'Brav! Dafür darfst du in der Pause drei Mal extra „GG“ schreiben. 🏆'];
+  if (!g.querySelector('.cg-count')) {
+    const t = L[(Math.random() * L.length) | 0];
+    g.innerHTML = '<div class="cg-box"><div class="cg-emoji">🎓</div><h2>Auf die Pause warten …</h2><p>' + t + '</p><p>Das Spiel öffnet sich wieder in:</p><div class="cg-count" id="cgCount"></div><div class="cg-btns"><button class="cg-link" id="cgOops" type="button">Ups, verklickt – ich darf doch spielen</button></div></div>';
+    $('cgOops').onclick = () => { classWait = false; g.classList.add('hidden'); classGateCheck(); };
+  }
+  g.classList.remove('hidden'); $('cgCount').textContent = pad2c(m) + ':' + pad2c(sc);
+}
+function showBreakOver() {
+  const g = $('classGate');
+  g.innerHTML = '<div class="cg-box"><div class="cg-emoji">🔔</div><h2>PAUSE! Zocken erlaubt 🎮</h2><p>Die Glocke hat geläutet – ab jetzt darfst du wieder bauen, kämpfen und Kühe erschrecken.</p><div class="cg-btns"><button class="no" id="cgGo" type="button">Los geht’s!</button></div></div>';
+  g.classList.remove('hidden'); $('cgGo').onclick = () => g.classList.add('hidden');
+}
+setInterval(() => { classGateCheck(); }, 1000);
+classGateCheck();
+
+window.__vc = { classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>
