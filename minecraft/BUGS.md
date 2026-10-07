@@ -165,3 +165,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * ✨ **Unterrichts-Abfrage:** Montag bis Freitag, während der Schulstunden (1. 07:55–08:40, 2. 08:50–09:35, 3. 09:50–10:35, 4. 10:45–11:30, 5. 12:05–12:50, 6. 12:55–13:40, 7. 13:55–14:40; nach Gerätezeit) erscheint beim Öffnen des Spiels – noch vor dem Menü – eine Vollbild-Frage mit lustigem Text (6 Varianten, zufällig), welche Stunde gerade läuft und den Knöpfen **„Ja, ich darf das! (Ehrenwort)“** und **„Nein, ich bleibe brav und warte auf die Pause“**. Bei Ja geht es normal weiter (für diese Stunde gemerkt, in der nächsten Stunde wird neu gefragt). Bei Nein läuft ein Countdown bis zur Pause, danach öffnet sich das Spiel mit „PAUSE! Zocken erlaubt“; „Ups, verklickt“ führt zurück. Beginnt mitten im Spiel eine Stunde, kommt nur ein kleiner Hinweis (kein Rauswurf). In Pausen, nach 14:40 und am Wochenende kommt nichts. Ausschaltbar unter Einstellungen → „Unterrichts-Abfrage“.
 
+## 2026-10-05.25
+
+* ✅ **Unterrichts-Abfrage nicht mehr abschaltbar:** Die Einstellung „Unterrichts-Abfrage“ ist entfernt, die Frage kommt immer (auch wenn ein alter Spielstand der Einstellungen etwas anderes gespeichert hat).
+

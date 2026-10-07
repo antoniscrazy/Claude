@@ -523,7 +523,6 @@ body.touch .ew-bar .ew-close{display:block}
     <label>Lautstärke <span id="vVol"></span></label><input id="sVol" type="range" min="0" max="100" step="5">
     <label>Sichtweite <span id="vDist"></span></label><input id="sDist" type="range" min="3" max="12" step="1">
     <label class="chk"><input type="checkbox" id="sClouds"> Wolken anzeigen</label>
-    <label class="chk"><input type="checkbox" id="sClass"> Unterrichts-Abfrage (während der Stunden fragen, ob man spielen darf)</label>
     <label class="chk"><input type="checkbox" id="sMap"> Minikarte (N)</label>
     <label class="chk"><input type="checkbox" id="sMapBig"> Große Minikarte</label>
     <label>Steuerung <select id="sTouch"><option value="auto">Automatisch (Maus / Touch)</option><option value="off">Maus &amp; Tastatur</option><option value="on">Touch</option></select></label>
@@ -1795,7 +1794,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.24';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-10-05.25';            // Spielversion (nur Anzeige)
 // Mehrspieler-Kompatibilität: NUR wenn sich das Netzwerkformat oder die Welt-Speicherung unverträglich ändert, MP_PROTO erhöhen. Normale Versionen (neue Blöcke, Rezepte, Mobs, Befehle …) vertragen sich untereinander –
 // dafür gibt es keine Warnung mehr. Clients ohne MP_PROTO (vor 2026-10-05.17) gelten ab MP_MIN_VER als kompatibel.
 const MP_PROTO = 1, MP_MIN_VER = '2026-10-05.1';
@@ -9899,7 +9898,7 @@ cmd(['gamerule', 'regel'], {
    N. EINSTELLUNGEN, WETTER, ANGELN, ERFOLGE, MINIKARTE, SCREENSHOT
 ===================================================================== */
 // ----- Einstellungen (localStorage) -----
-const settings = { fov: 75, sens: 1, volume: 0.5, classCheck: true, clouds: true, minimap: true, mapBig: false, locator: true, music: true, touch: 'auto' };
+const settings = { fov: 75, sens: 1, volume: 0.5, clouds: true, minimap: true, mapBig: false, locator: true, music: true, touch: 'auto' };
 try { Object.assign(settings, JSON.parse(localStorage.getItem('voxelcraft_settings') || '{}')); } catch (e) { /* egal */ }
 if (settings.touch === 'on') setTouchMode(true); else if (settings.touch === 'off') setTouchMode(false);
 const saveSettings = () => { try { localStorage.setItem('voxelcraft_settings', JSON.stringify(settings)); } catch (e) { /* egal */ } };
@@ -9913,7 +9912,7 @@ function applySettings() {
   $('sSens').value = Math.round(settings.sens * 100); $('vSens').textContent = Math.round(settings.sens * 100) + ' %';
   $('sVol').value = Math.round(settings.volume * 100); $('vVol').textContent = Math.round(settings.volume * 100) + ' %';
   $('sDist').value = renderDist; $('vDist').textContent = renderDist + ' Chunks';
-  $('sTouch').value = settings.touch || 'auto'; $('sMusic').checked = settings.music; $('sLoc').checked = settings.locator; $('sClouds').checked = settings.clouds; $('sClass').checked = settings.classCheck !== false; $('sMap').checked = settings.minimap; $('sMapBig').checked = settings.mapBig;
+  $('sTouch').value = settings.touch || 'auto'; $('sMusic').checked = settings.music; $('sLoc').checked = settings.locator; $('sClouds').checked = settings.clouds; $('sMap').checked = settings.minimap; $('sMapBig').checked = settings.mapBig;
 }
 let settingsFrom = 'pause';
 function openSettings() { settingsFrom = state === 'menu' ? 'menu' : 'pause'; applySettings(); setState('settings'); }
@@ -9927,7 +9926,6 @@ $('sDist').oninput = () => {
   if (world) { world.setRenderDistance(renderDist); uni.fogNear.value = renderDist * CS * 0.55; uni.fogFar.value = renderDist * CS - 6; }
 };
 $('sClouds').onchange = () => { settings.clouds = $('sClouds').checked; applySettings(); };
-$('sClass').onchange = () => { settings.classCheck = $('sClass').checked; saveSettings(); classGateCheck(); };
 $('sMap').onchange = () => { settings.minimap = $('sMap').checked; applySettings(); };
 $('sMapBig').onchange = () => { settings.mapBig = $('sMapBig').checked; applySettings(); };
 $('sTouch').onchange = () => { settings.touch = $('sTouch').value; if (settings.touch === 'on') setTouchMode(true); else if (settings.touch === 'off') setTouchMode(false); applySettings(); };
@@ -11865,7 +11863,7 @@ let classPick = -1, classAskedKey = '', classWait = false, classToastKey = '', c
 const classKey = (c) => new Date().toDateString() + '#' + c.n;
 function classGateCheck() {
   const g = $('classGate'); if (!g) return;
-  const c = settings.classCheck === false ? null : classNow(), ok = c && sessionStorage.getItem('vc_class_ok') === classKey(c);
+  const c = classNow(), ok = c && sessionStorage.getItem('vc_class_ok') === classKey(c);
   const inGame = state === 'play' || state === 'chat' || state === 'inv' || state === 'pause' || state === 'dead' || state === 'trade' || state === 'emotes';
   if (!c || ok) {                                                        // Pause oder schon erlaubt
     if (classWait && !c) { classWait = false; showBreakOver(); return; }
