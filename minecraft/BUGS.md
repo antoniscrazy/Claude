@@ -157,3 +157,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * ✅ **Beim Tod gehen nur noch 50 % der Erfahrung verloren** (vorher blieben nur 40 % der Level, der Fortschritt im Level fiel ganz weg). Berechnet wird jetzt aus allen gesammelten Erfahrungspunkten, die Hälfte bleibt erhalten und wird wieder in Level + Fortschritt umgerechnet. Test: Level 10 (160 Punkte) → Level 6 mit 80 Punkten, Level 30+20 → 707 von 1415, Level 40+100 → 1510 von 3020. Dazu ein Hinweis nach dem Respawn.
 
+## 2026-10-05.23
+
+* ✨ **Konten sperren (Dev-Konsole → Reiter „Konten“):** Knopf **„🚫 Sperren“** je Konto, dabei stellst du die **Nachricht** ein, die der Spieler sieht (wird beim nächsten Mal vorgeschlagen). Gesperrte Konten bekommen ein rotes „gesperrt“, dazu **„✔ Entsperren“** und **„✎ Nachricht“** zum Ändern. Ein gesperrtes Konto kann **auf keinen Server mehr** beitreten oder einen erstellen und sieht stattdessen „🚫 Dein Konto ist gesperrt: <deine Nachricht>“. Wer gerade online ist, wird sofort aus dem Spiel geworfen (gleiche Nachricht); fehlgeschlagenes Speichern löst zusätzlich eine Statusprüfung aus. **Alles bleibt erhalten:** Konto, Spielerdaten, Inventar, Server und Welten werden nicht angefasst, nach dem Entsperren geht es genau dort weiter. Die Sperre wird in der Datenbank erzwungen (Anmeldung, Beitreten, Erstellen und alle schreibenden Funktionen), nicht nur im Spiel. Einmalig `supabase/dev_console_part5.sql` im Supabase-SQL-Editor ausführen (setzt Teil 4 voraus).
+

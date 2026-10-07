@@ -1776,7 +1776,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.22';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-10-05.23';            // Spielversion (nur Anzeige)
 // Mehrspieler-Kompatibilität: NUR wenn sich das Netzwerkformat oder die Welt-Speicherung unverträglich ändert, MP_PROTO erhöhen. Normale Versionen (neue Blöcke, Rezepte, Mobs, Befehle …) vertragen sich untereinander –
 // dafür gibt es keine Warnung mehr. Clients ohne MP_PROTO (vor 2026-10-05.17) gelten ab MP_MIN_VER als kompatibel.
 const MP_PROTO = 1, MP_MIN_VER = '2026-10-05.1';
@@ -8770,6 +8770,7 @@ class SupabaseDB {
   constructor(sb) { this.sb = sb; }
   async rpc(fn, args) { const { data, error } = await this.sb.rpc(fn, args); if (error) throw new Error(error.message || 'Datenbankfehler'); return data; }
   register(name, token, skin, slim) { return this.rpc('vc_register', { p_name: name, p_token: token, p_skin: skin, p_slim: slim }); }
+  accountStatus(name, token) { return this.rpc('vc_account_status', { p_name: name, p_token: token }); }
   createRoom(room, seed, mode, name, token, pub) { return this.rpc('vc_create_room', { p_room: room, p_seed: seed, p_mode: mode, p_name: name, p_token: token, p_public: pub }); }
   joinRoom(room, name, token) { return this.rpc('vc_join_room', { p_room: room, p_name: name, p_token: token }); }
   setOp(room, name, token, target, op) { return this.rpc('vc_set_op', { p_room: room, p_name: name, p_token: token, p_target: target, p_op: op }); }
@@ -8810,6 +8811,7 @@ class LocalNet {
   async leave() { if (this.bc) { this.bc.postMessage({ e: '__bye', f: this.id }); this.bc.close(); this.bc = null; } clearInterval(this.hb); }
 }
 class LocalDB {
+  async accountStatus() { return { ok: true, banned: false }; }
   constructor() { this.key = 'voxelcraft_localdb_v1'; }
   load() { try { return JSON.parse(localStorage.getItem(this.key)) || {}; } catch (e) { return {}; } }
   save(d) { try { localStorage.setItem(this.key, JSON.stringify(d)); } catch (e) { throw new Error('Lokaler Speicher voll'); } }
@@ -9672,6 +9674,15 @@ function runRemoteCommand(name, args, by) {                 // Ein OP hat einen 
   remoteExec = true;
   try { c.run(args || [], (args || []).join(' ')); chatSys(by + ' hat /' + name + ' ' + (args || []).join(' ') + ' bei dir ausgeführt'); }
   catch (e) { chatErr(e.message); } finally { remoteExec = false; }
+}
+function bannedFromServer(msg) {                                         // Konto wurde gesperrt, während man spielt: speichern ist nicht mehr möglich, Verbindung trennen
+  if (!mp.on) return;
+  mpLeave().then(() => { mp.on = false; setState('mpmenu'); mpSetStatus('🚫 Dein Konto wurde gesperrt: ' + (msg || 'Dein Konto wurde gesperrt.'), true); });
+}
+let banCheckAt = 0;
+function mpCheckBan() {                                                  // Speichern wurde abgelehnt: ist das Konto gesperrt?
+  if (!mp.on || !mp.db || performance.now() - banCheckAt < 20000) return; banCheckAt = performance.now();
+  mp.db.accountStatus(mp.name, mp.token).then((r) => { if (r && r.banned) bannedFromServer(r.msg); }).catch(() => {});
 }
 function kickedFromServer(why) {
   mpLeave().then(() => { mp.on = false; setState('mpmenu'); mpSetStatus('Du wurdest vom Server geworfen' + (why ? ': ' + why : '') + '.', true); });
@@ -10668,6 +10679,7 @@ const mpHandlers = {
         const t = String(p.t || '').slice(0, 300);
         if (p.c === 'notice') { chatAdd(null, '📢 ' + t, 'ok'); toast('📢 ' + t); }
         else if (p.c === 'restart') mpDevRestart(t);
+        else if (p.c === 'ban' && String(p.n || '').toLowerCase() === String(mp.name || '').toLowerCase()) bannedFromServer(t);
         break;
       }
       case 'b': if (Array.isArray(p)) for (const q of p) if (Array.isArray(q)) mpHandlers.event(q[0], q[1], from, true, q[2]); break;
@@ -10830,7 +10842,7 @@ function applyMpState(d) {
 }
 function mpSaveState() {
   if (!mp.on || !mp.db) return Promise.resolve();
-  return mp.db.saveState(mp.room, mp.name, mp.token, mpStateData()).catch(() => {});
+  return mp.db.saveState(mp.room, mp.name, mp.token, mpStateData()).catch((e) => { if (e && /unauthorized/i.test(e.message || '')) mpCheckBan(); });
 }
 
 // --- Beitreten / Verlassen ---
@@ -10842,13 +10854,16 @@ async function mpJoin(cfg) {
     mp.db = new SupabaseDB(sb); mp.net = new SupabaseNet(sb, sb2);
   } else { mp.db = new LocalDB(); mp.net = new LocalNet(); }
   const reg = await mp.db.register(cfg.name, cfg.token, skinToDb(cfg.skin), cfg.slim);
+  if (reg && reg.error === 'banned') throw new Error('🚫 Dein Konto ist gesperrt: ' + (reg.msg || 'Dein Konto wurde gesperrt.'));
   if (!reg || !reg.ok) throw new Error(reg && reg.error === 'name_taken' ? 'Dieser Name ist bereits vergeben (gehört einem anderen Browser).' : 'Anmeldung fehlgeschlagen');
   let info;
   if (cfg.create) {
     info = await mp.db.createRoom(cfg.room, cfg.seed, cfg.mode, cfg.name, cfg.token, cfg.pub);
+    if (info && info.error === 'banned') throw new Error('🚫 Dein Konto ist gesperrt: ' + (info.msg || ''));
     if (!info || !info.ok) throw new Error(info && info.error === 'exists' ? 'Diesen Servernamen gibt es schon – nimm einen anderen oder tritt dem Server bei.' : info && info.error === 'create_locked' ? 'Das Erstellen neuer Server ist gesperrt – nur freigegebene Spieler dürfen das. Bestehenden Servern kannst du weiter beitreten.' : 'Server konnte nicht erstellt werden');
   } else {
     info = await mp.db.joinRoom(cfg.room, cfg.name, cfg.token);
+    if (info && info.error === 'banned') throw new Error('🚫 Dein Konto ist gesperrt: ' + (info.msg || ''));
     if (!info || !info.ok) throw new Error('Diesen Server gibt es nicht. Prüfe den Namen oder erstelle einen neuen Server.');
   }
   mp.freeze = null; mp.sleepCount = 0; mp.admin = false; mp.owner = info.owner || null; mp.ops = new Set((info.ops || []).map((n) => n.toLowerCase()));
@@ -11807,7 +11822,7 @@ Snake.cv.addEventListener('pointerup', snakeUp); Snake.cv.addEventListener('poin
 $('snakeBack').onclick = () => setState('menu');
 ATLAS.onReady(() => { if (state === 'menu' && !MenuScene.raf) menuSceneSync('menu'); });
 
-window.__vc = { xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+window.__vc = { mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>

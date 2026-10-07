@@ -235,11 +235,14 @@ function renderRooms() {
 }
 function renderPlayers() {
   const on = onlineNames(), el = $('tab-players');
-  el.innerHTML = '<div class="panel scroll"><table><tr><th>Konto</th><th>Status</th><th>Zuletzt gesehen</th><th>Registriert</th><th>Server (Daten)</th><th></th></tr>' +
-    ov.players.map((p) => '<tr><td>' + faceHtml(p.name) + esc(p.name) + '</td><td><span class="dot ' + (on.has(p.name) ? 'on' : '') + '"></span>' + (on.has(p.name) ? 'online' : 'offline') + '</td><td>' + ago(p.last_seen) + '</td><td>' + dt(p.created_at) +
-      '</td><td>' + (p.rooms || []).map((r) => '<a class="tag" href="#" data-room="' + esc(r) + '" style="color:var(--blue)">' + esc(r) + '</a>').join('') + '</td><td><button class="btn red sm" data-delp="' + esc(p.name) + '" type="button">Löschen</button></td></tr>').join('') + '</table></div>';
+  el.innerHTML = '<div class="panel scroll"><table><tr><th>Konto</th><th>Status</th><th>Zuletzt gesehen</th><th>Registriert</th><th>Server (Daten)</th><th>Sperre</th><th></th></tr>' +
+    ov.players.map((p) => '<tr><td>' + faceHtml(p.name) + esc(p.name) + '</td><td><span class="dot ' + (on.has(p.name) ? 'on' : '') + '"></span>' + (on.has(p.name) ? 'online' : 'offline') + (p.banned ? ' <span class="tag red">gesperrt</span>' : '') + '</td><td>' + ago(p.last_seen) + '</td><td>' + dt(p.created_at) +
+      '</td><td>' + (p.rooms || []).map((r) => '<a class="tag" href="#" data-room="' + esc(r) + '" style="color:var(--blue)">' + esc(r) + '</a>').join('') + '</td><td>' + (p.banned ? '<div class="dim" style="max-width:260px">„' + esc(p.ban_msg || 'Dein Konto wurde gesperrt.') + '“</div><button class="btn sm" data-unban="' + esc(p.name) + '" type="button">✔ Entsperren</button> <button class="btn sm" data-banmsg="' + esc(p.name) + '" type="button">✎ Nachricht</button>' : '<button class="btn red sm" data-ban="' + esc(p.name) + '" type="button">🚫 Sperren</button>') + '</td><td><button class="btn red sm" data-delp="' + esc(p.name) + '" type="button">Löschen</button></td></tr>').join('') + '</table></div>';
   el.querySelectorAll('a[data-room]').forEach((a) => { a.onclick = (e) => { e.preventDefault(); loadRoom(a.dataset.room); }; });
   el.querySelectorAll('[data-delp]').forEach((b) => { b.onclick = () => deletePlayer(b.dataset.delp); });
+  el.querySelectorAll('[data-ban]').forEach((b) => { b.onclick = () => banAccount(b.dataset.ban, false); });
+  el.querySelectorAll('[data-banmsg]').forEach((b) => { b.onclick = () => banAccount(b.dataset.banmsg, true); });
+  el.querySelectorAll('[data-unban]').forEach((b) => { b.onclick = () => unbanAccount(b.dataset.unban); });
 }
 // ---------- Einstellungen: Server-Erstellung sperren (Ausnahmen per Spielername) ----------
 async function renderSettings() {
@@ -350,6 +353,26 @@ function delSlot(key) {
   const data = JSON.parse(JSON.stringify(s.data)); data[kind][i] = 0;
   act('vc_dev_set_state', { p_room: curRoom, p_name: name, p_data: data }, 'Eintrag entfernt');
 }
+// ---------- Konten sperren ----------
+const BAN_DEFAULT = 'Dein Konto wurde gesperrt.';
+async function kickBanned(name, msg) {                                  // ist der Spieler gerade online: sofort aus dem Spiel werfen (mit der Nachricht)
+  for (const [room, e] of channels) {
+    if (!e.players.has(name) || !e.ch) continue;
+    try { await e.ch.send({ type: 'broadcast', event: 'e', payload: { e: 'b', p: [['dev', { c: 'ban', n: name, t: msg }]], f: e.key } }); } catch (x) { /* egal */ }
+  }
+}
+async function banAccount(name, editOnly) {
+  const p = ov.players.find((x) => x.name === name);
+  let last = ''; try { last = localStorage.getItem('vcdev_banmsg') || ''; } catch (e) { /* egal */ }
+  const msg = prompt('Nachricht, die „' + name + '“ beim Versuch sieht, einen Server zu betreten:', (p && p.ban_msg) || last || BAN_DEFAULT);
+  if (msg === null) return;
+  const m = msg.trim() || BAN_DEFAULT;
+  if (!editOnly && !confirm('Konto „' + name + '“ sperren?\nEs kann bis zur Entsperrung auf keinen Server mehr. Konto, Spielerdaten und Server bleiben erhalten.')) return;
+  try { localStorage.setItem('vcdev_banmsg', m); } catch (e) { /* egal */ }
+  try { await rpc('vc_dev_set_ban', { p_name: name, p_banned: true, p_msg: m }); if (!editOnly) await kickBanned(name, m); toast(editOnly ? 'Nachricht gespeichert' : '„' + name + '“ ist gesperrt'); await refresh(); }
+  catch (e) { toast(/fehlen noch/.test(e.message) ? 'Dafür einmalig supabase/dev_console_part5.sql im Supabase-SQL-Editor ausführen.' : e.code === 'msg_too_long' ? 'Nachricht zu lang (max. 300 Zeichen).' : e.message); }
+}
+function unbanAccount(name) { act('vc_dev_set_ban', { p_name: name, p_banned: false, p_msg: null }, '„' + name + '“ ist wieder entsperrt', true); }
 async function deletePlayer(name) {
   if (!confirm('Konto „' + name + '“ samt allen Spielerdaten löschen?')) return;
   const rooms = confirm('Auch alle Server löschen, die „' + name + '“ gehören?\nOK = ja, Abbrechen = Server behalten (ohne Besitzer)');
