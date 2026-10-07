@@ -522,6 +522,7 @@ body.touch .ew-bar .ew-close{display:block}
     <label>Empfindlichkeit <span id="vSens"></span></label><input id="sSens" type="range" min="30" max="300" step="5">
     <label>Lautstärke <span id="vVol"></span></label><input id="sVol" type="range" min="0" max="100" step="5">
     <label>Sichtweite <span id="vDist"></span></label><input id="sDist" type="range" min="3" max="12" step="1">
+    <label>Leistungsmodus <select id="sPerf"><option value="auto">Automatisch (bei riesigen Bauten / viel TNT)</option><option value="on">Immer an</option><option value="off">Aus</option></select></label>
     <label class="chk"><input type="checkbox" id="sClouds"> Wolken anzeigen</label>
     <label class="chk"><input type="checkbox" id="sMap"> Minikarte (N)</label>
     <label class="chk"><input type="checkbox" id="sMapBig"> Große Minikarte</label>
@@ -1794,7 +1795,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.26';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-10-05.27';            // Spielversion (nur Anzeige)
 // Mehrspieler-Kompatibilität: NUR wenn sich das Netzwerkformat oder die Welt-Speicherung unverträglich ändert, MP_PROTO erhöhen. Normale Versionen (neue Blöcke, Rezepte, Mobs, Befehle …) vertragen sich untereinander –
 // dafür gibt es keine Warnung mehr. Clients ohne MP_PROTO (vor 2026-10-05.17) gelten ab MP_MIN_VER als kompatibel.
 const MP_PROTO = 1, MP_MIN_VER = '2026-10-05.1';
@@ -4239,8 +4240,9 @@ for (let i = 0; i < 240; i++) {
   m.visible = false; scene.add(m); parts.push({ m, v: new THREE.Vector3(), life: 0 });
 }
 let partIdx = 0;
+const perf = { on: false, userDist: 6, idleT: 0, why: '', toastAt: -1e9 };         // Leistungsmodus (siehe perfSet)
 function spawnParticles(x, y, z, col, n, speed, spread) {
-  n = n || 10; speed = speed || 3; spread = spread === undefined ? 1 : spread;
+  n = n || 10; if (perf.on) n = Math.ceil(n / 3); speed = speed || 3; spread = spread === undefined ? 1 : spread;
   for (let i = 0; i < n; i++) {
     const q = parts[partIdx++ % parts.length];
     q.m.position.set(x + 0.5 + (Math.random() - 0.5) * spread, y + 0.5 + (Math.random() - 0.5) * spread, z + 0.5 + (Math.random() - 0.5) * spread);
@@ -4251,6 +4253,7 @@ function spawnParticles(x, y, z, col, n, speed, spread) {
 }
 // Einzelner Effekt-Partikel (Glut, Leuchtkäfer, Feuerball-Spur): eigene Geschwindigkeit, Schwerkraft g (0 = schwebt, <0 steigt), Größe
 function emitFx(x, y, z, col, vx, vy, vz, life, g, size) {
+  if (perf.on && Math.random() < 0.6) return;
   const q = parts[partIdx++ % parts.length];
   q.m.position.set(x, y, z); q.m.material.color.copy(col); q.v.set(vx, vy, vz); q.life = life; q.g = g; q.m.scale.setScalar(size || 1); q.m.visible = true;
 }
@@ -4443,7 +4446,7 @@ class PrimedTNT {
     const fr = Math.max(0, 1 - (this.onGround ? 8 : 0.5) * dt); this.v.x *= fr; this.v.z *= fr;
     const k = 1 + 0.08 * Math.sin(this.fuse * 14) * (this.fuse < 1.5 ? 1.5 : 1);
     this.mesh.position.set(this.p.x, this.p.y + 0.49, this.p.z); this.mesh.scale.setScalar(k);
-    this.flash.visible = Math.floor(this.fuse * 5) % 2 === 0;
+    this.flash.visible = !perf.on && Math.floor(this.fuse * 5) % 2 === 0;
     if (this.fuse <= 0) { if (this.remote) blastEffects(this.p.x, this.p.y + 0.5, this.p.z, 4); else explode(this.p.x, this.p.y + 0.5, this.p.z, 4); return false; }
     return true;
   }
@@ -7918,9 +7921,9 @@ function findSpawn() {
 function startGame(opts) {
   if (world) { world.dispose(); clearMobs(); clearDrops(); clearPrimed(); clearArrows(); clearFallers(); clearThrown(); clearOrbs(); }
   endDead.clear(); vehStash = null; P.creditsSeen = false; rsQ.clear(); rsTimers.length = 0; rsPrev.clear(); rsHop.clear(); rsBtn.clear(); rsPl.clear(); endT = 0;
-  mode = opts.mode; renderDist = opts.dist;
+  mode = opts.mode; renderDist = opts.dist; buildJob = null; perfReset();
   const save = opts.save;
-  if (!opts.mp) { mp.on = false; $('btnQuit').textContent = 'Speichern & Beenden'; }
+  if (!opts.mp) { mp.on = false; $('btnQuit').textContent = 'Speichern & Beenden'; spLoadPolicy(); }
   world = new World(save ? save.seed : opts.seed, scene, save ? (save.gv || 1) : opts.gv || 4);          // Welten ohne gv-Eintrag = alte Biome
   setWorldKeys(world.gv);
   world.setRenderDistance(renderDist);
@@ -7966,7 +7969,7 @@ function saveGame() {
   if (!world) return false;
   if (mp.on) { mpSaveState(); return true; }
   const data = {
-    v: 1, gv: world.gv, seed: world.seedStr, mode, dist: renderDist,
+    v: 1, gv: world.gv, seed: world.seedStr, mode, dist: perf.on ? perf.userDist : renderDist,
     player: { x: P.p.x, y: P.p.y, z: P.p.z, yaw: P.yaw, pitch: P.pitch, flying: P.flying },
     health: P.health, hunger: P.hunger, time: gameTime, sel: P.sel, xpL: P.xpL, xpP: P.xpP, vehs: world.dim === 0 ? vehicles.filter((v) => !v.puppet).map((v) => [v.type, +v.p.x.toFixed(2), +v.p.y.toFixed(2), +v.p.z.toFixed(2), +v.yaw.toFixed(2)]) : (vehStash || []),
     inv: packItems(inv), fuel: P.fuel, armor: packItems(armor), spawn: [P.spawn.x, P.spawn.y, P.spawn.z], bed: P.bedPos,
@@ -8242,7 +8245,7 @@ function frame(now) {
     camera.position.x += (Math.random() - 0.5) * P.shake * 0.4; camera.position.y += (Math.random() - 0.5) * P.shake * 0.4;
     camera.rotation.z = (Math.random() - 0.5) * P.shake * 0.08; P.shake = Math.max(0, P.shake - dt * 1.4);
   } else camera.rotation.z = 0;
-  updateEmote(dt); stepBuildJob();
+  updateEmote(dt); stepBuildJob(); perfTick(dt);
   const sprinting = state === 'play' && P.sprinting;
   const zooming = state === 'play' && mouse.right && inv[P.sel] && inv[P.sel].id >= ITEM_BASE && ITEMS[inv[P.sel].id].spyglass;
   fovCur = lerp(fovCur, zooming ? 14 : sprinting ? settings.fov + 9 : settings.fov, Math.min(1, 8 * dt));
@@ -9707,9 +9710,24 @@ function runRemoteCommand(name, args, by) {                 // Ein OP hat einen 
 }
 function mpLoadPolicy() {                                               // Befehls-Limits für diesen Spieler holen (Dev-Konsole → Einstellungen)
   if (!mp.on || !mp.db) return;
-  mp.db.commandPolicy(mp.name, mp.token).then((r) => { if (r && r.ok && mp.on) { cmdPolicy.unlimited = !!r.unlimited; cmdPolicy.warn = Math.max(1000, +r.warn || 100000); } }).catch(() => {});
+  mp.db.commandPolicy(mp.name, mp.token).then((r) => { if (r && r.ok && mp.on) { cmdPolicy.unlimited = !!r.unlimited; cmdPolicy.warn = Math.max(1000, +r.warn || 100000); try { localStorage.setItem(POL_KEY, JSON.stringify({ name: mp.name, u: cmdPolicy.unlimited, w: cmdPolicy.warn })); } catch (e) { /* egal */ } } }).catch(() => {});
 }
-setInterval(() => { if (mp.on) mpLoadPolicy(); }, 60000);
+const POL_KEY = 'voxelcraft_cmdpol';
+async function spLoadPolicy() {                                         // Einzelspieler: gilt das Konto, mit dem du zuletzt online gespielt hast (Name + Token), für die Befehls-Limits
+  if (mp.on) return;
+  const name = mpCfg.name; cmdPolicy.unlimited = false;
+  if (!/^[A-Za-z0-9_]{3,16}$/.test(name)) return;
+  try { const c = JSON.parse(localStorage.getItem(POL_KEY) || 'null'); if (c && c.name === name) { cmdPolicy.unlimited = !!c.u; cmdPolicy.warn = Math.max(1000, +c.w || 100000); } } catch (e) { /* egal */ }   // zuletzt bekannter Stand (offline)
+  if (mpCfg.backend !== 'online') return;
+  try {
+    const r = await new SupabaseDB(await sbClient(8000)).commandPolicy(name, mpToken());
+    if (r && r.ok && !mp.on && mpCfg.name === name) {
+      cmdPolicy.unlimited = !!r.unlimited; cmdPolicy.warn = Math.max(1000, +r.warn || 100000);
+      try { localStorage.setItem(POL_KEY, JSON.stringify({ name, u: cmdPolicy.unlimited, w: cmdPolicy.warn })); } catch (e) { /* egal */ }
+    }
+  } catch (e) { /* offline: zuletzt bekannter Stand bleibt */ }
+}
+setInterval(() => { if (mp.on) mpLoadPolicy(); else if (world && state !== 'menu' && state !== 'loading') spLoadPolicy(); }, 60000);
 function bannedFromServer(msg) {                                         // Konto wurde gesperrt, während man spielt: speichern ist nicht mehr möglich, Verbindung trennen
   if (!mp.on) return;
   mpLeave().then(() => { mp.on = false; setState('mpmenu'); mpSetStatus('🚫 Dein Konto wurde gesperrt: ' + (msg || 'Dein Konto wurde gesperrt.'), true); });
@@ -9804,6 +9822,7 @@ cmd(['fill'], {
     if (vol > MAXFILL && !cmdPolicy.unlimited) fail('Zu groß: ' + vol + ' Blöcke (max. ' + MAXFILL + ').');
     if (md && !['replace', 'hollow', 'outline', 'keep'].includes(md)) fail('Modus: replace, hollow, outline oder keep');
     if (cmdPolicy.unlimited && vol > cmdPolicy.warn) confirmBig('fill ' + a.join(' '), vol, 'Blöcke');
+    if (vol >= MAXFILL) perfBoost('große Bauaktion (' + fmtN(vol) + ' Blöcke)');
     if (vol > MAXFILL) {                                                    // freigegeben und groß: zeitverteilt über mehrere Bilder
       let filter = null; if (md === 'replace') { const f = resolveItem(a[8], true); filter = (b) => b === f; } if (md === 'keep') filter = (b) => b === AIR;
       startBuildJob(fillGen(x0, x1, y0, y1, z0, z1), id, md, filter, vol, 'Fülle'); return;
@@ -9851,6 +9870,7 @@ function* sphereGen(ox, oy, oz, r, hollow) {
 }
 function startBuildJob(gen, id, md, filter, total, label) {
   if (buildJob) fail('Es läuft schon eine große Bauaktion (/fillstop bricht sie ab).');
+  if (total >= 40000) perfBoost('große Bauaktion (' + fmtN(total) + ' Blöcke)');
   buildJob = { gen, id, md, filter, total, done: 0, n: 0, skipped: 0, undo: total <= 2000000 ? [] : null, label, t0: performance.now(), toastAt: 0 };
   chatOk(label + ' ' + fmtN(total) + ' Blöcke – das läuft im Hintergrund (/fillstop bricht ab).');
 }
@@ -9887,6 +9907,7 @@ cmd(['explode', 'boom'], {
   run(a) {
     const R = a[0] ? argNum(a[0], 'stärke', 1, 12) : 4;
     if (cmdPolicy.unlimited && R > 24) confirmBig('explode ' + a.join(' '), R, 'Sprengkraft');
+    if (R >= 24) perfBoost('große Explosion');
     const p = target ? [target.x + 0.5 + (target.nx || 0), target.y + 0.5 + (target.ny || 0), target.z + 0.5 + (target.nz || 0)] : [P.p.x - Math.sin(P.yaw) * 6, P.p.y + 1, P.p.z - Math.cos(P.yaw) * 6];
     explode(p[0], p[1], p[2], R);
   },
@@ -9966,20 +9987,20 @@ cmd(['gamerule', 'regel'], {
    N. EINSTELLUNGEN, WETTER, ANGELN, ERFOLGE, MINIKARTE, SCREENSHOT
 ===================================================================== */
 // ----- Einstellungen (localStorage) -----
-const settings = { fov: 75, sens: 1, volume: 0.5, clouds: true, minimap: true, mapBig: false, locator: true, music: true, touch: 'auto' };
+const settings = { fov: 75, sens: 1, volume: 0.5, clouds: true, minimap: true, mapBig: false, locator: true, music: true, touch: 'auto', perf: 'auto' };
 try { Object.assign(settings, JSON.parse(localStorage.getItem('voxelcraft_settings') || '{}')); } catch (e) { /* egal */ }
 if (settings.touch === 'on') setTouchMode(true); else if (settings.touch === 'off') setTouchMode(false);
 const saveSettings = () => { try { localStorage.setItem('voxelcraft_settings', JSON.stringify(settings)); } catch (e) { /* egal */ } };
 function applySettings() {
   if (masterGain) masterGain.gain.value = settings.volume;
-  cloudMesh.visible = settings.clouds;
+  cloudMesh.visible = settings.clouds && !perf.on;
   const size = settings.minimap ? (settings.mapBig ? 176 : 128) : 0;
   $('minimap').style.display = size ? 'block' : 'none'; $('minimap').style.width = $('minimap').style.height = size + 'px';
   document.documentElement.style.setProperty('--mm', size + 'px');
   $('sFov').value = settings.fov; $('vFov').textContent = settings.fov + '°';
   $('sSens').value = Math.round(settings.sens * 100); $('vSens').textContent = Math.round(settings.sens * 100) + ' %';
   $('sVol').value = Math.round(settings.volume * 100); $('vVol').textContent = Math.round(settings.volume * 100) + ' %';
-  $('sDist').value = renderDist; $('vDist').textContent = renderDist + ' Chunks';
+  $('sDist').value = userDist(); $('vDist').textContent = userDist() + ' Chunks'; $('sPerf').value = ['auto', 'on', 'off'].includes(settings.perf) ? settings.perf : 'auto';
   $('sTouch').value = settings.touch || 'auto'; $('sMusic').checked = settings.music; $('sLoc').checked = settings.locator; $('sClouds').checked = settings.clouds; $('sMap').checked = settings.minimap; $('sMapBig').checked = settings.mapBig;
 }
 let settingsFrom = 'pause';
@@ -9990,9 +10011,10 @@ $('sFov').oninput = () => { settings.fov = +$('sFov').value; applySettings(); };
 $('sSens').oninput = () => { settings.sens = +$('sSens').value / 100; applySettings(); };
 $('sVol').oninput = () => { settings.volume = +$('sVol').value / 100; applySettings(); sfx('place'); };
 $('sDist').oninput = () => {
-  renderDist = +$('sDist').value; applySettings();
+  if (perf.on) perf.userDist = +$('sDist').value; renderDist = perf.on ? Math.min(perf.userDist, PERF_DIST) : +$('sDist').value; applySettings();
   if (world) { world.setRenderDistance(renderDist); uni.fogNear.value = renderDist * CS * 0.55; uni.fogFar.value = renderDist * CS - 6; }
 };
+$('sPerf').onchange = () => { settings.perf = $('sPerf').value; saveSettings(); perfTick(0); applySettings(); };
 $('sClouds').onchange = () => { settings.clouds = $('sClouds').checked; applySettings(); };
 $('sMap').onchange = () => { settings.minimap = $('sMap').checked; applySettings(); };
 $('sMapBig').onchange = () => { settings.mapBig = $('sMapBig').checked; applySettings(); };
@@ -10000,6 +10022,35 @@ $('sTouch').onchange = () => { settings.touch = $('sTouch').value; if (settings.
 $('sMusic').onchange = () => { settings.music = $('sMusic').checked; applySettings(); };
 $('sLoc').onchange = () => { settings.locator = $('sLoc').checked; applySettings(); };
 $('btnMenuSettings').onclick = openSettings;
+
+// ----- Leistungsmodus: schaltet sich bei riesigen Bauaktionen (ab 40 000 Blöcken) und viel TNT automatisch ein, danach wieder aus -----
+const PERF_DIST = 3, PERF_TNT = 12;
+const userDist = () => perf.on ? perf.userDist : renderDist;
+function perfApplyDist(d) { renderDist = d; if (world) { world.setRenderDistance(d); uni.fogNear.value = d * CS * 0.55; uni.fogFar.value = d * CS - 6; } }
+function perfSet(on, why) {
+  if (on === perf.on) { if (on && why) perf.why = why; return; }
+  perf.idleT = 0; perf.why = why || '';
+  if (on) { perf.userDist = renderDist; perf.on = true; perfApplyDist(Math.min(renderDist, PERF_DIST)); renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 0.75)); }
+  else { perf.on = false; perfApplyDist(perf.userDist); renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5)); }
+  cloudMesh.visible = settings.clouds && !perf.on; rainMesh.visible = snowMesh.visible = false;
+  const now = performance.now(); if (why !== 'manuell' && now - perf.toastAt > 4000) { perf.toastAt = now; toast(on ? '⚡ Leistungsmodus an – ' + (why || '') + ' (schaltet sich von selbst wieder aus)' : 'Leistungsmodus aus'); }
+  applySettings();
+}
+function perfBoost(why) { if (settings.perf === 'off' || state === 'menu' || state === 'loading') return; perfSet(true, why); }
+function perfReset() { if (perf.on) { perf.on = false; renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5)); } perf.idleT = 0; }
+function perfTick(dt) {
+  if (!world || state === 'menu' || state === 'loading') return;
+  if (settings.perf === 'on') { if (!perf.on) perfSet(true, 'manuell'); return; }
+  if (settings.perf === 'off') { if (perf.on) perfSet(false); return; }
+  if (primed.length >= PERF_TNT) perfBoost('viel TNT');
+  if (!perf.on) return;
+  const busy = buildJob || primed.length || (world.dirty && world.dirty.size > 6);
+  perf.idleT = busy ? 0 : perf.idleT + dt;
+  if (perf.idleT > 8) perfSet(false);
+}
+cmd(['perf', 'leistung'], { desc: 'Leistungsmodus: auto (bei großen Bauten/viel TNT), on, off', args: [T.opt('modus', [['auto', 'schaltet sich bei Bedarf selbst ein'], ['on', 'immer an'], ['off', 'aus']], true)],
+  run(a) { const m = (a[0] || '').toLowerCase(); if (!m) { chatSys('Leistungsmodus: ' + settings.perf + (perf.on ? ' (gerade aktiv' + (perf.why ? ': ' + perf.why : '') + ')' : ' (gerade aus)')); return; }
+    if (!['auto', 'on', 'off'].includes(m)) fail('Modus: auto, on oder off'); settings.perf = m; saveSettings(); perfTick(0); chatOk('Leistungsmodus: ' + m); } });
 
 // ----- Screenshot -----
 let shotReq = false;
@@ -11972,7 +12023,7 @@ function showBreakOver() {
 setInterval(() => { classGateCheck(); }, 1000);
 classGateCheck();
 
-window.__vc = { cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+window.__vc = { perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>

@@ -1,4 +1,4 @@
-# VOXELCRAFT – Bug-Liste (Stand 2026-10-05.26)
+# VOXELCRAFT – Bug-Liste (Stand 2026-10-05.27)
 
 Gefunden durch Fuzz-/Monkey-Tests (Zufallsklicks, Tastenhagel), Zwei-Spieler-Tests im Multiplayer und Code-Durchsicht.
 Status: ✅ behoben · 🟡 offen (klein / kosmetisch) · 🔴 offen (spürbar)
@@ -177,3 +177,10 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * ✨ **Große Bauaktionen laufen zeitverteilt:** `/fill` > 40 000 Blöcke und `/sphere` > Radius 20 werden in kleinen Häppchen (8 ms pro Bild) im Hintergrund gebaut, mit Fortschrittsanzeige in %, **`/fillstop`** bricht ab, `/undo` geht bis 2 Mio. Blöcke. Nicht geladene Chunks werden übersprungen (Hinweis im Chat). Nur eine große Aktion gleichzeitig.
 * Das Limit gilt nur online und nur, solange der Server die Freigabe bestätigt (Abfrage beim Beitritt, danach jede Minute; beim Verlassen zurückgesetzt). Einzelspieler/lokal: weiter mit Limits. Einmalig `supabase/dev_console_part6.sql` im Supabase-SQL-Editor ausführen (setzt Teil 4 voraus).
 * Getestet: gesperrt (alte Fehlermeldungen), freigegeben (125 000-Block-Fill: Warnung → Bestätigung → Fertig nach ~9 s, `/undo`, `/fillstop` mittendrin, Kugel Radius 30, `/give` 5000, `/summon` 60, `/explode` 30) und Dev-Konsole mit Fake-RPCs (speichern, alle, aus, falsche Schwelle, fehlendes SQL).
+
+## 2026-10-05.27
+
+* ✨ **Befehls-Limits auch im Einzelspieler:** Beim Start eines Einzelspieler-Spiels (und danach jede Minute) fragt das Spiel mit dem gespeicherten Multiplayer-Konto (Name + geheimes Token dieses Browsers) bei der Datenbank nach, ob dieses Konto in der Dev-Konsole freigegeben ist. Wenn ja, gelten im Einzelspieler dieselben Regeln wie online (unbegrenzt `/fill`, keine Maximalzahlen, Warnschwelle). Der zuletzt bekannte Stand wird gemerkt, damit es auch offline klappt; wird die Freigabe entzogen, endet sie beim nächsten Abgleich. Ohne Multiplayer-Name (nie online gespielt) gelten die normalen Limits.
+* ✨ **Leistungsmodus:** schaltet sich **automatisch** ein bei Bauaktionen ab **40 000 Blöcken** (`/fill`, `/sphere`), bei `/explode` ab Stärke 24 und wenn **12 oder mehr TNT gleichzeitig** gezündet sind. Er senkt die Sichtweite auf 3 Chunks, die Auflösung, blendet Wolken/Regen aus und reduziert Partikel und das TNT-Blinken. Nach 8 s Ruhe (keine Bauaktion, kein TNT, Chunks fertig) geht er von selbst aus und stellt deine Sichtweite wieder her (gespeichert wird immer deine eigene Einstellung). Einstellbar unter Einstellungen → „Leistungsmodus“ (Automatisch / Immer an / Aus) oder per `/perf auto|on|off`.
+* Fix: Eine noch laufende große Bauaktion wurde beim Start einer neuen Welt nicht beendet.
+* Getestet: Einzelspieler mit gefälschter Datenbank (Freigabe → unbegrenzt, Entzug → Limit, Cache), 144 000-Block-Fill (Modus an, Sichtweite 3, nach ~13 s wieder aus mit Sichtweite 6), 14 TNT (Modus an), Einstellung „Aus“.
