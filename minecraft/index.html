@@ -1804,7 +1804,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.31';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-10-05.32';            // Spielversion (nur Anzeige)
 // Mehrspieler-Kompatibilität: NUR wenn sich das Netzwerkformat oder die Welt-Speicherung unverträglich ändert, MP_PROTO erhöhen. Normale Versionen (neue Blöcke, Rezepte, Mobs, Befehle …) vertragen sich untereinander –
 // dafür gibt es keine Warnung mehr. Clients ohne MP_PROTO (vor 2026-10-05.17) gelten ab MP_MIN_VER als kompatibel.
 const MP_PROTO = 1, MP_MIN_VER = '2026-10-05.1';
@@ -8125,7 +8125,7 @@ function findSpawn() {
 function startGame(opts) {
   if (world) { world.dispose(); clearMobs(); clearDrops(); clearPrimed(); clearArrows(); clearFallers(); clearThrown(); clearOrbs(); }
   endDead.clear(); vehStash = null; P.creditsSeen = false; rsQ.clear(); rsTimers.length = 0; rsPrev.clear(); rsHop.clear(); rsBtn.clear(); rsPl.clear(); endT = 0;
-  mode = opts.mode; renderDist = opts.dist; buildJob = null; blastAbort(); bigSt.active = false; perfReset();
+  mode = opts.mode; renderDist = opts.dist; buildJob = null; blastAbort(); bigSt.active = false; perfReset(); bossReset();
   const save = opts.save;
   if (!opts.mp) { mp.on = false; $('btnQuit').textContent = 'Speichern & Beenden'; spLoadPolicy(); }
   world = new World(save ? save.seed : opts.seed, scene, save ? (save.gv || 1) : opts.gv || 4);          // Welten ohne gv-Eintrag = alte Biome
@@ -8340,6 +8340,8 @@ document.addEventListener('touchmove', (e) => { if (e.scale && e.scale !== 1) e.
 // ----- Eingabe -----
 document.addEventListener('keydown', (e) => {
   if (e.target && e.target.tagName === 'INPUT') return;
+  if (boss.on && boss.me === 'boss' && boss.fight === 'fight' && !e.repeat && state === 'play' && ['KeyQ', 'KeyF', 'KeyR'].includes(e.code)) { boss['keys' + e.code.slice(3)] = 0.5; e.preventDefault(); return; }
+  if (bossLocked() && e.code !== 'Escape') { e.preventDefault(); return; }
   if (['Space', 'Tab', 'F2', 'F3', 'ArrowUp', 'ArrowDown'].includes(e.code)) e.preventDefault();
   if (e.code === 'F2' && world && state !== 'menu') { takeScreenshot(); return; }
   if (e.ctrlKey && state === 'play' && !['KeyW', 'KeyT', 'KeyN'].includes(e.code)) e.preventDefault();
@@ -8412,8 +8414,8 @@ function simTick(dt) {
   const live = !frozen && state === 'play', simOnly = !frozen && mp.on && (state === 'inv' || state === 'pause' || state === 'chat' || state === 'dead' || state === 'settings' || state === 'trade');
   if (live) {
     if (!mp.on && rules.daycycle) gameTime += dt;
-    updateSandBurial(dt); updateGaze(dt); if (P.ride) updatePlayerRide(dt); else updatePlayer(dt); updateEffects(dt); updatePortal(dt);
-    updateInteraction(dt); ambientTick(dt); musicTick(dt); fxTick(dt); { const bo = $('btnBackOut'); bo.classList.toggle('hidden', !(world.dim === 2 && state === 'play')); }
+    updateSandBurial(dt); updateGaze(dt); if (bossLocked()) updatePlayerIdle(dt); else if (P.ride) updatePlayerRide(dt); else updatePlayer(dt); updateEffects(dt); updatePortal(dt);
+    if (boss.on && (bossLocked() || boss.me === 'boss')) bossNoInteract(boss.me === 'boss'); else updateInteraction(dt); ambientTick(dt); musicTick(dt); fxTick(dt); { const bo = $('btnBackOut'); bo.classList.toggle('hidden', !(world.dim === 2 && state === 'play')); }
     saveTimer += dt; if (saveTimer > 45) { saveTimer = 0; saveGame(); }
   } else if (simOnly && state !== 'dead') { if (P.ride) updatePlayerRide(dt); else updatePlayerIdle(dt); updateEffects(dt); }
   if (mp.on) gameTime = mpGameTime();
@@ -8449,7 +8451,7 @@ function frame(now) {
     camera.position.x += (Math.random() - 0.5) * P.shake * 0.4; camera.position.y += (Math.random() - 0.5) * P.shake * 0.4;
     camera.rotation.z = (Math.random() - 0.5) * P.shake * 0.08; P.shake = Math.max(0, P.shake - dt * 1.4);
   } else camera.rotation.z = 0;
-  updateEmote(dt); stepBuildJob(); stepBlast(); bigTick(); perfTick(dt);
+  updateEmote(dt); stepBuildJob(); stepBlast(); bigTick(); perfTick(dt); bossTick(dt);
   const sprinting = state === 'play' && P.sprinting;
   const zooming = state === 'play' && mouse.right && inv[P.sel] && inv[P.sel].id >= ITEM_BASE && ITEMS[inv[P.sel].id].spyglass;
   fovCur = lerp(fovCur, zooming ? 14 : sprinting ? settings.fov + 9 : settings.fov, Math.min(1, 8 * dt));
@@ -8674,7 +8676,7 @@ function emoteAvatar() {
   return rp;
 }
 function playEmote(id) {
-  const E = EMOTES[id]; if (!E || !mp.on || state !== 'play' || P.sleeping || P.ride || emote.cd > 0 || isSpectator()) return false;
+  const E = EMOTES[id]; if (!E || boss.on || !mp.on || state !== 'play' || P.sleeping || P.ride || emote.cd > 0 || isSpectator()) return false;
   emote.on = true; emote.id = id; emote.t = 0; emote.cd = 0.5;
   const rp = emoteAvatar(); rp.emote = { id, t: 0 }; mpSend('emote', { e: id }); return true;
 }
@@ -8732,6 +8734,7 @@ function ewPaint() {
   cur.style.transform = 'translate(' + emote.cx + 'px,' + emote.cy + 'px)';
 }
 function openWheel(sticky) {
+  if (boss.on) return;
   if (!mp.on) { toast('Emotes gibt es nur im Mehrspielermodus'); return; }
   if (state !== 'play' || isSpectator() || emote.wheel) return;
   emote.wheel = true; emote.sticky = !!sticky; emote.openAt = performance.now(); emote.cx = emote.cy = 0; emote.sel = -1;
@@ -8872,7 +8875,8 @@ class RemotePlayer {
     else for (const m of M.mats) m.color.setScalar(light);
     if (this.heldMat) this.heldMat.color.setScalar(light);
     for (const [am] of (this.armorParts || [])) { const t = am.material.userData.tint; am.material.color.setRGB(light * t[0], light * t[1], light * t[2]); }
-    this.group.visible = (this.dim || 0) === world.dim && this.mode !== 'spectator';       // andere Dimension / Zuschauer: nicht zu sehen
+    if (this.boss && !this.eaten) bossPose(this, dt);                                  // Boss-Kampf: Riesen-Pose (10×)
+    this.group.visible = (this.dim || 0) === world.dim && this.mode !== 'spectator' && !this.eaten;       // andere Dimension / Zuschauer / gefressen: nicht zu sehen
   }
   dispose() {
     scene.remove(this.group);
@@ -8912,6 +8916,380 @@ function raycastPlayers(o, d, max) {
     if (ok && t0 < bt) { bt = t0; best = rp; }
   }
   return best;
+}
+
+/* =====================================================================
+   BOSS-KAMPF „DER RIESE“ (/animation – nur für den Admin)
+   Der Admin wird zum 10-fach großen Riesen und steuert ihn selbst; alle anderen Spieler werden auf eine Bedrock-Bühne hoch am Himmel geholt
+   und müssen ihn besiegen. Der Riese kann hauen, stampfen, Feuer speien, brüllen – und Spieler packen und FRESSEN. Ultra schwer.
+   Alles läuft deterministisch lokal (Pose/Kamera/Effekte aus der gemeinsamen Aktions-Zeit); der Admin ist die Autorität für Leben und Schaden.
+===================================================================== */
+const BS = 10, BARENA = 34, BEAT = 5.6;
+const BACT = { swipe: 1.1, stomp: 2.2, fire: 3.6, grab: 4.8, roar: 2.6, drop: 1.6, miss: 0.8, die: 6.4 };
+const BEAT_AT = 3.7, BGRAB_AT = 0.95;                                  // Zeitpunkte im Packen-Ablauf: Spieler gepackt / gefressen
+const boss = { on: false, admin: '', me: '', fight: '', t: 0, endT: 0, result: '', sc: 10, arena: { x: 0, y: 0, z: 0 }, hp: 1, hpMax: 1, hpShow: 1, stage: 1, act: null, names: [], eaten: new Set(), out: new Set(), ret: null,
+  built: false, buildT: 0, spawn: null, cd: {}, shock: [], hbT: 0, stepA: 0, keysQ: 0, keysF: 0, keysR: 0, dmgDone: 0, lastT: 0, ui: null, loseT: 0, shakeT: 0, titleT: 0, dm: 1, hitT: 0, bufL: 0, bufR: 0, goneAt: 0, grabNeed: 200, pendRoar: false, i1: 0, i2: 0, done: new Set(), warnT: 0 };
+const bossStage = () => (boss.hp / boss.hpMax > 0.66 ? 1 : boss.hp / boss.hpMax > 0.33 ? 2 : 3);
+const bossRp = () => { if (boss.me === 'boss') return emoteAvatar(); for (const rp of mp.players.values()) if (rp.name === boss.admin) return rp; return null; };
+const bossRpOf = (name) => { for (const rp of mp.players.values()) if (rp.name === name) return rp; return null; };
+const bossPos = (name) => (name === mp.name ? P.p : (() => { const rp = bossRpOf(name); return rp ? rp.target : null; })());
+function bossGrabbed(name) { const A = boss.act; return !!(A && A.k === 'grab' && A.v === name && A.t >= BGRAB_AT && A.t < BEAT_AT && !A.freed && !boss.eaten.has(name)); }
+const bossLocked = () => boss.on && boss.me !== '' && boss.me !== 'out' && boss.me !== 'boss' && (boss.fight === 'intro' || boss.me === 'eaten' || bossGrabbed(mp.name) || !boss.built);
+function bossFx() { return boss.ui || (() => {
+  const st = document.createElement('style');
+  st.textContent = '#bfBar{position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:36;width:min(620px,92vw);text-align:center;color:#fff;font:bold 15px "Courier New",monospace;text-shadow:1px 1px #000;pointer-events:none}#bfBar.hidden{display:none}#bfBar .bn{margin-bottom:3px;letter-spacing:1px}#bfBar .bb{position:relative;height:20px;background:#1a0808;border:2px solid #000;box-shadow:0 0 0 2px #7a1c1c,0 0 14px rgba(255,40,20,.55)}#bfBar .bt{position:absolute;inset:0 auto 0 0;background:#fff;opacity:.85}#bfBar .bf{position:absolute;inset:0 auto 0 0;background:linear-gradient(#ff4a3a,#a01212);transition:background .3s}#bfBar.s2 .bf{background:linear-gradient(#ff9a2a,#c05a08)}#bfBar.s3 .bf{background:linear-gradient(#c44cff,#6a12a8)}#bfBar .bk{position:absolute;top:0;bottom:0;width:2px;background:#000}#bfBar .bh{position:absolute;inset:0;line-height:20px;font-size:13px}' +
+    '#bfTitle{position:fixed;left:0;right:0;top:26%;z-index:37;text-align:center;color:#fff;font:bold clamp(28px,6vw,64px) "Courier New",monospace;text-shadow:3px 3px #000,0 0 22px #f22;letter-spacing:4px;pointer-events:none;opacity:0;transition:opacity .5s}#bfTitle small{display:block;font-size:.32em;letter-spacing:2px;margin-top:8px;color:#ffd0c0}' +
+    '#bfCd{position:fixed;left:50%;bottom:78px;transform:translateX(-50%);z-index:36;display:flex;gap:6px;pointer-events:none}#bfCd.hidden{display:none}#bfCd div{position:relative;width:74px;height:46px;background:rgba(10,10,14,.78);border:2px solid #7a7a86;font:bold 12px "Courier New",monospace;color:#fff;text-align:center;overflow:hidden;line-height:15px;padding-top:5px;box-sizing:border-box}#bfCd div i{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.72);height:0}#bfCd div b{display:block;color:#ffd35a}' +
+    '#bfBars{position:fixed;inset:0;z-index:34;pointer-events:none;display:none}#bfBars:before,#bfBars:after{content:"";position:absolute;left:0;right:0;height:9vh;background:#000}#bfBars:before{top:0}#bfBars:after{bottom:0}#bfFlash{position:fixed;inset:0;z-index:38;pointer-events:none;background:#fff;opacity:0}#bfEaten{position:fixed;left:0;right:0;bottom:16%;z-index:37;text-align:center;color:#ffb8a8;font:bold 22px "Courier New",monospace;text-shadow:2px 2px #000;display:none}';
+  document.head.appendChild(st);
+  const bar = document.createElement('div'); bar.id = 'bfBar'; bar.className = 'hidden';
+  bar.innerHTML = '<div class="bn"></div><div class="bb"><div class="bt"></div><div class="bf"></div><div class="bk" style="left:33%"></div><div class="bk" style="left:66%"></div><div class="bh"></div></div>';
+  const title = document.createElement('div'); title.id = 'bfTitle';
+  const cd = document.createElement('div'); cd.id = 'bfCd'; cd.className = 'hidden';
+  cd.innerHTML = ['Hieb|LMB', 'Packen|RMB', 'Stampfen|Q', 'Feuer|F', 'Brüllen|R'].map((s) => '<div><b>' + s.split('|')[1] + '</b>' + s.split('|')[0] + '<i></i></div>').join('');
+  const bars = document.createElement('div'); bars.id = 'bfBars'; const flash = document.createElement('div'); flash.id = 'bfFlash'; const eaten = document.createElement('div'); eaten.id = 'bfEaten';
+  document.body.append(bar, title, cd, bars, flash, eaten);
+  return (boss.ui = { bar, title, cd, bars, flash, eaten, nm: bar.querySelector('.bn'), bf: bar.querySelector('.bf'), bt: bar.querySelector('.bt'), bh: bar.querySelector('.bh') });
+})(); }
+function bossTitle(big, small, sec) { const u = bossFx(); u.title.innerHTML = big + (small ? '<small>' + small + '</small>' : ''); u.title.style.opacity = '1'; boss.titleT = sec || 3; }
+// ---------- Bühne (nur lokal, nichts davon wird gespeichert oder an andere gesendet) ----------
+function bossArenaChunk(cx, cz, clear) {
+  const c = world.chunks.get(ckey(cx, cz)); if (!c) return false;
+  const A = boss.arena, ox = A.x + 0.5, oz = A.z + 0.5, BR = ID.bedrock, GL = ID.glowstone, x0 = cx * CS, z0 = cz * CS;
+  for (let lz = 0; lz < CS; lz++) for (let lx = 0; lx < CS; lx++) {
+    const wx = x0 + lx, wz = z0 + lz, d = Math.hypot(wx + 0.5 - ox, wz + 0.5 - oz); if (d > BARENA + 1) continue;
+    const col = lx + (lz << 4);
+    if (clear) { for (let y = A.y - 1; y <= A.y + 9; y++) c.data[col + (y << 8)] = AIR; }
+    else if (d <= BARENA - 1.2) {
+      const ang = Math.atan2(wz + 0.5 - oz, wx + 0.5 - ox), ring = Math.abs(d - 24) < 0.6 && (((ang * 12 / PI) + 24) % 3) < 0.5;
+      c.data[col + ((A.y - 1) << 8)] = BR; c.data[col + (A.y << 8)] = ring ? GL : BR;
+      if (d > 8 && d < BARENA - 4 && (wx >> 1) % 9 === 0 && (wz >> 1) % 9 === 0) for (let y = A.y + 1; y <= A.y + 5; y++) c.data[col + (y << 8)] = BR;       // Deckungssäulen
+    } else if (d <= BARENA + 0.5) { for (let y = A.y - 1; y <= A.y + 9; y++) c.data[col + (y << 8)] = BR; }
+    c.recomputeTop(lx, lz); if (!clear && A.y + 10 > c.maxY) c.maxY = A.y + 10;
+  }
+  world.markDirty(cx, cz); world.markDirty(cx + 1, cz); world.markDirty(cx - 1, cz); world.markDirty(cx, cz + 1); world.markDirty(cx, cz - 1);
+  return true;
+}
+function bossArena(clear) {                                              // true, wenn alle betroffenen Chunks erledigt sind
+  const A = boss.arena; let ok = true; const r = BARENA + 2;
+  for (let cz = (A.z - r) >> 4; cz <= (A.z + r) >> 4; cz++) for (let cx = (A.x - r) >> 4; cx <= (A.x + r) >> 4; cx++) {
+    const k = cx + ',' + cz; if (!clear && boss.done && boss.done.has(k)) continue;
+    if (bossArenaChunk(cx, cz, clear)) { if (!clear) (boss.done || (boss.done = new Set())).add(k); } else if (!clear) ok = false;
+  }
+  return ok;
+}
+// ---------- Start / Ende ----------
+function bossSpawnFor(name) {
+  const A = boss.arena, others = boss.names.filter((n) => n !== boss.admin), i = Math.max(0, others.indexOf(name)), n = Math.max(1, others.length);
+  const a = (i / n) * 2 * PI + 0.4, r = 22;
+  return { x: A.x + 0.5 + Math.cos(a) * r, z: A.z + 0.5 + Math.sin(a) * r };
+}
+function bossBegin(p, isMe) {
+  if (boss.on || !world) return;
+  Object.assign(boss, { on: true, admin: p.n, names: p.names.slice(), arena: { x: p.ax, y: p.ay, z: p.az }, hpMax: p.hp, hp: p.hp, hpShow: p.hp, stage: 1, fight: 'intro', t: 0, endT: 0, result: '', act: null, built: false, buildT: 0, cd: {}, shock: [], done: new Set(), dmgDone: 0, loseT: 0, sc: 0.05 });
+  boss.eaten.clear(); boss.out.clear();
+  boss.me = isMe ? 'boss' : (p.names.includes(mp.name) && world.dim === 0 ? 'player' : 'out');
+  if (boss.me === 'out') { chatSys('⚔ Ein Boss-Kampf gegen ' + p.n + ' hat begonnen (du bist in einer anderen Dimension).'); return; }
+  wakeUp(); if (P.ride) { try { dismountVehicle(); } catch (e) { /* egal */ } } stopEmote(true); P.flying = false;
+  boss.ret = { x: P.p.x, y: P.p.y, z: P.p.z, yaw: P.yaw, pitch: P.pitch, hp: P.health };
+  const A = boss.arena, sp = isMe ? { x: A.x + 0.5, z: A.z + 0.5 } : bossSpawnFor(mp.name);
+  boss.spawn = { x: sp.x, y: A.y + 1.02, z: sp.z };
+  P.p.set(sp.x, A.y + 1.02, sp.z); P.v.set(0, 0, 0); P.fallPeak = P.p.y;
+  P.yaw = isMe ? 0 : Math.atan2(-(A.x + 0.5 - sp.x), -(A.z + 0.5 - sp.z)); P.pitch = 0;
+  closeWheel(false); weather.override = { kind: 'rain', until: gameTime + 9999 };
+  if (state === 'inv' || state === 'chat' || state === 'pause') setState('play');
+  chatSys('☠ ' + p.n + ' wird zum RIESEN! Besiege ihn – aber sei vorsichtig …');
+}
+function bossCleanup(restore) {
+  const A = boss.arena; try { bossArena(true); } catch (e) { /* egal */ }
+  for (const s of boss.shock) { scene.remove(s.mesh); s.mesh.geometry.dispose(); s.mesh.material.dispose(); }
+  boss.shock = [];
+  for (const rp of [...mp.players.values(), ...(emote.av ? [emote.av] : [])]) if (rp.boss || rp.eaten || rp.grabbed) {
+    rp.boss = rp.eaten = rp.grabbed = false; rp.hw = 0.3; rp.h = 1.8; if (rp.group) rp.group.scale.setScalar(1); if (rp.model) { emReset(rp.model); rp.model.armR.scale.y = 1; rp.model.armR.quaternion.identity(); rp.model.g.rotation.x = 0; rp.model.g.position.y = 0; rp.model.body.rotation.set(0, 0, 0); rp.model.body.position.set(0, 0, 0); } if (rp.tag) rp.tag.visible = true; rp.cutBoss = false;
+  }
+  if (emote.av && boss.me === 'boss') emote.av.group.visible = false;
+  weather.override = null; P.speedMul = 1;
+  const u = boss.ui; if (u) { u.bar.classList.add('hidden'); u.cd.classList.add('hidden'); u.bars.style.display = 'none'; u.title.style.opacity = '0'; u.eaten.style.display = 'none'; u.flash.style.opacity = '0'; }
+  const me = boss.me; boss.on = false; boss.act = null;
+  if (restore && boss.ret && me !== 'out' && me !== '') {
+    P.p.set(boss.ret.x, boss.ret.y, boss.ret.z); P.v.set(0, 0, 0); P.yaw = boss.ret.yaw; P.pitch = boss.ret.pitch; P.fallPeak = P.p.y;
+    if (me === 'eaten') { mp.lastHit = null; P.health = 0; die(); }
+    else if (state === 'play') lockPointer();
+  }
+  boss.ret = null; boss.me = ''; if (A) void A;
+}
+function bossReset() { if (boss.on) bossCleanup(false); boss.me = ''; boss.on = false; }
+function bossEnd(r) {                                                    // alle: Ende des Kampfes (win = Riese besiegt, lose = alle gefressen/besiegt, stop = abgebrochen)
+  if (!boss.on || boss.fight === 'end') return;
+  boss.fight = 'end'; boss.result = r; boss.endT = 0; boss.act = null;
+  if (r === 'stop') { bossCleanup(true); return; }
+  if (r === 'win') { bossTitle('DER RIESE IST BESIEGT!', boss.admin + ' liegt am Boden – ihr habt es geschafft! 🏆', 5); if (boss.me === 'player') { addXP(400); const n = Math.min(24, 8 + boss.names.length * 2); try { addItem(IID.diamond, n); } catch (e) { /* egal */ } toast('🏆 Belohnung: 400 Erfahrung und ' + n + ' Diamanten'); } }
+  else bossTitle('DER RIESE HAT GEWONNEN', 'Niemand ist übrig …', 5);
+}
+function bossAbort() { if (!boss.on) return; if (boss.me === 'boss') mpSend('boss', { a: 'end', r: 'stop' }); bossEnd('stop'); }
+// ---------- Netzwerk ----------
+function bossRecv(p, from) {
+  const s = mp.players.get(from); if (!p || !p.a) return;
+  const fromAdmin = !!(s && isAdminName(s.name));
+  switch (p.a) {
+    case 'start': if (!fromAdmin || boss.on || !Array.isArray(p.names)) break; bossBegin({ n: s.name, ax: +p.ax, ay: +p.ay, az: +p.az, hp: Math.max(100, +p.hp || 4000), names: p.names.map(String) }, false); break;
+    case 'act': if (!fromAdmin || !boss.on) break; boss.act = { k: p.k, t: +p.e || 0, v: p.v || '', freed: false, done: {} }; break;
+    case 'st': if (!fromAdmin || !boss.on) break; boss.hp = +p.hp; boss.stage = p.st | 0 || 1; if (p.eaten) for (const n of p.eaten) boss.eaten.add(n); if (boss.act && p.ak !== boss.act.k) boss.act = null; if (!boss.act && p.ak) boss.act = { k: p.ak, t: +p.at || 0, v: p.av || '', freed: false, done: {} }; break;
+    case 'eat': if (!fromAdmin || !boss.on) break; boss.eaten.add(p.v); { const r = bossRpOf(p.v); if (r) { r.eaten = true; for (let i = 0; i < 24; i++) emitFx(r.p.x, r.p.y + 1, r.p.z, new THREE.Color(0.8, 0.1, 0.1), (Math.random() - 0.5) * 6, Math.random() * 5, (Math.random() - 0.5) * 6, 0.9, 1, 1.4); }
+      if (p.v === mp.name && boss.me === 'player') { boss.me = 'eaten'; bossFx().eaten.style.display = 'block'; bossFx().eaten.textContent = '☠ Du wurdest gefressen – schau zu, bis der Kampf vorbei ist'; closeWheel(false); if (state === 'inv' || state === 'chat') setState('play'); } } break;
+    case 'free': if (!fromAdmin || !boss.on) break; if (boss.act && boss.act.k === 'grab') boss.act.freed = true; if (p.v === mp.name) { P.v.set(0, -3, 0); toast('Du bist frei!'); } break;
+    case 'bd': if (!fromAdmin || p.to !== mp.name || !boss.on || boss.me !== 'player') break; bossHarmMe(p); break;
+    case 'out': if (boss.on) boss.out.add(s ? s.name : ''); break;
+    case 'end': if (!fromAdmin) break; bossEnd(p.r || 'stop'); break;
+  }
+}
+function bossHarmMe(p) {
+  mp.lastHit = { by: boss.admin + ' (Riese)', t: Date.now() };
+  hurt(p.d); P.v.x += p.kx || 0; P.v.z += p.kz || 0; P.v.y = Math.max(P.v.y, p.ky || 0); P.shake = Math.max(P.shake || 0, 0.7);
+}
+function bossPlayersAlive() { const out = []; for (const rp of mp.players.values()) if (rp.have && boss.names.includes(rp.name) && !boss.out.has(rp.name) && !boss.eaten.has(rp.name) && (rp.dim || 0) === 0) out.push(rp); return out; }
+function bossHarm(rp, d, kx, ky, kz) { mpSend('boss', { a: 'bd', to: rp.name, d: Math.round(d * boss.dm * 10) / 10, kx: r2(kx), ky: r2(ky), kz: r2(kz) }); }
+function bossStartAct(k, v) {                                            // Admin
+  boss.act = { k, t: 0, v: v || '', freed: false, done: {}, dmg: 0 }; mpSend('boss', { a: 'act', k, v: v || '', e: 0 });
+}
+function bossDamage(d, by) {                                             // Admin: Treffer auf den Riesen
+  if (boss.me !== 'boss' || boss.fight !== 'fight' || (boss.act && boss.act.k === 'die')) return;
+  d = Math.min(d, 18); boss.hp = Math.max(0, boss.hp - d); boss.dmgDone += d; boss.hitT = 0.12;
+  if (boss.act && boss.act.k === 'grab' && !boss.act.freed) { boss.act.dmg = (boss.act.dmg || 0) + d; }
+  const rp = bossRp(); if (rp) rp.flash = 0.18;
+  sfx('hit'); if (boss.hp <= 0) { bossStartAct('die'); boss.hp = 0; }
+}
+// ---------- Pose des Riesen (läuft in RemotePlayer.update, wenn rp.boss gesetzt ist) ----------
+const _bm = new THREE.Vector3(), _bv = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()], _bq = [new THREE.Quaternion(), new THREE.Quaternion()], _bdown = new THREE.Vector3(0, -1, 0);
+function bossAim(M, arm, W, scaleOk) {                                    // Arm in Weltrichtung W ausrichten (Länge ggf. kürzen); gibt die Welt-Handposition zurück
+  M.g.updateMatrixWorld(true); arm.getWorldPosition(_bv[0]);
+  const v = _bv[1].copy(W).sub(_bv[0]), dist = v.length(), len = BEAT * (boss.sc / BS); v.normalize();
+  M.body.getWorldQuaternion(_bq[0]); _bq[0].invert(); _bv[2].copy(v).applyQuaternion(_bq[0]);
+  arm.quaternion.setFromUnitVectors(_bdown, _bv[2]); arm.scale.y = scaleOk ? Math.max(0.55, Math.min(1, dist / len)) : 1;
+  return _bv[3].copy(_bv[0]).addScaledVector(v, Math.min(len, dist));
+}
+function bossPose(rp, dt) {
+  const M = rp.model, g = rp.group, A = boss.act, k = A ? A.k : 'idle', t = A ? A.t : 0, sm = EMS.sm, cl = EMS.cl;
+  g.scale.setScalar(boss.sc); rp.tag.visible = false; rp.hw = 3.2 * boss.sc / BS; rp.h = 1.8 * boss.sc;
+  let dy = rp.yaw - rp.bodyYaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); rp.bodyYaw += dy * Math.min(1, dt * 7); M.g.rotation.y = rp.bodyYaw + PI;
+  emReset(M); M.armR.scale.y = 1; M.armR.quaternion.identity(); M.armR.rotation.order = 'YXZ'; M.g.rotation.x = 0; M.g.position.y = 0; M.body.rotation.set(0, 0, 0); M.headG.rotation.set(0, 0, 0);
+  const sp = Math.min(1, rp.speed / 4), wr = 1.5 + rp.speed * 0.28; rp.bw = (rp.bw || 0) + dt * wr; const sw = Math.sin(rp.bw) * 0.62 * sp * (k === 'idle' || k === 'miss' ? 1 : 0.35);
+  if (sp > 0.3 && Math.sin(rp.bw) * Math.sin(rp.bw - dt * wr) < 0) bossStep(rp);                                    // Fuß setzt auf
+  let th = 0, custom = false, hold = null;
+  M.legR.rotation.x = sw; M.legL.rotation.x = -sw; M.armL.rotation.x = sw * 0.9; M.armR.rotation.x = -sw * 0.9;
+  const br = Math.sin(performance.now() / 700) * 0.03; M.armL.rotation.z = 0.05 + br; M.armR.rotation.z = -0.05 - br;
+  if (boss.fight === 'intro') { const q = cl(boss.t / 5.2), u = sm(cl((q - 0.6) / 0.15)); M.headG.rotation.x = -0.45 * sm(cl((q - 0.55) / 0.2)) * (1 - sm(cl((q - 0.8) / 0.2))); M.armR.rotation.z = -0.9 * u; M.armL.rotation.z = 0.9 * u; }
+  switch (k) {
+    case 'swipe': {
+      const w = sm(cl(t / 0.36)), s = sm(cl((t - 0.36) / 0.24)), r = sm(cl((t - 0.62) / 0.48));
+      M.body.rotation.y = (1.0 * w - 2.1 * s) * (1 - r); M.armR.rotation.z = -1.45 * (w - r); M.armR.rotation.x = -0.25 * w; th = (-0.1 * w + 0.35 * s) * (1 - r); M.armL.rotation.x = 0.5 * w * (1 - r); break; }
+    case 'stomp': {
+      const u = sm(cl(t / 0.85)), d = t > 0.85 ? sm(cl((t - 0.85) / 0.12)) : 0, r = sm(cl((t - 1.3) / 0.9));
+      M.legR.rotation.x = -1.25 * u * (1 - d) * (1 - r); th = (-0.12 * u + 0.38 * d) * (1 - r); M.armR.rotation.x = M.armL.rotation.x = (-0.6 * u + 0.9 * d) * (1 - r);
+      if (t > 1.0 && !A.done.st) { A.done.st = 1; bossShockStart(rp); } break; }
+    case 'fire': {
+      const w = sm(cl(t / 0.6)), r = sm(cl((t - 3.0) / 0.6)), br2 = t > 0.6 && t < 3.0 ? 1 : 0;
+      M.headG.rotation.x = (-0.6 * w * (1 - br2) + (0.18 + Math.sin(t * 25) * 0.05) * br2) * (1 - r); th = (-0.25 * w * (1 - br2) + 0.22 * br2) * (1 - r); M.armR.rotation.z = -0.45 * w * (1 - r); M.armL.rotation.z = 0.45 * w * (1 - r);
+      if (br2) bossFireFx(rp, dt); break; }
+    case 'roar': {
+      const w = sm(cl(t / 0.7)), r = sm(cl((t - 1.9) / 0.7)), j = (t > 0.7 && t < 1.9) ? Math.sin(t * 40) * 0.025 : 0;
+      th = -0.38 * w * (1 - r) + j; M.headG.rotation.x = -0.75 * w * (1 - r); M.armR.rotation.z = -1.45 * w * (1 - r); M.armL.rotation.z = 1.45 * w * (1 - r); M.armR.rotation.x = M.armL.rotation.x = -0.35 * w * (1 - r);
+      if (t > 0.8 && !A.done.rw) { A.done.rw = 1; bossRoarFx(rp, boss.fight !== 'fight'); } break; }
+    case 'drop': {
+      const e = sm(cl(t / 0.3)) * (1 - sm(cl((t - 1.0) / 0.6))); th = 0.3 * e + Math.sin(t * 14) * 0.05 * e; M.armR.rotation.z = -0.9 * e; M.armR.rotation.x = Math.sin(t * 16) * 0.5 * e; M.headG.rotation.x = 0.3 * e; break; }
+    case 'miss': { const e = Math.sin(cl(t / 0.8) * PI); th = 0.5 * e; M.armR.rotation.x = -1.2 * e; break; }
+    case 'grab': {
+      if (!A.vp) { const q = bossPos(A.v); A.vp = q ? q.clone() : rp.p.clone().addScaledVector(rp.bossFwd || _bv[0].set(0, 0, -1), 8); }
+      const reach = sm(cl(t / 0.9)), lift = sm(cl((t - 1.0) / 1.4)), chew = cl((t - 2.4) / 1.3);
+      th = 1.12 * reach * (1 - lift) + 0.2 * lift; const lunge = reach * (1 - lift);
+      emBody(M, th); M.legR.rotation.x = -th + 0.5 * lunge; M.legL.rotation.x = -th - 0.9 * lunge; M.g.position.y = -0.2 * lunge; custom = true;
+      M.armL.rotation.x = -0.5 * reach * (1 - lift);
+      M.headG.rotation.x = t >= 2.4 ? -0.3 - 0.25 * Math.sin((t - 2.4) * 11) * (1 - chew * 0.3) : 0.35 * reach * (1 - lift);
+      if (t >= BEAT_AT) { const r2_ = sm(cl((t - BEAT_AT) / 0.5)); M.armR.rotation.x = -0.5; M.armL.rotation.x = -0.9 * r2_ * (1 - sm(cl((t - 4.4) / 0.4))); M.headG.rotation.x = -0.6 * Math.sin(cl((t - BEAT_AT) / 1.0) * PI); }
+      else {
+        g.updateMatrixWorld(true);
+        if (t < 1.0 || A.freed) _bm.copy(A.vp).y += 0.9; else { _bm.set(0, 1.3 / 16, 4.6 / 16); M.headG.localToWorld(_bm); }
+        hold = bossAim(M, M.armR, _bm, true).clone();
+      }
+      if (t >= 2.4 && t < BEAT_AT && ((t - 2.4) % 0.5) < dt) bossChew(rp);
+      break; }
+    case 'die': {
+      const a1 = cl(t / 2.4), a2 = sm(cl((t - 2.4) / 1.4)), a3 = Math.pow(cl((t - 3.8) / 1.5), 2);
+      th = 0.25 * a1 + Math.sin(t * 9) * 0.05 * (1 - a2); M.armR.rotation.z = -0.5 - 0.3 * Math.sin(t * 7) * (1 - a2); M.armL.rotation.z = 0.5 + 0.3 * Math.sin(t * 8) * (1 - a2); M.headG.rotation.x = 0.4 * a1 + Math.sin(t * 6) * 0.1 * (1 - a2);
+      M.legR.rotation.x = M.legL.rotation.x = -1.2 * a2 * (1 - a3); M.g.position.y = -0.34 * a2 * (1 - a3); M.g.rotation.x = (PI / 2) * a3; M.armR.rotation.x = M.armL.rotation.x = -0.4 * a3;
+      if (t > 0.3 && t < 5.4 && Math.random() < dt * 9) { const h = rp.bossHead || rp.p; emitFx(h.x + (Math.random() - 0.5) * 6, h.y - Math.random() * 6, h.z + (Math.random() - 0.5) * 6, EMBER[(Math.random() * 2) | 0], (Math.random() - 0.5) * 6, 3 + Math.random() * 4, (Math.random() - 0.5) * 6, 1, 0.3, 4); }
+      if (t > 3.9 && !A.done.fl) { A.done.fl = 1; P.shake = Math.max(P.shake || 0, 1.2); noise(1, 100, 'lowpass', 0.9); tone(70, 20, 1, 'sine', 0.7); bossShockStart(rp, 1); }
+      break; }
+  }
+  if (!custom) { emBody(M, th); M.legR.rotation.x -= th; M.legL.rotation.x -= th; }
+  g.updateMatrixWorld(true);
+  if (!rp.bossHead) { rp.bossHead = new THREE.Vector3(); rp.bossHand = new THREE.Vector3(); rp.bossFwd = new THREE.Vector3(); }
+  rp.bossHead.set(0, 4 / 16, 0); M.headG.localToWorld(rp.bossHead); rp.bossHand.set(0, -10 / 16, 0); M.armR.localToWorld(rp.bossHand); rp.bossHold = hold;
+  rp.bossFwd.set(-Math.sin(rp.bodyYaw), 0, -Math.cos(rp.bodyYaw));
+  if (boss.hitT > 0 && rp === emote.av) for (const m of M.mats) m.color.setRGB(1, 0.35, 0.35);
+}
+function bossStep(rp) {                                                  // schwerer Schritt: Beben + Staub + Geräusch (nur wenn nah)
+  const d = Math.hypot(rp.p.x - P.p.x, rp.p.z - P.p.z); if (performance.now() - boss.stepA < 260) return; boss.stepA = performance.now();
+  P.shake = Math.max(P.shake || 0, Math.max(0, 1 - d / 55) * 0.55); if (d < 70) { noise(0.3, 150, 'lowpass', Math.max(0.05, 0.6 - d / 110)); tone(60, 28, 0.25, 'sine', Math.max(0.04, 0.5 - d / 110)); }
+  for (let i = 0; i < 4; i++) emitFx(rp.p.x + (Math.random() - 0.5) * 5, rp.p.y + 0.2, rp.p.z + (Math.random() - 0.5) * 5, new THREE.Color(0.45, 0.45, 0.48), (Math.random() - 0.5) * 3, 1.5, (Math.random() - 0.5) * 3, 0.8, -0.1, 2);
+}
+function bossChew(rp) { const d = Math.hypot(rp.p.x - P.p.x, rp.p.z - P.p.z); if (d < 80) { noise(0.12, 900, 'bandpass', Math.max(0.1, 0.7 - d / 120)); tone(140, 70, 0.14, 'square', 0.1); } if (rp.bossHead) for (let i = 0; i < 6; i++) emitFx(rp.bossHead.x, rp.bossHead.y - 1, rp.bossHead.z, new THREE.Color(0.7, 0.05, 0.05), (Math.random() - 0.5) * 3, Math.random() * 2, (Math.random() - 0.5) * 3, 0.7, 1, 1.2); }
+function bossRoarFx(rp, harmless) {
+  const d = Math.hypot(rp.p.x - P.p.x, rp.p.z - P.p.z); P.shake = Math.max(P.shake || 0, Math.max(0.2, 1 - d / 70)); const v = Math.max(0.1, 0.9 - d / 110);
+  tone(110, 38, 1.7, 'sawtooth', v * 0.45); tone(70, 30, 1.9, 'square', v * 0.3); noise(1.5, 400, 'lowpass', v * 0.6);
+  const u = bossFx(); u.flash.style.transition = 'none'; u.flash.style.opacity = d < 40 ? '0.55' : '0.2'; requestAnimationFrame(() => { u.flash.style.transition = 'opacity 0.9s'; u.flash.style.opacity = '0'; });
+  bossShockStart(rp, 1);
+  if (boss.me === 'boss' && !harmless) {                                    // Admin: alle weit wegschleudern
+    for (const q of bossPlayersAlive()) { const dx = q.target.x - rp.p.x, dz = q.target.z - rp.p.z, l = Math.hypot(dx, dz) || 1; if (l < 46) bossHarm(q, 4, dx / l * 17, 6, dz / l * 17); }
+  }
+}
+function bossFireFx(rp, dt) {
+  if (!rp.bossHead) return; const f = rp.bossFwd, h = rp.bossHead;
+  for (let i = 0; i < 14; i++) {
+    const s = Math.random() * 24, sp = 0.35 * s + 0.6, ang = (Math.random() - 0.5) * 0.7, c = Math.cos(ang), n = Math.sin(ang), dx = f.x * c - f.z * n, dz = f.x * n + f.z * c;
+    emitFx(h.x + dx * 3, h.y - 1.5 - s * 0.12, h.z + dz * 3, EMBER[(Math.random() * 2) | 0], dx * (14 + Math.random() * 10), -2 + (Math.random() - 0.3) * 3, dz * (14 + Math.random() * 10), 0.5 + Math.random() * 0.5, -0.05, 3 + Math.random() * 3); void sp;
+  }
+  if (Math.random() < dt * 8) { const d = Math.hypot(rp.p.x - P.p.x, rp.p.z - P.p.z); if (d < 90) noise(0.2, 700, 'bandpass', Math.max(0.05, 0.5 - d / 150)); }
+}
+function bossShockStart(rp, big) {
+  const m = new THREE.Mesh(new THREE.RingGeometry(0.92, 1, 56), new THREE.MeshBasicMaterial({ color: big ? 0xffd070 : 0xff8a30, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false, fog: false }));
+  m.rotation.x = -PI / 2; m.position.set(rp.p.x, boss.arena.y + 1.15, rp.p.z); scene.add(m);
+  boss.shock.push({ mesh: m, x: rp.p.x, z: rp.p.z, y: boss.arena.y + 1, r: 1, v: big ? 26 : 20, hit: new Set(), dmg: !big, big });
+  const d = Math.hypot(rp.p.x - P.p.x, rp.p.z - P.p.z); P.shake = Math.max(P.shake || 0, Math.max(0.15, 1.1 - d / 60)); const v = Math.max(0.1, 0.9 - d / 100);
+  if (!big) { noise(0.5, 120, 'lowpass', v); tone(90, 25, 0.5, 'sine', v * 0.7); }
+  for (let i = 0; i < 40; i++) { const a = Math.random() * 2 * PI, r = 1 + Math.random() * 5; emitFx(rp.p.x + Math.cos(a) * r, boss.arena.y + 1.2, rp.p.z + Math.sin(a) * r, new THREE.Color(0.5, 0.5, 0.52), Math.cos(a) * 9, 3 + Math.random() * 4, Math.sin(a) * 9, 1, 0.6, 2.5); }
+}
+// ---------- Admin-Logik: Steuerung, Angriffe, Schaden ----------
+function bossAdminTick(dt) {
+  const rp = bossRp(), A = boss.act; if (!rp) return; boss.hitT = Math.max(0, (boss.hitT || 0) - dt);
+  for (const k in boss.cd) boss.cd[k] = Math.max(0, boss.cd[k] - dt);
+  const st = bossStage(); if (st !== boss.stage && boss.fight === 'fight' && !(A && A.k === 'die')) { boss.stage = st; boss.pendRoar = true; }
+  boss.dm = [0, 1, 1.3, 1.65][boss.stage];
+  const S = boss.stage, tk = (a) => a * [0, 1, 0.8, 0.6][S];
+  const sw = S === 1 ? 1 : 1.18, canMove = !A || A.k === 'fire';
+  P.speedMul = boss.fight !== 'fight' ? 0.01 : A ? (A.k === 'fire' ? 0.5 : 0.01) : (2.4 + 0.25 * S);
+  if (boss.fight === 'fight' && !A) {
+    if (boss.pendRoar) { boss.pendRoar = false; bossStartAct('roar'); bossTitle(S === 2 ? 'DER RIESE WIRD WÜTEND' : 'DER RIESE TOBT!', S === 2 ? 'Er haut und stampft schneller' : 'Er ist kaum noch aufzuhalten', 3); }
+    else {
+      const wantSwipe = boss.bufL > 0, wantGrab = boss.bufR > 0;
+      if (wantSwipe && !boss.cd.swipe) { boss.cd.swipe = tk(1.15); boss.bufL = 0; bossStartAct('swipe'); }
+      else if (wantGrab && !boss.cd.grab) {
+        let best = null, bd = 13;
+        for (const q of bossPlayersAlive()) { const dx = q.target.x - P.p.x, dz = q.target.z - P.p.z, d = Math.hypot(dx, dz), fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw); if (d < bd && (dx * fx + dz * fz) / (d || 1) > 0.25) { best = q; bd = d; } }
+        if (best) { boss.bufR = 0; boss.cd.grab = tk(9); boss.grabNeed = 90 + 40 * Math.max(1, bossPlayersAlive().length) * (S > 2 ? 1.2 : 1); bossStartAct('grab', best.name); } else if (!boss.warnT || performance.now() - boss.warnT > 1500) { boss.warnT = performance.now(); toast('Niemand in Reichweite vor dir'); }
+      } else if (boss.keysQ > 0 && !boss.cd.stomp) { boss.cd.stomp = tk(6.5); boss.keysQ = 0; bossStartAct('stomp'); }
+      else if (boss.keysF > 0 && !boss.cd.fire) { boss.cd.fire = tk(13); boss.keysF = 0; bossStartAct('fire'); }
+      else if (boss.keysR > 0 && !boss.cd.roar) { boss.cd.roar = tk(24); boss.keysR = 0; bossStartAct('roar'); }
+    }
+  }
+  if (mouse.leftPressed) boss.bufL = 0.4; if (mouse.rightPressed) boss.bufR = 0.4; mouse.leftPressed = mouse.rightPressed = false;
+  boss.bufL = Math.max(0, boss.bufL - dt); boss.bufR = Math.max(0, boss.bufR - dt); boss.keysQ = Math.max(0, boss.keysQ - dt * 2.5); boss.keysF = Math.max(0, boss.keysF - dt * 2.5); boss.keysR = Math.max(0, boss.keysR - dt * 2.5); void sw; void canMove;
+  if (A && boss.fight === 'fight') {
+    const k = A.k, t = A.t, fx = -Math.sin(rp.bodyYaw), fz = -Math.cos(rp.bodyYaw), pl = bossPlayersAlive();
+    if (k === 'swipe' && t >= 0.5 && !A.done.hit) {
+      A.done.hit = 1;
+      for (const q of pl) { const dx = q.target.x - P.p.x, dz = q.target.z - P.p.z, d = Math.hypot(dx, dz); if (d < 13.5 && (dx * fx + dz * fz) / (d || 1) > 0.15 && q.target.y < P.p.y + 14) bossHarm(q, 11, dx / (d || 1) * 15, 8, dz / (d || 1) * 15); }
+      noise(0.25, 700, 'bandpass', 0.5);
+    }
+    if (k === 'fire' && t >= 0.65 && t <= 3.0) {
+      A.tick = (A.tick || 0) + dt;
+      if (A.tick >= 0.22) { A.tick = 0; for (const q of pl) { const dx = q.target.x - P.p.x, dz = q.target.z - P.p.z, d = Math.hypot(dx, dz); if (d < 27 && d > 1.5 && (dx * fx + dz * fz) / d > 0.9 && q.target.y < P.p.y + 14) bossHarm(q, 2.6, fx * 2, 1.5, fz * 2); } }
+    }
+    if (k === 'grab') {
+      if (t >= BGRAB_AT && !A.done.g) { A.done.g = 1; const q = bossRpOf(A.v), d = q ? Math.hypot(q.target.x - P.p.x, q.target.z - P.p.z) : 99; if (!q || boss.eaten.has(A.v) || boss.out.has(A.v) || d > 13.5) { bossStartAct('miss'); return; } mpSend('chat', { n: '*', t: '😱 ' + boss.admin + ' packt ' + A.v + ' – schlagt zu, bis er loslässt!' }); }
+      if (A.done.g && !A.freed && t < BEAT_AT && (A.dmg || 0) >= boss.grabNeed) { A.freed = true; mpSend('boss', { a: 'free', v: A.v }); const q = bossRpOf(A.v); bossStartAct('drop'); mpSend('boss', { a: 'free', v: A.v }); if (q) bossHarm(q, 3, fx * 4, 5, fz * 4); chatSys('💥 ' + A.v + ' wurde befreit!'); return; }
+      if (t >= BEAT_AT && !A.done.e) { A.done.e = 1; if (!A.freed) { boss.eaten.add(A.v); mpSend('boss', { a: 'eat', v: A.v }); mpSend('chat', { n: '*', t: '☠ ' + A.v + ' wurde von ' + boss.admin + ' gefressen!' }); chatSys('☠ ' + A.v + ' wurde von ' + boss.admin + ' gefressen!'); boss.hp = Math.min(boss.hpMax, boss.hp + boss.hpMax * 0.04); } }
+    }
+    if (k === 'die' && t >= BACT.die - 0.1 && !A.done.end) { A.done.end = 1; mpSend('boss', { a: 'end', r: 'win' }); bossEnd('win'); }
+  }
+  if (A && A.t >= (BACT[A.k] || 1) && boss.act === A) { boss.act = A.k === 'die' ? A : null; }
+  // Niederlage: niemand mehr im Kampf
+  if (boss.fight === 'fight' && !boss.act) { if (!bossPlayersAlive().length && boss.names.length > 1) { boss.loseT += dt; if (boss.loseT > 3) { mpSend('boss', { a: 'end', r: 'lose' }); bossEnd('lose'); } } else boss.loseT = 0; }
+  // Heartbeat
+  boss.hbT -= dt; if (boss.hbT <= 0) { boss.hbT = 0.3; mpSend('boss', { a: 'st', hp: Math.round(boss.hp), st: boss.stage, ak: boss.act ? boss.act.k : '', at: boss.act ? r2(boss.act.t) : 0, av: boss.act ? boss.act.v : '', eaten: [...boss.eaten] }); }
+}
+function bossShocksTick(dt) {
+  const rp = bossRp(); const all = bossPlayersAlive();
+  for (let i = boss.shock.length - 1; i >= 0; i--) {
+    const s = boss.shock[i]; s.r += s.v * dt; s.mesh.scale.set(s.r, s.r, 1); s.mesh.material.opacity = Math.max(0, 0.85 * (1 - s.r / 46));
+    if (s.r > 46) { scene.remove(s.mesh); s.mesh.geometry.dispose(); s.mesh.material.dispose(); boss.shock.splice(i, 1); continue; }
+    if (s.dmg && boss.me === 'boss') for (const q of all) { if (s.hit.has(q.name)) continue; const d = Math.hypot(q.target.x - s.x, q.target.z - s.z); if (Math.abs(d - s.r) < 2 && q.target.y < s.y + 1.4) { s.hit.add(q.name); const l = d || 1; bossHarm(q, 13, (q.target.x - s.x) / l * 10, 9, (q.target.z - s.z) / l * 10); } }
+    if (s.dmg && boss.me === 'player' && !s.hit.has(mp.name)) { /* Schaden kommt vom Admin (bd) */ }
+    if (Math.random() < 0.9) { const a = Math.random() * 2 * PI; emitFx(s.x + Math.cos(a) * s.r, s.y + 0.3, s.z + Math.sin(a) * s.r, new THREE.Color(1, 0.6, 0.2), 0, 2.5, 0, 0.5, 0.2, 2); }
+  }
+  void rp;
+}
+// ---------- Kamera + Oberfläche pro Bild ----------
+function bossCam(dt) {
+  const rp = bossRp(), u = bossFx(); if (!rp) return;
+  const A = boss.arena, c = _bv[0].set(A.x + 0.5, A.y + 1, A.z + 0.5), bp = boss.me === 'boss' ? P.p : rp.p;
+  let cine = false;
+  if (boss.fight === 'intro') {
+    const q = Math.max(0, boss.t), a = 0.5 + q * 0.28, r = 28 - q * 0.8; camera.position.set(bp.x + Math.cos(a) * r, A.y + 5 + q * 1.6, bp.z + Math.sin(a) * r); camera.lookAt(bp.x, A.y + 2 + boss.sc * 0.7, bp.z); cine = true;
+  } else if (boss.me === 'boss') {
+    const f = _bv[1].set(-Math.sin(P.yaw), 0, -Math.cos(P.yaw)); camera.position.set(P.p.x - f.x * 30, P.p.y + 15 + Math.max(0, P.pitch) * 8, P.p.z - f.z * 30); camera.rotation.set(P.pitch - 0.12, P.yaw, 0, 'YXZ');
+    if (P.shake > 0.01) { camera.position.x += (Math.random() - 0.5) * P.shake * 0.8; camera.position.y += (Math.random() - 0.5) * P.shake * 0.8; }
+  } else if (boss.me === 'eaten' || boss.fight === 'end' && boss.me !== 'player') {
+    const a = boss.t * 0.18 + 1; camera.position.set(bp.x + Math.cos(a) * 30, A.y + 22, bp.z + Math.sin(a) * 30); camera.lookAt(bp.x, A.y + 9, bp.z); cine = true;
+  } else if (bossGrabbed(mp.name) && rp.bossHold && rp.bossHead) {
+    const f = rp.bossFwd; camera.position.copy(rp.bossHold).add(_bv[1].set(f.x * 4.5, 1.2, f.z * 4.5)); camera.lookAt(rp.bossHead.x, rp.bossHead.y - 0.5, rp.bossHead.z); cine = true; $('crosshair').style.opacity = '0';
+  } else if (boss.fight === 'end' && boss.result === 'win') { const a = boss.t * 0.25; camera.position.set(bp.x + Math.cos(a) * 30, A.y + 14, bp.z + Math.sin(a) * 30); camera.lookAt(bp.x, A.y + 5, bp.z); cine = true; }
+  u.bars.style.display = cine ? 'block' : 'none';
+  if (boss.me === 'boss') $('crosshair').style.opacity = '0';
+  void c;
+}
+function bossUi(dt) {
+  const u = bossFx(); u.bar.classList.remove('hidden');
+  u.bar.classList.toggle('s2', boss.stage === 2); u.bar.classList.toggle('s3', boss.stage === 3);
+  const pct = Math.max(0, boss.hp / boss.hpMax * 100); boss.hpShow += (boss.hp - boss.hpShow) * Math.min(1, dt * 1.6);
+  u.nm.textContent = '☠ ' + boss.admin + ' – DER RIESE' + (boss.stage > 1 ? '  ·  PHASE ' + boss.stage : '');
+  u.bf.style.width = pct + '%'; u.bt.style.width = Math.max(0, boss.hpShow / boss.hpMax * 100) + '%'; u.bh.textContent = Math.ceil(boss.hp) + ' / ' + boss.hpMax;
+  u.cd.classList.toggle('hidden', boss.me !== 'boss' || boss.fight !== 'fight');
+  if (boss.me === 'boss') { const names = ['swipe', 'grab', 'stomp', 'fire', 'roar'], full = { swipe: 1.15, grab: 9, stomp: 6.5, fire: 13, roar: 24 }; [...u.cd.children].forEach((el, i) => { el.lastChild.style.height = Math.min(100, (boss.cd[names[i]] || 0) / (full[names[i]] * 0.8) * 100) + '%'; }); }
+  if (boss.titleT > 0) { boss.titleT -= dt; if (boss.titleT <= 0) u.title.style.opacity = '0'; }
+}
+function bossTick(dt) {
+  if (!boss.on) { if (boss.ui && !boss.ui.bar.classList.contains('hidden')) { boss.ui.bar.classList.add('hidden'); boss.ui.cd.classList.add('hidden'); boss.ui.bars.style.display = 'none'; } return; }
+  boss.t += dt;
+  if (boss.goneAt && boss.me !== 'boss' && performance.now() - boss.goneAt > 9000) { boss.goneAt = 0; bossEnd('stop'); return; }
+  const rp = bossRp(), me = boss.me;
+  if (rp) { rp.boss = true; rp.cutBoss = true; for (const q of mp.players.values()) q.eaten = boss.eaten.has(q.name); }
+  if (boss.fight === 'end') { boss.endT += dt; if (boss.endT > 6.5) { bossCleanup(true); return; } }
+  if (me === 'out') { bossUi(dt); return; }
+  // Bühne bauen, bis alle Chunks da sind (Spieler halten währenddessen still)
+  if (me !== 'out' && !boss.built) {
+    boss.buildT -= dt; P.v.set(0, 0, 0); if (boss.spawn) P.p.set(boss.spawn.x, boss.spawn.y, boss.spawn.z);
+    if (boss.buildT <= 0) { boss.buildT = 0.25; if (bossArena(false)) { boss.built = true; boss.t = me === 'boss' ? -2.6 : 0; if (me === 'boss') mpSend('boss', { a: 'start', n: boss.admin, ax: boss.arena.x, ay: boss.arena.y, az: boss.arena.z, hp: boss.hpMax, names: boss.names }); } }
+    bossUi(dt); return;
+  }
+  // Intro
+  if (boss.fight === 'intro') {
+    boss.sc = Math.max(0.05, BS * (1 - Math.pow(1 - cl01(boss.t / 3.6), 3)) + Math.sin(cl01(boss.t / 3.6) * PI) * 0.5);
+    if (boss.t > 1.2 && !boss.i1) { boss.i1 = 1; bossTitle('☠ ' + boss.admin.toUpperCase(), 'ERWACHT …', 3.4); }
+    if (boss.t > 3.7 && !boss.i2) { boss.i2 = 1; boss.act = { k: 'roar', t: 0.7, v: '', freed: false, done: {} }; bossRoarFx(rp || { p: P.p }, true); bossTitle('DER RIESE', 'Besiegt ihn – wenn ihr könnt!', 3); }
+    if (boss.t > 5.4) { boss.fight = 'fight'; boss.act = null; boss.i1 = boss.i2 = 0; if (me === 'boss') chatSys('LMB = Hieb · RMB = Spieler packen & fressen · Q = Stampfen · F = Feueratem · R = Brüllen'); }
+  } else boss.sc = BS;
+  // Aktion fortschreiben (alle Clients)
+  if (boss.act) { boss.act.t += dt; if (me !== 'boss' && boss.act.t > (BACT[boss.act.k] || 1) + 0.6 && boss.act.k !== 'die') boss.act = null; }
+  if (me === 'boss') {
+    if (rp) { rp.have = true; rp.dim = 0; rp.mode = 'survival'; rp.target.copy(P.p); rp.vel.set(0, 0, 0); rp.tAt = performance.now(); rp.yaw = rp.tyaw = P.yaw; rp.pitch = 0; rp.sneak = false; rp.setArmor(armorCode()); rp.update(dt, lerp(0.42, 1, env.dayF)); rp.group.visible = true; }
+    bossAdminTick(dt);
+  } else if (me === 'player' || me === 'eaten') {
+    // gepackt: Position folgt der Hand
+    if (bossGrabbed(mp.name) && rp && rp.bossHold) { P.p.set(rp.bossHold.x, rp.bossHold.y - 0.9, rp.bossHold.z); P.v.set(0, 0, 0); P.fallPeak = P.p.y; const hh = rp.bossHead; if (hh) { const dx = hh.x - P.p.x, dz = hh.z - P.p.z; P.yaw = Math.atan2(-dx, -dz); P.pitch = 0.5; } }
+    if (me === 'eaten') { P.p.set(boss.arena.x + 0.5, boss.arena.y + 40, boss.arena.z + 0.5); P.v.set(0, 0, 0); P.fallPeak = P.p.y; }
+  }
+  // gepackte Mitspieler hängen in der Hand des Riesen
+  if (rp && boss.act && boss.act.k === 'grab' && rp.bossHold) { const v = bossRpOf(boss.act.v); for (const q of mp.players.values()) q.grabbed = false; if (v && bossGrabbed(v.name)) { v.grabbed = true; v.p.copy(rp.bossHold).y -= 0.9; v.target.copy(v.p); v.sneak = false; } }
+  else for (const q of mp.players.values()) q.grabbed = false;
+  bossShocksTick(dt);
+  if (boss.me === 'player' && state === 'dead') { boss.me = 'out'; mpSend('boss', { a: 'out' }); }
+  bossUi(dt); bossCam(dt);
+}
+const cl01 = (x) => Math.max(0, Math.min(1, x));
+function bossNoInteract(keepMouse) {
+  target = mobTarget = playerTarget = vehTarget = null; hlMesh.visible = false; crackMesh.visible = false; brk = null;
+  if (!keepMouse) { mouse.leftPressed = mouse.rightPressed = false; mouse.left = mouse.right = false; atkQueue = 0; }
 }
 
 /* ---------------- L2. Netzwerk-Schichten ---------------- */
@@ -9882,6 +10260,20 @@ cmd(['admin'], {
     if (!adminEligible()) fail('Unbekannter Befehl.');
     if (mp.admin) { chatOk('Du bist schon Admin.'); return; }
     mp.admin = true; mp.sendT = 0; chatOk('🛡 Admin-Modus an – du hast alle Rechte und bist nicht deop- oder rauswerfbar.'); if (mp.tab) renderTabList();
+  },
+});
+cmd(['animation', 'riese'], {
+  desc: 'Admin: Boss-Kampf – du wirst ein 10× großer Riese, alle anderen müssen dich besiegen (/animation [leben] oder /animation stop)', hidden: true, mpOnly: true, args: [T.opt('leben', ['stop'], true)],
+  run(a) {
+    if (!mp.on || !isAdminName(mp.name)) fail('Unbekannter Befehl.');
+    if ((a[0] || '').toLowerCase() === 'stop') { if (!boss.on) fail('Es läuft kein Kampf.'); bossAbort(); chatOk('Kampf abgebrochen.'); return; }
+    if (boss.on) fail('Es läuft schon ein Kampf (/animation stop beendet ihn).');
+    if (world.dim !== 0) fail('Der Kampf startet nur in der Oberwelt.');
+    const names = [mp.name]; for (const rp of mp.players.values()) if (rp.have && (rp.dim || 0) === 0) names.push(rp.name);
+    const hp = a[0] ? Math.round(argNum(a[0], 'leben', 100, 100000000, true)) : 2400 + 1600 * (names.length - 1);
+    const ay = Math.min(CH - 50, 170);
+    bossBegin({ n: mp.name, ax: Math.floor(P.p.x), ay, az: Math.floor(P.p.z), hp, names }, true);
+    chatOk('Der Riese erwacht … (' + (names.length - 1) + ' Gegner, ' + hp + ' Leben)');
   },
 });
 cmd(['unadmin'], {
@@ -11059,7 +11451,7 @@ const mpHandlers = {
     for (const [oid, o] of [...mp.players]) if (o.name === meta.name) {          // derselbe Spieler mit neuer Sitzung: nur die neueste bleibt
       if ((o.joinedAt || 0) <= (meta.joinedAt || 0)) { o.dispose(); mp.players.delete(oid); } else return;
     }
-    const rp = new RemotePlayer(id, meta.name, meta.joinedAt); mp.players.set(id, rp); rp.ver = meta.v;
+    const rp = new RemotePlayer(id, meta.name, meta.joinedAt); mp.players.set(id, rp); rp.ver = meta.v; if (boss.on && meta.name === boss.admin) boss.goneAt = 0;
     { const bad = mpCompat(meta); if (bad) mpVersionWarn(rp, bad); }                              // nur bei wirklich unverträglichen Versionen
     chatSys(meta.name + ' ist beigetreten'); achGive('mp'); mpEnsureProfile(rp); mpStatusHud(); if (mp.tab) renderTabList();
     if (isHost()) {                                                    // der Host bringt Neulinge auf den aktuellen Stand (Uhrzeit, Regeln, Wetter)
@@ -11069,7 +11461,7 @@ const mpHandlers = {
   },
   leave(id) {
     const rp = mp.players.get(id); if (!rp) return;
-    chatSys(rp.name + ' hat das Spiel verlassen'); rp.dispose(); mp.players.delete(id); mpStatusHud(); if (mp.tab) renderTabList();
+    chatSys(rp.name + ' hat das Spiel verlassen'); if (boss.on) { if (rp.name === boss.admin) boss.goneAt = performance.now(); else boss.out.add(rp.name); } rp.dispose(); mp.players.delete(id); mpStatusHud(); if (mp.tab) renderTabList();
   },
   closed() { netBad = Math.max(netBad, 1); },                     // supabase-js verbindet selbst neu; nur wenn es länger dauert, wird angehalten
   reconnected() { mpRecover(); },
@@ -11126,6 +11518,7 @@ const mpHandlers = {
         if (p.wk) weather.override = { kind: p.wk, until: gameTime + (p.wd || 900) };
         break;
       case 'bolt': strikeLightning(p.x, p.z, true); break;
+      case 'boss': bossRecv(p, from); break;
       case 'emote': { const rp = mp.players.get(from); if (rp) rp.emote = p && Number.isInteger(p.e) && EMOTES[p.e] ? { id: p.e, t: 0 } : null; break; }
       case 'throw': thrown.push(new ThrownPotion(p.id, p.x, p.y, p.z, p.vx, p.vy, p.vz, true)); break;
       case 'splash': applySplash(p.x, p.y, p.z, p.id, true); break;
@@ -11135,6 +11528,7 @@ const mpHandlers = {
       case 'fall': startFall(p.x, p.y, p.z, p.id, true); break;
       case 'arrow': arrows.push(new Arrow(p.x, p.y, p.z, p.vx, p.vy, p.vz, p.o === 'mob' || p.o === 'fire' || p.o === 'ghast' ? p.o : 'remote')); if (p.o === 'ghast' && ghastSnd('fireball', p.x, p.y, p.z)) break; sfxAt(p.o === 'fire' || p.o === 'ghast' ? 'fireball' : 'shoot', p.x, p.y, p.z); break;
       case 'hit':
+        if (p.to === mp.name && boss.on && boss.me === 'boss') { if (Math.hypot(P.p.x - p.fx, P.p.z - p.fz) < 18) bossDamage(+p.dmg || 1, p.by); break; }
         if (p.to !== mp.name) { const hp = mp.players.get(from) && [...mp.players.values()].find((q) => q.name === p.to); if (hp) hp.flash = 0.3; }      // andere Spieler sehen den Treffer ebenfalls (rot)
         if (p.to === mp.name && state !== 'dead') {
           if (Math.hypot(P.p.x - p.fx, P.p.z - p.fz) > 6) break;                       // Angreifer ist in Wirklichkeit weit weg (veraltete Position) – kein Phantomschaden
@@ -11166,7 +11560,8 @@ function mpArrowHit(pos, vel) {                            // eigener Pfeil trif
   if (!mp.on) return false;
   for (const rp of mp.players.values()) {
     if (!rp.have || rp.mode === 'creative' || rp.mode === 'spectator') continue;
-    if (Math.abs(pos.x - rp.p.x) < 0.45 && Math.abs(pos.z - rp.p.z) < 0.45 && pos.y > rp.p.y && pos.y < rp.p.y + 1.85) {
+    const bw = rp.boss ? rp.hw + 0.15 : 0.45, bh = rp.boss ? rp.h : 1.85;
+    if (Math.abs(pos.x - rp.p.x) < bw && Math.abs(pos.z - rp.p.z) < bw && pos.y > rp.p.y && pos.y < rp.p.y + bh) {
       mpSend('hit', { to: rp.name, dmg: 5 + Math.floor(Math.random() * 4), fx: pos.x - vel.x, fz: pos.z - vel.z, by: mp.name }); rp.flash = 0.3; sfx('hit'); return true;
     }
   }
@@ -11229,7 +11624,7 @@ function mpApplyMobs(list) {
 }
 
 // --- Zustand speichern / laden ---
-const mpStateData = () => ({ dim: world ? world.dim : 0, inv: packItems(inv), armor: packItems(armor), hp: P.health, hunger: P.hunger, xpL: P.xpL, xpP: P.xpP, pos: [P.p.x, P.p.y, P.p.z], yaw: P.yaw, pitch: P.pitch,
+const mpStateData = () => ({ dim: world ? world.dim : 0, inv: packItems(inv), armor: packItems(armor), hp: P.health, hunger: P.hunger, xpL: P.xpL, xpP: P.xpP, pos: boss.on && boss.ret ? [boss.ret.x, boss.ret.y, boss.ret.z] : [P.p.x, P.p.y, P.p.z], yaw: P.yaw, pitch: P.pitch,
   sel: P.sel, fuel: P.fuel, spawn: [P.spawn.x, P.spawn.y, P.spawn.z], bed: P.bedPos, ...mpPetData() });
 function applyMpState(d) {
   if (!d) return;
@@ -11287,7 +11682,7 @@ async function mpJoin(cfg) {
 }
 async function mpLeave() {
   if (!mp.on) return;
-  cmdPolicy.unlimited = false; if (buildJob) finishBuildJob(true);
+  cmdPolicy.unlimited = false; if (buildJob) finishBuildJob(true); bossReset();
   try { mpFlush(); } catch (e) { /* egal */ }
   mp.on = false; mp.offline = false; $('netLost').classList.add('hidden'); mp.out = []; mp.posPend = null;
   try { mpFlushBlocks(); await Promise.race([Promise.all([mpFlushDb(), mpSaveState()]), new Promise((r) => setTimeout(r, 2500))]); } catch (e) { /* egal */ }
@@ -12289,7 +12684,7 @@ function showBreakOver() {
 setInterval(() => { classGateCheck(); }, 1000);
 classGateCheck();
 
-window.__vc = { blastAsk, askRealBlast, answerRealBlast, chainSet: (n, x, y, z) => { chainLocal = n; chainSum = [n * x, n * y, n * z]; }, blastQ, blastInfo: () => ({ tot: blastTot, done: blastDone, n: blastN, cur: !!blastCur }), bigSt, stepBlast, bigTick, perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+window.__vc = { boss, bossBegin, bossEnd, bossTick, bossPos, bossRp, bossStartAct, bossDamage, bossPlayersAlive, bossLocked, BACT, blastAsk, askRealBlast, answerRealBlast, chainSet: (n, x, y, z) => { chainLocal = n; chainSum = [n * x, n * y, n * z]; }, blastQ, blastInfo: () => ({ tot: blastTot, done: blastDone, n: blastN, cur: !!blastCur }), bigSt, stepBlast, bigTick, perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>
