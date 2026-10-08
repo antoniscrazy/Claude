@@ -1,4 +1,4 @@
-# VOXELCRAFT – Bug-Liste (Stand 2026-10-05.29)
+# VOXELCRAFT – Bug-Liste (Stand 2026-10-05.30)
 
 Gefunden durch Fuzz-/Monkey-Tests (Zufallsklicks, Tastenhagel), Zwei-Spieler-Tests im Multiplayer und Code-Durchsicht.
 Status: ✅ behoben · 🟡 offen (klein / kosmetisch) · 🔴 offen (spürbar)
@@ -196,3 +196,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * ✨ **Rückfrage bei 40 000 TNT:** Sind in einer TNT-Kette **40 000 oder mehr TNT** gezündet, erscheint ein Popup „💥 Über 40.000 TNT! – Echte Explosionskraft?“ mit **Ja / Nein**. Hintergrund: Bei so vielen TNT werden die Explosionen vereinfacht berechnet (damit nichts abstürzt) und richten kaum Schaden an. **Ja** löst zusätzlich eine echte Riesen-Detonation am Mittelpunkt der Kette aus (Radius ≈ 2,2 × ∛Anzahl, höchstens 100 – bei 40 000 TNT Radius 75) mit vollem Schaden an Spielern und Mobs (Reichweite doppelt so weit), die Welt wird vorher gesichert und der Ladebalken läuft mit. **Nein** bleibt bei der vereinfachten Kette. Im Einzelspieler ist das Spiel pausiert, bis du antwortest (Esc pausiert das Popup nicht weg); im Mehrspieler läuft es weiter und ohne Antwort gilt nach 20 s „Nein“.
 * Getestet: Popup erscheint, Spiel + TNT eingefroren, „Ja“ → Radius-75-Detonation über die Warteschlange (Spieler in der Nähe stirbt), „Nein“ → keine Detonation, kein Schaden.
+
+## 2026-10-05.30
+
+* ✅ **Seed-Eastereggs „67“ und „steve“ hingen in der Weltgenerierung fest:** Seit die Strukturen in tiefen Welten erst nach den Höhlen gebaut werden, gab es in der Egg-Plattform noch keine Strukturliste (`structOut`) – der Zugriff warf bei jedem Chunk einen Fehler, die Welt wurde nie fertig. Behoben (Zugriff abgesichert). Getestet: beide Seeds laden wieder, die große 67 (gelb, mit Aussichtshügel) und die Steve-Statue stehen direkt vor dem Spawn.

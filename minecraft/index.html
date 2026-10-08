@@ -1804,7 +1804,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.29';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-10-05.30';            // Spielversion (nur Anzeige)
 // Mehrspieler-Kompatibilität: NUR wenn sich das Netzwerkformat oder die Welt-Speicherung unverträglich ändert, MP_PROTO erhöhen. Normale Versionen (neue Blöcke, Rezepte, Mobs, Befehle …) vertragen sich untereinander –
 // dafür gibt es keine Warnung mehr. Clients ohne MP_PROTO (vor 2026-10-05.17) gelten ab MP_MIN_VER als kompatibel.
 const MP_PROTO = 1, MP_MIN_VER = '2026-10-05.1';
@@ -2086,7 +2086,7 @@ class TerrainGen {
         for (let r = 0; r < 32; r++) { const c = STEVE[r][gx]; if (c !== '.') setb(wx, Y0 + 32 - r, wz, P[c]); }
       }
     }
-    this.structOut.length = 0;
+    if (this.structOut) this.structOut.length = 0;                          // (bei aufgeschobenen Strukturen – tiefe Welten – gibt es hier noch keine Liste)
     return true;
   }
 
