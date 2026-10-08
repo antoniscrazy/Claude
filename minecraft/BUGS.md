@@ -1,4 +1,4 @@
-# VOXELCRAFT – Bug-Liste (Stand 2026-10-05.30)
+# VOXELCRAFT – Bug-Liste (Stand 2026-10-05.31)
 
 Gefunden durch Fuzz-/Monkey-Tests (Zufallsklicks, Tastenhagel), Zwei-Spieler-Tests im Multiplayer und Code-Durchsicht.
 Status: ✅ behoben · 🟡 offen (klein / kosmetisch) · 🔴 offen (spürbar)
@@ -200,3 +200,9 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 ## 2026-10-05.30
 
 * ✅ **Seed-Eastereggs „67“ und „steve“ hingen in der Weltgenerierung fest:** Seit die Strukturen in tiefen Welten erst nach den Höhlen gebaut werden, gab es in der Egg-Plattform noch keine Strukturliste (`structOut`) – der Zugriff warf bei jedem Chunk einen Fehler, die Welt wurde nie fertig. Behoben (Zugriff abgesichert). Getestet: beide Seeds laden wieder, die große 67 (gelb, mit Aussichtshügel) und die Steve-Statue stehen direkt vor dem Spawn.
+
+## 2026-10-05.31
+
+* ✨ **Neues Seed-Easteregg „paris“** (Groß-/Kleinschreibung egal): Die Welt startet mitten in Paris auf einer ebenen Plattform (160 × 224 Blöcke). Spawn auf dem Champ de Mars, Blick zum Turm. Enthalten: **Eiffelturm** (110 Blöcke hoch, Eckpfeiler, Fachwerk mit Diagonalen, Bögen unten, drei Plattformen mit Geländer, leuchtende Lichter, Spitze; innen eine **Leiter** bis zur obersten Plattform), die **Seine** mit **Brücke** (Pont d'Iéna) und Kaimauern, die **Avenue** mit Bäumen und Laternen zum **Arc de Triomphe** (mit Kreisverkehr, großem Bogen, Seitenbögen, ewiger Flamme), die **Louvre-Glaspyramide** im Hof dreier Schlossflügel, **Notre-Dame** (zwei Türme mit Zinnen, Portale, blaue Rosette, Schiff mit Strebepfeilern und Dachreiter), **Haussmann-Häuser** (5 Stockwerke, Balkone, Mansarddach, Schornsteine, innen begehbar mit Leitern) samt **Cafés** (rot-weiße Markisen, Tische), **Blumenbeete** auf dem Champ de Mars und die **École Militaire** mit Kuppel am Ende der Achse. Alles aus normalen Blöcken, kreativ weiterbaubar.
+* ✅ **Eastereggs in tiefen Welten gehärtet:** Die Plattform wird nach der Höhlen-Erzeugung noch einmal aufgestempelt, damit Höhlen/Schluchten sie nicht anschneiden (gilt auch für „67“ und „steve“; die große Paris-Fläche wird außerdem nicht von Zufallsstrukturen überbaut).
+* Getestet: Welt lädt ohne Fehler, Screenshots von Turm, Arc, Notre-Dame, Häusern; Leiter im Turm benutzbar (Spieler klettert), Brücke/Wasser vorhanden, „67“ und „steve“ laden weiter.
