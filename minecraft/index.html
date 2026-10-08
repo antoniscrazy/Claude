@@ -377,6 +377,15 @@ body.touch .ew-bar .ew-close{display:block}
   </div>
 </div>
 
+<div id="blastAsk" class="overlay hidden" style="z-index:215;background:rgba(45,0,0,.86)">
+  <div class="panel" style="max-width:480px;text-align:center">
+    <h2>💥 Über 40.000 TNT!</h2>
+    <p id="baText" style="margin:10px 0 14px;line-height:1.45"></p>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button class="btn" id="baYes" type="button" style="width:auto;padding:8px 16px">Ja – echte Explosionskraft</button><button class="btn" id="baNo" type="button" style="width:auto;padding:8px 16px">Nein – vereinfacht</button></div>
+    <p id="baCount" style="margin-top:10px;font-size:13px;opacity:.8"></p>
+  </div>
+</div>
+
 <div id="netLost" class="overlay hidden" style="z-index:200;background:rgba(0,0,0,.82)">
   <div class="panel" style="max-width:380px;text-align:center">
     <h2>Verbindung verloren</h2>
@@ -1795,7 +1804,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.28';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-10-05.29';            // Spielversion (nur Anzeige)
 // Mehrspieler-Kompatibilität: NUR wenn sich das Netzwerkformat oder die Welt-Speicherung unverträglich ändert, MP_PROTO erhöhen. Normale Versionen (neue Blöcke, Rezepte, Mobs, Befehle …) vertragen sich untereinander –
 // dafür gibt es keine Warnung mehr. Clients ohne MP_PROTO (vor 2026-10-05.17) gelten ab MP_MIN_VER als kompatibel.
 const MP_PROTO = 1, MP_MIN_VER = '2026-10-05.1';
@@ -4460,9 +4469,9 @@ class PrimedTNT {
     return true;
   }
 }
-let chainSeen = 0, chainDet = 0, chainBig = false;                      // TNT-Kette: gezündet / schon explodiert (für den Ladebalken)
+let chainSeen = 0, chainDet = 0, chainBig = false, chainLocal = 0, chainSum = [0, 0, 0];                      // TNT-Kette: gezündet / schon explodiert (für den Ladebalken)
 function igniteTNT(x, y, z, fuse, remote) {
-  chainSeen++;
+  chainSeen++; if (!remote) { chainLocal++; chainSum[0] += x; chainSum[1] += y; chainSum[2] += z; }
   primed.push(new PrimedTNT(x, y, z, fuse, remote)); if (fuse > 1.5) sfxAt('fuse', x, y, z);
   if (!remote) achGive('tnt');
   if (!remote && mp.on) mpSend('tnt', { x, y, z, fuse });
@@ -4490,7 +4499,7 @@ function* explodeGen(cx, cy, cz, R, heavy) {
     if (!isCreative() && dropBudget > 0 && Math.random() < 0.3) { dropBudget--; lootFor(id).forEach(([i, n]) => spawnDrop(i, n, x + 0.5, y + 0.5, z + 0.5)); }
   }
   blastEffects(cx, cy, cz, R, heavy);
-  if (mp.on && (!heavy || Math.random() < 0.15)) mpSend('explode', { x: r2(cx), y: r2(cy), z: r2(cz), R });
+  if (mp.on && (!heavy || R >= 30 || Math.random() < 0.15)) mpSend('explode', { x: r2(cx), y: r2(cy), z: r2(cz), R });
 }
 function explode(cx, cy, cz, R) {
   const est = Math.max(1, 4.19 * R * R * R), heavy = blastQ.length > 0 || !!blastCur || primed.length > 40 || (2 * Math.ceil(R) + 1) ** 3 > BIG_WORK;
@@ -4499,7 +4508,7 @@ function explode(cx, cy, cz, R) {
   if (blastTot >= BIG_WORK) { perfBoost('große Explosion'); bigBegin(); }
 }
 function stepBlast() {
-  if (!world || state === 'menu' || state === 'loading') return;
+  if (!world || state === 'menu' || state === 'loading' || blastAsk.open) return;
   if (!blastCur && !blastQ.length) { if (blastTot) { if (blastTot >= BIG_WORK) chatOk('Explosionen fertig: ' + fmtN(blastN) + ' Detonation(en)'); blastTot = blastDone = blastN = 0; } return; }
   const t0 = performance.now();
   while (performance.now() - t0 < 8) {
@@ -9937,6 +9946,34 @@ function stepBuildJob() {
   const el = document.createElement('div'); el.id = 'bigBar'; el.className = 'hidden'; el.innerHTML = '<div class="bbl"></div><div class="bbt"><i></i></div><small></small>';
   document.body.appendChild(el);
 })();
+// --- Ab 40 000 TNT in einer Kette: Rückfrage „echte Explosionskraft?“ (Popup, im Einzelspieler pausiert das Spiel solange) ---
+const TNT_ASK = 40000;
+const blastAsk = { open: false, asked: false, wasPlay: false, t0: 0, n: 0, R: 0, c: [0, 0, 0] };
+function chainResetAll() { chainSeen = chainDet = chainLocal = 0; chainSum = [0, 0, 0]; blastAsk.asked = false; }
+function askRealBlast() {
+  const n = chainLocal; if (blastAsk.asked || n < 1) return;
+  blastAsk.asked = true; blastAsk.open = true; blastAsk.n = n; blastAsk.t0 = performance.now();
+  blastAsk.c = [chainSum[0] / n + 0.5, chainSum[1] / n + 0.5, chainSum[2] / n + 0.5];
+  blastAsk.R = Math.min(100, Math.round(2.2 * Math.cbrt(n)));
+  $('baText').innerHTML = 'In dieser Kette sind <b>' + fmtN(n) + ' TNT</b> gezündet. Aktuell werden sie vereinfacht berechnet – das ist schnell, richtet aber kaum Schaden an Spielern und Mobs an.<br><br><b>Ja:</b> zusätzlich eine echte Riesen-Detonation (Radius ' + blastAsk.R + ' Blöcke) mit vollem Schaden – kann dich und Mobs töten und die Welt stark zerstören. Die Welt wird vorher gesichert; <code>/fillstop</code> bricht ab.<br><b>Nein:</b> bei der vereinfachten Kette bleiben.';
+  $('blastAsk').classList.remove('hidden');
+  blastAsk.wasPlay = state === 'play' && !mp.on; if (blastAsk.wasPlay) setState('pause');
+  bigBegin();                                                             // vor der Antwort sichern
+}
+function answerRealBlast(yes) {
+  if (!blastAsk.open) return;
+  blastAsk.open = false; $('blastAsk').classList.add('hidden');
+  if (blastAsk.wasPlay && state === 'pause') { setState('play'); lockPointer(); }
+  if (yes) { const c = blastAsk.c; chatSys('💥 Echte Explosionskraft: Riesen-Detonation mit Radius ' + blastAsk.R + ' (' + fmtN(blastAsk.n) + ' TNT).'); explode(c[0], c[1], c[2], blastAsk.R); }
+  else chatSys('Vereinfachte Explosionskette (kaum Schaden).');
+}
+function askTick() {
+  if (blastAsk.wasPlay && state === 'play') setState('pause');          // Esc darf das Popup nicht „wegpausieren“
+  if (mp.on) { const left = 20 - (performance.now() - blastAsk.t0) / 1000; $('baCount').textContent = 'Mehrspieler läuft weiter – ohne Antwort gilt „Nein“ in ' + Math.max(0, Math.ceil(left)) + ' s'; if (left <= 0) answerRealBlast(false); }
+  else $('baCount').textContent = 'Das Spiel ist pausiert, bis du antwortest.';
+}
+$('baYes').onclick = () => answerRealBlast(true);
+$('baNo').onclick = () => answerRealBlast(false);
 const bigSt = { active: false, saveAt: 0, uiAt: 0, saved: 0 };
 function bigSave() {
   try { if (mp.on) { mpFlushBlocks(); mpSaveState(); bigSt.saved = performance.now(); } else if (saveGame()) bigSt.saved = performance.now(); } catch (e) { /* egal */ }
@@ -9945,10 +9982,12 @@ function bigSave() {
 function bigBegin() { if (bigSt.active) return; bigSt.active = true; bigSave(); chatSys('💾 Große Aktion: Welt wurde vorher gesichert und wird währenddessen automatisch weiter gespeichert.'); }
 function bigTick() {
   if (primed.length >= 150) chainBig = true;
-  const quiet = !primed.length && !blastQ.length && !blastCur; if (quiet && !chainBig) chainSeen = chainDet = 0;
+  const quiet = !primed.length && !blastQ.length && !blastCur; if (quiet && !chainBig) chainResetAll();
   const bj = buildJob, bq = (blastCur || blastQ.length) && blastTot >= BIG_WORK, tc = chainBig && !quiet, act = !!bj || !!bq || tc, now = performance.now(), el = $('bigBar');
   if (act && !bigSt.active) bigBegin();
-  if (quiet && chainBig && !bj) { chainBig = false; chainSeen = chainDet = 0; }
+  if (quiet && chainBig && !bj) { chainBig = false; chainResetAll(); }
+  if (chainLocal >= TNT_ASK && !blastAsk.asked) askRealBlast();
+  if (blastAsk.open) askTick();
   if (!act) { if (bigSt.active) { bigSt.active = false; bigSave(); chatSys('💾 Welt automatisch gespeichert.'); } if (!el.classList.contains('hidden')) el.classList.add('hidden'); return; }
   if (now - bigSt.saveAt > 30000) bigSave();                              // alle 30 s zwischenspeichern
   if (now - bigSt.uiAt < 90) return; bigSt.uiAt = now;
@@ -12087,7 +12126,7 @@ function showBreakOver() {
 setInterval(() => { classGateCheck(); }, 1000);
 classGateCheck();
 
-window.__vc = { blastQ, blastInfo: () => ({ tot: blastTot, done: blastDone, n: blastN, cur: !!blastCur }), bigSt, stepBlast, bigTick, perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+window.__vc = { blastAsk, askRealBlast, answerRealBlast, chainSet: (n, x, y, z) => { chainLocal = n; chainSum = [n * x, n * y, n * z]; }, blastQ, blastInfo: () => ({ tot: blastTot, done: blastDone, n: blastN, cur: !!blastCur }), bigSt, stepBlast, bigTick, perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>

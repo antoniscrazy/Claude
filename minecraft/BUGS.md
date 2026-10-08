@@ -1,4 +1,4 @@
-# VOXELCRAFT – Bug-Liste (Stand 2026-10-05.28)
+# VOXELCRAFT – Bug-Liste (Stand 2026-10-05.29)
 
 Gefunden durch Fuzz-/Monkey-Tests (Zufallsklicks, Tastenhagel), Zwei-Spieler-Tests im Multiplayer und Code-Durchsicht.
 Status: ✅ behoben · 🟡 offen (klein / kosmetisch) · 🔴 offen (spürbar)
@@ -191,3 +191,8 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * ✅ **Absturzschutz bei TNT:** Explosionen werden bei vielen TNT / riesigem Radius in eine Warteschlange gestellt und zeitverteilt (8 ms pro Bild) abgearbeitet statt alle im selben Bild. Ab 120 gleichzeitig brennenden TNT sind weitere nur noch unsichtbare Zünder (kein Modell, keine Physik); Explosionstöne und Mehrspieler-Meldungen werden gedrosselt. Getestet mit 1 536 TNT in einem Block: lief durch, alles explodiert, kein Fehler.
 * ✨ **Automatisches Speichern:** Beim Start jeder großen Aktion wird die Welt **sofort gesichert**, dann **alle 30 Sekunden** zwischengespeichert und am Ende noch einmal (Einzelspieler: Spielstand, online: Welt + Spielerdaten). Hinweise im Chat („💾 …“).
 * ✅ **Speicher-Fix:** Spielstände speichern Blockänderungen jetzt als Läufe (ein 144 000-Block-Fill: 1,3 MB → 56 KB). Vorher hätte ein riesiger Fill den Browser-Speicher (~5 MB) gesprengt und das Speichern wäre fehlgeschlagen. Alte Spielstände laden weiter. Schlägt Speichern trotzdem fehl, bleibt die alte Sicherung erhalten; ab ~4 MB gibt es eine Warnung. `/undo` gilt jetzt bis 500 000 Blöcke (größere Aktionen sind nicht rückgängig zu machen, um den Arbeitsspeicher zu schonen).
+
+## 2026-10-05.29
+
+* ✨ **Rückfrage bei 40 000 TNT:** Sind in einer TNT-Kette **40 000 oder mehr TNT** gezündet, erscheint ein Popup „💥 Über 40.000 TNT! – Echte Explosionskraft?“ mit **Ja / Nein**. Hintergrund: Bei so vielen TNT werden die Explosionen vereinfacht berechnet (damit nichts abstürzt) und richten kaum Schaden an. **Ja** löst zusätzlich eine echte Riesen-Detonation am Mittelpunkt der Kette aus (Radius ≈ 2,2 × ∛Anzahl, höchstens 100 – bei 40 000 TNT Radius 75) mit vollem Schaden an Spielern und Mobs (Reichweite doppelt so weit), die Welt wird vorher gesichert und der Ladebalken läuft mit. **Nein** bleibt bei der vereinfachten Kette. Im Einzelspieler ist das Spiel pausiert, bis du antwortest (Esc pausiert das Popup nicht weg); im Mehrspieler läuft es weiter und ohne Antwort gilt nach 20 s „Nein“.
+* Getestet: Popup erscheint, Spiel + TNT eingefroren, „Ja“ → Radius-75-Detonation über die Warteschlange (Spieler in der Nähe stirbt), „Nein“ → keine Detonation, kein Schaden.
