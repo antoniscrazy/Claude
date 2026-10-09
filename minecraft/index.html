@@ -1405,6 +1405,16 @@ DUST_IDS.forEach((a) => a.forEach((id) => { BLOCKS[id].drop = IID.redstone; }));
 const DYE_RGB = { white: [240, 240, 240], orange: [249, 128, 29], magenta: [199, 78, 189], light_blue: [58, 179, 218], yellow: [254, 216, 61], lime: [128, 199, 31], pink: [243, 139, 170], gray: [71, 79, 82],
   light_gray: [157, 157, 151], cyan: [22, 156, 156], purple: [137, 50, 184], blue: [60, 68, 170], brown: [131, 84, 50], green: [94, 124, 22], red: [176, 46, 38], black: [29, 29, 33] };
 COLORS.forEach(([c, de]) => item('dye_' + c, 'Farbstoff: ' + de, 'gen_dye_' + c));
+// ---------- HALLOWEEN (angehängt): Süßigkeiten & Beute, alle Symbole selbst gezeichnet (genHalloweenImages) ----------
+item('candy_corn', 'Zuckermais', 'gen_candy_corn', { food: 2, always: true });
+item('lollipop', 'Lutscher', 'gen_lollipop', { food: 3, always: true, effects: [['speed', 25, 0]] });
+item('chocolate_bar', 'Schokoriegel', 'gen_chocolate_bar', { food: 4, always: true, effects: [['regeneration', 6, 0]] });
+item('caramel_apple', 'Karamellapfel', 'gen_caramel_apple', { food: 7, always: true, effects: [['jump', 40, 1]] });
+item('spooky_pie', 'Spukkürbiskuchen', 'gen_spooky_pie', { food: 9, always: true, stack: 16, effects: [['regeneration', 10, 0], ['strength', 30, 0]] });
+item('witch_brew', 'Hexengebräu', 'gen_witch_brew', { food: 2, always: true, stack: 8, effects: [['night_vision', 120, 0], ['jump', 60, 1], ['strength', 40, 0]] });
+item('candy_bucket', 'Süßigkeiten-Eimer', 'gen_candy_bucket', { stack: 16, candyBucket: true });
+item('ectoplasm', 'Ektoplasma', 'gen_ectoplasm');
+item('reaper_scythe', 'Sense des Sensenmanns', 'gen_reaper_scythe', { stack: 1, tool: { type: 'sword', tier: 4, speed: 2, dur: 900, dmg: 11 } });
 PALETTE.items = PALETTE.items.filter((i) => i !== IID.almond_water);
 // ---------- Abbau: passendes Werkzeug und benötigte Stufe (0 Hand, 1 Holz, 2 Stein, 3 Eisen, 4 Diamant) ----------
 const setMine = (id, tool, need) => { BLOCKS[id].tool = tool; BLOCKS[id].need = need; };
@@ -1707,9 +1717,148 @@ function genBackroomsMobTextures(MT) {
     MT.brHound = mk(c);
   }
 }
+// ===== Halloween: alle Mob-Texturen und Item-Symbole sind selbst gezeichnet (keine Pack-Texturen) =====
+function genHalloweenMobTextures(MT) {
+  const mk = (c) => { const t = new THREE.CanvasTexture(c); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; return t; };
+  const r = mulberry32(31337), nz = (a) => (r() - 0.5) * 2 * a;
+  const col = (c, a) => { const n = nz(a || 5); return [c[0] + n, c[1] + n, c[2] + n]; };
+  const mul = (c, k) => [c[0] * k, c[1] * k, c[2] * k];
+  const PUMP = [226, 118, 22], PUMP_D = [176, 78, 12], GLOW = [255, 226, 70], CAV = [60, 24, 6];
+  { // Kürbiszombie: grüngraue Haut mit Nähten, zerlumpte lila Weste, Kürbiskopf mit leuchtendem Gesicht
+    const c = brCanvas(64, 64), skin = [112, 142, 98];
+    brBox(c, 0, 0, 8, 8, 8, (f) => col(PUMP_D, 4));
+    brBox(c, 16, 16, 8, 12, 4, (f, x, y, w, h) => { if (f === 'front' && (y === 5 || y === 6) && x % 2 === 0) return [40, 30, 20]; if (r() < 0.06) return col(skin, 6); return col([74, 44, 98], 6); });
+    brBox(c, 0, 16, 4, 12, 4, (f, x, y) => y < 6 ? col([38, 32, 44], 4) : col([30, 26, 36], 4));
+    brBox(c, 40, 16, 4, 12, 4, (f, x, y) => { if (y > 9 && r() < 0.55) return col([84, 54, 104], 5); return y === 4 && x % 2 ? [48, 36, 30] : col(skin, 6); });
+    brBox(c, 0, 32, 10, 10, 10, (f, x, y, w, h) => {                       // Kürbis
+      const rib = (x % 3 === 0) ? 0.82 : 1, base = f === 'top' ? [90, 64, 24] : mul(PUMP, rib);
+      if (f === 'top' && x >= 3 && x <= 6 && y >= 3 && y <= 6) return [60, 100, 30];
+      if (f === 'front') {
+        const eye = (y >= 2 && y <= 4) && ((x >= 1 && x <= 3 && y - 2 <= x - 1 + 1 && y >= 3 - (x - 1) * 0 - 0) || (x >= 6 && x <= 8)), tri = (y >= 2 && y <= 4) && (Math.abs(x - 2) <= (y - 1) / 2 || Math.abs(x - 7) <= (y - 1) / 2);
+        if (tri) return GLOW;
+        if (y >= 6 && y <= 8 && x >= 1 && x <= 8 && (x % 2 === 1 ? y <= 8 : y >= 7)) return y === 6 ? CAV : GLOW;
+      }
+      return col(base, 6);
+    });
+    MT.hw_zombie = mk(c);
+  }
+  { // Spuk-Skelett: schimmernde Knochen, grün leuchtende Augen, Zylinder mit Fledermaus-Band
+    const c = brCanvas(64, 32), bone = [222, 216, 190];
+    brBox(c, 0, 0, 8, 8, 8, (f, x, y) => { if (f === 'front') { if ((x === 1 || x === 2 || x === 5 || x === 6) && (y === 3 || y === 4)) return [96, 255, 130]; if (y >= 6 && x % 2 === 0) return [60, 56, 50]; } return col(bone, 7); });
+    brBox(c, 16, 16, 8, 12, 4, (f, x, y) => (f === 'front' || f === 'back') && y % 3 === 1 && x > 0 && x < 7 ? [52, 48, 44] : col(bone, 7));
+    brBox(c, 40, 16, 2, 12, 2, (f, x, y) => col(bone, 8)); brBox(c, 0, 16, 2, 12, 2, (f, x, y) => col(bone, 8));
+    brBox(c, 32, 0, 6, 7, 6, (f, x, y, w, h) => (y >= h - 2 && f !== 'top' && f !== 'bottom') ? col([128, 60, 190], 4) : col([22, 20, 26], 3));      // Zylinder
+    MT.hw_skeleton = mk(c);
+  }
+  { // Kürbis-Creeper: orange mit grünem Ranken-Muster, geschnitztes Gesicht
+    const c = brCanvas(64, 32);
+    brBox(c, 0, 0, 8, 8, 8, (f, x, y) => {
+      if (f === 'front') { if ((x === 1 || x === 2 || x === 5 || x === 6) && (y === 2 || y === 3)) return GLOW; if (y >= 5 && y <= 6 && x >= 2 && x <= 5) return (x === 3 || x === 4) && y === 6 ? CAV : GLOW; if (y === 4 && (x === 3 || x === 4)) return CAV; }
+      if (f === 'top') return (x >= 3 && x <= 4 && y >= 3 && y <= 4) ? [70, 100, 30] : col(PUMP_D, 5);
+      return col(x % 3 === 0 ? PUMP_D : PUMP, 6);
+    });
+    brBox(c, 16, 16, 8, 12, 4, (f, x, y) => ((x * 3 + y * 5) % 11 < 2 && r() < 0.7) ? col([52, 92, 34], 6) : col(x % 3 === 0 ? PUMP_D : PUMP, 6));
+    brBox(c, 0, 16, 4, 6, 4, (f, x, y) => col(y > 3 ? [70, 100, 30] : PUMP_D, 6));
+    MT.hw_creeper = mk(c);
+  }
+  { // Giftspinne: schwarz, oranger Stundenglas-Fleck, rot leuchtende Augen, orange gestreifte Beine
+    const c = brCanvas(64, 32);
+    brBox(c, 32, 4, 8, 8, 8, (f, x, y) => { if (f === 'front') { if ((x === 1 || x === 2 || x === 5 || x === 6) && (y === 2 || y === 4)) return [255, 40, 30]; if (x === 3 || x === 4) { if (y === 6) return [240, 236, 220]; } } return col([24, 20, 26], 4); });
+    brBox(c, 0, 0, 6, 6, 6, (f) => col([32, 26, 36], 4));
+    brBox(c, 0, 12, 10, 8, 12, (f, x, y, w, h) => {
+      if (f === 'top') { const m = Math.abs(x - 4.5), q = y - 5.5; if ((q < 0 ? Math.abs(q) : q) <= 4.2 - m * 1.4 + (q * q * 0.06)) return [255, 126, 20]; }
+      return col([26, 22, 30], 4);
+    });
+    brBox(c, 18, 0, 16, 2, 2, (f, x) => (x % 4 < 2) ? col([255, 120, 20], 6) : col([20, 18, 24], 3));
+    MT.hw_spider = mk(c);
+  }
+  { // Kürbis-Fledermaus: orange Fell, lila Flügelhäute mit orangen Adern, gelbe Augen
+    const c = brCanvas(64, 64);
+    brBox(c, 0, 16, 6, 12, 6, (f) => col([214, 104, 20], 7));
+    brBox(c, 0, 0, 6, 6, 6, (f, x, y) => f === 'front' ? ((x === 1 || x === 4) && y === 2 ? [255, 244, 80] : (y === 4 && (x === 2 || x === 3) ? [240, 236, 224] : col([196, 92, 18], 6))) : col([196, 92, 18], 6));
+    brBox(c, 24, 0, 3, 4, 1, (f) => col([30, 20, 36], 4));
+    brBox(c, 42, 0, 10, 16, 1, (f, x, y) => (x + y) % 5 === 0 ? col([255, 126, 30], 5) : col([64, 28, 92], 8));
+    brBox(c, 24, 16, 8, 12, 1, (f, x, y) => (x + y) % 5 === 0 ? col([255, 126, 30], 5) : col([64, 28, 92], 8));
+    MT.hw_bat = mk(c);
+  }
+  { // Geist: weißblaues Laken, schwarze Augenhöhlen, ausgefranster Saum (Transparenz)
+    const c = brCanvas(64, 64), sheet = (f, x, y) => { const n = nz(6); return [226 + n, 232 + n, 248 + n]; };
+    brBox(c, 0, 0, 10, 10, 10, (f, x, y, w, h) => {
+      if (f === 'front') { const ey = (y === 3 || y === 4 || y === 5) && (x === 2 || x === 3 || x === 6 || x === 7); if (ey) return [10, 8, 18]; if (y >= 6 && y <= 8 && x >= 4 && x <= 5) return [10, 8, 18]; }
+      return sheet(f, x, y);
+    });
+    brBox(c, 0, 20, 10, 14, 8, (f, x, y) => y > 9 && (f === 'front' || f === 'back') && x % 3 === 1 && r() < 0.3 ? [30, 30, 50, 0] : sheet(f, x, y));
+    brBox(c, 0, 40, 12, 5, 10, (f, x, y, w, h) => (f !== 'top' && f !== 'bottom' && y >= h - 2 && ((x + y) % 4 < 2)) ? [0, 0, 0, 0] : sheet(f, x, y));
+    brBox(c, 44, 20, 3, 12, 3, sheet);
+    MT.hw_ghost = mk(c);
+  }
+  { // Hexe: grüne Haut, Warze, lila Robe, Spitzhut mit Gürtelschnalle
+    const c = brCanvas(64, 64), skin = [96, 150, 70];
+    brBox(c, 0, 0, 8, 10, 8, (f, x, y) => { if (f === 'front') { if ((x === 1 || x === 2 || x === 5 || x === 6) && y === 4) return (x === 2 || x === 5) ? [20, 12, 24] : [250, 250, 240]; if (y === 7 && x >= 2 && x <= 5) return [64, 30, 40]; if (x === 6 && y === 6) return [70, 100, 50]; } if (f === 'top' || (f === 'back' && y < 3)) return col([40, 26, 20], 4); return col(skin, 5); });
+    brBox(c, 32, 0, 2, 4, 2, (f) => col([84, 134, 60], 4));
+    brBox(c, 0, 32, 14, 1, 14, (f) => col([30, 22, 38], 3));
+    brBox(c, 0, 48, 8, 3, 8, (f, x, y) => y === 1 && f !== 'top' ? [220, 170, 40] : col([36, 26, 46], 3));
+    brBox(c, 32, 48, 5, 3, 5, (f) => col([36, 26, 46], 3));
+    brBox(c, 0, 20, 8, 12, 6, (f, x, y) => (f === 'front' && y === 6 && x > 0 && x < 7) ? [200, 160, 50] : col([88, 44, 128], 6));
+    brBox(c, 28, 20, 4, 10, 4, (f, x, y) => y < 6 ? col([76, 38, 112], 5) : col(skin, 5));
+    brBox(c, 44, 20, 10, 6, 8, (f, x, y) => col([74, 36, 108], 5));
+    MT.hw_witch = mk(c);
+  }
+  { // Werwolf: dunkelbraunes zotteliges Fell, rote Augen, helle Krallen und Zähne
+    const c = brCanvas(64, 64), fur = (f, x, y) => { const n = nz(11) + ((x * 7 + y * 3) % 5 === 0 ? -14 : 0); return [74 + n, 54 + n * 0.8, 44 + n * 0.6]; };
+    brBox(c, 0, 0, 7, 7, 7, (f, x, y) => { if (f === 'front') { if ((x === 1 || x === 5) && y === 2) return [255, 40, 20]; if (y === 4 && x >= 2 && x <= 4) return [30, 20, 18]; } if (f === 'top') return [48, 36, 30]; return fur(f, x, y); });
+    brBox(c, 0, 14, 4, 3, 5, (f, x, y) => (f === 'front' && y === 2 && x % 2 === 0) ? [244, 240, 224] : (f === 'front' && y === 0) ? [28, 22, 20] : fur(f, x, y));
+    brBox(c, 28, 0, 3, 3, 1, (f) => [58, 44, 36]);
+    brBox(c, 0, 24, 10, 14, 6, (f, x, y) => y > 10 && f === 'front' && x % 3 === 1 ? [110, 78, 66] : fur(f, x, y));
+    brBox(c, 32, 24, 4, 14, 4, (f, x, y) => y > 11 ? [236, 232, 214] : fur(f, x, y));
+    brBox(c, 0, 44, 4, 12, 4, (f, x, y) => y > 9 ? [30, 24, 22] : fur(f, x, y));
+    brBox(c, 48, 0, 3, 3, 10, fur);
+    MT.hw_werewolf = mk(c);
+  }
+  { // Vogelscheuche: Stroh, Sackleinen-Gesicht mit Nähten, Flickenhemd
+    const c = brCanvas(64, 64), straw = (f, x, y) => { const n = nz(10); return [208 + n, 176 + n, 80 + n * 0.6]; }, sack = (f, x, y) => { const n = nz(7) + (x % 3 === 0 ? -8 : 0); return [176 + n, 146 + n, 100 + n]; };
+    brBox(c, 0, 0, 8, 8, 8, (f, x, y) => { if (f === 'front') { if ((x === 1 || x === 2 || x === 5 || x === 6) && (y === 3 || y === 4)) return (x === 1 || x === 5) ? [20, 14, 10] : sack(f, x, y); if (y === 6 && x >= 1 && x <= 6) return x % 2 ? [40, 24, 16] : sack(f, x, y); } return sack(f, x, y); });
+    brBox(c, 0, 32, 14, 1, 14, straw); brBox(c, 0, 48, 8, 5, 8, (f, x, y) => y === 3 && f !== 'top' ? [124, 56, 30] : straw(f, x, y));
+    brBox(c, 16, 16, 8, 12, 4, (f, x, y) => ((x < 3 && y < 5) || (x > 4 && y > 6)) ? col([150, 60, 40], 6) : (x + y) % 6 === 0 ? [60, 90, 150] : [186 + nz(8), 160 + nz(8), 90]);
+    brBox(c, 40, 16, 4, 12, 4, (f, x, y) => y > 9 ? straw(f, x, y) : col([186, 160, 96], 6));
+    brBox(c, 0, 16, 4, 12, 4, (f, x, y) => y > 9 ? straw(f, x, y) : col([96, 74, 52], 6));
+    brBox(c, 32, 0, 2, 30, 2, (f) => col([104, 76, 46], 6));
+    MT.hw_scarecrow = mk(c);
+  }
+  { // Sensenmann: schwarze Kutte, leuchtend blaue Augen im Dunkel, Knochenhände, Sense
+    const c = brCanvas(64, 64), robe = (f, x, y) => { const n = nz(4); return [20 + n, 16 + n, 28 + n * 1.5]; };
+    brBox(c, 0, 0, 8, 8, 8, (f, x, y) => { if (f === 'front') { if ((x === 2 || x === 5) && (y === 4 || y === 5)) return [90, 210, 255]; if (x >= 1 && x <= 6 && y >= 2 && y <= 6) return [6, 5, 10]; } return robe(f, x, y); });
+    brBox(c, 0, 16, 10, 22, 6, (f, x, y, w, h) => (f !== 'top' && f !== 'bottom' && y >= h - 2 && (x + y) % 3 === 0) ? [0, 0, 0, 0] : (f === 'front' && x === 5 && y > 2 && y < 18 ? [40, 30, 56] : robe(f, x, y)));
+    brBox(c, 32, 0, 3, 12, 3, (f, x, y) => y > 8 ? [228, 224, 206] : robe(f, x, y));
+    brBox(c, 48, 0, 1, 24, 1, (f) => col([92, 66, 40], 5));
+    brBox(c, 0, 48, 10, 1, 2, (f) => col([196, 202, 214], 6));
+    brBox(c, 24, 48, 4, 1, 2, (f) => col([196, 202, 214], 6));
+    MT.hw_reaper = mk(c);
+  }
+  { // Schwarze Katze: tiefschwarz, grün leuchtende Augen
+    const c = brCanvas(64, 32), fur = (f, x, y) => { const n = nz(4); return [20 + n, 18 + n, 24 + n]; };
+    brBox(c, 0, 0, 5, 4, 5, (f, x, y) => (f === 'front' && (x === 0 || x === 4) && y === 1) ? [120, 255, 90] : (f === 'front' && x === 2 && y === 2 ? [190, 90, 110] : fur(f, x, y)));
+    brBox(c, 20, 0, 4, 4, 10, fur); brBox(c, 0, 12, 2, 6, 2, fur); brBox(c, 8, 12, 2, 8, 2, fur); brBox(c, 22, 14, 1, 2, 1, (f) => [190, 90, 110]);
+    MT.hw_cat = mk(c);
+  }
+}
+function genHalloweenImages() {
+  const I = ATLAS.images, r = mulberry32(4242);
+  const ic = (name, fn) => { const c = brCanvas(16, 16), x = c.getContext('2d'); fn(x, (xx, yy, col, w, h) => { x.fillStyle = col; x.fillRect(xx, yy, w || 1, h || 1); }); I['item/gen_' + name] = c; };
+  ic('candy_corn', (x, p) => { for (let i = 0; i < 3; i++) { const ox = 2 + i * 4, oy = 4 + (i % 2) * 2; for (let yy = 0; yy < 8; yy++) { const hw = Math.max(1, 3 - (yy >> 1)); for (let xx = -hw + 1; xx <= hw; xx++) p(ox + 1 + xx, oy + yy, yy < 3 ? '#f7f2e4' : yy < 5 ? '#ffb02e' : '#ffd84a'); } } });
+  ic('lollipop', (x, p) => { for (let yy = 9; yy < 15; yy++) p(8, yy, '#e8e0cc'); for (let yy = 1; yy < 9; yy++) for (let xx = 3; xx < 13; xx++) { const dx = xx - 7.5, dy = yy - 4.5, d = Math.hypot(dx, dy); if (d > 4.4) continue; const a = (Math.atan2(dy, dx) + d * 0.9 + 12) % (Math.PI / 2); p(xx, yy, a < Math.PI / 4 ? '#ff6a1a' : '#6a2bc2'); } p(6, 3, '#fff3'); });
+  ic('chocolate_bar', (x, p) => { for (let yy = 2; yy < 14; yy++) for (let xx = 4; xx < 12; xx++) p(xx, yy, ((xx + yy) & 1) ? '#5a3418' : '#4a2a12'); for (let xx = 4; xx < 12; xx++) { p(xx, 8, '#2e1a0a'); } p(7, 2, '#2e1a0a'); p(7, 3, '#2e1a0a'); for (let yy = 2; yy < 14; yy++) p(7, yy, '#2e1a0a'); for (let yy = 10; yy < 14; yy++) for (let xx = 3; xx < 13; xx++) p(xx, yy, yy === 10 ? '#d8d8e0' : '#c0c0cc'); p(5, 11, '#d83a2a'); p(6, 11, '#d83a2a'); p(9, 11, '#f0b830'); });
+  ic('caramel_apple', (x, p) => { for (let yy = 4; yy < 13; yy++) for (let xx = 3; xx < 13; xx++) { const d = Math.hypot(xx - 7.5, yy - 8.5); if (d > 4.8) continue; p(xx, yy, yy < 7 ? '#8a4b1c' : d > 4 ? '#6a3412' : '#b8631f'); } p(5, 6, '#e8a860'); p(6, 6, '#e8a860'); p(8, 1, '#7a5a2a'); p(8, 2, '#7a5a2a'); p(8, 3, '#7a5a2a'); p(9, 2, '#5a9a2a'); p(10, 1, '#5a9a2a'); for (let yy = 12; yy < 15; yy++) p(7, yy, '#c8b890'); });
+  ic('candy_bucket', (x, p) => { for (let yy = 5; yy < 14; yy++) for (let xx = 3; xx < 13; xx++) { const w = 4 + (yy - 5) * 0.12; if (Math.abs(xx - 7.5) > w) continue; p(xx, yy, (xx + yy) & 1 ? '#f27a14' : '#ea6a08'); } for (let xx = 3; xx < 13; xx++) p(xx, 5, '#ffa040'); p(5, 8, '#2a1608'); p(6, 8, '#2a1608'); p(9, 8, '#2a1608'); p(10, 8, '#2a1608'); for (let xx = 5; xx < 11; xx++) p(xx, 11, '#2a1608'); for (let xx = 3; xx < 13; xx++) { p(xx, 3 + (xx === 3 || xx === 12 ? 1 : 0), '#4a3820'); } p(3, 4, '#4a3820'); p(12, 4, '#4a3820'); for (let xx = 5; xx < 11; xx++) p(xx, 2, '#4a3820'); p(5, 3, '#4a3820'); p(10, 3, '#4a3820'); p(6, 4, '#ff3a5a'); p(8, 4, '#3ad0ff'); p(10, 4, '#ffe03a'); });
+  ic('ectoplasm', (x, p) => { for (let yy = 3; yy < 14; yy++) for (let xx = 3; xx < 13; xx++) { const d = Math.hypot(xx - 7.5, (yy - 8.5) * 0.9 + Math.sin(xx) * 0.4); if (d > 4.6) continue; p(xx, yy, d > 3.6 ? '#4ec98a' : d > 2 ? '#8ef0b8' : '#d8fff0'); } p(6, 6, '#fff'); p(5, 7, '#fff'); });
+  ic('witch_brew', (x, p) => { for (let yy = 7; yy < 14; yy++) for (let xx = 3; xx < 13; xx++) { const d = Math.hypot(xx - 7.5, yy - 10.5); if (d > 4.3) continue; p(xx, yy, yy < 9 ? '#9a7aff' : '#6a3ad8'); } p(6, 3, '#d8dce6'); p(7, 3, '#d8dce6'); p(8, 3, '#d8dce6'); p(9, 3, '#d8dce6'); for (let yy = 4; yy < 7; yy++) { p(6, yy, '#c8ccd6'); p(9, yy, '#c8ccd6'); } p(7, 2, '#8a5a2a'); p(8, 2, '#8a5a2a'); p(5, 9, '#d8fff0'); p(9, 12, '#e8a8ff'); });
+  ic('reaper_scythe', (x, p) => { for (let i = 0; i < 14; i++) p(3 + (i >> 1), 14 - i, '#7a5a30'); for (let i = 0; i < 8; i++) { p(8 + i, 1 + (i * i >> 4), '#d2d8e6'); p(8 + i, 2 + (i * i >> 4), '#9aa2b8'); } p(7, 3, '#d2d8e6'); p(6, 4, '#8a5a2a'); });
+  ic('spooky_pie', (x, p) => { for (let yy = 7; yy < 13; yy++) for (let xx = 2; xx < 14; xx++) { const d = Math.hypot((xx - 7.5) / 5.8, (yy - 10) / 3); if (d > 1) continue; p(xx, yy, yy < 9 ? '#e08a20' : '#a85a14'); } for (let xx = 4; xx < 12; xx++) p(xx, 8, '#f6c070'); p(6, 9, '#2a1608'); p(9, 9, '#2a1608'); p(7, 11, '#2a1608'); p(8, 11, '#2a1608'); });
+}
+
 ATLAS.promise = Promise.all(Object.keys(PACK).map((k) => loadImage(PACK[k]).then((img) => { ATLAS.images[k] = img; })))
   .then(() => {
-    genBackroomsImages();
+    genBackroomsImages(); genHalloweenImages();
     paintAtlas();
     for (let i = 0; i < 10; i++) {
       const t = new THREE.Texture(ATLAS.images['block/destroy_stage_' + i]);
@@ -1804,7 +1953,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.32';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-10-05.33';            // Spielversion (nur Anzeige)
 // Mehrspieler-Kompatibilität: NUR wenn sich das Netzwerkformat oder die Welt-Speicherung unverträglich ändert, MP_PROTO erhöhen. Normale Versionen (neue Blöcke, Rezepte, Mobs, Befehle …) vertragen sich untereinander –
 // dafür gibt es keine Warnung mehr. Clients ohne MP_PROTO (vor 2026-10-05.17) gelten ab MP_MIN_VER als kompatibel.
 const MP_PROTO = 1, MP_MIN_VER = '2026-10-05.1';
@@ -2377,12 +2526,88 @@ class TerrainGen {
       for (let k = 0; k < len; k++) set(lx + k - 2, h + 1, lz, lg);
     }
   }
+  // ===== Halloween-Deko beim Erzeugen neuer Chunks (nur solange das Event läuft): Friedhöfe, Spukhäuser, Kürbisfelder, Gräber, tote Bäume =====
+  hwDecor(cx, cz, data, gi0, seed) {
+    const S = ID, Yo = this.Yo, out = this.structOut || (this.structOut = []);
+    const R = (k) => hash2(cx, cz, seed + 8800 + k), H = (x, z) => genH[gi0(x, z)];
+    const setb = (x, y, z, id) => { y += Yo; if (x >= 0 && x < CS && z >= 0 && z < CS && y >= 1 && y < CH) data[x + (z << 4) + (y << 8)] = id; };
+    const getb = (x, y, z) => { y += Yo; return (x >= 0 && x < CS && z >= 0 && z < CS && y >= 0 && y < CH) ? data[x + (z << 4) + (y << 8)] : 0; };
+    const fill = (x0, y0, z0, sx, sy, sz, id) => { for (let y = y0; y < y0 + sy; y++) for (let z = z0; z < z0 + sz; z++) for (let x = x0; x < x0 + sx; x++) setb(x, y, z, id); };
+    const grassAt = (x, z) => x >= 1 && x < 15 && z >= 1 && z < 15 && getb(x, H(x, z), z) === GRASS && getb(x, H(x, z) + 1, z) === AIR;
+    const rec = (kind, x, y, z, extra) => out.push(Object.assign({ kind, key: (cx * CS + x) + ',' + (y + Yo) + ',' + (cz * CS + z), x: cx * CS + x, y: y + Yo, z: cz * CS + z, mobs: [], spawned: false }, extra || {}));
+    const flat = (ox, oz, sx, sz) => { let mn = 999, mx = 0; for (let z = oz - 1; z <= oz + sz; z++) for (let x = ox - 1; x <= ox + sx; x++) { const h = H(x, z); if (h < mn) mn = h; if (h > mx) mx = h; } return (mx - mn <= 2 && mn >= SEA + 2 && mx <= (this.smooth ? 66 : 48)) ? mx : -1; };
+    const grave = (x, z, base) => { fill(x, base + 1, z, 1, 2, 1, S.cobble_wall); setb(x, base, z + 1, S.podzol); if (R(x * 17 + z * 5) < 0.3) setb(x + 1, base + 1, z + 1, S.dead_bush); if (R(x * 3 + z * 11 + 50) < 0.25) setb(x, base + 1, z + 1, S.candle); };
+    const okTop = new Set([GRASS, DIRT, SAND, STONE, S.podzol, S.coarse_dirt, S.gravel]);
+    const clearOf = (ox, oz, sx, sz, hgt) => {                                      // nur auf freiem, natürlichem Gelände bauen: keine Bäume, Strukturen oder Wasser im Weg
+      for (let z = oz - 1; z <= oz + sz; z++) for (let x = ox - 1; x <= ox + sx; x++) {
+        if (x < 0 || x >= CS || z < 0 || z >= CS) continue;
+        const h = H(x, z); if (!okTop.has(getb(x, h, z))) return false;
+        for (let y = h + 1; y <= h + hgt; y++) { const b = getb(x, y, z); if (b !== AIR && !(BLOCKS[b] && BLOCKS[b].plant)) return false; }
+      }
+      return true;
+    };
+    if (this.curEdits && this.curEdits.m && this.curEdits.m.size) return;           // dort haben Spieler schon gebaut: nichts hinzufügen
+    const sr = R(0), free = !out.length;
+    if (sr < 0.035 && free) {                                                      // Friedhof: Zaun, Gruft mit Truhe, Gräberreihen
+      const ox = 2, oz = 2, base = flat(ox, oz, 12, 12);
+      if (base > 0 && clearOf(ox, oz, 12, 12, 8)) {
+        fill(ox - 1, base + 1, oz - 1, 14, 8, 14, AIR);
+        for (let z = 0; z < 12; z++) for (let x = 0; x < 12; x++) { for (let y = H(ox + x, oz + z) + 1; y <= base; y++) setb(ox + x, y, oz + z, DIRT); setb(ox + x, base, oz + z, (x * 7 + z * 3) % 5 === 0 ? S.podzol : S.coarse_dirt); }
+        for (let i = 0; i < 12; i++) for (const [x, z] of [[i, 0], [i, 11], [0, i], [11, i]]) { if (z === 11 && (x === 5 || x === 6)) continue; setb(ox + x, base + 1, oz + z, S.iron_bars); setb(ox + x, base + 2, oz + z, i % 3 === 0 ? S.iron_bars : AIR); }
+        setb(ox + 4, base + 1, oz + 11, S.cobbled_deepslate_wall); setb(ox + 4, base + 2, oz + 11, S.cobbled_deepslate_wall); setb(ox + 4, base + 3, oz + 11, S.lantern);
+        setb(ox + 7, base + 1, oz + 11, S.cobbled_deepslate_wall); setb(ox + 7, base + 2, oz + 11, S.cobbled_deepslate_wall); setb(ox + 7, base + 3, oz + 11, S.lantern);
+        // Gruft
+        fill(ox + 3, base + 1, oz + 1, 6, 4, 5, S.stone_bricks); fill(ox + 4, base + 1, oz + 2, 4, 3, 3, AIR); fill(ox + 3, base + 5, oz + 1, 6, 1, 5, S.stone_bricks_slab);
+        for (const [x, z] of [[3, 1], [8, 1], [3, 5], [8, 5]]) fill(ox + x, base + 1, oz + z, 1, 4, 1, S.mossy_bricks);
+        setb(ox + 5, base + 1, oz + 5, AIR); setb(ox + 5, base + 2, oz + 5, AIR); setb(ox + 6, base + 1, oz + 5, AIR); setb(ox + 6, base + 2, oz + 5, AIR);
+        setb(ox + 5, base + 1, oz + 2, LOOT_CHEST_IDS.dungeon[2]); setb(ox + 7, base + 3, oz + 2, S.cobweb); setb(ox + 4, base + 3, oz + 4, S.cobweb); setb(ox + 7, base + 1, oz + 4, S.candle); setb(ox + 4, base + 1, oz + 4, S.candle);
+        for (const z of [7, 9]) for (let i = 0; i < 3; i++) if (R(z * 31 + i) < 0.9) grave(ox + (z === 7 ? 2 : 3) + i * 3, oz + z, base);
+        setb(ox + 1, base + 1, oz + 1, S.jack_o_lantern); setb(ox + 10, base + 1, oz + 1, S.jack_o_lantern); setb(ox + 10, base + 1, oz + 10, S.pumpkin);
+        rec('graveyard', ox + 5, base + 1, oz + 8, { mobs: ['hw_skeleton', 'hw_ghost', 'hw_ghost'] });
+      }
+    } else if (sr < 0.05 && free) {                                                // Spukhaus: 2 Stockwerke, Spinnweben, Kerzen, Truhe
+      let ox = 3, oz = 3, base = -1; const sx = 9, sz = 9;
+      for (const [tx, tz] of [[3, 3], [4, 4], [2, 5], [5, 2], [4, 2]]) { const b0 = flat(tx, tz, sx, sz); if (b0 > 0 && clearOf(tx, tz, sx, sz, 14)) { ox = tx; oz = tz; base = b0; break; } }
+      if (base > 0) {
+        fill(ox - 1, base + 1, oz - 1, sx + 2, 14, sz + 2, AIR);
+        for (let z = 0; z < sz; z++) for (let x = 0; x < sx; x++) for (let y = H(ox + x, oz + z) + 1; y <= base; y++) setb(ox + x, y, oz + z, S.cobble);
+        fill(ox, base, oz, sx, 1, sz, S.dark_oak_planks);
+        for (let y = 1; y <= 7; y++) for (let x = 0; x < sx; x++) for (let z = 0; z < sz; z++) if (x === 0 || x === sx - 1 || z === 0 || z === sz - 1) setb(ox + x, base + y, oz + z, y <= 3 ? ((x + z + y) % 4 === 0 ? S.cracked_bricks : S.mossy_bricks) : S.dark_oak_planks);
+        for (const [x, z] of [[0, 0], [sx - 1, 0], [0, sz - 1], [sx - 1, sz - 1]]) fill(ox + x, base, oz + z, 1, 8, 1, S.dark_oak_log);
+        fill(ox + 1, base + 4, oz + 1, sx - 2, 1, sz - 2, S.dark_oak_planks);                                          // Zwischendecke
+        setb(ox + 1, base + 4, oz + 1, AIR); for (let y = 1; y <= 7; y++) setb(ox + 1, base + y, oz + 1, LADDER_IDS[0]);
+        for (let k = 0; k < 4; k++) fill(ox - 1 + k, base + 8 + k, oz - 1 + k, sx + 2 - 2 * k, 1, sz + 2 - 2 * k, S.spruce_planks);   // Dach
+        fill(ox + 3, base + 12, oz + 3, 3, 1, 3, S.spruce_planks);
+        for (const [x, z] of [[2, 0], [6, 0], [0, 3], [0, 6], [sx - 1, 3], [sx - 1, 6], [2, sz - 1], [6, sz - 1]]) { setb(ox + x, base + 2, oz + z, GLASS); setb(ox + x, base + 6, oz + z, GLASS); }
+        const dm = DOOR_FAMS['spruce'].ids; setb(ox + 4, base + 1, oz + sz - 1, dm[4]); setb(ox + 4, base + 2, oz + sz - 1, dm[12]);
+        setb(ox + 3, base + 1, oz + sz, S.jack_o_lantern); setb(ox + 5, base + 1, oz + sz, S.jack_o_lantern); setb(ox + 7, base + 1, oz + sz, S.pumpkin);
+        setb(ox + 7, base + 1, oz + 1, LOOT_CHEST_IDS.dungeon[2]); setb(ox + 6, base + 1, oz + 1, S.bookshelf); setb(ox + 7, base + 2, oz + 1, S.bookshelf); setb(ox + 2, base + 3, oz + 6, S.cobweb); setb(ox + 7, base + 3, oz + 3, S.cobweb); setb(ox + 1, base + 6, oz + 7, S.cobweb);
+        setb(ox + 4, base + 1, oz + 4, S.candle); setb(ox + 6, base + 5, oz + 6, S.candle); setb(ox + 2, base + 5, oz + 2, S.lantern); setb(ox + 7, base + 5, oz + 7, S.cobweb);
+        rec('haunted', ox + 4, base + 1, oz + 4, { mobs: ['hw_ghost', 'hw_ghost', 'hw_witch'] });
+      }
+    } else if (sr < 0.2) {                                                         // Kürbisfeld
+      const px0 = 3 + ((R(1) * 10) | 0), pz0 = 3 + ((R(2) * 10) | 0), n = 5 + ((R(3) * 6) | 0);
+      for (let i = 0; i < n; i++) { const x = px0 + Math.round((R(10 + i) - 0.5) * 6), z = pz0 + Math.round((R(30 + i) - 0.5) * 6); if (grassAt(x, z)) setb(x, H(x, z) + 1, z, R(60 + i) < 0.3 ? S.jack_o_lantern : S.pumpkin); }
+      if (grassAt(px0, pz0)) { setb(px0, H(px0, pz0) + 1, pz0, S.hay); if (R(4) < 0.5) rec('scarecrowfield', px0, H(px0, pz0) + 2, pz0 + 1, { mobs: ['hw_scarecrow'] }); }
+    } else if (sr < 0.33) {                                                        // einzelne Gräber
+      const n = 1 + ((R(5) * 3) | 0);
+      for (let i = 0; i < n; i++) { const x = 3 + ((R(70 + i) * 10) | 0), z = 3 + ((R(80 + i) * 10) | 0); if (grassAt(x, z) && grassAt(x, z + 1)) grave(x, z, H(x, z)); }
+    } else if (sr < 0.4) {                                                         // toter Baum mit Spinnweben
+      const x = 4 + ((R(6) * 8) | 0), z = 4 + ((R(7) * 8) | 0);
+      if (grassAt(x, z)) {
+        const b = H(x, z), h = 5 + ((R(8) * 3) | 0); setb(x, b, z, S.podzol);
+        for (let y = 1; y <= h; y++) setb(x, b + y, z, S.dark_oak_log);
+        for (const [dx, dz, y] of [[1, 0, h - 1], [-1, 0, h - 2], [0, 1, h - 3], [0, -1, h]]) { setb(x + dx, b + y, z + dz, S.dark_oak_log); setb(x + dx * 2, b + y + 1, z + dz * 2, S.dark_oak_log); if (R(90 + y + dx * 7) < 0.7) setb(x + dx * 2, b + y, z + dz * 2, S.cobweb); }
+      }
+    }
+  }
   // Alle Strukturen eines Chunks bauen. Yo = Höhenversatz (tiefe Welten: das Gelände wurde um Yo angehoben; alle Plan-Höhen bleiben „alt“)
   placeStructures(cx, cz, data, gi0, Yo) {
     const seed = this.seed | 0; this.Yo = Yo; this.structOut = [];
     if (Yo && this.special && (this.special === 'paris' ? cx >= -7 && cx <= 6 && cz >= -9 && cz <= 9 : cx >= -4 && cx <= 4 && cz >= -4 && cz <= 5)) { this.Yo = 0; return; }       // Seed-Easteregg (67 / Steve / Paris) nicht überbauen
     if (this.big) { if (!this.bigStructures(cx, cz, data, gi0)) this.structures(cx, cz, data, gi0, seed); this.extras(cx, cz, data, gi0, seed); } else this.structures(cx, cz, data, gi0, seed);
     { const sc = strongholdChunkFor(seed); if (cx === sc[0] && cz === sc[1]) this.buildStronghold(data, gi0, seed); }
+    if (HW.on && !this.special) this.hwDecor(cx, cz, data, gi0, seed);
     this.Yo = 0;
   }
   structures(cx, cz, data, gi0, seed) {
@@ -2704,7 +2929,7 @@ class TerrainGen {
       }
     }
 
-    if (!defer) this.placeStructures(cx, cz, data, gi0, 0);
+    this.curEdits = edits; if (!defer) this.placeStructures(cx, cz, data, gi0, 0);
     if (this.special) this.stamp(cx, cz, data, gi0);
 
     // Spieler-Änderungen anwenden
@@ -2982,7 +3207,7 @@ class DeepGen {
       }
     }
     if (anyProt) for (let col = 0; col < LAYER; col++) if (prot[col]) for (let y = hc[col] - 12; y <= hc[col]; y++) { const i = col + (y << 8), b = data[i]; if (b === AIR || b === WATER || b === LAVA) data[i] = STONE; }   // keine Löcher unter Bauplätzen
-    if (B.special) B.stamp(cx, cz, data, gi0, YO);                                  // Seed-Eastereggs: nach den Höhlen erneut aufstempeln (nichts wird angeschnitten)
+    B.curEdits = edits; if (B.special) B.stamp(cx, cz, data, gi0, YO);                                  // Seed-Eastereggs: nach den Höhlen erneut aufstempeln (nichts wird angeschnitten)
     B.placeStructures(cx, cz, data, gi0, YO); this.structOut = B.structOut.slice();
     this.deepStructures(cx, cz, data, hc);
     if (edits) for (const [idx, id] of edits.m) data[idx] = safeBlock(id);
@@ -5009,6 +5234,7 @@ function useItem(pressed) {
   }
   if (world.dim === 2 && I && (I.lighter || I.door || I.key === 'bucket' || I.fills !== undefined || (!I.food && !I.potion && !I.splash && !I.rod && !I.clock && !I.compass && !I.bow && !I.armor && !I.spyglass))) { if (pressed) brLockMsg(); return; }
   if (I) {
+    if (I.candyBucket) { if (pressed) hwOpenBucket(slot); return; }
     if (I.food) {                                          // Essen: gedrückt halten, bis aufgegessen
       if (pressed && !isCreative() && (P.hunger < 20 || I.always)) startEat(slot);
       return;
@@ -6502,6 +6728,12 @@ recipe('Bauteile', ID.composter, 1, [[ID.oak_slab, 7]], 'table');
 recipe('Nahrung', IID.sugar, 1, [[ID.sugar_cane, 1]]);
 recipe('Nahrung', IID.cookie, 4, [[IID.wheat, 2], [IID.sugar, 1]]);
 recipe('Nahrung', IID.pumpkin_pie, 1, [[ID.pumpkin, 1], [IID.sugar, 1], [IID.egg, 1]]);
+recipe('Nahrung', IID.candy_corn, 4, [[IID.sugar, 1], [IID.wheat, 1]]);
+recipe('Nahrung', IID.lollipop, 2, [[IID.sugar, 2], [IID.stick, 1]]);
+recipe('Nahrung', IID.chocolate_bar, 2, [[IID.sugar, 1], [IID.cookie, 1], [IID.milk_bucket || IID.egg, 1]]);
+recipe('Nahrung', IID.caramel_apple, 1, [[IID.apple, 1], [IID.sugar, 2], [IID.stick, 1]]);
+recipe('Nahrung', IID.spooky_pie, 1, [[IID.pumpkin_pie, 1], [IID.candy_corn, 4]]);
+recipe('Nahrung', IID.candy_bucket, 1, [[IID.candy_corn, 6], [IID.lollipop, 2], [IID.chocolate_bar, 1], [ID.pumpkin, 1]]);
 recipe('Nahrung', IID.golden_apple, 1, [[IID.apple, 1], [IID.gold_ingot, 8]], 'table');
 recipe('Nahrung', IID.golden_carrot, 1, [[IID.carrot, 1], [IID.gold_nugget, 8]], 'table');
 recipe('Nahrung', IID.glistering_melon, 1, [[IID.melon_slice, 1], [IID.gold_nugget, 8]], 'table');
@@ -6836,7 +7068,7 @@ const mobGroup = new THREE.Group(); scene.add(mobGroup);
 // Mob-Texturen aus dem Pack (Standard-Layouts 64x32 / 64x64), nach dem Laden erzeugt
 const MT = {};
 ATLAS.onReady(() => {
-  genBackroomsMobTextures(MT);
+  genBackroomsMobTextures(MT); genHalloweenMobTextures(MT);
   const mk = (name) => { const t = new THREE.Texture(ATLAS.images[name]); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; t.needsUpdate = true; return t; };
   MT.pig = mk('entity/pig/temperate_pig'); MT.zombie = mk('entity/zombie/zombie'); MT.husk = mk('entity/zombie/husk');
   MT.cow = mk('entity/cow/temperate_cow'); MT.sheep = mk('entity/sheep/sheep'); MT.sheepWool = mk('entity/sheep/sheep_wool');
@@ -6921,6 +7153,8 @@ function boxGeo(w, h, d, u, v, tw, th, inflate) {
 
 // Baut das Modell eines Mobs (Maße in Pixel, Modell blickt nach +z). mats: Liste { m, tint } für Beleuchtung/Treffer-Blinken
 function buildMobModel(type, mats, tint, ex) {
+  if (HW_NEWMODELS.has(type)) return buildHwModel(type, mats);
+  const tx = type; type = MOBBASE[type] || type;                       // Halloween-Varianten teilen das Modell, haben aber eigene Textur (tx)
   const g = new THREE.Group(), legs = [], arms = [], X = { wool: [], wings: [] };
   const mk = (tex, t) => { const m = new THREE.MeshBasicMaterial({ map: MT[tex], alphaTest: 0.1 }); mats.push({ m, tint: t || [1, 1, 1] }); return m; };
   const px = (n) => n / 16;
@@ -6966,14 +7200,15 @@ function buildMobModel(type, mats, tint, ex) {
     part(boxGeo(1, 4, 6, 24, 13, 64, 32), m, -3.5, 9.5, 0); part(boxGeo(1, 4, 6, 24, 13, 64, 32), m, 3.5, 9.5, 0);
     legs.push(limb(boxGeo(3, 5, 3, 26, 0, 64, 32), m, -2, 5, 0, 2.5), limb(boxGeo(3, 5, 3, 26, 0, 64, 32), m, 2, 5, 0, 2.5));
   } else if (type === 'zombie' || type === 'husk') {
-    const m = mk(type);
-    part(boxGeo(8, 8, 8, 0, 0, 64, 64), m, 0, 28, 0);
+    const m = mk(tx);
+    if (tx === 'hw_zombie') part(boxGeo(10, 10, 10, 0, 32, 64, 64), m, 0, 28.5, 0);
+    else part(boxGeo(8, 8, 8, 0, 0, 64, 64), m, 0, 28, 0);
     part(boxGeo(8, 12, 4, 16, 16, 64, 64), m, 0, 18, 0);
     legs.push(limb(boxGeo(4, 12, 4, 0, 16, 64, 64), m, -2, 12, 0, 6), limb(boxGeo(4, 12, 4, 0, 16, 64, 64), m, 2, 12, 0, 6));
     for (const [x, u, v] of [[-6, 40, 16], [6, 40, 16]]) { const a = limb(boxGeo(4, 12, 4, u, v, 64, 64), m, x, 22, 0, 4); a.rotation.x = -1.45; arms.push(a); }
   } else if (type === 'skeleton' || type === 'wither_skeleton') {
-    const m = mk(type); if (type === 'wither_skeleton') g.scale.setScalar(1.2);
-    part(boxGeo(8, 8, 8, 0, 0, 64, 32), m, 0, 28, 0);
+    const m = mk(tx); if (type === 'wither_skeleton') g.scale.setScalar(1.2);
+    part(boxGeo(8, 8, 8, 0, 0, 64, 32), m, 0, 28, 0); if (tx === 'hw_skeleton') part(boxGeo(6, 7, 6, 32, 0, 64, 32), m, 0, 35.5, 0);
     part(boxGeo(8, 12, 4, 16, 16, 64, 32), m, 0, 18, 0);
     legs.push(limb(boxGeo(2, 12, 2, 0, 16, 64, 32), m, -2, 12, 0, 6), limb(boxGeo(2, 12, 2, 0, 16, 64, 32), m, 2, 12, 0, 6));
     for (const x of [-5, 5]) { const a = limb(boxGeo(2, 12, 2, 40, 16, 64, 32), m, x, 22, 0, 4); a.rotation.x = -1.3; arms.push(a); }
@@ -6984,12 +7219,12 @@ function buildMobModel(type, mats, tint, ex) {
       bow.position.set(0, px(-9), 0); bow.scale.setScalar(0.85); arms[1].add(bow);
     }
   } else if (type === 'creeper') {
-    const m = mk('creeper');
+    const m = mk(tx);
     part(boxGeo(8, 8, 8, 0, 0, 64, 32), m, 0, 22, 0);
     part(boxGeo(8, 12, 4, 16, 16, 64, 32), m, 0, 12, 0);
     for (const [x, z] of [[-2, 4], [2, 4], [-2, -4], [2, -4]]) legs.push(limb(boxGeo(4, 6, 4, 0, 16, 64, 32), m, x, 6, z, 3));
   } else if (type === 'spider') {
-    const m = mk('spider');
+    const m = mk(tx);
     part(boxGeo(6, 6, 6, 0, 0, 64, 32), m, 0, 8, 0);
     part(boxGeo(8, 8, 8, 32, 4, 64, 32), m, 0, 8, 7);
     part(boxGeo(10, 8, 12, 0, 12, 64, 32), m, 0, 8, -9);
@@ -7096,7 +7331,7 @@ function buildMobModel(type, mats, tint, ex) {
     part(boxGeo(8, 8, 8, 0, 0, 64, 32), outer, 0, 4, 0);
     g.scale.setScalar(Math.max(1, ex | 0));
   } else if (type === 'bat') {
-    const m = mk('bat');
+    const m = mk(tx);
     part(boxGeo(6, 12, 6, 0, 16, 64, 64), m, 0, 8, 0).rotation.x = R90;
     part(boxGeo(6, 6, 6, 0, 0, 64, 64), m, 0, 8.5, 8);
     part(boxGeo(3, 4, 1, 24, 0, 64, 64), m, -2, 13, 8); part(boxGeo(3, 4, 1, 24, 0, 64, 64), m, 2, 13, 8);
@@ -7278,7 +7513,7 @@ class Mob {
     const T = MOBTYPES[type];
     if (mid === undefined && mp.on) { mid = mp.id + '-' + (++mp.mobSeq); mp.mobsById.set(mid, this); }      // eindeutige ID für die Synchronisation
     this.mid = mid;
-    this.type = type; this.kind = T.kind; this.T = T;
+    this.type = type; this.base = MOBBASE[type] || type; this.kind = T.kind; this.T = T;
     this.p = new THREE.Vector3(x, y, z); this.v = new THREE.Vector3();
     this.hw = T.hw; this.h = T.h; this.hp = T.hp; this.speed = T.speed; this.step = 0.6;
     if (ex === undefined) ex = type === 'sheep' ? (Math.random() * SHEEP_TINTS.length) | 0 : type === 'rabbit' ? (Math.random() * 3) | 0 : type === 'villager' ? (Math.random() * VILLAGER_JOBS.length) | 0 : type === 'horse' ? ((Math.random() * 7) | 0) << 3 : isSlime(type) ? 1 : 0;
@@ -7345,8 +7580,8 @@ class Mob {
     if (!this.T.big && this.type !== 'end_crystal') { this.v.x = dx / l * 5; this.v.z = dz / l * 5; this.v.y = 4.5; }
     if (this.type === 'wolf' && !this.tame) { this.angry = 40; this.syncEx(); }
     else if (this.kind === 'passive') { this.panic = 4; this.yaw = Math.atan2(dx, dz); }
-    if (this.type === 'spider') this.angry = 25;
-    if (this.type === 'creeper' && this.fuse > 0) this.fuse = Math.max(0, this.fuse - 0.3);
+    if (this.base === 'spider') this.angry = 25;
+    if (this.base === 'creeper' && this.fuse > 0) this.fuse = Math.max(0, this.fuse - 0.3);
     if (this.type === 'enderman') { this.angry = 90; if (Math.random() < 0.4) this.tele(Math.random() < 0.5); }
   }
   die() {
@@ -7722,7 +7957,7 @@ class Mob {
     return this.wander(dt, 0.7);
   }
   animExtras(dt) {                                                                 // reine Darstellung (Flügel, Schwanz, Hüpfen)
-    const X = this.model.X, g = this.model.g;
+    const X = this.model.X, g = this.model.g; if (X.tick) X.tick(dt, this);
     if (this.moving && (this.stepSnd = (this.stepSnd || 0) - dt) <= 0) { this.stepSnd = 0.38 + Math.random() * 0.12; if (((SND.mob[this.type] && SND.mob[this.type].step) || (VOICES[this.type] && VOICES[this.type].step)) && (this.p.x - P.p.x) ** 2 + (this.p.z - P.p.z) ** 2 < 196 && !(this.T.fly)) mobSay(this.type, 'step', this.p.x, this.p.y, this.p.z); }
     if (X.crystal) { this.age2 = (this.age2 || 0) + dt; X.crystal.rotation.y = this.age2 * 1.4; X.crystal.position.y = 34 / 16 + Math.sin(this.age2 * 2.2) * 0.14; X.crystalIn.rotation.y = -this.age2 * 2.2; X.crystalIn.rotation.x = 0.6 + Math.sin(this.age2 * 1.7) * 0.25; X.crystalMid.rotation.y = this.age2 * 1.9; X.crystalMid.rotation.z = Math.sin(this.age2 * 1.3) * 0.4;
       if ((this.glowT = (this.glowT || 0) - dt) <= 0) { this.glowT = 0.18; emitFx(this.p.x + (Math.random() - 0.5) * 0.8, this.p.y + 1.2 + Math.random(), this.p.z + (Math.random() - 0.5) * 0.8, new THREE.Color(1, 0.35, 0.9), 0, 0.5, 0, 0.8, 0, 1); } }
@@ -7745,7 +7980,7 @@ class Mob {
       X.tail.forEach((tl, i) => { const k = i + 1; tl.position.x = Math.sin(t * 1.5 - i * 0.55) * k * 0.2 * (ph === 'charge' ? 0.4 : 1) + (X.roll || 0) * -0.15 * k; tl.position.y = tl.userData.by + Math.sin(t * 1.2 - i * 0.5) * k * 0.05 + (X.pitch || 0) * k * 0.12; tl.rotation.y = Math.cos(t * 1.5 - i * 0.55) * 0.12; });
       X.legs.forEach((lg) => { const tuck = ph === 'perch' && D.landed ? 0 : lg.k; lg.pv.rotation.x += ((tuck + Math.sin(X.flapPh + lg.ph) * 0.08) - lg.pv.rotation.x) * Math.min(1, 4 * dt); });
     }
-    if (this.type === 'bat') { this.walk += dt * 16; const a = Math.sin(this.walk) * 0.9; X.wings.forEach((pv) => { pv.rotation.z = a; pv.userData.tip.rotation.z = a * 0.6; }); }
+    if (this.base === 'bat') { this.walk += dt * 16; const a = Math.sin(this.walk) * 0.9; X.wings.forEach((pv) => { pv.rotation.z = a; pv.userData.tip.rotation.z = a * 0.6; }); }
     else if (this.type === 'blaze') {
       const age = performance.now() / 50, R = X.rods; let f = age * Math.PI * -0.1;
       for (let i = 0; i < 12; i++) {
@@ -7781,14 +8016,14 @@ class Mob {
     let dy = this.tyaw - this.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); this.yaw += dy * k;
     if (this.moving) this.walk += dt * 8;
     const sw = this.moving ? Math.sin(this.walk) * 0.75 : 0, L = this.model.legs;
-    if (this.type === 'spider') L.forEach((pv) => { const u = pv.userData; pv.rotation.y = u.base + (this.moving ? Math.sin(this.walk * 1.4 + u.k * 1.6 + (u.side > 0 ? 0 : Math.PI)) * 0.35 : 0); });
+    if (this.base === 'spider') L.forEach((pv) => { const u = pv.userData; pv.rotation.y = u.base + (this.moving ? Math.sin(this.walk * 1.4 + u.k * 1.6 + (u.side > 0 ? 0 : Math.PI)) * 0.35 : 0); });
     else if (L.length === 4) { L[0].rotation.x = L[3].rotation.x = sw; L[1].rotation.x = L[2].rotation.x = -sw; }
     else if (L.length === 2) { L[0].rotation.x = sw; L[1].rotation.x = -sw; }
-    if (this.type === 'creeper') { const s = this.fuse > 0 ? 1 + Math.sin(this.fuse * 22) * 0.08 + this.fuse * 0.2 : 1; this.model.g.scale.set(s, s, s); }
+    if (this.base === 'creeper') { const s = this.fuse > 0 ? 1 + Math.sin(this.fuse * 22) * 0.08 + this.fuse * 0.2 : 1; this.model.g.scale.set(s, s, s); }
     this.animExtras(dt);
     if (this.flash > 0) this.flash -= dt;
     if ((this.sayT = (this.sayT === undefined ? 2 + Math.random() * 8 : this.sayT) - dt) <= 0) { this.sayT = 6 + Math.random() * 12; mobSay(this.type, 'idle', this.p.x, this.p.y, this.p.z); }
-    const white = this.type === 'creeper' && this.fuse > 0 && Math.floor(this.fuse * 8) % 2 === 0;
+    const white = this.base === 'creeper' && this.fuse > 0 && Math.floor(this.fuse * 8) % 2 === 0;
     for (const o of this.mats) {
       if (this.flash > 0) o.m.color.setRGB(light * o.tint[0], light * o.tint[1] * 0.35, light * o.tint[2] * 0.35);
       else if (white) o.m.color.setRGB(1, 1, 1); else o.m.color.setRGB(light * o.tint[0], light * o.tint[1], light * o.tint[2]);
@@ -7817,7 +8052,7 @@ class Mob {
         if (!this.noticed) { this.noticed = true; mobSay(this.type, 'angry', this.p.x, this.p.y, this.p.z); }
         face(); this.moving = pl.dist > this.hw + 0.6; spd = this.moving ? this.speed : 0;
         if (pl.dist < (this.hw + 0.9) && Math.abs(pl.dy) < 1.6 && this.cd <= 0) { this.cd = 1; this.strike(this.T.dmg || 3, pl); }
-      } else if (this.type === 'skeleton') {
+      } else if (this.base === 'skeleton') {
         face(); this.shootCd -= dt;
         if (pl.dist > 12) { this.moving = true; spd = this.speed; }
         else if (pl.dist < 6) { this.moving = true; spd = -this.speed * 0.8; }            // Abstand halten
@@ -7829,7 +8064,7 @@ class Mob {
           const blocked = raycastBlocks(o, d, L - 0.5);
           if (!blocked) { shootArrow(ex, eye, ez, this.tgt.x, this.tgt.y + 1.2, this.tgt.z); this.shootCd = 1.6 + Math.random(); } else this.shootCd = 0.5;
         }
-      } else if (this.type === 'spider') {
+      } else if (this.base === 'spider') {
         const aggressive = env.dayF < 0.5 || this.angry > 0;
         this.angry -= dt;
         if (aggressive) {
@@ -7837,7 +8072,7 @@ class Mob {
           if (pl.dist > 2.5 && pl.dist < 5 && this.onGround && this.cd <= 0) { this.v.y = 6.5; this.v.x = pl.dx / pl.dist * 7; this.v.z = pl.dz / pl.dist * 7; this.cd = 1.5; }
           if (pl.dist < 1.6 && Math.abs(pl.dy) < 1.5 && this.cd <= 0) { this.cd = 0.9; this.strike(2, pl); }
         } else { this.timer -= dt; if (this.timer <= 0) { this.timer = 2 + Math.random() * 3; this.moving = Math.random() < 0.5; this.yaw = Math.random() * 6.28; } if (this.moving) spd = this.speed * 0.5; }
-      } else if (this.type === 'creeper') {
+      } else if (this.base === 'creeper') {
         face();
         const tg = this.tgt || { x: P.p.x, y: P.p.y, z: P.p.z };                              // Sicht: durch Wände zündet ein Creeper nicht
         const see = lineClear(this.p.x, this.p.y + 1.2, this.p.z, tg.x, tg.y + 1.0, tg.z);
@@ -7879,19 +8114,19 @@ class Mob {
     if (this.moving) this.walk += dt * 8 * Math.min(1.6, Math.abs(spd) / this.speed);
     // Animation
     const sw = this.moving ? Math.sin(this.walk) * 0.75 : 0, L = this.model.legs;
-    if (this.type === 'spider') {
+    if (this.base === 'spider') {
       L.forEach((pv, i) => { const u = pv.userData; pv.rotation.y = u.base + (this.moving ? Math.sin(this.walk * 1.4 + u.k * 1.6 + (u.side > 0 ? 0 : Math.PI)) * 0.35 : 0); });
     } else if (L.length === 4) { L[0].rotation.x = L[3].rotation.x = sw; L[1].rotation.x = L[2].rotation.x = -sw; }
     else if (L.length === 2) { L[0].rotation.x = sw; L[1].rotation.x = -sw; }
-    if (this.type === 'creeper') {
+    if (this.base === 'creeper') {
       const s = this.fuse > 0 ? 1 + Math.sin(this.fuse * 22) * 0.08 + this.fuse * 0.2 : 1; this.model.g.scale.set(s, s, s);
     }
-    if (this.type === 'skeleton') { const draw = this.shootCd < 0.55 ? 1 : 0; this.model.arms.forEach((a) => { a.rotation.x += ((-1.3 - 0.3 * draw) - a.rotation.x) * Math.min(1, dt * 14); }); }
+    if (this.base === 'skeleton') { const draw = this.shootCd < 0.55 ? 1 : 0; this.model.arms.forEach((a) => { a.rotation.x += ((-1.3 - 0.3 * draw) - a.rotation.x) * Math.min(1, dt * 14); }); }
     this.animExtras(dt);
     if (this.sheared) { this.regrow -= dt; if (this.regrow <= 0) { this.sheared = false; this.syncEx(); } }
     if (this.flash > 0) this.flash -= dt;
     if ((this.sayT = (this.sayT === undefined ? 2 + Math.random() * 8 : this.sayT) - dt) <= 0) { this.sayT = 6 + Math.random() * 12; mobSay(this.type, 'idle', this.p.x, this.p.y, this.p.z); }
-    const white = this.type === 'creeper' && this.fuse > 0 && Math.floor(this.fuse * 8) % 2 === 0;
+    const white = this.base === 'creeper' && this.fuse > 0 && Math.floor(this.fuse * 8) % 2 === 0;
     for (const o of this.mats) {
       if (this.flash > 0) o.m.color.setRGB(light * o.tint[0], light * o.tint[1] * 0.35, light * o.tint[2] * 0.35);
       else if (white) o.m.color.setRGB(1, 1, 1);
@@ -7923,6 +8158,174 @@ function raycastMobs(o, d, max) {
 
 let spawnT = 0;
 function nearestSpotDist(x, z) { let bd = Infinity; for (const sp of allPlayerSpots()) bd = Math.min(bd, Math.hypot(sp.x - x, sp.z - z)); return bd; }
+// ===== Halloween-Mobs: Modelle (alles aus eigenen Texturen), KI, Stimmen =====
+const HW_CANDY = [['candy_corn', 1, 4, 0.95], ['lollipop', 0, 1, 0.35], ['chocolate_bar', 0, 1, 0.3], ['caramel_apple', 0, 1, 0.15]];
+const MOBBASE = { hw_zombie: 'zombie', hw_skeleton: 'skeleton', hw_creeper: 'creeper', hw_spider: 'spider', hw_bat: 'bat' };
+Object.assign(MOBTYPES, {
+  hw_zombie: { de: 'Kürbiszombie', hw: 0.3, h: 2.0, hp: 24, speed: 2.7, kind: 'hostile', burn: true, dmg: 4, loot: [['rotten_flesh', 0, 1, 0.5], ['pumpkin', 0, 1, 0.3], ...HW_CANDY] },
+  hw_skeleton: { de: 'Spuk-Skelett', hw: 0.3, h: 1.95, hp: 20, speed: 2.5, kind: 'hostile', burn: true, loot: [['bone', 0, 2, 1], ['arrow', 0, 2, 0.8], ...HW_CANDY] },
+  hw_creeper: { de: 'Kürbis-Creeper', hw: 0.3, h: 1.7, hp: 20, speed: 2.4, kind: 'hostile', loot: [['gunpowder', 0, 2, 1], ['pumpkin', 0, 1, 0.4], ...HW_CANDY] },
+  hw_spider: { de: 'Giftspinne', hw: 0.7, h: 0.9, hp: 18, speed: 3.5, kind: 'hostile', loot: [['string', 0, 2, 1], ['spider_eye', 0, 1, 0.5], ...HW_CANDY] },
+  hw_bat: { de: 'Kürbis-Fledermaus', hw: 0.25, h: 0.6, hp: 6, speed: 2.8, kind: 'passive', ai: 'batAI', fly: true, loot: [['candy_corn', 0, 2, 0.6]] },
+  hw_ghost: { de: 'Geist', hw: 0.45, h: 1.9, hp: 14, speed: 1.9, kind: 'hostile', ai: 'hwGhostAI', fly: true, noclip: true, dmg: 2, loot: [['ectoplasm', 0, 2, 0.7], ...HW_CANDY] },
+  hw_witch: { de: 'Hexe', hw: 0.3, h: 1.95, hp: 26, speed: 2.3, kind: 'hostile', ai: 'hwWitchAI', dmg: 3, loot: [['witch_brew', 0, 1, 0.4], ['glass_bottle', 0, 2, 0.5], ['spider_eye', 0, 1, 0.4], ['stick', 0, 3, 0.7], ...HW_CANDY] },
+  hw_werewolf: { de: 'Werwolf', hw: 0.45, h: 2.2, hp: 46, speed: 4.2, kind: 'hostile', ai: 'hwWolfAI', dmg: 6, loot: [['bone', 0, 2, 0.8], ['leather', 0, 2, 0.8], ['chocolate_bar', 0, 2, 0.6], ...HW_CANDY] },
+  hw_scarecrow: { de: 'Vogelscheuche', hw: 0.3, h: 2.0, hp: 28, speed: 2.9, kind: 'hostile', ai: 'hwScareAI', dmg: 4, loot: [['wheat', 0, 3, 0.8], ['pumpkin', 0, 1, 0.5], ...HW_CANDY] },
+  hw_reaper: { de: 'Sensenmann', hw: 0.55, h: 3.1, hp: 160, speed: 2.7, kind: 'hostile', ai: 'hwReaperAI', dmg: 8, loot: [['reaper_scythe', 0, 1, 0.5], ['candy_bucket', 1, 2, 1], ['totem_of_undying', 0, 1, 0.12], ['diamond', 0, 2, 0.6], ['chocolate_bar', 1, 3, 1]] },
+  hw_cat: { de: 'Schwarze Katze', hw: 0.2, h: 0.55, hp: 8, speed: 2.2, kind: 'passive', ai: 'hwCatAI', loot: [['string', 0, 1, 0.5]] },
+});
+MELEE.add('hw_zombie');
+Object.assign(MOB_XP, { hw_zombie: 6, hw_skeleton: 6, hw_creeper: 6, hw_spider: 6, hw_ghost: 9, hw_witch: 12, hw_werewolf: 14, hw_scarecrow: 9, hw_reaper: 150 });
+const HW_NEWMODELS = new Set(['hw_ghost', 'hw_witch', 'hw_werewolf', 'hw_scarecrow', 'hw_reaper', 'hw_cat']);
+function buildHwModel(type, mats) {
+  const g = new THREE.Group(), legs = [], arms = [], X = { wool: [], wings: [] }, root = new THREE.Group(); g.add(root); X.root = root;
+  const px = (n) => n / 16, R90 = Math.PI / 2;
+  const mk = (opt) => { const m = new THREE.MeshBasicMaterial(Object.assign({ map: MT[type], alphaTest: 0.1 }, opt || {})); mats.push({ m, tint: [1, 1, 1] }); return m; };
+  const part = (geo, mat, x, y, z, parent) => { const m = new THREE.Mesh(geo, mat); m.position.set(px(x), px(y), px(z)); (parent || root).add(m); return m; };
+  const limb = (geo, mat, x, y, z, offY, parent) => { const pv = new THREE.Group(); pv.position.set(px(x), px(y), px(z)); const m = new THREE.Mesh(geo, mat); m.position.y = px(-offY); pv.add(m); (parent || root).add(pv); return pv; };
+  const S = 64;
+  if (type === 'hw_ghost') {
+    const m = mk({ transparent: true, opacity: 0.78, depthWrite: false, side: THREE.DoubleSide, alphaTest: 0.05 });
+    part(boxGeo(12, 5, 10, 0, 40, S, S), m, 0, 6, 0); part(boxGeo(10, 14, 8, 0, 20, S, S), m, 0, 16, 0); part(boxGeo(10, 10, 10, 0, 0, S, S), m, 0, 28, 0);
+    for (const x of [-7, 7]) { const a = limb(boxGeo(3, 12, 3, 44, 20, S, S), m, x, 21, 0, 5); a.rotation.x = -1.2; arms.push(a); }
+    X.tick = (dt, mob) => { const t = performance.now() / 1000 + mob.p.x; root.position.y = Math.sin(t * 1.8) * 0.12; root.rotation.z = Math.sin(t * 1.1) * 0.07; arms.forEach((a, i) => { a.rotation.x = -1.2 + Math.sin(t * 2.4 + i * 2) * 0.35; }); };
+  } else if (type === 'hw_witch') {
+    const m = mk();
+    part(boxGeo(8, 10, 8, 0, 0, S, S), m, 0, 29, 0); part(boxGeo(2, 4, 2, 32, 0, S, S), m, 0, 27, 5);
+    const hat = new THREE.Group(); hat.position.set(0, px(34), 0); root.add(hat);
+    part(boxGeo(14, 1, 14, 0, 32, S, S), m, 0, 0.5, 0, hat); const h2 = new THREE.Group(); h2.position.set(0, px(1), 0); h2.rotation.x = -0.12; hat.add(h2);
+    part(boxGeo(8, 3, 8, 0, 48, S, S), m, 0, 1.5, 0, h2); const h3 = new THREE.Group(); h3.position.set(0, px(3), 0); h3.rotation.x = -0.2; h2.add(h3); part(boxGeo(5, 3, 5, 32, 48, S, S), m, 0, 1.5, 0, h3);
+    part(boxGeo(8, 12, 6, 0, 20, S, S), m, 0, 18, 0);
+    for (const x of [-6, 6]) { const a = limb(boxGeo(4, 12, 4, 28, 20, S, S), m, x, 22, 0, 4); a.rotation.x = -0.9; arms.push(a); }
+    for (const x of [-2, 2]) legs.push(limb(boxGeo(4, 12, 4, 28, 20, S, S), m, x, 12, 0, 6));
+    X.tick = (dt, mob) => { const t = performance.now() / 700; hat.rotation.z = Math.sin(t + mob.p.z) * 0.06; if (mob.drinkT > 0) { mob.drinkT -= dt; arms[0].rotation.x = -2.1; } else arms[0].rotation.x = -0.9 + (mob.shootCd < 0.4 ? -0.8 : 0); };
+  } else if (type === 'hw_werewolf') {
+    const m = mk(); g.scale.setScalar(1.12);
+    const tor = new THREE.Group(); tor.position.set(0, px(13), 0); tor.rotation.x = 0.5; root.add(tor);
+    part(boxGeo(10, 14, 6, 0, 24, S, S), m, 0, 7, 0, tor);
+    part(boxGeo(7, 7, 7, 0, 0, S, S), m, 0, 17.5, 3, tor); part(boxGeo(4, 3, 5, 0, 14, S, S), m, 0, 15.5, 8.5, tor);
+    part(boxGeo(3, 3, 1, 28, 0, S, S), m, -2.5, 22.5, 2.5, tor); part(boxGeo(3, 3, 1, 28, 0, S, S), m, 2.5, 22.5, 2.5, tor);
+    for (const x of [-7, 7]) { const a = limb(boxGeo(4, 14, 4, 32, 24, S, S), m, x, 12, 0, 6, tor); a.rotation.x = -0.3; arms.push(a); }
+    for (const x of [-3, 3]) legs.push(limb(boxGeo(4, 12, 4, 0, 44, S, S), m, x, 12, 0, 6));
+    const tail = part(boxGeo(3, 3, 10, 48, 0, S, S), m, 0, 11, -8); tail.rotation.x = 0.35;
+    X.tick = (dt, mob) => { const t = performance.now() / 600; tor.rotation.x = 0.5 + Math.sin(t) * 0.04 + (mob.moving ? 0.15 : 0); tail.rotation.y = Math.sin(t * 1.7) * 0.4; arms.forEach((a, i) => { a.rotation.x = -0.3 + (mob.moving ? Math.sin(mob.walk + i * Math.PI) * 0.6 : 0) + (mob.cd > 0.5 ? -1.0 : 0); }); };
+  } else if (type === 'hw_scarecrow') {
+    const m = mk();
+    part(boxGeo(2, 30, 2, 32, 0, S, S), m, 0, 15, -3); const bar = part(boxGeo(2, 30, 2, 32, 0, S, S), m, 0, 23, -3); bar.rotation.z = R90;
+    part(boxGeo(8, 12, 4, 16, 16, S, S), m, 0, 18, 0); part(boxGeo(8, 8, 8, 0, 0, S, S), m, 0, 28, 0);
+    part(boxGeo(14, 1, 14, 0, 32, S, S), m, 0, 33, 0); part(boxGeo(8, 5, 8, 0, 48, S, S), m, 0, 36, 0);
+    for (const x of [-6, 6]) { const a = limb(boxGeo(4, 12, 4, 40, 16, S, S), m, x, 22, 0, 4); a.rotation.z = x < 0 ? 1.5 : -1.5; arms.push(a); }
+    for (const x of [-2, 2]) legs.push(limb(boxGeo(4, 12, 4, 0, 16, S, S), m, x, 12, 0, 6));
+    X.pole = [root.children[0], bar];
+    X.tick = (dt, mob) => { const aw = !!mob.awake; X.pole.forEach((p) => { p.visible = !aw; }); arms.forEach((a, i) => { const s = i ? -1 : 1; a.rotation.z += ((aw ? s * 0.25 : s * -1.5) * -1 - a.rotation.z) * Math.min(1, dt * 5); a.rotation.x = aw ? -1.2 + Math.sin(mob.walk + i * 3) * 0.3 : 0; }); root.rotation.z = aw ? Math.sin(performance.now() / 150) * 0.05 : 0; };
+  } else if (type === 'hw_reaper') {
+    const m = mk({ side: THREE.DoubleSide }); g.scale.setScalar(1.35);
+    part(boxGeo(10, 22, 6, 0, 16, S, S), m, 0, 17, 0); part(boxGeo(8, 8, 8, 0, 0, S, S), m, 0, 32, 0);
+    const aR = limb(boxGeo(3, 12, 3, 32, 0, S, S), m, 6.5, 26, 0, 5), aL = limb(boxGeo(3, 12, 3, 32, 0, S, S), m, -6.5, 26, 0, 5); aR.rotation.x = -0.9; aL.rotation.x = -0.5; arms.push(aR, aL);
+    const sc = new THREE.Group(); sc.position.set(0, px(-9), px(2)); aR.add(sc); sc.rotation.x = 0.9;
+    part(boxGeo(1, 24, 1, 48, 0, S, S), m, 0, 2, 0, sc); part(boxGeo(8, 1, 2, 0, 48, S, S), m, 0, 14, 4.5, sc); const tip = part(boxGeo(4, 1, 2, 24, 48, S, S), m, 0, 13, 9.5, sc); tip.rotation.x = 0.5;
+    X.tick = (dt, mob) => { const t = performance.now() / 900; root.position.y = Math.sin(t) * 0.07; root.rotation.z = Math.sin(t * 0.7) * 0.03; aR.rotation.x = -0.9 + (mob.cd > 1.4 ? -1.1 : 0); sc.rotation.x = 0.9 + (mob.cd > 1.4 ? -0.4 : 0); };
+  } else if (type === 'hw_cat') {
+    const m = mk();
+    const body = part(boxGeo(4, 4, 10, 20, 0, S, 32), m, 0, 7, 0); part(boxGeo(5, 4, 5, 0, 0, S, 32), m, 0, 9, 6.5);
+    part(boxGeo(1, 2, 1, 22, 14, S, 32), m, -1.8, 12, 7.5); part(boxGeo(1, 2, 1, 22, 14, S, 32), m, 1.8, 12, 7.5);
+    for (const [x, z, f] of [[-1.5, 3.5, 1], [1.5, 3.5, 1], [-1.5, -3.5, 0], [1.5, -3.5, 0]]) legs.push(limb(f ? boxGeo(2, 6, 2, 0, 12, S, 32) : boxGeo(2, 8, 2, 8, 12, S, 32), m, x, f ? 6 : 7, z, 3));
+    const tail = limb(boxGeo(1, 1, 8, 30, 14, S, 32), m, 0, 8, -5, 0); tail.rotation.x = -0.5;
+    X.tick = (dt, mob) => { const t = performance.now() / 400; tail.rotation.x = -0.5 + Math.sin(t) * 0.25 + (mob.alert ? 0.9 : 0); tail.rotation.y = Math.sin(t * 0.7) * 0.4; body.rotation.x = mob.alert ? -0.35 : 0; root.scale.set(1, mob.alert ? 1.18 : 1, 1); };
+  }
+  return { g, legs, arms, X };
+}
+// ---------- KI (an Mob angehängt) ----------
+const hwIsNight = () => env.dayF < 0.45;
+function hwFireball(mob, tgt, owner) {
+  const ex = mob.p.x, ey = mob.p.y + 1.6, ez = mob.p.z, d = new THREE.Vector3(tgt.x - ex, tgt.y + 1 - ey, tgt.z - ez).normalize().multiplyScalar(11);
+  arrows.push(new Arrow(ex, ey, ez, d.x, d.y, d.z, owner || 'fire')); if (mp.on) mpSend('arrow', { x: r2(ex), y: r2(ey), z: r2(ez), vx: r2(d.x), vy: r2(d.y), vz: r2(d.z), o: owner || 'fire' });
+}
+Object.assign(Mob.prototype, {
+  hwGhostAI(dt, pl, hunting) {                                              // schwebt auf dich zu, durchquert Wände, verlangsamt beim Berühren
+    this.cd -= dt;
+    if (!(hunting && pl.dist < 36)) { this.timer -= dt; if (this.timer <= 0) { this.timer = 2 + Math.random() * 3; this.moving = Math.random() < 0.7; this.yaw = Math.random() * 6.28; this.flyTy = (Math.random() - 0.5) * 0.8; } return this.moving ? this.speed * 0.45 : 0; }
+    this.yaw = Math.atan2(pl.dx, pl.dz); this.flyTy = clamp((this.tgt.y + 1.0 + Math.sin(performance.now() / 700) * 0.5 - this.p.y) * 1.4, -2.2, 2.2);
+    if (pl.dist > 1.5) { this.moving = true; return this.speed; }
+    this.moving = false;
+    if (this.cd <= 0) { this.cd = 1.5; this.strike(this.T.dmg, pl); if (!this.tgt.name) { try { addEffect('slowness', 4, 0); } catch (e) { /* egal */ } } spawnParticles(this.p.x - 0.5, this.p.y + 1, this.p.z - 0.5, new THREE.Color(0.6, 1, 0.8), 6, 2, 0.5); }
+    return 0;
+  },
+  hwWitchAI(dt, pl, hunting) {                                              // Hexe: hält Abstand, wirft Feuerzauber, trinkt Heiltränke
+    this.cd -= dt; this.shootCd -= dt; this.drinkT = Math.max(0, (this.drinkT || 0) - 0);
+    if (this.hp < 9 && !(this.healCd > 0) && this.hp > 0) { this.healCd = 14; this.hp = Math.min(this.T.hp, this.hp + 10); this.drinkT = 1.2; spawnParticles(this.p.x - 0.5, this.p.y + 1.6, this.p.z - 0.5, new THREE.Color(0.7, 0.4, 1), 12, 2, 0.6); mobSay(this.type, 'idle', this.p.x, this.p.y, this.p.z); }
+    this.healCd = (this.healCd || 0) - dt;
+    if (!(hunting && pl.dist < 26)) return this.wander(dt, 0.6);
+    this.yaw = Math.atan2(pl.dx, pl.dz); this.goal = this.tgt;
+    let spd = 0; if (pl.dist > 13) { this.moving = true; spd = this.speed; } else if (pl.dist < 7) { this.moving = true; spd = -this.speed * 0.9; } else { this.moving = true; spd = this.speed * 0.5; this.moveYaw = this.yaw + this.strafe * Math.PI / 2; if (Math.random() < 0.01) this.strafe = -this.strafe; }
+    if (pl.dist < 22 && this.shootCd <= 0) { const o = new THREE.Vector3(this.p.x, this.p.y + 1.6, this.p.z), d = new THREE.Vector3(this.tgt.x - o.x, this.tgt.y + 1 - o.y, this.tgt.z - o.z), L = d.length(); d.normalize(); if (!raycastBlocks(o, d, L - 0.5)) { hwFireball(this, this.tgt, 'fire'); this.shootCd = 2.4 + Math.random() * 1.2; mobSay(this.type, 'angry', this.p.x, this.p.y, this.p.z); } else this.shootCd = 0.6; }
+    return spd;
+  },
+  hwWolfAI(dt, pl, hunting) {                                               // Werwolf: nachts schnell + Sprungangriff, tagsüber ruhig
+    this.cd -= dt; this.angry -= dt;
+    const active = hwIsNight() || this.angry > 0;
+    if (!(hunting && pl.dist < 38 && active)) return this.wander(dt, 0.5);
+    if (!this.noticed) { this.noticed = true; mobSay(this.type, 'angry', this.p.x, this.p.y, this.p.z); }
+    this.yaw = Math.atan2(pl.dx, pl.dz); this.goal = this.tgt; this.moving = pl.dist > this.hw + 0.7;
+    if (pl.dist > 3 && pl.dist < 8 && this.onGround && this.cd <= 0) { this.v.y = 7; this.v.x = pl.dx / pl.dist * 10; this.v.z = pl.dz / pl.dist * 10; this.cd = 2; }
+    if (pl.dist < this.hw + 1.1 && Math.abs(pl.dy) < 1.8 && this.cd <= 0.4 && !this.hitCd) { this.cd = 1.1; this.strike(this.T.dmg, pl); }
+    return this.moving ? this.speed : 0;
+  },
+  hwScareAI(dt, pl, hunting) {                                              // Vogelscheuche: steht starr, bis man ihr zu nah kommt
+    this.cd -= dt;
+    if (!this.awake) { this.moving = false; if (hunting && pl.dist < 6.5) { this.awake = true; this.asleepT = 0; mobSay(this.type, 'angry', this.p.x, this.p.y, this.p.z); spawnParticles(this.p.x - 0.5, this.p.y + 1, this.p.z - 0.5, new THREE.Color(0.85, 0.7, 0.3), 12, 3, 0.7); } return 0; }
+    if (!(hunting && pl.dist < 30)) { this.asleepT = (this.asleepT || 0) + dt; if (this.asleepT > 8) { this.awake = false; } this.moving = false; return 0; }
+    this.asleepT = 0; this.yaw = Math.atan2(pl.dx, pl.dz); this.goal = this.tgt; this.moving = pl.dist > this.hw + 0.7;
+    if (pl.dist < this.hw + 1.0 && Math.abs(pl.dy) < 1.8 && this.cd <= 0) { this.cd = 1.2; this.strike(this.T.dmg, pl); }
+    return this.moving ? this.speed * (1 + 0.3 * Math.sin(this.walk * 0.8)) : 0;
+  },
+  hwReaperAI(dt, pl, hunting) {                                             // Sensenmann: blinzelt hinter dich, schwingt die Sense, ruft Geister, wütet bei wenig Leben
+    this.cd -= dt; this.tpCd = (this.tpCd === undefined ? 5 : this.tpCd) - dt;
+    if (!(hunting && pl.dist < 60)) return this.wander(dt, 0.6);
+    const rage = this.hp < this.T.hp * 0.3;
+    this.yaw = Math.atan2(pl.dx, pl.dz); this.goal = this.tgt;
+    if (this.tpCd <= 0 && pl.dist > 6) { this.tpCd = this.blink() ? (rage ? 4 : 7) + Math.random() * 4 : 1.5; }
+    if (!this.summoned && this.hp < this.T.hp * 0.55) { this.summoned = true; for (let i = 0; i < 3; i++) { const a = Math.random() * 6.28; const gm = new Mob('hw_ghost', this.p.x + Math.cos(a) * 2.5, this.p.y + 1, this.p.z + Math.sin(a) * 2.5); mobs.push(gm); } mobSay(this.type, 'angry', this.p.x, this.p.y, this.p.z); chatSys('💀 Der Sensenmann ruft die Geister!'); }
+    this.moving = pl.dist > this.hw + 1.4;
+    if (pl.dist < this.hw + 2.4 && Math.abs(pl.dy) < 3 && this.cd <= 0) {
+      this.cd = rage ? 1.6 : 2.2; this.strike(this.T.dmg + (rage ? 3 : 0), pl);
+      if (!this.tgt.name) { P.v.x += pl.dx / (pl.dist || 1) * 8; P.v.z += pl.dz / (pl.dist || 1) * 8; P.v.y = Math.max(P.v.y, 6); }
+      spawnParticles(this.p.x - 0.5, this.p.y + 1.5, this.p.z - 0.5, new THREE.Color(0.55, 0.8, 1), 14, 5, 1);
+    }
+    return this.moving ? this.speed * (rage ? 1.5 : 1) : 0;
+  },
+  hwCatAI(dt, pl) {                                                         // Schwarze Katze: streunt, buckelt und faucht, wenn man nah kommt
+    this.alert = pl.dist < 3.2 && !isCreative();
+    if (this.alert) { this.yaw = Math.atan2(pl.dx, pl.dz); this.moving = false; if (!this.hissed) { this.hissed = true; mobSay(this.type, 'angry', this.p.x, this.p.y, this.p.z); } return 0; }
+    this.hissed = false; return this.wander(dt, 0.7);
+  },
+});
+// ---------- Stimmen ----------
+Object.assign(VOICES, {
+  hw_zombie: { idle: () => { tone(110, 80, 0.5, 'sawtooth', 0.1); noise(0.3, 400, 'lowpass', 0.08); hwLater(() => tone(160, 90, 0.3, 'square', 0.06), 250); }, hurt: () => { tone(220, 120, 0.2, 'sawtooth', 0.14); noise(0.1, 700, 'lowpass', 0.15); }, die: () => { tone(140, 40, 0.8, 'sawtooth', 0.14); noise(0.5, 300, 'lowpass', 0.12); }, angry: () => tone(90, 140, 0.4, 'sawtooth', 0.12), step: () => noise(0.06, 280, 'lowpass', 0.25) },
+  hw_skeleton: { idle: () => { for (let i = 0; i < 4; i++) hwLater(() => noise(0.04, 3200, 'highpass', 0.12), i * 70); }, hurt: () => { noise(0.12, 2600, 'highpass', 0.2); tone(500, 300, 0.12, 'square', 0.07); }, die: () => { for (let i = 0; i < 7; i++) hwLater(() => noise(0.05, 2400 + i * 200, 'highpass', 0.14), i * 55); }, step: () => noise(0.04, 3000, 'highpass', 0.1) },
+  hw_creeper: { idle: () => { noise(0.25, 1400, 'highpass', 0.05); tone(180, 150, 0.3, 'triangle', 0.05); }, hurt: () => tone(260, 130, 0.25, 'square', 0.12), die: () => tone(200, 50, 0.6, 'square', 0.12) },
+  hw_spider: { idle: () => { noise(0.3, 2600, 'bandpass', 0.07); }, hurt: () => { tone(900, 400, 0.15, 'sawtooth', 0.12); noise(0.1, 3000, 'highpass', 0.12); }, die: () => { tone(800, 200, 0.5, 'sawtooth', 0.1); }, angry: () => { noise(0.4, 3500, 'highpass', 0.12); } },
+  hw_bat: { idle: () => { tone(1700, 2200, 0.07, 'sine', 0.05); hwLater(() => tone(2100, 1500, 0.07, 'sine', 0.05), 110); }, hurt: () => tone(2400, 900, 0.14, 'sine', 0.1), die: () => tone(2000, 400, 0.35, 'sine', 0.1) },
+  hw_ghost: { idle: () => { tone(380, 560, 0.9, 'sine', 0.07); tone(384, 566, 0.9, 'sine', 0.05); noise(0.8, 900, 'bandpass', 0.04); }, hurt: () => tone(700, 300, 0.3, 'sine', 0.1), die: () => { tone(600, 100, 1.2, 'sine', 0.1); noise(1, 700, 'bandpass', 0.06); } },
+  hw_witch: { idle: () => { for (let i = 0; i < 5; i++) hwLater(() => tone(560 + Math.random() * 200, 820, 0.1, 'square', 0.06), i * 100); }, hurt: () => tone(600, 300, 0.2, 'sawtooth', 0.12), die: () => { for (let i = 0; i < 6; i++) hwLater(() => tone(700 - i * 70, 300, 0.12, 'square', 0.07), i * 110); }, angry: () => { tone(420, 760, 0.18, 'square', 0.08); hwLater(() => tone(760, 420, 0.25, 'square', 0.08), 180); } },
+  hw_werewolf: { idle: () => { tone(260, 520, 0.7, 'sawtooth', 0.09); hwLater(() => tone(520, 300, 1.0, 'sawtooth', 0.09), 600); }, hurt: () => { tone(300, 140, 0.25, 'sawtooth', 0.16); noise(0.15, 800, 'lowpass', 0.14); }, die: () => tone(260, 40, 1.0, 'sawtooth', 0.15), angry: () => { tone(130, 90, 0.5, 'sawtooth', 0.14); noise(0.4, 500, 'lowpass', 0.1); }, step: () => noise(0.05, 240, 'lowpass', 0.22) },
+  hw_scarecrow: { idle: () => { noise(0.5, 1500, 'bandpass', 0.05); }, hurt: () => { noise(0.2, 1000, 'bandpass', 0.15); tone(220, 140, 0.2, 'triangle', 0.08); }, die: () => { noise(0.8, 900, 'lowpass', 0.14); }, angry: () => { tone(160, 280, 0.4, 'sawtooth', 0.11); noise(0.3, 1400, 'bandpass', 0.1); } },
+  hw_reaper: { idle: () => { tone(55, 50, 1.6, 'sawtooth', 0.1); noise(1.4, 200, 'lowpass', 0.07); tone(330, 320, 1.2, 'sine', 0.03); }, hurt: () => { tone(110, 60, 0.4, 'square', 0.14); noise(0.2, 2400, 'highpass', 0.1); }, die: () => { tone(200, 30, 2.0, 'sawtooth', 0.16); for (let i = 0; i < 5; i++) hwLater(() => tone(196, 190, 1.2, 'sine', 0.1), i * 400); }, angry: () => { tone(70, 45, 1.2, 'sawtooth', 0.15); noise(1, 300, 'lowpass', 0.12); }, step: () => { noise(0.1, 200, 'lowpass', 0.3); } },
+  hw_cat: { idle: () => { tone(900, 700, 0.3, 'sine', 0.05); hwLater(() => tone(800, 950, 0.35, 'sine', 0.05), 300); }, hurt: () => tone(1100, 600, 0.2, 'sawtooth', 0.12), die: () => tone(900, 300, 0.4, 'sawtooth', 0.1), angry: () => { noise(0.6, 4200, 'highpass', 0.14); tone(600, 500, 0.5, 'sawtooth', 0.05); } },
+});
+// ---------- Auftauchen während des Events ----------
+function hwHostile(type) {
+  const cnt = (t) => { let n = 0; for (const m of mobs) if (m.type === t) n++; return n; }, r = Math.random(), dark = env.dayF < 0.3;
+  if (r < 0.10 && cnt('hw_ghost') < 4) return 'hw_ghost';
+  if (r < 0.15 && cnt('hw_witch') < 2) return 'hw_witch';
+  if (r < 0.21 && dark && cnt('hw_werewolf') < 2) return 'hw_werewolf';
+  if (r < 0.27 && cnt('hw_scarecrow') < 3) return 'hw_scarecrow';
+  if (r < 0.285 && dark && cnt('hw_reaper') < 1) return 'hw_reaper';
+  const m = { zombie: 'hw_zombie', husk: 'hw_zombie', skeleton: 'hw_skeleton', spider: 'hw_spider', creeper: 'hw_creeper' }[type];
+  return m && Math.random() < 0.8 ? m : type;
+}
+
 function updateMobs(dt) {
   navFrame = 0;
   const light = lerp(0.42, 1, env.dayF);
@@ -7998,8 +8401,9 @@ function trySpawnMob() {
   if (world.dim === 1) return trySpawnNether();
   if (world.dim === 2) return trySpawnBackrooms();
   const passive = mobs.filter((m) => m.kind === 'passive' && !m.T.keep && !m.T.fly).length, hostile = mobs.filter((m) => m.kind === 'hostile').length;
-  const night = env.dayF < 0.3;
-  const wantP = env.dayF > 0.3 && passive < 14, wantH = !isCreative() && hostile < 9 && rules.difficulty !== 'peaceful';
+  if (HW.on) hwAmbientSpawn();
+  const night = env.dayF < (HW.on ? 0.45 : 0.3);
+  const wantP = env.dayF > 0.3 && passive < 14, wantH = !isCreative() && hostile < (HW.on ? 14 : 9) && rules.difficulty !== 'peaceful';
   const cave = wantH && Math.random() < 0.4;                              // manchmal Höhlen-Spawn (rund um die Uhr)
   const surfaceH = wantH && night && !cave;
   if (!wantP && !surfaceH && !cave) return;
@@ -8021,6 +8425,7 @@ function trySpawnMob() {
     const r = Math.random();
     if (surfaceH && Math.random() < 0.05 && mobs.filter((m) => m.type === 'enderman').length < 2) { mobs.push(new Mob('enderman', x + 0.5, y, z + 0.5)); return; }
     type = r < 0.4 ? (desert ? 'husk' : 'zombie') : r < 0.62 ? 'skeleton' : r < 0.82 ? 'spider' : 'creeper';
+    if (HW.on && surfaceH) type = hwHostile(type);
     if (cave && Math.random() < 0.22 && mobs.filter((m) => m.type === 'bat').length < 5) type = 'bat';
     else if (cave && Math.random() < 0.1 && mobs.filter((m) => m.type === 'slime').length < 4) type = 'slime';
   } else {
@@ -8033,7 +8438,7 @@ function trySpawnMob() {
     if (!type) return;
   }
   const sz = type === 'slime' ? [1, 1, 2, 4][(Math.random() * 4) | 0] : undefined;
-  mobs.push(new Mob(type, x + 0.5, y, z + 0.5, undefined, sz));
+  mobs.push(new Mob(type, x + 0.5, type === 'hw_ghost' ? y + 1.5 : y, z + 0.5, undefined, sz));
   if (type === 'wolf') for (let i = 0; i < 1 + ((Math.random() * 2) | 0); i++) mobs.push(new Mob('wolf', x + 0.5 + (Math.random() - 0.5) * 3, y, z + 0.5 + (Math.random() - 0.5) * 3));
 }
 function clearMobs() { mobs.forEach((m) => m.dispose()); mobs.length = 0; mp.mobsById.clear(); }
@@ -8451,7 +8856,7 @@ function frame(now) {
     camera.position.x += (Math.random() - 0.5) * P.shake * 0.4; camera.position.y += (Math.random() - 0.5) * P.shake * 0.4;
     camera.rotation.z = (Math.random() - 0.5) * P.shake * 0.08; P.shake = Math.max(0, P.shake - dt * 1.4);
   } else camera.rotation.z = 0;
-  updateEmote(dt); stepBuildJob(); stepBlast(); bigTick(); perfTick(dt); bossTick(dt);
+  updateEmote(dt); stepBuildJob(); stepBlast(); bigTick(); perfTick(dt); bossTick(dt); hwTick(dt);
   const sprinting = state === 'play' && P.sprinting;
   const zooming = state === 'play' && mouse.right && inv[P.sel] && inv[P.sel].id >= ITEM_BASE && ITEMS[inv[P.sel].id].spyglass;
   fovCur = lerp(fovCur, zooming ? 14 : sprinting ? settings.fov + 9 : settings.fov, Math.min(1, 8 * dt));
@@ -8476,6 +8881,7 @@ function frame(now) {
     uni.fogColor.value.copy(skyCol);
     uni.fogNear.value = renderDist * CS * 0.55 * (1 - 0.5 * weather.wf) * (1 - 0.92 * Math.max(weather.fogF, weather.sand)); uni.fogFar.value = (renderDist * CS - 6) * (1 - 0.35 * weather.wf) * (1 - 0.72 * weather.fogF - 0.82 * weather.sand);
   }
+  if (!lava && !water && world.dim === 0 && HW.k > 0) { uni.fogNear.value *= 1 - 0.3 * HW.k; uni.fogFar.value *= 1 - 0.22 * HW.k; }
   renderer.setClearColor(water ? uni.fogColor.value : skyCol);
   $('under').style.display = water ? 'block' : 'none';
   $('under').style.background = lava ? 'rgba(220,70,10,.55)' : 'rgba(30,70,170,.35)';
@@ -8939,7 +9345,7 @@ function bossFx() { return boss.ui || (() => {
   const st = document.createElement('style');
   st.textContent = '#bfBar{position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:36;width:min(620px,92vw);text-align:center;color:#fff;font:bold 15px "Courier New",monospace;text-shadow:1px 1px #000;pointer-events:none}#bfBar.hidden{display:none}#bfBar .bn{margin-bottom:3px;letter-spacing:1px}#bfBar .bb{position:relative;height:20px;background:#1a0808;border:2px solid #000;box-shadow:0 0 0 2px #7a1c1c,0 0 14px rgba(255,40,20,.55)}#bfBar .bt{position:absolute;inset:0 auto 0 0;background:#fff;opacity:.85}#bfBar .bf{position:absolute;inset:0 auto 0 0;background:linear-gradient(#ff4a3a,#a01212);transition:background .3s}#bfBar.s2 .bf{background:linear-gradient(#ff9a2a,#c05a08)}#bfBar.s3 .bf{background:linear-gradient(#c44cff,#6a12a8)}#bfBar .bk{position:absolute;top:0;bottom:0;width:2px;background:#000}#bfBar .bh{position:absolute;inset:0;line-height:20px;font-size:13px}' +
     '#bfTitle{position:fixed;left:0;right:0;top:26%;z-index:37;text-align:center;color:#fff;font:bold clamp(28px,6vw,64px) "Courier New",monospace;text-shadow:3px 3px #000,0 0 22px #f22;letter-spacing:4px;pointer-events:none;opacity:0;transition:opacity .5s}#bfTitle small{display:block;font-size:.32em;letter-spacing:2px;margin-top:8px;color:#ffd0c0}' +
-    '#bfCd{position:fixed;left:50%;bottom:78px;transform:translateX(-50%);z-index:36;display:flex;gap:6px;pointer-events:none}#bfCd.hidden{display:none}#bfCd div{position:relative;width:74px;height:46px;background:rgba(10,10,14,.78);border:2px solid #7a7a86;font:bold 12px "Courier New",monospace;color:#fff;text-align:center;overflow:hidden;line-height:15px;padding-top:5px;box-sizing:border-box}#bfCd div i{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.72);height:0}#bfCd div b{display:block;color:#ffd35a}' +
+    '#bfCd{position:fixed;left:50%;bottom:128px;transform:translateX(-50%);z-index:36;display:flex;gap:6px;pointer-events:none}#bfCd.hidden{display:none}#bfCd div{position:relative;width:74px;height:46px;background:rgba(10,10,14,.78);border:2px solid #7a7a86;font:bold 12px "Courier New",monospace;color:#fff;text-align:center;overflow:hidden;line-height:15px;padding-top:5px;box-sizing:border-box}#bfCd div i{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.72);height:0}#bfCd div b{display:block;color:#ffd35a}' +
     '#bfBars{position:fixed;inset:0;z-index:34;pointer-events:none;display:none}#bfBars:before,#bfBars:after{content:"";position:absolute;left:0;right:0;height:9vh;background:#000}#bfBars:before{top:0}#bfBars:after{bottom:0}#bfFlash{position:fixed;inset:0;z-index:38;pointer-events:none;background:#fff;opacity:0}#bfEaten{position:fixed;left:0;right:0;bottom:16%;z-index:37;text-align:center;color:#ffb8a8;font:bold 22px "Courier New",monospace;text-shadow:2px 2px #000;display:none}';
   document.head.appendChild(st);
   const bar = document.createElement('div'); bar.id = 'bfBar'; bar.className = 'hidden';
@@ -9008,7 +9414,7 @@ function bossCleanup(restore) {
     rp.boss = rp.eaten = rp.grabbed = false; rp.hw = 0.3; rp.h = 1.8; if (rp.group) rp.group.scale.setScalar(1); if (rp.model) { emReset(rp.model); rp.model.armR.scale.y = 1; rp.model.armR.quaternion.identity(); rp.model.g.rotation.x = 0; rp.model.g.position.y = 0; rp.model.body.rotation.set(0, 0, 0); rp.model.body.position.set(0, 0, 0); } if (rp.tag) rp.tag.visible = true; rp.cutBoss = false;
   }
   if (emote.av && boss.me === 'boss') emote.av.group.visible = false;
-  weather.override = null; P.speedMul = 1;
+  weather.override = null; P.speedMul = 1; $('crosshair').style.opacity = '1';
   const u = boss.ui; if (u) { u.bar.classList.add('hidden'); u.cd.classList.add('hidden'); u.bars.style.display = 'none'; u.title.style.opacity = '0'; u.eaten.style.display = 'none'; u.flash.style.opacity = '0'; }
   const me = boss.me; boss.on = false; boss.act = null;
   if (restore && boss.ret && me !== 'out' && me !== '') {
@@ -9227,7 +9633,9 @@ function bossCam(dt) {
   if (boss.fight === 'intro') {
     const q = Math.max(0, boss.t), a = 0.5 + q * 0.28, r = 28 - q * 0.8; camera.position.set(bp.x + Math.cos(a) * r, A.y + 5 + q * 1.6, bp.z + Math.sin(a) * r); camera.lookAt(bp.x, A.y + 2 + boss.sc * 0.7, bp.z); cine = true;
   } else if (boss.me === 'boss') {
-    const f = _bv[1].set(-Math.sin(P.yaw), 0, -Math.cos(P.yaw)); camera.position.set(P.p.x - f.x * 30, P.p.y + 15 + Math.max(0, P.pitch) * 8, P.p.z - f.z * 30); camera.rotation.set(P.pitch - 0.12, P.yaw, 0, 'YXZ');
+    const f = _bv[1].set(-Math.sin(P.yaw), 0, -Math.cos(P.yaw)), hh = rp.bossHead;                          // Ego-Sicht: Kamera sitzt vor dem Gesicht des Riesen und folgt dem Kopf
+    if (hh) camera.position.set(hh.x + f.x * 2.7, hh.y + 0.3, hh.z + f.z * 2.7); else camera.position.set(P.p.x, P.p.y + 15.7, P.p.z);
+    camera.rotation.set(P.pitch, P.yaw, 0, 'YXZ');
     if (P.shake > 0.01) { camera.position.x += (Math.random() - 0.5) * P.shake * 0.8; camera.position.y += (Math.random() - 0.5) * P.shake * 0.8; }
   } else if (boss.me === 'eaten' || boss.fight === 'end' && boss.me !== 'player') {
     const a = boss.t * 0.18 + 1; camera.position.set(bp.x + Math.cos(a) * 30, A.y + 22, bp.z + Math.sin(a) * 30); camera.lookAt(bp.x, A.y + 9, bp.z); cine = true;
@@ -9235,7 +9643,7 @@ function bossCam(dt) {
     const f = rp.bossFwd; camera.position.copy(rp.bossHold).add(_bv[1].set(f.x * 4.5, 1.2, f.z * 4.5)); camera.lookAt(rp.bossHead.x, rp.bossHead.y - 0.5, rp.bossHead.z); cine = true; $('crosshair').style.opacity = '0';
   } else if (boss.fight === 'end' && boss.result === 'win') { const a = boss.t * 0.25; camera.position.set(bp.x + Math.cos(a) * 30, A.y + 14, bp.z + Math.sin(a) * 30); camera.lookAt(bp.x, A.y + 5, bp.z); cine = true; }
   u.bars.style.display = cine ? 'block' : 'none';
-  if (boss.me === 'boss') $('crosshair').style.opacity = '0';
+  $('crosshair').style.opacity = cine ? '0' : '1';
   void c;
 }
 function bossUi(dt) {
@@ -9292,6 +9700,103 @@ function bossNoInteract(keepMouse) {
   if (!keepMouse) { mouse.leftPressed = mouse.rightPressed = false; mouse.left = mouse.right = false; atkQueue = 0; }
 }
 
+/* =====================================================================
+   HALLOWEEN-EVENT (/event halloween | off – nur Admin). Gilt für alle Server, alle Welten und auch Einzelspieler-Welten:
+   Der Admin-Schalter steht in der Datenbank (vc_event_set), jeder Client fragt ihn beim Start und danach jede Minute ab.
+   Auf dem aktuellen Server wird zusätzlich sofort per Ereignis umgeschaltet.
+===================================================================== */
+const HW = { on: false, k: 0, ambT: 10, leafT: 0, wispT: 0, flashT: 40, pollT: 4, tag: null, spDb: null, lootRoll: 0 };
+const HW_KEY = 'voxelcraft_hw';
+try { const c = JSON.parse(localStorage.getItem(HW_KEY) || 'null'); if (c && c.on === true && Date.now() - (c.t || 0) < 6 * 3600e3) HW.on = true; } catch (e) { /* egal */ }       // zuletzt bekannter Stand (offline)
+function hwApply(on, quiet) {
+  on = !!on; if (on === HW.on) return;
+  HW.on = on; try { localStorage.setItem(HW_KEY, JSON.stringify({ on, t: Date.now() })); } catch (e) { /* egal */ }
+  if (quiet || !world || state === 'menu' || state === 'loading') return;
+  if (on) { chatSys('🎃 Das HALLOWEEN-EVENT hat begonnen! Gruselige Mobs, Süßigkeiten, Friedhöfe und mehr …'); bossTitle('🎃 HALLOWEEN', 'Das Grauen beginnt …', 4.5); hwBell(); }
+  else { chatSys('🎃 Das Halloween-Event ist vorbei – bis zum nächsten Mal!'); toast('Halloween-Event beendet'); }
+  if (typeof hwWorldSwitch === 'function') hwWorldSwitch(on);
+}
+function hwDbOf() { return mp.on && mp.db ? mp.db : HW.spDb; }
+async function hwPoll() {                                                // Datenbank-Schalter abfragen (Mehrspieler: bestehende Verbindung, Einzelspieler: eigener Client)
+  try {
+    let db = mp.on ? mp.db : null;
+    if (!db) { if (mpCfg.backend !== 'online') { if (mpCfg.backend === 'local') db = new LocalDB(); else return; } else { if (!HW.spDb) HW.spDb = new SupabaseDB(await sbClient(8000)); db = HW.spDb; } }
+    const r = await db.getEvent(); if (r && r.ok) { hwApply(!!r.halloween); try { localStorage.setItem(HW_KEY, JSON.stringify({ on: !!r.halloween, t: Date.now() })); } catch (e) { /* egal */ } }
+  } catch (e) { /* offline / SQL fehlt: letzter Stand bleibt */ }
+}
+async function hwAdminSet(on) {
+  hwApply(on); if (mp.on) mpSend('hw', { on });
+  try {
+    let db = mp.on ? mp.db : null;
+    if (!db) { if (mpCfg.backend === 'local') db = new LocalDB(); else { if (!HW.spDb) HW.spDb = new SupabaseDB(await sbClient(8000)); db = HW.spDb; } }
+    const r = await db.setEvent(mp.on ? mp.name : mpCfg.name, mp.on ? mp.token : mpToken(), 'halloween', on);
+    if (r && r.ok) chatOk('Gespeichert: das Event gilt jetzt für ALLE Server und Welten.'); else chatSys('Hinweis: nur auf diesem Server umgeschaltet (Datenbank hat „' + ((r && r.error) || 'Fehler') + '“ gemeldet).');
+  } catch (e) { chatSys('Hinweis: nur lokal/auf diesem Server umgeschaltet – für „alle Server“ einmalig supabase/dev_console_part7.sql ausführen.'); }
+}
+// ---------- Stimmung: Himmel, Mond, Nebel, Laub, Irrlichter, Geräusche ----------
+const HW_NIGHT = new THREE.Color(0.2, 0.045, 0.27), HW_DAY = new THREE.Color(0.82, 0.5, 0.34), HW_CLOUD = new THREE.Color(0.62, 0.34, 0.5);
+function hwSkyTint() {
+  if (!(HW.k > 0.001) || world.dim !== 0) { if (moonMesh.scale.x !== 1) { moonMesh.scale.setScalar(1); moonMesh.material.color.setRGB(1, 1, 1); } return; }
+  tmpCol.copy(HW_NIGHT).lerp(HW_DAY, env.dayF); skyCol.lerp(tmpCol, 0.55 * HW.k);
+  cloudMat.color.lerp(HW_CLOUD, 0.5 * HW.k);
+  moonMesh.scale.setScalar(1 + 0.9 * HW.k); moonMesh.material.color.setRGB(1, 1 - 0.5 * HW.k, 1 - 0.75 * HW.k);
+}
+const hwLater = (fn, ms) => setTimeout(fn, ms);
+function hwBell() { for (let i = 0; i < 4; i++) hwLater(() => { tone(196, 190, 1.4, 'sine', 0.12); tone(392, 380, 1.1, 'sine', 0.05); tone(588, 560, 0.8, 'sine', 0.03); }, i * 1100); }
+const HW_SOUNDS = [
+  () => { tone(300, 520, 0.7, 'sawtooth', 0.05); hwLater(() => tone(520, 330, 0.9, 'sawtooth', 0.05), 600); hwLater(() => tone(330, 260, 1.4, 'sine', 0.05), 1400); },                   // Wolfsheulen
+  hwBell,
+  () => { for (let i = 0; i < 6; i++) hwLater(() => tone(500 + Math.random() * 200, 800 + Math.random() * 300, 0.12, 'square', 0.05), i * 110); hwLater(() => tone(700, 300, 0.5, 'sawtooth', 0.04), 700); },   // Hexenlachen
+  () => { tone(440, 330, 1.6, 'sine', 0.06); tone(554, 415, 1.6, 'sine', 0.05); tone(660, 494, 1.6, 'sine', 0.04); noise(1.6, 900, 'bandpass', 0.05); },                              // Geisterchor
+  () => { noise(0.8, 300, 'lowpass', 0.1); tone(90, 70, 0.8, 'sawtooth', 0.06); },                                                                                                   // knarrende Tür
+  () => { tone(480, 480, 0.28, 'sine', 0.07); hwLater(() => tone(400, 400, 0.4, 'sine', 0.07), 340); },                                                                              // Eule
+  () => { for (let i = 0; i < 3; i++) hwLater(() => { tone(880 - i * 120, 600, 0.12, 'triangle', 0.05); noise(0.1, 4000, 'highpass', 0.04); }, i * 140); },                               // Fledermaus-Gekreisch
+];
+function hwFlash() { weather.flash = 1; thunderSound(1.2 + Math.random() * 1.5, false); }
+function hwTick(dt) {
+  HW.k += ((HW.on ? 1 : 0) - HW.k) * Math.min(1, dt * 0.6); if (HW.k < 0.002 && !HW.on) HW.k = 0;
+  HW.pollT -= dt; if (HW.pollT <= 0) { HW.pollT = 60; if (world && state !== 'menu' && state !== 'loading') hwPoll(); }
+  const tg = HW.tag || (HW.tag = (() => { const e = document.createElement('div'); e.id = 'hwTag'; e.style.cssText = 'position:absolute;right:10px;top:76px;font-size:12px;color:#ffb347;text-shadow:1px 1px #000;text-align:right'; $('hud').appendChild(e); return e; })());
+  const show = HW.k > 0.05 && world && world.dim === 0 && state !== 'menu'; tg.textContent = show ? '🎃 Halloween-Event' : ''; if (!world || state !== 'play' || world.dim !== 0 || !(HW.k > 0.3)) return;
+  const px = P.p.x, py = P.p.y, pz = P.p.z, night = env.dayF < 0.5;
+  HW.leafT -= dt; if (HW.leafT <= 0) {                                      // fallendes Laub in Herbstfarben
+    HW.leafT = 0.09; const c = [[1, 0.5, 0.1], [0.8, 0.3, 0.05], [0.55, 0.25, 0.1], [0.15, 0.1, 0.12], [0.95, 0.7, 0.2]][(Math.random() * 5) | 0];
+    emitFx(px + (Math.random() - 0.5) * 28, py + 6 + Math.random() * 7, pz + (Math.random() - 0.5) * 28, new THREE.Color(c[0], c[1], c[2]), (Math.random() - 0.3) * 1.4, -0.4, (Math.random() - 0.5) * 1.4, 5.5, 0.05, 0.9);
+  }
+  HW.wispT -= dt; if (HW.wispT <= 0) {                                      // grünliche Irrlichter über dem Boden
+    HW.wispT = night ? 0.25 : 0.8; const a = Math.random() * 6.28, r = 5 + Math.random() * 14, x = px + Math.cos(a) * r, z = pz + Math.sin(a) * r, y = colTopY(x, z);
+    if (y > 0) emitFx(x, y + 0.5 + Math.random(), z, new THREE.Color(0.45, 1, 0.55), 0, 0.5, 0, 3, -0.03, 1.2);
+  }
+  HW.ambT -= dt; if (HW.ambT <= 0) { HW.ambT = 14 + Math.random() * 30; if (night || Math.random() < 0.4) HW_SOUNDS[(Math.random() * HW_SOUNDS.length) | 0](); }
+  HW.flashT -= dt; if (HW.flashT <= 0) { HW.flashT = 35 + Math.random() * 70; if (night && weather.rain < 0.3) hwFlash(); }
+}
+
+function hwOpenBucket(slot) {                                           // Süßigkeiten-Eimer öffnen: 3–6 Süßigkeiten
+  if (!slot || !slot.id) return; if (!isCreative() && --slot.count <= 0) inv[P.sel] = null; refreshHotbar();
+  const n = 3 + ((Math.random() * 4) | 0); for (let i = 0; i < n; i++) { const k = ['candy_corn', 'candy_corn', 'lollipop', 'chocolate_bar', 'caramel_apple'][(Math.random() * 5) | 0]; addItem(IID[k], 1 + ((Math.random() * 2) | 0)); }
+  if (Math.random() < 0.15) addItem(IID.spooky_pie, 1); sfx('pop'); toast('🎃 Süßes! Du hast Süßigkeiten gefunden'); spawnParticles(P.p.x - 0.5, P.p.y + 1, P.p.z - 0.5, new THREE.Color(1, 0.55, 0.1), 14, 3, 0.8);
+}
+function hwTreat(m) {                                                     // Dorfbewohner geben Süßigkeiten für einen Kürbis in der Hand
+  mobSay('villager', 'idle', m.p.x, m.p.y, m.p.z); toast('🎃 „Süßes oder Saures!“ – der Dorfbewohner gibt dir Süßigkeiten');
+  const n = 2 + ((Math.random() * 3) | 0); for (let i = 0; i < n; i++) spawnDrop(IID[['candy_corn', 'lollipop', 'chocolate_bar', 'caramel_apple', 'candy_corn'][(Math.random() * 5) | 0]], 1 + ((Math.random() * 2) | 0), m.p.x, m.p.y + 1.2, m.p.z);
+  spawnParticles(m.p.x - 0.5, m.p.y + 1.5, m.p.z - 0.5, new THREE.Color(1, 0.7, 0.2), 14, 3, 0.8);
+}
+function hwAmbientSpawn() {                                               // Kürbis-Fledermäuse (Dämmerung/Nacht) und schwarze Katzen (tagsüber)
+  if (world.dim !== 0 || isCreative() || !rules.mobspawn) return;
+  const cnt = (t) => { let n = 0; for (const m of mobs) if (m.type === t) n++; return n; };
+  const spots = allPlayerSpots(), b = spots[(Math.random() * spots.length) | 0], a = Math.random() * 6.28, d = 8 + Math.random() * 14, x = Math.floor(b.x + Math.cos(a) * d), z = Math.floor(b.z + Math.sin(a) * d);
+  if (!world.getChunk(x >> 4, z >> 4)) return;
+  let y = CH - 1; while (y > 0 && world.getBlock(x, y, z) === AIR) y--; y++;
+  if (env.dayF < 0.6 && cnt('hw_bat') < 7 && Math.random() < 0.35) { if (world.getBlock(x, y + 5, z) === AIR) mobs.push(new Mob('hw_bat', x + 0.5, y + 4 + Math.random() * 3, z + 0.5)); }
+  else if (env.dayF > 0.3 && cnt('hw_cat') < 3 && Math.random() < 0.2 && world.getBlock(x, y - 1, z) === GRASS && world.getBlock(x, y, z) === AIR) mobs.push(new Mob('hw_cat', x + 0.5, y, z + 0.5));
+}
+function hwWorldSwitch(on) {                                              // Event an/aus: Halloween-Mobs verschwinden, entfernte Chunks werden neu erzeugt (mit/ohne Deko; Änderungen der Spieler bleiben)
+  if (!on) for (const m of mobs) if (m.type.startsWith('hw_')) { m.hp = 0; m.exploded = true; }
+  if (!world || world.dim !== 0) return;
+  const pcx = Math.floor(P.p.x) >> 4, pcz = Math.floor(P.p.z) >> 4;
+  for (const [k, c] of [...world.chunks]) if (Math.max(Math.abs(c.cx - pcx), Math.abs(c.cz - pcz)) >= 2) { world.disposeChunk(c); world.chunks.delete(k); }
+  world.lcx = NaN;
+}
 /* ---------------- L2. Netzwerk-Schichten ---------------- */
 const rid = () => Array.from(crypto.getRandomValues(new Uint8Array(8)), (b) => b.toString(16).padStart(2, '0')).join('');
 function loadScript(src, timeoutMs) {
@@ -9375,6 +9880,8 @@ class SupabaseDB {
   register(name, token, skin, slim) { return this.rpc('vc_register', { p_name: name, p_token: token, p_skin: skin, p_slim: slim }); }
   accountStatus(name, token) { return this.rpc('vc_account_status', { p_name: name, p_token: token }); }
   commandPolicy(name, token) { return this.rpc('vc_command_policy', { p_name: name, p_token: token }); }
+  getEvent() { return this.rpc('vc_event_get', {}); }
+  setEvent(name, token, key, on) { return this.rpc('vc_event_set', { p_name: name, p_token: token, p_key: key, p_on: on }); }
   createRoom(room, seed, mode, name, token, pub) { return this.rpc('vc_create_room', { p_room: room, p_seed: seed, p_mode: mode, p_name: name, p_token: token, p_public: pub }); }
   joinRoom(room, name, token) { return this.rpc('vc_join_room', { p_room: room, p_name: name, p_token: token }); }
   setOp(room, name, token, target, op) { return this.rpc('vc_set_op', { p_room: room, p_name: name, p_token: token, p_target: target, p_op: op }); }
@@ -9417,6 +9924,8 @@ class LocalNet {
 class LocalDB {
   async accountStatus() { return { ok: true, banned: false }; }
   async commandPolicy() { return { ok: true, unlimited: false, warn: 100000 }; }
+  async getEvent() { const d = this.load(); return { ok: true, halloween: !!(d.event && d.event.halloween) }; }
+  async setEvent(name, token, key, on) { const d = this.load(); d.event = Object.assign(d.event || {}, { [key]: !!on }); this.save(d); return { ok: true }; }
   constructor() { this.key = 'voxelcraft_localdb_v1'; }
   load() { try { return JSON.parse(localStorage.getItem(this.key)) || {}; } catch (e) { return {}; } }
   save(d) { try { localStorage.setItem(this.key, JSON.stringify(d)); } catch (e) { throw new Error('Lokaler Speicher voll'); } }
@@ -9629,7 +10138,8 @@ const isAdminName = (n) => {
 };
 const rankMark = (n) => (isAdminName(n) ? '🛡 [Admin] ' : isOwnerName(n) ? '👑 ' : isOp(n) ? '⭐ ' : '');
 const isOp = (n) => !!n && (isAdminName(n) || isOwnerName(n) || mp.ops.has(n.toLowerCase()));
-const visibleCmds = () => CMD_LIST.filter((s) => !s.hidden || adminEligible());
+const spAdminOk = (c) => !!c.spAdmin && !mp.on && mpCfg.name === ADMIN_NAME;       // Befehle, die der Admin auch im Einzelspieler nutzen darf (/event)
+const visibleCmds = () => CMD_LIST.filter((s) => !s.hidden || adminEligible() || spAdminOk(s));
 let remoteExec = false;
 const canCheat = () => !mp.on || remoteExec || isOp(mp.name);
 const norm = (s) => String(s).toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss').replace(/[^a-z0-9]/g, '');
@@ -9820,7 +10330,7 @@ function chatCommand(body) {
   const parts = body.trim().split(/\s+/), name = (parts[0] || '').toLowerCase(), args = parts.slice(1);
   if (!name) return;
   let c = CMDS[name];
-  if (c && c.hidden && !adminEligible()) c = undefined;               // geheime Befehle gibt es für alle anderen nicht
+  if (c && c.hidden && !adminEligible() && !spAdminOk(c)) c = undefined;               // geheime Befehle gibt es für alle anderen nicht
   if (!c) {
     const near = [...new Set(visibleCmds().flatMap((s) => [s.name, ...s.aliases]))].filter((n) => n.startsWith(name.slice(0, 2)) || n.includes(name)).slice(0, 4);
     return chatErr('Unbekannter Befehl „/' + name + '“.' + (near.length ? ' Meintest du: ' + near.map((n) => '/' + n).join(', ') + '?' : ' /help zeigt alle Befehle.'));
@@ -10260,6 +10770,17 @@ cmd(['admin'], {
     if (!adminEligible()) fail('Unbekannter Befehl.');
     if (mp.admin) { chatOk('Du bist schon Admin.'); return; }
     mp.admin = true; mp.sendT = 0; chatOk('🛡 Admin-Modus an – du hast alle Rechte und bist nicht deop- oder rauswerfbar.'); if (mp.tab) renderTabList();
+  },
+});
+cmd(['event', 'ereignis'], {
+  desc: 'Admin: Events schalten – /event halloween (an) | /event off (aus). Gilt für alle Server und Welten.', hidden: true, spAdmin: true, args: [T.opt('event', [['halloween', 'Halloween-Event an'], ['off', 'Event aus']], true)],
+  run(a) {
+    const ok = mp.on ? isAdminName(mp.name) : (mpCfg.name === ADMIN_NAME); if (!ok) fail('Unbekannter Befehl.');
+    const w = (a[0] || '').toLowerCase();
+    if (!w) { chatAdd(null, '🎃 Halloween-Event: ' + (HW.on ? 'AN' : 'aus') + ' – /event halloween oder /event off', 'sys'); return; }
+    if (['halloween', 'on', 'an'].includes(w)) { if (HW.on) { chatOk('Das Event läuft schon.'); return; } hwAdminSet(true); }
+    else if (['off', 'aus', 'stop', 'none'].includes(w)) { if (!HW.on) { chatOk('Es läuft kein Event.'); return; } hwAdminSet(false); }
+    else fail('/event halloween oder /event off');
   },
 });
 cmd(['animation', 'riese'], {
@@ -10903,6 +11424,7 @@ function applyWeatherSky() {
   } else { sunMesh.material.opacity = 1; moonMesh.material.opacity = 1; }
   if (weather.fogF > 0.001) { tmpCol.setRGB(0.72, 0.75, 0.78).multiplyScalar(0.2 + 0.8 * env.dayF); skyCol.lerp(tmpCol, 0.85 * weather.fogF); sunMesh.material.opacity *= 1 - 0.8 * weather.fogF; moonMesh.material.opacity *= 1 - 0.8 * weather.fogF; starMat.opacity *= 1 - weather.fogF; uni.uDay.value *= 1 - 0.12 * weather.fogF; }
   if (weather.sand > 0.001) { tmpCol.setRGB(0.82, 0.66, 0.42).multiplyScalar(0.2 + 0.8 * env.dayF); skyCol.lerp(tmpCol, 0.9 * weather.sand); sunMesh.material.opacity *= 1 - 0.85 * weather.sand; moonMesh.material.opacity *= 1 - 0.85 * weather.sand; starMat.opacity *= 1 - weather.sand; uni.uDay.value *= 1 - 0.2 * weather.sand; }
+  hwSkyTint();
   if (weather.flash > 0) { skyCol.lerp(FLASH_COL, weather.flash * 0.6); uni.uDay.value = Math.min(1.4, uni.uDay.value + weather.flash * 0.5); }
   $('flash').style.opacity = weather.flash * 0.45;
 }
@@ -11257,7 +11779,10 @@ const myName = () => mp.on ? mp.name : 'Du';
 function interactMob(m, dry) {
   const held = inv[P.sel], hid = held ? held.id : 0, hI = hid >= ITEM_BASE ? ITEMS[hid] : null;
   const send = (act) => { if (!mp.on || !m.remote) m.interact(act, myName()); else mpSend('mobuse', { id: m.mid, act, by: mp.name }); };
-  if (m.type === 'villager') { if (!dry) openTrade(m); return true; }
+  if (m.type === 'villager') {
+    if (HW.on && (hid === ID.jack_o_lantern || hid === ID.pumpkin) && !(m.treatT > 0)) { if (dry) return true; m.treatT = 600; hwTreat(m); return true; }          // Süßes oder Saures!
+    if (!dry) openTrade(m); return true;
+  }
   if (m.type === 'horse') {
     if (dry) return true;
     if (hid === IID.saddle && m.tame && !m.saddled) { if (!isCreative() && --held.count <= 0) inv[P.sel] = null; refreshHotbar(); send('saddle'); toast('Das Pferd trägt jetzt einen Sattel'); return true; }
@@ -11331,6 +11856,7 @@ function rollLoot(kind, x, y, z) {
     const id = IID[key] !== undefined ? IID[key] : ID[key]; if (id === undefined) continue;
     out.push([id, min + Math.floor(rng() * (max - min + 1))]);
   }
+  if (HW.on && kind !== 'backrooms') for (const [k, mn, mx, pr] of [['candy_corn', 2, 6, 0.9], ['lollipop', 1, 3, 0.6], ['chocolate_bar', 1, 2, 0.5], ['caramel_apple', 1, 1, 0.3], ['candy_bucket', 1, 1, 0.25], ['spooky_pie', 1, 1, 0.15], ['witch_brew', 1, 1, 0.15]]) if (rng() < pr) out.push([IID[k], mn + Math.floor(rng() * (mx - mn + 1))]);
   if (out.length < 2) out.push([IID.bread, 2], [IID.coal, 3]);
   return out;
 }
@@ -11399,12 +11925,14 @@ function updateStructs(dt) {
   for (const s of world.structs.values()) {
     if (Math.hypot(P.p.x - s.x, P.p.z - s.z) < 14 && Math.abs(P.p.y - s.y) < 12) achGive('ruin');
     let dmin = 1e9; for (const sp of spots) dmin = Math.min(dmin, Math.hypot(sp.x - s.x, sp.z - s.z) + Math.abs(sp.y - s.y) * 0.5);
+    if (s.spawned && dmin > 90 && s.kind && (s.kind === 'graveyard' || s.kind === 'haunted' || s.kind === 'scarecrowfield') && performance.now() > (s.coolT || 0)) { s.spawned = false; s.coolT = performance.now() + 240000; }       // Halloween-Orte füllen sich nach einer Weile wieder
     if (dmin > 40 || !canSpawn || !world.getChunk(s.x >> 4, s.z >> 4)) continue;
     if (!s.spawned && s.mobs.length && dmin < 34) {
       s.spawned = true;
       if (mobs.some((m) => Math.hypot(m.p.x - s.x, m.p.z - s.z) < 14 && s.mobs.includes(m.type))) continue;
       for (const t of s.mobs) {
         if (MOBTYPES[t].kind === 'hostile' && (isCreative() || rules.difficulty === 'peaceful')) continue;
+        if (t.startsWith('hw_') && !HW.on) continue;
         mobs.push(new Mob(t, s.x + 0.5 + (Math.random() - 0.5) * 2, s.y, s.z + 0.5 + (Math.random() - 0.5) * 2));
       }
     }
@@ -11456,7 +11984,7 @@ const mpHandlers = {
     chatSys(meta.name + ' ist beigetreten'); achGive('mp'); mpEnsureProfile(rp); mpStatusHud(); if (mp.tab) renderTabList();
     if (isHost()) {                                                    // der Host bringt Neulinge auf den aktuellen Stand (Uhrzeit, Regeln, Wetter)
       const o = weather.override && gameTime < weather.override.until ? weather.override : null;
-      net('env', { ep: mp.epoch, fr: mp.freeze, rules: { ...rules }, ...(o ? { wk: o.kind, wd: Math.round(o.until - gameTime) } : {}) });
+      net('env', { ep: mp.epoch, fr: mp.freeze, rules: { ...rules }, hw: HW.on ? 1 : 0, ...(o ? { wk: o.kind, wd: Math.round(o.until - gameTime) } : {}) });
     }
   },
   leave(id) {
@@ -11514,11 +12042,13 @@ const mpHandlers = {
         if (typeof p.ep === 'number') mp.epoch = p.ep;
         if ('fr' in p) mp.freeze = typeof p.fr === 'number' ? p.fr : null;
         if (p.rules) { Object.assign(rules, p.rules); hudStatsDirty = true; }
+        if ('hw' in p) hwApply(!!p.hw, false);
         if (p.sk) { weather.override = { kind: 'clear', until: mpGameTime() + 300 }; if (P.sleeping) toast('Die Nacht wurde verschlafen'); }
         if (p.wk) weather.override = { kind: p.wk, until: gameTime + (p.wd || 900) };
         break;
       case 'bolt': strikeLightning(p.x, p.z, true); break;
       case 'boss': bossRecv(p, from); break;
+      case 'hw': { const sn = mp.players.get(from); if (sn && isAdminName(sn.name)) hwApply(!!p.on); break; }
       case 'emote': { const rp = mp.players.get(from); if (rp) rp.emote = p && Number.isInteger(p.e) && EMOTES[p.e] ? { id: p.e, t: 0 } : null; break; }
       case 'throw': thrown.push(new ThrownPotion(p.id, p.x, p.y, p.z, p.vx, p.vy, p.vz, true)); break;
       case 'splash': applySplash(p.x, p.y, p.z, p.id, true); break;
@@ -12684,7 +13214,7 @@ function showBreakOver() {
 setInterval(() => { classGateCheck(); }, 1000);
 classGateCheck();
 
-window.__vc = { boss, bossBegin, bossEnd, bossTick, bossPos, bossRp, bossStartAct, bossDamage, bossPlayersAlive, bossLocked, BACT, blastAsk, askRealBlast, answerRealBlast, chainSet: (n, x, y, z) => { chainLocal = n; chainSum = [n * x, n * y, n * z]; }, blastQ, blastInfo: () => ({ tot: blastTot, done: blastDone, n: blastN, cur: !!blastCur }), bigSt, stepBlast, bigTick, perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+window.__vc = { HW, hwApply, hwTick, hwPoll, boss, bossBegin, bossEnd, bossTick, bossPos, bossRp, bossStartAct, bossDamage, bossPlayersAlive, bossLocked, BACT, blastAsk, askRealBlast, answerRealBlast, chainSet: (n, x, y, z) => { chainLocal = n; chainSum = [n * x, n * y, n * z]; }, blastQ, blastInfo: () => ({ tot: blastTot, done: blastDone, n: blastN, cur: !!blastCur }), bigSt, stepBlast, bigTick, perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>
