@@ -58,6 +58,18 @@ h2{font-size:26px;margin-bottom:14px;text-shadow:2px 2px #333}
 .btn:active{box-shadow:inset 3px 3px 0 #4a4a4a,inset -3px -3px 0 #b4b4b4}
 .btn.sel{background:#4c9a34}
 .btn:disabled{opacity:.45;cursor:not-allowed}
+#signEdit .panel{max-width:440px}
+#signPrev{margin:10px auto 14px;width:300px;max-width:100%;padding:12px 8px;background:#b8945a;border:4px solid #4a331a;box-shadow:inset 0 0 0 2px #8a6a3a;color:#1a1208;font:bold 19px/1.45 "Courier New",monospace;text-align:center;min-height:5.8em}
+#signPrev div{white-space:pre;overflow:hidden;text-overflow:clip;min-height:1.45em}
+#signEdit input[type=text]{text-align:center;margin:3px 0}
+#book .panel{max-width:500px}
+#bookPaper{margin:10px auto;background:#efe3c0;border:4px solid #4a2c10;box-shadow:inset 0 0 0 2px #c9b57e;color:#2a1a08;min-height:260px;padding:14px 16px;text-align:left;position:relative}
+#bookText{width:100%;height:230px;resize:none;border:0;outline:none;background:transparent;color:#2a1a08;font:17px/1.35 "Georgia",serif;box-sizing:border-box}
+#bookRead{white-space:pre-wrap;word-break:break-word;font:17px/1.35 "Georgia",serif;min-height:230px}
+#bookCover{text-align:center;padding-top:34px}#bookCover b{font:bold 24px Georgia,serif;display:block;word-break:break-word}#bookCover i{display:block;margin-top:10px;font:italic 16px Georgia,serif}
+#bookNav{display:flex;align-items:center;justify-content:center;gap:10px}#bookNav .btn{width:auto;min-width:56px;margin:4px 0}#bookPg{min-width:96px;text-align:center}
+#bookSignBox{margin-top:8px;border-top:2px solid #666;padding-top:6px}
+#bookSignBox .warn{color:#ffb347;font-size:14px;margin:8px 0}
 .row{display:flex;gap:10px}
 .row .btn{margin:6px 0}
 label{display:block;text-align:left;font-size:14px;margin:12px 0 4px;color:#d6d6d6}
@@ -504,6 +516,39 @@ body.touch .ew-bar .ew-close{display:block}
     <div class="sub" id="tradeSub"></div>
     <div id="tradeList" style="max-height:52vh;overflow-y:auto;text-align:left;touch-action:pan-y"></div>
     <button class="btn" id="btnTradeClose" type="button" style="margin-top:12px">Schließen</button>
+  </div>
+</div>
+
+<!-- Schild beschriften -->
+<div id="signEdit" class="overlay hidden">
+  <div class="panel">
+    <h2>Schild beschriften</h2>
+    <div class="sub">Bis zu 4 Zeilen mit je 15 Zeichen</div>
+    <div id="signPrev"><div></div><div></div><div></div><div></div></div>
+    <input type="text" id="signL0" maxlength="15" autocomplete="off" spellcheck="false">
+    <input type="text" id="signL1" maxlength="15" autocomplete="off" spellcheck="false">
+    <input type="text" id="signL2" maxlength="15" autocomplete="off" spellcheck="false">
+    <input type="text" id="signL3" maxlength="15" autocomplete="off" spellcheck="false">
+    <div class="row"><button class="btn" id="btnSignOk" type="button">Fertig</button><button class="btn" id="btnSignCancel" type="button">Abbrechen</button></div>
+  </div>
+</div>
+
+<!-- Buch und Feder / signiertes Buch -->
+<div id="book" class="overlay hidden">
+  <div class="panel">
+    <h2 id="bookTitle">Buch und Feder</h2>
+    <div class="sub" id="bookSub"></div>
+    <div id="bookPaper"><textarea id="bookText" maxlength="256" spellcheck="false" placeholder="Hier schreiben …"></textarea><div id="bookRead" class="hidden"></div><div id="bookCover" class="hidden"></div></div>
+    <div id="bookNav"><button class="btn" id="bookPrev" type="button">◀</button><span id="bookPg"></span><button class="btn" id="bookNext" type="button">▶</button></div>
+    <div id="bookSignBox" class="hidden">
+      <label for="bookTitleIn">Titel des Buches</label>
+      <input type="text" id="bookTitleIn" maxlength="24" autocomplete="off" spellcheck="false">
+      <label for="bookAuthorIn" id="bookAuthorLbl">Autor</label>
+      <input type="text" id="bookAuthorIn" maxlength="24" autocomplete="off" spellcheck="false">
+      <div class="warn">⚠ Nach dem Signieren kann das Buch von niemandem mehr verändert werden – auch nicht von dir.</div>
+      <div class="row"><button class="btn" id="btnBookSignOk" type="button">Signieren</button><button class="btn" id="btnBookSignBack" type="button">Zurück</button></div>
+    </div>
+    <div class="row" id="bookBtns"><button class="btn" id="btnBookSign" type="button">Signieren</button><button class="btn" id="btnBookDone" type="button">Fertig</button></div>
   </div>
 </div>
 
@@ -1290,6 +1335,22 @@ const FLW = [], FLL = [];
     arr[lv] = id; LQ[id] = fam; LVL[id] = lv; LIQH[id] = lv === 9 ? 1 : 0.06 + 0.1 * lv;
   }
 });
+// --- Schilder (angehängt): Standschild (4 Blickrichtungen, braucht Boden) und Wandschild (4 Wände). Der Text steckt nicht im Block, sondern in `signs` ---
+const SIGN_IDS = [];                                    // 0–3 Standschild (Vorderseite zeigt nach DIRS4[n]), 4–7 Wandschild (wallDir d, Vorderseite zeigt nach DIRS4[(d+2)%4])
+{
+  const tp = allSides('oak_planks'), ic = tile('sign_item', { src: 'item/gen_sign' }), S16s = (b) => b.map((v) => v / 16);
+  for (let n = 0; n < 4; n++) {
+    const ns = (n & 1) === 0, board = ns ? S16s([1, 7, 7, 15, 15, 9]) : S16s([7, 7, 1, 9, 15, 15]), post = S16s([7, 0, 7, 9, 7, 9]);
+    SIGN_IDS.push(add('sign_' + n, 'Schild', tp, { solid: false, opaque: false, hard: 1, tool: 'axe', need: 0, boxes: [box(board), box(post)], aabbs: [board, post], support: 'below', drop: 0, sign: { n, wall: false }, tab: n === 0 ? 'bau' : undefined, flat: ic }));
+  }
+  for (let d = 0; d < 4; d++) {
+    const e = EDGE_BOX(d, 2 / 16), b = d === 0 || d === 2 ? [1 / 16, 4 / 16, e[2], 15 / 16, 12 / 16, e[5]] : [e[0], 4 / 16, 1 / 16, e[3], 12 / 16, 15 / 16];
+    SIGN_IDS.push(add('sign_wall_' + d, 'Schild', tp, { solid: false, opaque: false, hard: 1, tool: 'axe', need: 0, boxes: [box(b)], aabbs: [b], wallDir: d, drop: 0, sign: { n: (d + 2) % 4, wall: true }, flat: ic }));
+  }
+  SIGN_IDS.forEach((id) => { BLOCKS[id].drop = SIGN_IDS[0]; });
+  ID.sign = SIGN_IDS[0]; BLOCKS[ID.sign].wallIds = SIGN_IDS.slice(4); BLOCKS[ID.sign].standIds = SIGN_IDS.slice(0, 4);
+}
+if (nextId >= 4000) throw new Error('Zu viele Blöcke');
 // ---------- Items (Nicht-Blöcke, IDs ab 1000) ----------
 const ITEM_BASE = 5000;
 let nextItem = ITEM_BASE;
@@ -1415,7 +1476,10 @@ item('witch_brew', 'Hexengebräu', 'gen_witch_brew', { food: 2, always: true, st
 item('candy_bucket', 'Süßigkeiten-Eimer', 'gen_candy_bucket', { stack: 16, candyBucket: true });
 item('ectoplasm', 'Ektoplasma', 'gen_ectoplasm');
 item('reaper_scythe', 'Sense des Sensenmanns', 'gen_reaper_scythe', { stack: 1, tool: { type: 'sword', tier: 4, speed: 2, dur: 900, dmg: 11 } });
-PALETTE.items = PALETTE.items.filter((i) => i !== IID.almond_water);
+// --- Buch und Feder / signiertes Buch: Inhalt steckt im Stapel (ench._bk = { t: Titel, a: Autor, p: [Seiten], s: 1 }) ---
+item('writable_book', 'Buch und Feder', 'gen_book_quill', { stack: 1, bookKind: 'w' });
+item('written_book', 'Signiertes Buch', 'gen_book_written', { stack: 1, bookKind: 's' });
+PALETTE.items = PALETTE.items.filter((i) => i !== IID.almond_water && i !== IID.written_book);
 // ---------- Abbau: passendes Werkzeug und benötigte Stufe (0 Hand, 1 Holz, 2 Stein, 3 Eisen, 4 Diamant) ----------
 const setMine = (id, tool, need) => { BLOCKS[id].tool = tool; BLOCKS[id].need = need; };
 [GRASS, DIRT, SAND, SNOW].forEach((id) => setMine(id, 'shovel', 0));
@@ -1856,9 +1920,33 @@ function genHalloweenImages() {
   ic('spooky_pie', (x, p) => { for (let yy = 7; yy < 13; yy++) for (let xx = 2; xx < 14; xx++) { const d = Math.hypot((xx - 7.5) / 5.8, (yy - 10) / 3); if (d > 1) continue; p(xx, yy, yy < 9 ? '#e08a20' : '#a85a14'); } for (let xx = 4; xx < 12; xx++) p(xx, 8, '#f6c070'); p(6, 9, '#2a1608'); p(9, 9, '#2a1608'); p(7, 11, '#2a1608'); p(8, 11, '#2a1608'); });
 }
 
+// Schild-Symbol und Buch-Symbole (selbst gezeichnet)
+function genSignImages() {
+  const I = ATLAS.images;
+  const ic = (name, fn, also) => { const c = brCanvas(16, 16), x = c.getContext('2d'); fn((xx, yy, col, w, h) => { x.fillStyle = col; x.fillRect(xx, yy, w || 1, h || 1); }); I['item/gen_' + name] = c; };
+  ic('sign', (p) => {
+    p(1, 1, '#4a331a', 14, 8); p(2, 2, '#b8945a', 12, 6);
+    for (let xx = 2; xx < 14; xx++) { p(xx, 3, '#a07c46'); p(xx, 6, '#a07c46'); }
+    p(3, 4, '#3a2a14', 5, 1); p(3, 7, '#3a2a14', 7, 1); p(9, 4, '#3a2a14', 3, 1);
+    p(7, 9, '#4a331a', 2, 6); p(7, 9, '#8a6a3a', 1, 6);
+  });
+  ic('book_quill', (p) => {
+    p(3, 1, '#2a1a0a', 10, 13); p(4, 2, '#6b4423', 8, 11); p(4, 2, '#8a5a2e', 8, 1); p(3, 1, '#3a2410', 1, 13); p(5, 3, '#e9dcb8', 6, 9);
+    for (let yy = 4; yy < 11; yy += 2) p(6, yy, '#9a8a66', 4, 1);
+    for (let i = 0; i < 9; i++) { p(14 - i, 1 + i, '#f2f2f2'); if (i > 1 && i < 8) p(13 - i, 1 + i, '#c9d3dc'); }
+    p(5, 10, '#1a1a1a'); p(4, 11, '#1a1a1a');
+  });
+  ic('book_written', (p) => {
+    p(3, 1, '#1f0a0a', 10, 14); p(4, 2, '#8a1c1c', 8, 12); p(4, 2, '#b02a2a', 8, 1); p(3, 1, '#3a1010', 1, 14);
+    p(6, 4, '#e8c050', 4, 1); p(5, 5, '#e8c050', 1, 4); p(10, 5, '#e8c050', 1, 4); p(6, 9, '#e8c050', 4, 1); p(7, 6, '#e8c050', 2, 2);
+    p(4, 13, '#5a1010', 8, 1);
+  });
+  I['block/gen_sign_icon'] = I['item/gen_sign'];
+}
+
 ATLAS.promise = Promise.all(Object.keys(PACK).map((k) => loadImage(PACK[k]).then((img) => { ATLAS.images[k] = img; })))
   .then(() => {
-    genBackroomsImages(); genHalloweenImages();
+    genBackroomsImages(); genHalloweenImages(); genSignImages();
     paintAtlas();
     for (let i = 0; i < 10; i++) {
       const t = new THREE.Texture(ATLAS.images['block/destroy_stage_' + i]);
@@ -1953,7 +2041,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.33';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-10-05.34';            // Spielversion (nur Anzeige)
 // Mehrspieler-Kompatibilität: NUR wenn sich das Netzwerkformat oder die Welt-Speicherung unverträglich ändert, MP_PROTO erhöhen. Normale Versionen (neue Blöcke, Rezepte, Mobs, Befehle …) vertragen sich untereinander –
 // dafür gibt es keine Warnung mehr. Clients ohne MP_PROTO (vor 2026-10-05.17) gelten ab MP_MIN_VER als kompatibel.
 const MP_PROTO = 1, MP_MIN_VER = '2026-10-05.1';
@@ -5095,6 +5183,7 @@ function breakBlock(hit, noDrop) {
     const key = ckeyOf(hit.x, hit.y, hit.z), items = containers.get(key);
     if (items) { items.forEach((it) => { if (it) spawnDrop(it.id, it.count, hit.x + 0.5, hit.y + 0.5, hit.z + 0.5, { dur: it.dur, ench: it.ench }); }); containers.delete(key); if (mp.on) mpSaveContainer(hit.x, hit.y, hit.z, []); }
   }
+  if (BLOCKS[id].sign) signRemove(hit.x, hit.y, hit.z);
   world.setBlock(hit.x, hit.y, hit.z, AIR);
   if (!isCreative()) {
     if (!noDrop) { const held0 = inv[P.sel]; lootFor(id, held0).forEach(([i, n]) => spawnDrop(i, n, hit.x + 0.5, hit.y + 0.4, hit.z + 0.5)); if (!hasEnch(held0, 'silk_touch')) { const xv = oreXp(id); if (xv) spawnOrbs(hit.x + 0.5, hit.y + 0.5, hit.z + 0.5, xv); } }
@@ -5170,6 +5259,11 @@ function placementFor(id) {
     const d = DIRS4.findIndex((q) => q[0] === -target.nx && q[1] === -target.nz);
     return d < 0 ? null : { x, y, z, id: LADDER_IDS[d] };
   }
+  if (B.sign) {                                                          // Schild: oben drauf = Standschild (zeigt zum Spieler), an der Wand = Wandschild
+    if (target.ny > 0) return { x, y, z, id: B.standIds[(facingDir() + 2) % 4] };
+    const d = DIRS4.findIndex((q) => q[0] === -target.nx && q[1] === -target.nz);
+    return target.ny === 0 && d >= 0 && isSolidId(target.id) ? { x, y, z, id: B.wallIds[d] } : null;
+  }
   if (B.wallIds && target.ny === 0) {                                    // Fackeln an Wänden
     const d = DIRS4.findIndex((q) => q[0] === -target.nx && q[1] === -target.nz);
     if (d >= 0 && isSolidId(target.id)) return { x, y, z, id: B.wallIds[d] };
@@ -5231,9 +5325,11 @@ function useItem(pressed) {
     if (TB.door) { toggleDoor(target); return; }
     if (TB.trap) { toggleTrap(target); return; }
     if (TB.gate) { toggleGate(target); return; }
+    if (TB.sign && !P.sneak) { signOpen(target.x, target.y, target.z); return; }
   }
   if (world.dim === 2 && I && (I.lighter || I.door || I.key === 'bucket' || I.fills !== undefined || (!I.food && !I.potion && !I.splash && !I.rod && !I.clock && !I.compass && !I.bow && !I.armor && !I.spyglass))) { if (pressed) brLockMsg(); return; }
   if (I) {
+    if (I.bookKind) { if (pressed) bookOpen(slot); return; }
     if (I.candyBucket) { if (pressed) hwOpenBucket(slot); return; }
     if (I.food) {                                          // Essen: gedrückt halten, bis aufgegessen
       if (pressed && !isCreative() && (P.hunger < 20 || I.always)) startEat(slot);
@@ -5323,6 +5419,7 @@ function useItem(pressed) {
   if (pb.rail) railAround(x, y, z);
   blockSfx('place', pl.id); handSwing(); if (mp.on) mp.swing = true;
   if (!isCreative() && --slot.count <= 0) inv[P.sel] = null;
+  if (pb.sign) signPlaced(x, y, z);
   refreshHotbar();
 }
 
@@ -5619,6 +5716,7 @@ function checkFall(x, y, z) {
 const isSolidId = (id) => id > 0 && BLOCKS[id].solid;
 function popBlock(x, y, z, drop) {
   const nid = world.getBlock(x, y, z); if (nid <= 0) return;
+  if (BLOCKS[nid].sign) signRemove(x, y, z);
   world.setBlock(x, y, z, AIR);
   if (drop && !isCreative()) lootFor(nid).forEach(([i, n]) => spawnDrop(i, n, x + 0.5, y + 0.4, z + 0.5));
 }
@@ -5966,7 +6064,163 @@ function closeContainer() {
   openChest = null;
 }
 const packItems = (arr) => arr.map((s) => s ? (s.ench ? [s.id, s.count, s.dur, s.ench] : s.dur === undefined ? [s.id, s.count] : [s.id, s.count, s.dur]) : 0);
-const unpackItems = (arr) => arr.map((s) => { if (!(s && validId(s[0]))) return null; const o = s[2] === undefined ? { id: s[0], count: s[1] } : { id: s[0], count: s[1], dur: s[2] }; if (s[3] && typeof s[3] === 'object') o.ench = s[3]; return o; });
+const unpackItems = (arr) => arr.map((s) => { if (!(s && validId(s[0]))) return null; const o = s[2] == null ? { id: s[0], count: s[1] } : { id: s[0], count: s[1], dur: s[2] }; if (s[3] && typeof s[3] === 'object') o.ench = s[3]; return o; });
+
+// ===== Schilder: Text steckt nicht im Block, sondern in `signs` (Schlüssel wie bei Containern). Im Mehrspielermodus läuft er über denselben Kanal wie Truhen ({sg:[4 Zeilen]}) =====
+const signs = new Map();                        // "x,Y,z" -> { l: [4 Zeilen], x, y, z, d (Dimension), mesh, miss }
+const SIGN_LINE = 15;
+const signClean = (a) => { const l = []; for (let i = 0; i < 4; i++) l.push(String((a && a[i]) || '').replace(/[\u0000-\u001f<>]/g, '').slice(0, SIGN_LINE)); return l; };
+function signTexture(lines) {
+  const c = document.createElement('canvas'); c.width = 224; c.height = 128; const x = c.getContext('2d');
+  x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = '#1a1208';
+  lines.forEach((t, i) => { if (!t) return; x.font = 'bold 24px "Courier New", monospace'; const w = x.measureText(t).width; x.save(); x.translate(112, 19 + i * 30); if (w > 212) x.scale(212 / w, 1); x.fillText(t, 0, 0); x.restore(); });
+  const tex = new THREE.CanvasTexture(c); tex.minFilter = tex.magFilter = THREE.LinearFilter; tex.generateMipmaps = false; return tex;
+}
+function signMeshOff(r) { if (!r.mesh) return; scene.remove(r.mesh); r.mesh.material.map.dispose(); r.mesh.material.dispose(); r.mesh.geometry.dispose(); r.mesh = null; }
+function signMeshOn(r, b) {
+  const S = BLOCKS[b].sign, nrm = DIRS4[S.n], off = S.wall ? 2 / 16 - 0.5 + 0.004 : 1 / 16 + 0.004;       // Vorderseite: Wandschild liegt am Rand (Wand-Seite), Standschild in der Mitte
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(14 / 16, 8 / 16), new THREE.MeshBasicMaterial({ map: signTexture(r.l), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+  m.position.set(r.x + 0.5 + nrm[0] * off, r.y + (S.wall ? 0.5 : 11 / 16), r.z + 0.5 + nrm[1] * off); m.rotation.y = Math.atan2(nrm[0], nrm[1]);
+  scene.add(m); r.mesh = m;
+}
+function signSetKey(key, lines) {
+  const old = signs.get(key); if (old) signMeshOff(old);
+  const l = signClean(lines); if (!l.some(Boolean)) { signs.delete(key); return; }
+  signs.set(key, { l, miss: 0, mesh: null });
+}
+function signsReset() { signs.forEach(signMeshOff); signs.clear(); }
+const signsPack = () => { const o = {}; signs.forEach((r, k) => { o[k] = r.l; }); return o; };
+function containerLoad(key, items) {            // Schild-Daten stehen im Container-Kanal – true, wenn es welche waren
+  if (items && items.length && items[0] && items[0].sg) { signSetKey(key, items[0].sg); return true; }
+  return false;
+}
+function mpSaveSign(x, y0, z, lines) {
+  if (!mp.on) return;
+  const y = keyY(world.dim, y0), packed = lines ? [{ sg: lines }] : [];
+  mpSend('container', { x, y, z, items: packed });
+  if (mp.db) mp.db.setContainer(mp.room, mp.name, mp.token, ...toWire(x, y, z), packed).catch(() => mpStatusHud('Schild konnte nicht gespeichert werden'));
+}
+function signRemove(x, y, z) {                  // Schild wurde von uns abgebaut
+  const key = ckeyOf(x, y, z), r = signs.get(key); if (!r) return;
+  signMeshOff(r); signs.delete(key); mpSaveSign(x, y, z, null);
+}
+let signT = 0;
+function signTick(dt) {
+  if (!world || !signs.size) return;
+  signT -= dt; if (signT > 0) return; signT = 0.4;
+  const px = P.p.x, pz = P.p.z, now = performance.now();
+  for (const [key, r] of signs) {
+    if (r.x === undefined) { const q = key.split(',').map(Number), dy = fromKeyY(q[1]); r.x = q[0]; r.z = q[2]; r.d = dy[0]; r.y = dy[1]; }
+    if (r.d !== world.dim) { signMeshOff(r); continue; }
+    const dx = r.x + 0.5 - px, dz = r.z + 0.5 - pz;
+    if (dx * dx + dz * dz > 44 * 44) { signMeshOff(r); continue; }
+    const b = world.getBlock(r.x, r.y, r.z);
+    if (b < 0) continue;                                          // Chunk noch nicht da
+    if (!(b > 0 && BLOCKS[b].sign)) { signMeshOff(r); if (!r.miss) r.miss = now; else if (now - r.miss > 6000) signs.delete(key); continue; }   // Schild weg (Explosion, andere Spieler …)
+    r.miss = 0; if (!r.mesh) signMeshOn(r, b);
+  }
+}
+let signEd = null;
+function signOpen(x, y, z) {
+  const r = signs.get(ckeyOf(x, y, z)); signEd = { x, y, z };
+  for (let i = 0; i < 4; i++) $('signL' + i).value = r ? r.l[i] : '';
+  signPreview(); setState('sign'); setTimeout(() => { if (state === 'sign') $('signL0').focus(); }, 40);
+}
+function signPreview() { for (let i = 0; i < 4; i++) $('signPrev').children[i].textContent = $('signL' + i).value; }
+function signClose(save) {
+  const e = signEd; signEd = null; if (!e) return;
+  if (save) {
+    const b = world.getBlock(e.x, e.y, e.z), lines = signClean([0, 1, 2, 3].map((i) => $('signL' + i).value)), key = ckeyOf(e.x, e.y, e.z);
+    if (b > 0 && BLOCKS[b].sign) { signSetKey(key, lines); mpSaveSign(e.x, e.y, e.z, lines.some(Boolean) ? lines : null); sfx('place'); }
+  }
+  if (state === 'sign') resume();
+}
+for (let i = 0; i < 4; i++) {
+  const el = $('signL' + i);
+  el.addEventListener('input', signPreview);
+  el.addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.preventDefault(); signClose(false); } else if (e.key === 'Enter') { e.preventDefault(); if (i < 3) $('signL' + (i + 1)).focus(); else signClose(true); } else if (e.key === 'ArrowDown' && i < 3) { e.preventDefault(); $('signL' + (i + 1)).focus(); } else if (e.key === 'ArrowUp' && i > 0) { e.preventDefault(); $('signL' + (i - 1)).focus(); } });
+}
+$('btnSignOk').onclick = () => signClose(true);
+$('btnSignCancel').onclick = () => signClose(false);
+function signPlaced(x, y, z) {                  // frisch gesetzt: alte Reste löschen, dann beschriften
+  const key = ckeyOf(x, y, z), r = signs.get(key); if (r) { signMeshOff(r); signs.delete(key); }
+  mpSaveSign(x, y, z, null); signOpen(x, y, z);
+}
+
+// ===== Bücher: Buch und Feder (beschreibbar) und signiertes Buch (unveränderlich). Inhalt: stack.ench._bk = { p: Seiten, t: Titel, a: Autor, s: 1 } =====
+const BOOK_PAGES = 12, BOOK_PAGE_LEN = 256;
+let BK = null;
+const bookOf = (s) => (s && s.ench && s.ench._bk) || null;
+const bookClean = (t, n) => String(t || '').replace(/[\u0000-\u001f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
+const bookMyName = () => mp.on ? mp.name : (mpCfg.name || 'Spieler');
+const bookAdmin = () => (mp.on && !!mp.admin) || (!mp.on && mpCfg.name === ADMIN_NAME);          // Admin-Modus: der Autorenname ist frei wählbar
+function bookOpen(slot) {
+  const d = bookOf(slot), written = slot.id === IID.written_book;
+  const pages = d && Array.isArray(d.p) && d.p.length ? d.p.slice(0, BOOK_PAGES).map((t) => String(t).slice(0, BOOK_PAGE_LEN)) : [''];
+  BK = { slot, written, pages, i: written ? -1 : 0, signing: false, t: d && d.t ? d.t : 'Unbekannt', a: d && d.a ? d.a : '?' };
+  bookRender(); setState('book'); if (!written) setTimeout(() => { if (state === 'book' && BK && !BK.signing) $('bookText').focus(); }, 40);
+}
+function bookRender() {
+  if (!BK) return;
+  const w = BK.written, last = BK.pages.length - 1, show = (id, on) => $(id).classList.toggle('hidden', !on);
+  $('bookTitle').textContent = w ? '📖 ' + BK.t : '✒ Buch und Feder';
+  $('bookSub').textContent = w ? 'von ' + BK.a + ' · signiert – unveränderlich' : (BK.signing ? 'Buch signieren' : 'Schreibe in das Buch – Seite ' + (BK.i + 1) + ' von ' + BK.pages.length);
+  show('bookPaper', !BK.signing); show('bookNav', !BK.signing);
+  show('bookText', !w); show('bookRead', w && BK.i >= 0); show('bookCover', w && BK.i < 0);
+  if (!w) { $('bookText').value = BK.pages[BK.i] || ''; }
+  else if (BK.i >= 0) $('bookRead').textContent = BK.pages[BK.i];
+  else { const c = $('bookCover'); c.innerHTML = ''; const b = document.createElement('b'), i = document.createElement('i'); b.textContent = BK.t; i.textContent = 'von ' + BK.a; c.append(b, i); }
+  $('bookPg').textContent = w ? (BK.i < 0 ? 'Titelseite' : 'Seite ' + (BK.i + 1) + ' / ' + BK.pages.length) : 'Seite ' + (BK.i + 1) + ' / ' + BK.pages.length;
+  $('bookPrev').disabled = BK.i <= (w ? -1 : 0);
+  $('bookNext').disabled = w ? BK.i >= last : (BK.i >= last && BK.pages.length >= BOOK_PAGES);
+  $('bookNext').textContent = !w && BK.i >= last ? '＋' : '▶';
+  show('bookSignBox', BK.signing); show('bookBtns', !BK.signing); show('btnBookSign', !w);
+}
+function bookGo(dir) {
+  if (!BK) return;
+  if (!BK.written) { BK.pages[BK.i] = $('bookText').value.slice(0, BOOK_PAGE_LEN); if (dir > 0 && BK.i >= BK.pages.length - 1) { if (BK.pages.length >= BOOK_PAGES) return; BK.pages.push(''); } }
+  BK.i = Math.max(BK.written ? -1 : 0, Math.min(BK.pages.length - 1, BK.i + dir)); bookRender();
+  if (!BK.written) $('bookText').focus();
+}
+function bookStore() {                          // Text in den Stapel zurückschreiben (nur ungesigniert)
+  if (!BK || BK.written || inv[P.sel] !== BK.slot) return;
+  if (state === 'book' && !BK.signing) BK.pages[BK.i] = $('bookText').value.slice(0, BOOK_PAGE_LEN);
+  const pages = BK.pages.slice(); while (pages.length > 1 && !pages[pages.length - 1]) pages.pop();
+  if (pages.length === 1 && !pages[0]) { if (BK.slot.ench) { delete BK.slot.ench._bk; if (!Object.keys(BK.slot.ench).length) delete BK.slot.ench; } }
+  else BK.slot.ench = Object.assign(BK.slot.ench || {}, { _bk: { p: pages } });
+}
+function bookClose() {
+  if (BK) { if (BK.signing) BK.signing = false; bookStore(); }
+  BK = null; refreshHotbar(); if (state === 'book') resume();
+}
+function bookSignStart() {
+  if (!BK || BK.written) return;
+  bookStore(); const d = bookOf(BK.slot); if (!d || !d.p.some((t) => t.trim())) { toast('Das Buch ist leer – schreibe erst etwas hinein'); return; }
+  BK.signing = true; const adm = bookAdmin(), a = $('bookAuthorIn');
+  a.value = bookMyName(); a.readOnly = !adm; a.style.opacity = adm ? 1 : 0.7;
+  $('bookAuthorLbl').textContent = adm ? 'Autor (Admin: frei wählbar)' : 'Autor';
+  $('bookTitleIn').value = ''; bookRender(); setTimeout(() => $('bookTitleIn').focus(), 30);
+}
+function bookSignDo() {
+  if (!BK || !BK.signing || inv[P.sel] !== BK.slot) return;
+  const t = bookClean($('bookTitleIn').value, 24); if (!t) { toast('Bitte gib dem Buch einen Titel'); $('bookTitleIn').focus(); return; }
+  let a = bookMyName(); if (bookAdmin()) { const v = bookClean($('bookAuthorIn').value, 24); if (v) a = v; }
+  const slot = BK.slot, d = bookOf(slot), pages = d.p.slice(), ench = { _bk: { t, a, p: pages, s: 1 } };
+  if (slot.count > 1) {                         // Stapel (z. B. per /give): nur ein Buch signieren
+    slot.count--; const left = addItem(IID.written_book, 1, undefined, ench); if (left > 0) spawnDrop(IID.written_book, 1, P.p.x, P.p.y + 1, P.p.z, { ench });
+    BK.slot = inv.find((q) => q && q.id === IID.written_book && q.ench === ench) || slot;
+  } else { slot.id = IID.written_book; slot.ench = ench; delete slot.dur; }
+  BK.written = true; BK.signing = false; BK.t = t; BK.a = a; BK.i = -1;
+  sfx('craft'); toast('📖 Buch signiert: „' + t + '“ von ' + a); refreshHotbar(); bookRender();
+}
+$('bookPrev').onclick = () => bookGo(-1);
+$('bookNext').onclick = () => bookGo(1);
+$('btnBookDone').onclick = bookClose;
+$('btnBookSign').onclick = bookSignStart;
+$('btnBookSignOk').onclick = bookSignDo;
+$('btnBookSignBack').onclick = () => { if (BK) { BK.signing = false; bookRender(); } };
+$('bookText').addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.preventDefault(); bookClose(); } });
+['bookTitleIn', 'bookAuthorIn'].forEach((id) => $(id).addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.preventDefault(); if (BK) { BK.signing = false; bookRender(); } } else if (e.key === 'Enter') { e.preventDefault(); if (id === 'bookTitleIn' && !$('bookAuthorIn').readOnly) $('bookAuthorIn').focus(); else bookSignDo(); } }));
 
 
 
@@ -6346,7 +6600,12 @@ function enchCats(id) {
   return [];
 }
 const enchantable = (it) => !!it && enchCats(it.id).length > 0 && !(it.ench && Object.keys(it.ench).length);
-const enchLines = (it) => it && it.ench ? Object.keys(it.ench).map((k) => ENCH[k] ? ENCH[k].de + (ENCH[k].max > 1 ? ' ' + EROMAN[it.ench[k]] : '') : '').filter(Boolean) : [];
+const enchLines = (it) => {
+  if (!it || !it.ench) return [];
+  const o = Object.keys(it.ench).map((k) => ENCH[k] ? ENCH[k].de + (ENCH[k].max > 1 ? ' ' + EROMAN[it.ench[k]] : '') : '').filter(Boolean), b = it.ench._bk;
+  if (b && b.s) o.unshift('„' + b.t + '“', 'von ' + b.a); return o;
+};
+const hasGlint = (it) => !!(it && it.ench && (it.ench._bk ? it.ench._bk.s : Object.keys(it.ench).some((k) => k[0] !== '_')));
 const xpToNext = (l) => l < 16 ? 2 * l + 7 : l < 31 ? 5 * l - 38 : 9 * l - 158;
 function updateXpHud() {
   const surv = !isCreative(), box = $('xp');
@@ -6714,6 +6973,8 @@ recipe('Bauteile', ID.glass_pane, 16, [[GLASS, 6]], 'table');
 COLORS.forEach(([c]) => recipe('Bauteile', ID[c + '_glass_pane'], 16, [[ID[c + '_glass'], 6]], 'table'));
 recipe('Bauteile', ID.iron_bars, 16, [[IID.iron_ingot, 6]], 'table');
 recipe('Bauteile', ID.ladder, 3, [[IID.stick, 7]]);                                            // Leitern: überall herstellbar (keine Werkbank nötig)
+recipe('Bauteile', ID.sign, 3, [['planks', 6], [IID.stick, 1]], 'table');
+recipe('Bauteile', IID.writable_book, 1, [[IID.book, 1], [IID.feather, 1], [IID.dye_black, 1]]);
 recipe('Bauteile', ID.lantern, 1, [[ID.torch, 1], [IID.iron_ingot, 1]], 'table');
 recipe('Bauteile', ID.soul_lantern, 1, [[ID.soul_torch, 1], [IID.iron_ingot, 1]], 'table');
 recipe('Bauteile', ID.candle, 2, [[IID.string, 1], [IID.bone, 1]]);
@@ -6917,7 +7178,7 @@ function refreshStats() {
 }
 
 function paintSlot(el, item, active) {
-  el.innerHTML = ''; el.classList.toggle('active', !!active); el.classList.toggle('ench', !!(item && item.ench));
+  el.innerHTML = ''; el.classList.toggle('active', !!active); el.classList.toggle('ench', hasGlint(item));
   if (!item) { if (!el.dataset.keepTitle) el.title = ''; return; }
   el.title = [itemName(item.id), ...enchLines(item)].join('\n');
   const img = document.createElement('img'); img.src = getIcon(item.id); el.appendChild(img);
@@ -8450,7 +8711,7 @@ let state = 'menu';       // menu | loading | play | pause | inv | dead
 let touchMode = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
 if (touchMode) document.body.classList.add('touch');
 let gameTime = 0, saveTimer = 0;
-const SCREENS = { snake: 'snake', dino: 'dino', menu: 'menu', mpmenu: 'mpmenu', loading: 'loading', pause: 'pause', inv: 'inventory', emotes: 'emotes', dead: 'death', chat: 'chatBar', settings: 'settings', trade: 'trade' };
+const SCREENS = { snake: 'snake', dino: 'dino', menu: 'menu', mpmenu: 'mpmenu', loading: 'loading', pause: 'pause', inv: 'inventory', emotes: 'emotes', dead: 'death', chat: 'chatBar', settings: 'settings', trade: 'trade', sign: 'signEdit', book: 'book' };
 
 function setState(s) {
   state = s;
@@ -8541,9 +8802,9 @@ function startGame(opts) {
   P.fx = {}; P.god = false; P.canFly = false; P.speedMul = 1; P.back = null; fxDirty = true; undoBuf = null;
   achLoad(); reelIn(); weather.override = null; weather.rain = weather.thunder = weather.wf = 0; weather.flash = 0; rainMesh.visible = snowMesh.visible = false;
   if (save) { world.loadEdits(save.edits || {}, 0); world.loadEdits(save.edits1 || {}, 1); world.loadEdits(save.edits2 || {}, 2); world.loadEdits(save.edits3 || {}, 3); endDead.clear(); (save.endDead || []).forEach((i) => endDead.add(i)); }
-  containers.clear(); armor.fill(null); P.bowCd = 0; openChest = null;
+  containers.clear(); signsReset(); armor.fill(null); P.bowCd = 0; openChest = null; BK = null; signEd = null;
   if (opts.mpEdits) for (const [ex, ey, ez, b] of opts.mpEdits) { const [x, Y, z] = fromWire(ex, ey, ez), [d, y] = fromKeyY(Y); world.recordEditDim(d, x, y, z, b); }
-  if (opts.mpContainers) for (const [ex, ey, ez, items] of opts.mpContainers) { const [x, Y, z] = fromWire(ex, ey, ez); containers.set(ckeyEnc(x, Y, z), unpackItems(items)); }
+  if (opts.mpContainers) for (const [ex, ey, ez, items] of opts.mpContainers) { const [x, Y, z] = fromWire(ex, ey, ez); if (!containerLoad(ckeyEnc(x, Y, z), items)) containers.set(ckeyEnc(x, Y, z), unpackItems(items)); }
   uni.fogNear.value = renderDist * CS * 0.55; uni.fogFar.value = renderDist * CS - 6;
   for (let i = 0; i < 36; i++) inv[i] = null;
   cursorItem = null; brk = null;
@@ -8562,6 +8823,7 @@ function startGame(opts) {
     if (save.spawn) P.spawn.set(save.spawn[0], save.spawn[1], save.spawn[2]);
     P.bedPos = save.bed || null;
     for (const k in (save.containers || {})) containers.set(k, unpackItems(save.containers[k]));
+    for (const k in (save.signs || {})) signSetKey(k, save.signs[k]);
   } else {
     P.p.copy(P.spawn);
     if (isCreative()) [GRASS, STONE, WOOD, PLANKS, GLASS, ID.torch, ID.tnt, IID.flint_and_steel, IID.iron_sword].forEach((id, i) => { inv[i] = newStack(id, maxStack(id) > 1 ? 64 : 1); });
@@ -8582,7 +8844,7 @@ function saveGame() {
     player: { x: P.p.x, y: P.p.y, z: P.p.z, yaw: P.yaw, pitch: P.pitch, flying: P.flying },
     health: P.health, hunger: P.hunger, time: gameTime, sel: P.sel, xpL: P.xpL, xpP: P.xpP, vehs: world.dim === 0 ? vehicles.filter((v) => !v.puppet).map((v) => [v.type, +v.p.x.toFixed(2), +v.p.y.toFixed(2), +v.p.z.toFixed(2), +v.yaw.toFixed(2)]) : (vehStash || []),
     inv: packItems(inv), fuel: P.fuel, armor: packItems(armor), spawn: [P.spawn.x, P.spawn.y, P.spawn.z], bed: P.bedPos,
-    containers: Object.fromEntries([...containers].map(([k, v]) => [k, packItems(v)])),
+    containers: Object.fromEntries([...containers].map(([k, v]) => [k, packItems(v)])), signs: signsPack(),
     edits: world.serializeEdits(0), edits1: world.serializeEdits(1), edits2: world.serializeEdits(2), edits3: world.serializeEdits(3), dim: world.dim, endDead: [...endDead],
   };
   try { const txt = JSON.stringify(data); localStorage.setItem(SAVE_KEY, txt); if (txt.length > 4200000) toast('⚠ Spielstand ist sehr groß (' + (txt.length / 1e6).toFixed(1) + ' MB) – der Browser-Speicher ist bald voll'); return true; }
@@ -8744,7 +9006,7 @@ document.addEventListener('touchmove', (e) => { if (e.scale && e.scale !== 1) e.
 
 // ----- Eingabe -----
 document.addEventListener('keydown', (e) => {
-  if (e.target && e.target.tagName === 'INPUT') return;
+  if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
   if (boss.on && boss.me === 'boss' && boss.fight === 'fight' && !e.repeat && state === 'play' && ['KeyQ', 'KeyF', 'KeyR'].includes(e.code)) { boss['keys' + e.code.slice(3)] = 0.5; e.preventDefault(); return; }
   if (bossLocked() && e.code !== 'Escape') { e.preventDefault(); return; }
   if (['Space', 'Tab', 'F2', 'F3', 'ArrowUp', 'ArrowDown'].includes(e.code)) e.preventDefault();
@@ -8771,6 +9033,8 @@ document.addEventListener('keydown', (e) => {
   if (e.code === 'KeyE' && (state === 'play' || state === 'inv')) toggleInventory();
   else if (e.code === 'Escape' && state === 'inv') toggleInventory();
   else if (e.code === 'Escape' && state === 'trade') closeTrade();
+  else if (e.code === 'Escape' && state === 'sign') signClose(false);
+  else if (e.code === 'Escape' && state === 'book') bookClose();
   if (e.code === 'F3' && state !== 'play') $('debug').classList.toggle('hidden');
 });
 document.addEventListener('keyup', (e) => { keys[e.code] = false; if (e.code === 'KeyR' && emote.wheel && !emote.sticky) { if (emote.sel < 0 && performance.now() - emote.openAt < 260 && !touchMode) emote.sticky = true; else closeWheel(true); } if (e.code === 'KeyW') P.dblW = 0; if (e.code === 'Tab' && mp.tab) { mp.tab = false; $('tablist').classList.add('hidden'); } });
@@ -8856,7 +9120,7 @@ function frame(now) {
     camera.position.x += (Math.random() - 0.5) * P.shake * 0.4; camera.position.y += (Math.random() - 0.5) * P.shake * 0.4;
     camera.rotation.z = (Math.random() - 0.5) * P.shake * 0.08; P.shake = Math.max(0, P.shake - dt * 1.4);
   } else camera.rotation.z = 0;
-  updateEmote(dt); stepBuildJob(); stepBlast(); bigTick(); perfTick(dt); bossTick(dt); hwTick(dt);
+  updateEmote(dt); stepBuildJob(); stepBlast(); bigTick(); perfTick(dt); bossTick(dt); hwTick(dt); signTick(dt);
   const sprinting = state === 'play' && P.sprinting;
   const zooming = state === 'play' && mouse.right && inv[P.sel] && inv[P.sel].id >= ITEM_BASE && ITEMS[inv[P.sel].id].spyglass;
   fovCur = lerp(fovCur, zooming ? 14 : sprinting ? settings.fov + 9 : settings.fov, Math.min(1, 8 * dt));
@@ -11692,7 +11956,7 @@ function updateHand(dt) {
   hand.visible = show && !zoom && state !== 'dead' && !isSpectator() && emote.k < 0.05;
   if (!hand.visible) return;
   if (handSkinDirty || !armMesh) refreshHandArm();
-  const eh = !!(held && held.ench && Object.keys(held.ench).length);
+  const eh = hasGlint(held);
   if (id !== hand.id || eh !== hand.eh) { if (id !== hand.id) hand.raise = 0; hand.id = id; hand.eh = eh; buildHandItem(id, eh); }
   if (hand.glint) { hand.glintT = (hand.glintT || 0) + dt; hand.glint.opacity = 0.3 + 0.3 * Math.sin(hand.glintT * 3.2); hand.glint.color.setHSL(0.74 + 0.04 * Math.sin(hand.glintT * 1.7), 1, 0.62); }
   hand.raise = Math.min(1, hand.raise + dt * 4.5);
@@ -12079,7 +12343,7 @@ const mpHandlers = {
       case 'dropgone': { const i = drops.findIndex((d) => d.did === p.d); if (i >= 0) { drops[i].dispose(); drops.splice(i, 1); } break; }
       case 'container': {
         const key = ckeyEnc(p.x, p.y, p.z);
-        if (p.items && p.items.length) containers.set(key, unpackItems(p.items)); else containers.delete(key);
+        if (p.items && p.items.length) { if (!containerLoad(key, p.items)) containers.set(key, unpackItems(p.items)); } else { containers.delete(key); const sr = signs.get(key); if (sr) { signMeshOff(sr); signs.delete(key); } }
         if (state === 'inv' && openChest && openChest.key === key) { if (!containers.has(key)) containers.set(key, new Array(27).fill(null)); renderInventory(); }
         break;
       }
@@ -13214,7 +13478,7 @@ function showBreakOver() {
 setInterval(() => { classGateCheck(); }, 1000);
 classGateCheck();
 
-window.__vc = { HW, hwApply, hwTick, hwPoll, boss, bossBegin, bossEnd, bossTick, bossPos, bossRp, bossStartAct, bossDamage, bossPlayersAlive, bossLocked, BACT, blastAsk, askRealBlast, answerRealBlast, chainSet: (n, x, y, z) => { chainLocal = n; chainSum = [n * x, n * y, n * z]; }, blastQ, blastInfo: () => ({ tot: blastTot, done: blastDone, n: blastN, cur: !!blastCur }), bigSt, stepBlast, bigTick, perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+window.__vc = { signs, signOpen, signClose, signTick, signPlaced, signSetKey, signsPack, signRemove, containerLoad, SIGN_IDS, bookOpen, bookClose, bookSignStart, bookSignDo, bookGo, bookOf, getBK: () => BK, hasGlint, enchLines, placementFor, HW, hwApply, hwTick, hwPoll, boss, bossBegin, bossEnd, bossTick, bossPos, bossRp, bossStartAct, bossDamage, bossPlayersAlive, bossLocked, BACT, blastAsk, askRealBlast, answerRealBlast, chainSet: (n, x, y, z) => { chainLocal = n; chainSum = [n * x, n * y, n * z]; }, blastQ, blastInfo: () => ({ tot: blastTot, done: blastDone, n: blastN, cur: !!blastCur }), bigSt, stepBlast, bigTick, perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>
