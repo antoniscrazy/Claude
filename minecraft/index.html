@@ -14186,10 +14186,17 @@ async function aiWalkPath(path) {                                        // eine
     AIB.p.set(tx, n.y, tz); AIB.vx = AIB.vz = 0;
   }
 }
+async function aiSettle() {                                             // herunterfallen, bis fester Boden unter den Füßen ist (max. 8 Blöcke)
+  for (let i = 0; i < 8; i++) { const b = aiBlk(Math.floor(AIB.p.x), Math.floor(AIB.p.y - 0.05), Math.floor(AIB.p.z)); if (b < 0 || aiFloor(b)) return; const ty = Math.floor(AIB.p.y) - 1; while (AIB.p.y > ty + 0.02) { const dt = await aiFrame(); AIB.p.y = Math.max(ty, AIB.p.y - 12 * dt); } AIB.p.y = ty; }
+}
+async function aiCollectDrops() {                                        // nach einem Kampf die Beute einsammeln
+  aiPickup();
+  for (let k = 0; k < 6; k++) { let near = null, nd = 8; for (const dr of drops) { const d = Math.hypot(dr.p.x - AIB.p.x, dr.p.z - AIB.p.z); if (d < nd && d > 0.9) { nd = d; near = dr; } } if (!near) break; try { await aiGotoPos(near.p.x, near.p.y, near.p.z, 0); } catch (e) { if (!(e instanceof AIFail)) throw e; break; } await aiSleep(0.15); aiPickup(); }
+}
 function aiPickup() {                                                    // herumliegende Drops einsammeln
   for (let i = drops.length - 1; i >= 0; i--) {
-    const d = drops[i]; if (d.age !== undefined && d.age < 0.6) continue;
-    if (Math.hypot(d.p.x - AIB.p.x, d.p.z - AIB.p.z) < 1.6 && Math.abs(d.p.y - (AIB.p.y + 0.5)) < 2.2) {
+    const d = drops[i]; if (d.noBot) continue;
+    if (Math.hypot(d.p.x - AIB.p.x, d.p.z - AIB.p.z) < 2.0 && Math.abs(d.p.y - (AIB.p.y + 0.5)) < 2.6) {
       if (d.id && validId(d.id)) { aiAdd(d.id, d.count || 1); if (d.did && mp.on) mpSend('dropgone', { d: d.did }); d.dispose(); drops.splice(i, 1); }
     }
   }
@@ -14354,7 +14361,7 @@ async function aiHunt(types, id, need) {
       }
       aiPickup();
     }
-    await aiSleep(0.7); for (let k = 0; k < 4; k++) { let near = null, nd = 7; for (const dr of drops) { const d = Math.hypot(dr.p.x - AIB.p.x, dr.p.z - AIB.p.z); if (d < nd && d > 1.2) { nd = d; near = dr; } } if (!near) break; await aiGotoPos(near.p.x, near.p.y, near.p.z, 0).catch(() => 0); aiPickup(); }
+    await aiSleep(0.7); await aiCollectDrops();
     if (performance.now() - T0 > 240000) throw new AIFail('Jagd dauert zu lange');
   }
 }
@@ -14375,14 +14382,15 @@ async function aiObtain(spec, n, depth, stack) {
         let lastErr = null;
         for (const r of R) {
           if (r.ins.some(([sp]) => sp === id)) continue;                     // sich selbst als Zutat: sinnlos
-          try { await aiCraftWith(r, n - (AIB.inv.get(id) || 0), depth, st2); if ((AIB.inv.get(id) || 0) >= n) return; } catch (e) { if (e instanceof AIFail) { lastErr = e; continue; } throw e; }
+          try { await aiCraftWith(r, n - (AIB.inv.get(id) || 0), depth, st2); if ((AIB.inv.get(id) || 0) >= n) return; } catch (e) { if (e instanceof AIFail) { if (!lastErr || /Kreisbezug/.test(lastErr.message)) lastErr = e; continue; } throw e; }
         }
         if (lastErr) throw lastErr;
       }
       if (mode === 'mob' && M) { await aiHunt(M, id, n); return; }
     } catch (e) { if (e instanceof AIFail) { errs.push(e.message); continue; } throw e; }
   }
-  throw new AIFail('Kann ' + itemName(id) + ' nicht besorgen' + (errs.length ? ' (' + errs[0] + ')' : ''));
+  const real = errs.find((m) => !/Kreisbezug/.test(m)) || errs[0];
+  throw new AIFail('Kann ' + itemName(id) + ' nicht besorgen' + (real ? ' (' + real + ')' : ''));
 }
 
 // ---------- Weitere Fähigkeiten ----------
@@ -14396,7 +14404,7 @@ async function aiGive(name, items) {
     aiFace(pl.p.x, pl.p.y + 1.2, pl.p.z); AIB.swing = 0.25; await aiSleep(0.25);
     const dx = pl.p.x - AIB.p.x, dz = pl.p.z - AIB.p.z, l = Math.hypot(dx, dz) || 1;
     aiTake(id, cnt); if (id >= ITEM_BASE && ITEMS[id].armor) { const sl = ITEMS[id].armor.slot; if (!(AIB.inv.get(id) > 0)) AIB.armor[sl] = 0; }
-    spawnDrop(id, cnt, AIB.p.x + dx / l * 0.6, AIB.p.y + 1.1, AIB.p.z + dz / l * 0.6, { vx: dx / l * 2.5, vy: 2.2, vz: dz / l * 2.5 });
+    const dr = spawnDrop(id, cnt, AIB.p.x + dx / l * 0.6, AIB.p.y + 1.1, AIB.p.z + dz / l * 0.6, { vx: dx / l * 2.5, vy: 2.2, vz: dz / l * 2.5 }); if (dr) dr.noBot = true;
     given.push(cnt + '× ' + itemName(id)); await aiSleep(0.2);
   }
   if (!given.length) throw new AIFail('Ich habe nichts davon');
@@ -14420,7 +14428,7 @@ async function aiTunnel(dir, len) {
     if (dir === 'down') ny = y - 1; else if (dir === 'up') { ny = y + 1; await aiMine(x, y + 2, z); } else { nx = x + v[0]; nz = z + v[1]; }
     for (const cy of [ny, ny + 1]) { const b = aiBlk(nx, cy, nz); if (b >= 0 && !aiPass(b)) await aiMine(nx, cy, nz); }
     if (dir === 'down' && !aiFloor(aiBlk(nx, ny - 1, nz))) throw new AIFail('Unten ist kein fester Boden');
-    await aiWalkPath({ nodes: [{ x: nx, y: ny, z: nz, kind: dir === 'down' ? 'down' : dir === 'up' ? 'up' : 'walk' }] }); done++;
+    await aiWalkPath({ nodes: [{ x: nx, y: ny, z: nz, kind: dir === 'down' ? 'down' : dir === 'up' ? 'up' : 'free' }] }); done++; await aiSettle();
   }
   return 'Tunnel ' + dir + ' ' + done + ' Blöcke';
 }
@@ -14492,7 +14500,7 @@ async function aiSkill(s, from) {                                        // eine
         let tt = 0, hitT = 0, rp = 0; while (target.hp > 0 && mobs.includes(target) && tt < 60) { const dt = await aiFrame(); tt += dt; hitT -= dt; rp -= dt; const d = Math.hypot(target.p.x - AIB.p.x, target.p.z - AIB.p.z); aiFace(target.p.x, target.p.y + 0.8, target.p.z);
           if (d > 2.4) { if (rp <= 0) { rp = 0.8; const p = aiPath(aiNearGoal(Math.floor(target.p.x), Math.floor(target.p.y), Math.floor(target.p.z), 1), Math.floor(target.p.x), Math.floor(target.p.y), Math.floor(target.p.z), 3000, 30); if (p && p.nodes.length) { try { await aiWalkPath({ nodes: p.nodes.slice(0, 4) }); } catch (e) { if (!(e instanceof AIFail)) throw e; } } } }
           else if (hitT <= 0) { hitT = 0.6; const sw = aiBestTool('sword'); aiHold(sw || 0); AIB.swing = 0.25; target.hit(sw ? ITEMS[sw].tool.dmg : 1.5, AIB.p.x, AIB.p.z); } aiPickup(); }
-        if (target.hp <= 0 || !mobs.includes(target)) kills++; await aiSleep(0.6); aiPickup(); }
+        if (target.hp <= 0 || !mobs.includes(target)) kills++; await aiSleep(0.7); await aiCollectDrops(); }
       return kills + ' Mobs besiegt';
     }
     case 'give': {
