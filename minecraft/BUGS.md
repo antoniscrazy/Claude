@@ -273,3 +273,8 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * **Schlüssel:** gehört nicht ins Repository. Entweder im Spiel `/ai key gsk_…` oder `GROQ_KEY=gsk_… python3 tools/inject_groq_key.py` (→ `index.keyed.html`, in `.gitignore`).
 * Getestet (Playwright; die Groq-Antwort wurde nachgebildet, weil das Test-System api.groq.com nicht erreicht – der echte Aufruf ist **nicht** live geprüft): Bot besorgt allein eine Holzspitzhacke (2 Welten), **eine Eisenbrustplatte aus dem Nichts** (Holz, Werkbank, Stein, Eisenerz, Ofen, Schmelzen, Craften – 3100 Schritte), baut ein Haus aus 93 Bruchstein; Mehrspieler mit 2 Clients: Nicht-OP darf `/ai` nicht, Bot erscheint in der Spielerliste, Begrüßung, Plaudern, Befehl „Holzspitzhacke“ → Plan → Bot besorgt sie und übergibt sie, Bob hat sie im Inventar, `/ai stop`.
 
+## 2026-10-13.39
+
+* 🔧 **Intern: verdeckter Bot-Modus** für automatisierte Spieler (nur per URL-Parameter, in der Oberfläche nicht sichtbar): läuft ohne Darstellung mit festem 20-Ticks-Takt unabhängig von der Bildrate und wird über eine Programmierschnittstelle gesteuert, die dieselben Spielregeln nutzt wie normale Spieler (Reichweite, Abbauzeit, Schaden, Hunger, Rezepte) – siehe `tools/BOT_API.md`. Normale Spieler merken nichts davon.
+* `aiPath` (Wegfindung des `/ai`-Spielers) akzeptiert jetzt optional eine eigene Startposition/Kostenfunktion (für den Bot-Modus: ohne Graben); das Verhalten von `/ai` ist unverändert.
+

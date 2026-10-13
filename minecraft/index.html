@@ -2047,7 +2047,10 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.38';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-10-13.39';            // Spielversion (nur Anzeige)
+// Verdeckter Bot-Modus (nur per URL ?bot=1, nirgends in der Oberfläche erwähnt): läuft ohne Darstellung mit festem 20-Ticks-Takt, Steuerung über window.BOT (siehe Abschnitt BOT)
+const botChat = [];
+const BOTMODE = /[?&]bot=1(?:&|#|$)/.test(location.search);
 // Mehrspieler-Kompatibilität: NUR wenn sich das Netzwerkformat oder die Welt-Speicherung unverträglich ändert, MP_PROTO erhöhen. Normale Versionen (neue Blöcke, Rezepte, Mobs, Befehle …) vertragen sich untereinander –
 // dafür gibt es keine Warnung mehr. Clients ohne MP_PROTO (vor 2026-10-05.17) gelten ab MP_MIN_VER als kompatibel.
 const MP_PROTO = 1, MP_MIN_VER = '2026-10-05.1';
@@ -3948,6 +3951,7 @@ function emitWallTorch(bd, x, y, z, t, d) {
 }
 
 function buildChunkMesh(world, c) {
+  if (BOTMODE) { world.disposeChunk(c); c.lights = []; c.meshed = true; c.dirty = false; return; }          // Bot-Modus: keine Geometrie, nur Blockdaten
   fillPad(world, c); computeBlockLight(world, c);
   solidB.reset(); transB.reset();
   const data = c.data, maxY = c.maxY, lights = [], lavaLights = [];
@@ -4263,12 +4267,13 @@ const keys = Object.create(null);
 const touchMove = { x: 0, y: 0 };   // virtueller Joystick (-1..1)
 let touchSprint = false, touchSneak = false, sprintLatch = false, joyFull = false;
 
+const BOTIN = { fwd: 0, str: 0, jump: false, sneak: false, sprint: false, wake: false };          // Eingabekanal des Bot-Modus (analog zu Tasten, aber ohne Tastenereignisse)
 function updatePlayer(dt) {
   const w = world, p = P.p, v = P.v;
   if (P.sleeping) {                                                  // schlafen: festliegen, Nacht überspringen
     v.set(0, 0, 0); P.sleepT += dt; EYE += (0.45 - EYE) * Math.min(1, 6 * dt);
     $('sleepOv').style.opacity = Math.min(0.92, P.sleepT / 2);
-    if (keys.KeyW || keys.KeyA || keys.KeyS || keys.KeyD || keys.Space || keys.ShiftLeft || Math.hypot(touchMove.x, touchMove.y) > 0.3 || env.dayF > 0.6) { wakeUp(); }
+    if (keys.KeyW || keys.KeyA || keys.KeyS || keys.KeyD || keys.Space || keys.ShiftLeft || BOTIN.wake || Math.hypot(touchMove.x, touchMove.y) > 0.3 || env.dayF > 0.6) { wakeUp(); }
     else if (!mp.on && P.sleepT > 2.6) { skipToMorning(); wakeUp(); }
     return;
   }
@@ -4279,7 +4284,7 @@ function updatePlayer(dt) {
     P.pitch = clamp(P.pitch + ((keys.ArrowUp ? 1 : 0) - (keys.ArrowDown ? 1 : 0)) * r, -Math.PI / 2 + 0.01, Math.PI / 2 - 0.01);
   }
   const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw), rx = Math.cos(P.yaw), rz = -Math.sin(P.yaw);
-  const fwd = clamp((keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0) + touchMove.y, -1, 1), str = clamp((keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0) + touchMove.x, -1, 1);
+  const fwd = clamp((keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0) + touchMove.y + BOTIN.fwd, -1, 1), str = clamp((keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0) + touchMove.x + BOTIN.str, -1, 1), jmp = keys.Space || BOTIN.jump;
   const bx = Math.floor(p.x), bz = Math.floor(p.z);
   P.inWater = LQ[w.getBlock(bx, Math.floor(p.y + 0.3), bz)] === 1 || LQ[w.getBlock(bx, Math.floor(p.y + 1.0), bz)] === 1;
   if (P.inWater && !P.wasInWater && !P.flying) sfx('splash'); P.wasInWater = P.inWater;
@@ -4289,7 +4294,7 @@ function updatePlayer(dt) {
   P.headLava = LQ[w.getBlock(bx, Math.floor(p.y + EYE), bz)] === 2;
   { const l1 = w.getBlock(bx, Math.floor(p.y + 0.4), bz), l2 = w.getBlock(bx, Math.floor(p.y + 1.2), bz); P.onLadder = (l1 > 0 && BLOCKS[l1].climb) || (l2 > 0 && BLOCKS[l2].climb); }
 
-  const shift = keys.ShiftLeft || keys.ShiftRight, ctrl = keys.ControlLeft || keys.ControlRight || P.dblW > 0;
+  const shift = keys.ShiftLeft || keys.ShiftRight || BOTIN.sneak, ctrl = keys.ControlLeft || keys.ControlRight || P.dblW > 0 || BOTIN.sprint;
   P.sneak = !!(shift || touchSneak) && !P.flying && !P.inWater && !P.inLava && !P.onLadder;
   EYE += ((P.sneak ? 1.27 : 1.62) - EYE) * Math.min(1, 14 * dt);
   const sprint = (ctrl || touchSprint) && fwd > 0 && !P.flying && !P.sneak && (isCreative() || P.hunger > 6);
@@ -4305,18 +4310,18 @@ function updatePlayer(dt) {
 
   let jumped = false;
   if (P.flying) {
-    const ty = ((keys.Space ? 1 : 0) - (keys.KeyC ? 1 : 0)) * speed;
+    const ty = ((jmp ? 1 : 0) - (keys.KeyC ? 1 : 0)) * speed;
     v.y += (ty - v.y) * Math.min(1, 10 * dt);
   } else if (P.inWater || P.inLava) {
     v.y -= 10 * dt; v.y *= 1 - Math.min(1, 3 * dt);
-    if (keys.Space) v.y += 30 * dt;
+    if (jmp) v.y += 30 * dt;
     v.y = clamp(v.y, -3, 4);
-    if (keys.Space && P.hitH) v.y = Math.max(v.y, 6.5);           // aus dem Wasser klettern
+    if (jmp && P.hitH) v.y = Math.max(v.y, 6.5);           // aus dem Wasser klettern
   } else if (P.onLadder) {                                          // Leiter: hoch mit Vorwärts/Leertaste, Shift hält fest
-    if (keys.Space || fwd > 0.3) v.y = 3.6; else if (shift) v.y = 0; else v.y = Math.max(v.y - 20 * dt, -2.6);
+    if (jmp || fwd > 0.3) v.y = 3.6; else if (shift) v.y = 0; else v.y = Math.max(v.y - 20 * dt, -2.6);
   } else {
     v.y = Math.max(v.y - 30 * dt, -55);
-    if (keys.Space && P.onGround) { v.y = 9.3 + 1.6 * fxAmp('jump'); jumped = true; }
+    if (jmp && P.onGround) { v.y = 9.3 + 1.6 * fxAmp('jump'); jumped = true; }
     if (P.fx.levitation) v.y += (1.8 * fxAmp('levitation') - v.y) * Math.min(1, 3 * dt);
     else if (P.fx.slow_falling && v.y < -2.5) v.y = -2.5;
   }
@@ -4399,6 +4404,7 @@ const dirV = new THREE.Vector3(), eyeV = new THREE.Vector3();
 let actx = null, masterGain = null, noiseBuf = null, muted = false;
 try { muted = localStorage.getItem('voxelcraft_muted') === '1'; } catch (e) { /* egal */ }
 function audio() {
+  if (BOTMODE) return false;
   if (actx === null) {
     try {
       actx = new (window.AudioContext || window.webkitAudioContext)();
@@ -9092,8 +9098,9 @@ try {
 function updatePlayerIdle(dt) {                                      // Spielerphysik ohne Eingaben (Schwerkraft, Wasser, Fallschaden …), solange man pausiert
   const sk = {}; for (const k in keys) { sk[k] = keys[k]; keys[k] = false; }
   const tx = touchMove.x, ty = touchMove.y, ts = touchSprint, tn = touchSneak, dw = P.dblW;
+  const bi = { ...BOTIN }; BOTIN.fwd = BOTIN.str = 0; BOTIN.jump = BOTIN.sneak = BOTIN.sprint = BOTIN.wake = false;
   touchMove.x = touchMove.y = 0; touchSprint = false; touchSneak = false; P.dblW = 0;
-  try { updatePlayer(dt); } finally { for (const k in sk) keys[k] = sk[k]; touchMove.x = tx; touchMove.y = ty; touchSprint = ts; touchSneak = tn; P.dblW = dw; }
+  try { updatePlayer(dt); } finally { for (const k in sk) keys[k] = sk[k]; touchMove.x = tx; touchMove.y = ty; touchSprint = ts; touchSneak = tn; P.dblW = dw; Object.assign(BOTIN, bi); }
 }
 function simTick(dt) {
   const frozen = mp.on && mp.offline;                                // Internet weg: Mehrspieler-Welt ist angehalten
@@ -9189,7 +9196,49 @@ function frame(now) {
   updateHand(dt); renderHand(); updateLocator();
   if (shotReq) doScreenshot();
 }
-requestAnimationFrame(frame);
+if (!BOTMODE) requestAnimationFrame(frame);
+
+// ----- Bot-Modus: gleiche Simulation wie frame(), aber ohne Darstellung und mit festem Zeitschritt (20 Ticks/s), unabhängig von FPS -----
+const BOT_DT = 0.05;
+let botTicks = 0, botTps = 0;
+function botFrame(dt) {
+  frameDt = dt;
+  if (!world || state === 'menu' || state === 'mpmenu' || (state === 'settings' && settingsFrom === 'menu')) return;
+  if (state === 'loading') {
+    world.update(P.p.x, P.p.z, 30, 30);
+    let need = 0, have = 0;
+    for (const o of world.offsets) { if (o[2] > 4) break; need++; const c = world.getChunk(world.lcx + o[0], world.lcz + o[1]); if (c && c.meshed) have++; }
+    if (have >= need) { P.v.set(0, 0, 0); finishArrival(); resume(); }
+  } else simTick(dt);
+  camera.position.set(P.p.x, P.p.y + EYE, P.p.z); camera.rotation.y = P.yaw; camera.rotation.x = P.pitch;
+  updateEmote(dt); stepBuildJob(); stepBlast(); bigTick(); bossTick(dt); hwTick(dt); signTick(dt); hbTick(dt); fireTick(dt); aiTick(dt);
+  updateSky(((gameTime / DAY_LEN) % 1 + 1) % 1); applyWeatherSky();
+}
+const botWaiters = [];
+if (BOTMODE) {
+  // Takt aus einem Web-Worker (wird auch im Hintergrund nicht gedrosselt); verpasste Ticks werden nachgeholt (max. 6 pro Aufruf).
+  // Zwischen den Ticks wird die Ereigniswarteschlange geleert, damit wartende BOT-Aufrufe pro Tick reagieren können.
+  let acc = 0, lastT = performance.now(), tpsT = lastT, tpsN = 0, busy = false;
+  const mc = new MessageChannel(), macro = () => new Promise((r) => { mc.port1.onmessage = () => r(); mc.port2.postMessage(0); });
+  const run = async () => {
+    if (busy) return; busy = true;
+    try {
+      const now = performance.now(); acc += Math.min(now - lastT, 1000); lastT = now;
+      for (let n = 0; acc >= BOT_DT * 1000 && n < 6; n++) {
+        acc -= BOT_DT * 1000; botTicks++; tpsN++;
+        try { botFrame(BOT_DT); } catch (e) { console.error(e); }
+        const w = botWaiters.splice(0); for (const f of w) { try { f(); } catch (e) { console.error(e); } }
+        await macro();
+      }
+      if (acc > 200) acc = 200;
+      if (now - tpsT >= 2000) { botTps = tpsN * 1000 / (now - tpsT); tpsN = 0; tpsT = now; }
+    } finally { busy = false; }
+  };
+  try {
+    const bw = new Worker(URL.createObjectURL(new Blob(['setInterval(function(){postMessage(1)},10)'], { type: 'application/javascript' })));
+    bw.onmessage = run;
+  } catch (e) { setInterval(run, 10); }
+}
 
 /* =====================================================================
    L. MEHRSPIELER (Supabase Realtime + Postgres) – mit lokalem Modus für mehrere Tabs
@@ -10411,6 +10460,7 @@ async function mpEnsureProfile(rp) {
 
 // --- Chat ---
 function chatAdd(name, text, cls) {
+  if (BOTMODE) { botChat.push({ t: Date.now(), name: name || '', text: String(text), sys: !name }); if (botChat.length > 300) botChat.shift(); }
   const line = document.createElement('div'); line.className = 'cl' + (cls ? ' ' + cls : '');
   if (name) { const b = document.createElement('b'); b.textContent = (isAdminName(name) ? '🛡 [Admin] ' : '') + '<' + name + '> '; line.appendChild(b); }
   line.appendChild(document.createTextNode(text));
@@ -12884,6 +12934,7 @@ function menuSceneFrame(now) {
   }
 }
 function menuSceneSync(s) {
+  if (BOTMODE) return;
   if (s === 'menu') { if (!MenuScene.raf) { menuSceneSize(); MenuScene.t0 = performance.now(); MenuScene.raf = requestAnimationFrame(menuSceneFrame); } }
   else if (MenuScene.raf) { cancelAnimationFrame(MenuScene.raf); MenuScene.raf = 0; atStop(); }
   if (s === 'dino') dinoStart();
@@ -13552,6 +13603,7 @@ const CLASS_JOKES = [
 let classPick = -1, classAskedKey = '', classWait = false, classToastKey = '', classTick = 0;
 const classKey = (c) => new Date().toDateString() + '#' + c.n;
 function classGateCheck() {
+  if (BOTMODE) return;
   const g = $('classGate'); if (!g) return;
   const c = classNow(), ok = c && sessionStorage.getItem('vc_class_ok') === classKey(c);
   const inGame = state === 'play' || state === 'chat' || state === 'inv' || state === 'pause' || state === 'dead' || state === 'trade' || state === 'emotes';
@@ -14089,8 +14141,9 @@ function aiCellCost(x, y, z) {                                           // 0 = 
   return aiCanBreak(b, x, y, z) ? 1.5 + aiMineTime(b) : Infinity;
 }
 function aiLavaNear(x, y, z) { for (let dy = -1; dy <= 2; dy++) for (const [dx, dz] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) if (LQ[aiBlk(x + dx, y + dy, z + dz)] === 2) return true; return false; }
-function aiPath(goalFn, tx, ty, tz, maxN, radius) {
-  const sx = Math.floor(AIB.p.x), sy = Math.floor(AIB.p.y + 0.02), sz = Math.floor(AIB.p.z), R = radius || 50; maxN = maxN || 14000;
+function aiPath(goalFn, tx, ty, tz, maxN, radius, opt) {                 // opt (Bot-Modus): { p: Startposition, cost: Zellkosten-Funktion, noDown: true = nie graben }
+  const sp = opt && opt.p || AIB.p, CC = opt && opt.cost || aiCellCost;
+  const sx = Math.floor(sp.x), sy = Math.floor(sp.y + 0.02), sz = Math.floor(sp.z), R = radius || 50; maxN = maxN || 14000;
   const key = (x, y, z) => ((x + 32768) * 65536 + (z + 32768)) * 512 + y;
   const hf = (x, y, z) => Math.abs(x - tx) + Math.abs(z - tz) + Math.abs(y - ty) * 1.2;
   const open = [], g = new Map(), par = new Map(), closed = new Set();
@@ -14108,10 +14161,10 @@ function aiPath(goalFn, tx, ty, tz, maxN, radius) {
     const c = pop(); if (closed.has(c.k)) continue; closed.add(c.k); n++;
     const h = hf(c.x, c.y, c.z); if (h < bh) { bh = h; best = c; }
     if (goalFn(c.x, c.y, c.z)) { goal = c; break; }
-    const { x, y, z } = c, hc = aiCellCost(x, y + 2, z);
+    const { x, y, z } = c, hc = CC(x, y + 2, z);
     for (const [dx, dz] of AI_DIRS) {
       const nx = x + dx, nz = z + dz;
-      const c1 = aiCellCost(nx, y, nz), c2 = aiCellCost(nx, y + 1, nz), fl = aiBlk(nx, y - 1, nz);
+      const c1 = CC(nx, y, nz), c2 = CC(nx, y + 1, nz), fl = aiBlk(nx, y - 1, nz);
       if (c1 < Infinity && c2 < Infinity) {
         if (aiFloor(fl)) add(c, nx, y, nz, 1 + c1 + c2, 'walk');
         else if (aiPass(fl) && fl >= 0) {                                    // Abbruch: bis 3 Blöcke hinunterlaufen
@@ -14119,11 +14172,11 @@ function aiPath(goalFn, tx, ty, tz, maxN, radius) {
         }
       }
       // eine Stufe hinauf (Kopffreiheit über der aktuellen Zelle nötig)
-      if (hc < Infinity && aiFloor(aiBlk(nx, y, nz))) { const u1 = aiCellCost(nx, y + 1, nz), u2 = aiCellCost(nx, y + 2, nz); if (u1 < Infinity && u2 < Infinity) add(c, nx, y + 1, nz, 2 + hc + u1 + u2, 'up'); }
+      if (hc < Infinity && aiFloor(aiBlk(nx, y, nz))) { const u1 = CC(nx, y + 1, nz), u2 = CC(nx, y + 2, nz); if (u1 < Infinity && u2 < Infinity) add(c, nx, y + 1, nz, 2 + hc + u1 + u2, 'up'); }
     }
     // nach unten graben
-    const dc = aiCellCost(x, y - 1, z), df = aiBlk(x, y - 2, z);
-    if (dc < Infinity && aiFloor(df) && !LQ[df]) add(c, x, y - 1, z, 1.5 + dc, 'down');
+    const dc = CC(x, y - 1, z), df = aiBlk(x, y - 2, z);
+    if (!(opt && opt.noDown) && dc < Infinity && aiFloor(df) && !LQ[df]) add(c, x, y - 1, z, 1.5 + dc, 'down');
   }
   const end = goal || best; if (!end) return null;
   const out = []; let k = end.k, cur = end;
@@ -14634,6 +14687,478 @@ cmd(['herobrine', 'herobrien', 'herebrien'], {
     else fail('/herobrine stop | undo | summon | status');
   },
 });
+/* =====================================================================
+   BOT. VERDECKTER BOT-MODUS (nur mit ?bot=1, nirgends in der Oberfläche erwähnt)
+   Das Spiel läuft ohne Darstellung (kein Rendern, kein Mesh, kein Ton) mit festem Zeitschritt von 20 Ticks/s – unabhängig von der Bildrate.
+   window.BOT steuert den normalen Spieler (P) über dieselben Spielregeln: Reichweite, Abbauzeit/Werkzeug, Schaden, Hunger, Rezepte.
+   Die Aktionen laufen durch dieselbe Interaktions-Pipeline wie bei Menschen (updatePlayer/updateInteraction) und sind darum im
+   Mehrspieler für alle sichtbar (Position, Schwingen, Blöcke, Chat, Tab-Liste). Keine Tasten-/Maus-Ereignisse, keine Teleports.
+   Alle Aktionen sind async und liefern { ok, reason?, … }; eine neue Aktion bricht die laufende ab (BOT.cancel()).
+===================================================================== */
+const BOT = (() => {
+  const B = {};
+  let gen = 0;
+  class Cancel extends Error {}
+  class Fail extends Error {}
+  const fail = (m) => { throw new Fail(m); };
+  const tk = (g) => new Promise((res, rej) => { botWaiters.push(() => { if (g !== gen) rej(new Cancel()); else res(); }); });
+  const rnd1 = (n) => Math.round(n * 100) / 100;
+  const playing = () => { if (!world) fail('keine Welt geladen'); if (state === 'dead') fail('tot (BOT.respawn())'); if (state !== 'play') fail('nicht im Spiel (Zustand: ' + state + ')'); };
+  const release = () => { BOTIN.fwd = BOTIN.str = 0; BOTIN.jump = BOTIN.sneak = BOTIN.sprint = BOTIN.wake = false; mouse.left = mouse.right = mouse.leftPressed = mouse.rightPressed = false; };
+  const act = (fn) => async (...a) => {
+    const g = ++gen; release();
+    try { return await fn(g, ...a); }
+    catch (e) {
+      if (e instanceof Cancel) return { ok: false, reason: 'abgebrochen' };
+      if (e instanceof Fail) return { ok: false, reason: e.message };
+      console.error(e); return { ok: false, reason: String((e && e.message) || e) };
+    } finally { if (g === gen) release(); }
+  };
+  const waitTicks = async (g, n) => { for (let i = 0; i < n; i++) await tk(g); };
+  const eyePos = () => ({ x: P.p.x, y: P.p.y + EYE, z: P.p.z });
+  const posOf = (o) => (o && o.p) ? o.p : o;
+  const setAim = (dx, dy, dz) => { P.yaw = Math.atan2(-dx, -dz); P.pitch = clamp(Math.atan2(dy, Math.hypot(dx, dz) || 1e-6), -1.5, 1.5); };
+  const dirTo = (e, x, y, z) => { const dx = x - e.x, dy = y - e.y, dz = z - e.z, l = Math.hypot(dx, dy, dz) || 1e-6; return { x: dx / l, y: dy / l, z: dz / l, l }; };
+
+  // ---------- Namen auflösen ----------
+  const norm = (s) => String(s).toLowerCase().replace(/[^a-z0-9äöüß]+/g, '_').replace(/^_|_$/g, '');
+  function itemId(x) {
+    if (typeof x === 'number') return x;
+    if (x && typeof x === 'object' && x.id !== undefined) return x.id | 0;
+    const k = norm(x);
+    if (IID[k] !== undefined) return IID[k];
+    if (ID[k] !== undefined) return ID[k];
+    for (let i = 1; i < BLOCKS.length; i++) if (BLOCKS[i] && norm(BLOCKS[i].name || '') === k) return i;
+    for (const i in ITEMS) if (norm(ITEMS[i].name || '') === k) return +i;
+    return 0;
+  }
+  const nameOf = (id) => { try { return itemName(id); } catch (e) { return String(id); } };
+  const countOf = (id) => inv.reduce((n, s) => n + (s && s.id === id ? s.count : 0), 0);
+
+  // ---------- Inventar ----------
+  function holdSlot(i) {                                              // in die Schnellleiste holen (Tausch mit dem gewählten Platz) und auswählen
+    if (i < 0 || i > 35) return false;
+    if (i < 9) { P.sel = i; refreshHotbar(); return true; }
+    const t = inv[P.sel]; inv[P.sel] = inv[i]; inv[i] = t; refreshHotbar(); return true;
+  }
+  function holdItem(id) { const i = inv.findIndex((s, k) => s && s.id === id && k < 9); const j = i >= 0 ? i : inv.findIndex((s) => s && s.id === id); return j >= 0 && holdSlot(j); }
+  function bestSlot(score) { let best = -1, bs = -Infinity; for (let i = 0; i < 36; i++) { const s = inv[i]; if (!s) continue; const v = score(s); if (v !== null && v > bs) { bs = v; best = i; } } return best; }
+  function holdToolFor(blockId) {
+    const Bk = BLOCKS[blockId]; if (!Bk) return;
+    const i = bestSlot((s) => { const t = toolOf(s); if (!t) return null; if (Bk.tool && t.type === Bk.tool) return t.tier * 100 + t.speed; return null; });
+    if (i >= 0) holdSlot(i); else if (inv[P.sel] && toolOf(inv[P.sel])) { const e = inv.findIndex((s, k) => !s && k < 9); if (e >= 0) P.sel = e; }
+  }
+  function holdWeapon() { const i = bestSlot((s) => { const t = toolOf(s); return t && t.dmg ? t.dmg : null; }); if (i >= 0) holdSlot(i); }
+
+  // ---------- Zielen ----------
+  const FACE_PT = [0.5, 0.25, 0.75];
+  function findAimBlock(x, y, z, want) {                              // Blickrichtung, bei der der Strahl (wie beim Spieler) genau diesen Block trifft
+    const e = eyePos(), reach = reach0(), pts = [];
+    for (const a of FACE_PT) for (const b of FACE_PT) for (const c of FACE_PT) pts.push([x + a, y + b, z + c]);
+    pts.sort((p, q) => Math.hypot(p[0] - x - 0.5, p[1] - y - 0.5, p[2] - z - 0.5) - Math.hypot(q[0] - x - 0.5, q[1] - y - 0.5, q[2] - z - 0.5));
+    for (const q of pts) {
+      const d = dirTo(e, q[0], q[1], q[2]); if (d.l > reach) continue;
+      const h = raycastBlocks(e, d, reach); if (h && h.x === x && h.y === y && h.z === z && (!want || want(h))) return d;
+    }
+    return null;
+  }
+  const PLACE_DIRS = [[0, -1, 0], [1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1], [0, 1, 0]];
+  function findAimPlace(x, y, z) {                                    // an welcher Nachbarfläche kann man klicken, damit der Block bei (x,y,z) entsteht?
+    const e = eyePos(), reach = reach0();
+    for (const [dx, dy, dz] of PLACE_DIRS) {
+      const nx = x + dx, ny = y + dy, nz = z + dz, nb = world.getBlock(nx, ny, nz);
+      if (!(nb > 0) || BLOCKS[nb].liquid || BLOCKS[nb].plant) continue;
+      for (const u of FACE_PT) for (const v of FACE_PT) {
+        const px = nx + 0.5 - dx * 0.48 + (dx ? 0 : u - 0.5) * 0.9, py = ny + 0.5 - dy * 0.48 + (dy ? 0 : (dx ? v : u) - 0.5) * 0.9, pz = nz + 0.5 - dz * 0.48 + (dz ? 0 : v - 0.5) * 0.9;
+        const d = dirTo(e, px, py, pz); if (d.l > reach) continue;
+        const h = raycastBlocks(e, d, reach);
+        if (h && h.x === nx && h.y === ny && h.z === nz && h.nx === -dx && h.ny === -dy && h.nz === -dz) return d;
+      }
+    }
+    return null;
+  }
+  function aimClear() {                                               // irgendwohin schauen, wo nichts getroffen wird (Essen/Trinken)
+    const e = eyePos(), reach = reach0();
+    for (const pit of [-0.9, 0.9, -0.4, 0.4, 0]) for (let k = 0; k < 8; k++) {
+      const yaw = P.yaw + k * Math.PI / 4, cp = Math.cos(pit), d = { x: -Math.sin(yaw) * cp, y: Math.sin(pit), z: -Math.cos(yaw) * cp };
+      if (!raycastBlocks(e, d, reach) && !raycastMobs(e, d, reach)) { P.yaw = yaw; P.pitch = pit; return true; }
+    }
+    return false;
+  }
+
+  // ---------- Wegfindung (nur Gehen/Springen/Fallen bis 3 Blöcke – kein Graben, kein Bauen) ----------
+  const botCost = (x, y, z) => {
+    if (y < 1 || y >= CH - 2) return Infinity;
+    const b = world.getBlock(x, y, z); if (b < 0) return Infinity;
+    if (aiPass(b)) return 0;
+    const Bk = BLOCKS[b]; if (Bk && Bk.door && !Bk.door.open) return 2;                    // geschlossene Tür: wird beim Gehen geöffnet
+    if (Bk && Bk.gate && !Bk.gate.open) return 2;
+    return Infinity;
+  };
+  const planPath = (goalFn, tx, ty, tz, maxN) => {
+    const dist = Math.hypot(tx - P.p.x, tz - P.p.z);
+    return aiPath(goalFn, tx, ty, tz, maxN || 9000, clamp(dist + 24, 40, 140), { p: P.p, cost: botCost, noDown: true });
+  };
+  async function openDoorsAt(g, x, y, z) {                           // Türen/Tore auf dem Weg öffnen
+    for (let dy = 0; dy < 2; dy++) {
+      const b = world.getBlock(x, y + dy, z), Bk = b > 0 ? BLOCKS[b] : null;
+      if (Bk && ((Bk.door && !Bk.door.open) || (Bk.gate && !Bk.gate.open))) { await useBlock(g, x, y + dy, z, true); return true; }
+    }
+    return false;
+  }
+
+  // Bewegung zu einem (beweglichen) Ziel. goalFn: Zellen-Test für den A*; until: Abbruchbedingung ab der aktuellen Position
+  async function moveTo(g, getTarget, o) {
+    o = o || {};
+    const range = o.range === undefined ? 0.9 : o.range, maxT = Math.ceil((o.timeout || 90) / BOT_DT);
+    let nodes = null, ni = 0, planAt = -1e9, stuckAt = botTicks, stuckX = P.p.x, stuckZ = P.p.z, stuckN = 0;
+    const closeEnough = (tg) => Math.hypot(tg.x - P.p.x, tg.z - P.p.z) <= range && Math.abs(tg.y - P.p.y) <= (o.dy === undefined ? 2 : o.dy);
+    for (let t = 0; t < maxT; t++) {
+      playing();
+      const tg = getTarget(); if (!tg) fail('Ziel weg');
+      if (o.until ? o.until(tg) : closeEnough(tg)) { release(); return true; }
+      const dynamic = !!o.dynamic;
+      if (!nodes || ni >= nodes.length || (dynamic && botTicks - planAt >= 20)) {
+        const goalFn = o.goal ? o.goal(tg) : (x, y, z) => Math.hypot(x + 0.5 - tg.x, z + 0.5 - tg.z) <= Math.max(range, 0.9) && Math.abs(y - tg.y) <= (o.dy === undefined ? 2 : o.dy);
+        const path = planPath(goalFn, tg.x, tg.y, tg.z, o.maxN);
+        planAt = botTicks;
+        if (!path || !path.nodes.length) { if (path && !path.partial) { release(); return true; } fail('kein Weg zum Ziel'); }
+        if (path.partial && path.nodes.length < 2) fail('Ziel nicht erreichbar');
+        nodes = path.nodes; ni = 0; nodes.partial = path.partial;
+      }
+      // steuern
+      while (ni < nodes.length) {
+        const n = nodes[ni], dx = n.x + 0.5 - P.p.x, dz = n.z + 0.5 - P.p.z, nx = nodes[ni + 1], pv = nodes[ni - 1] || { x: Math.floor(P.p.x), z: Math.floor(P.p.z) };
+        const turn = nx && ((nx.x - n.x) !== (n.x - pv.x) || (nx.z - n.z) !== (n.z - pv.z));
+        if (Math.hypot(dx, dz) < (turn ? 0.22 : 0.45) && Math.abs(n.y - P.p.y) < 1.1) ni++; else break;
+      }
+      if (ni >= nodes.length) { if (nodes.partial) fail('Ziel nicht erreichbar'); nodes = null; BOTIN.fwd = 0; BOTIN.sprint = false; await tk(g); continue; }
+      const n = nodes[ni], dx = n.x + 0.5 - P.p.x, dz = n.z + 0.5 - P.p.z, d = Math.hypot(dx, dz);
+      if (d > 0.05) P.yaw = Math.atan2(-dx, -dz);
+      BOTIN.fwd = 1;
+      BOTIN.sprint = !isCreative() && P.hunger > 6 && nodes.length - ni > 6 && !P.inWater;
+      BOTIN.jump = P.inWater || P.inLava || (P.onGround && (n.y > P.p.y + 0.3 || (P.hitH && d > 0.3)) && d < 1.6);
+      if (P.onGround && ((world.getBlock(n.x, n.y, n.z) > 0 && BLOCKS[world.getBlock(n.x, n.y, n.z)].door) || (world.getBlock(n.x, n.y + 1, n.z) > 0 && BLOCKS[world.getBlock(n.x, n.y + 1, n.z)].door) || (world.getBlock(n.x, n.y, n.z) > 0 && BLOCKS[world.getBlock(n.x, n.y, n.z)].gate))) {
+        if (d < 2.2 && await openDoorsAt(g, n.x, n.y, n.z)) continue;
+      }
+      // Festhängen
+      if (botTicks - stuckAt >= 30) {
+        if (Math.hypot(P.p.x - stuckX, P.p.z - stuckZ) < 0.25) { stuckN++; nodes = null; if (stuckN >= 4) fail('steckt fest'); } else stuckN = 0;
+        stuckAt = botTicks; stuckX = P.p.x; stuckZ = P.p.z;
+      }
+      await tk(g);
+    }
+    fail('Zeitüberschreitung');
+  }
+
+  // ---------- Block benutzen / abbauen / platzieren ----------
+  async function stand(g) {                                           // zum Stillstand kommen, damit Zielstrahl und Spielerposition übereinstimmen
+    BOTIN.fwd = BOTIN.str = 0; BOTIN.jump = BOTIN.sprint = false;
+    for (let i = 0; i < 24; i++) { if (Math.hypot(P.v.x, P.v.z) < 0.04 && (P.onGround || P.inWater || P.flying)) return; await tk(g); }
+  }
+  async function reachBlock(g, x, y, z, finder, avoid, walk) {        // so nah herangehen, dass der Block erreichbar und sichtbar ist
+    const ok = () => { const d = finder(); return d ? d : null; };
+    if (ok()) return;
+    if (walk === false) fail('außer Reichweite oder verdeckt');
+    const cx = x + 0.5, cy = y + 0.5, cz = z + 0.5, reach = reach0();
+    const cellOk = (sx, sy, sz) => {
+      if (avoid && sx === x && sz === z && sy >= y - 1 && sy <= y) return false;
+      const ex = sx + 0.5, ey = sy + 1.62, ez = sz + 0.5, d = Math.hypot(ex - cx, ey - cy, ez - cz); if (d > reach - 0.7) return false;
+      const dir = dirTo({ x: ex, y: ey, z: ez }, cx, cy, cz), h = raycastBlocks({ x: ex, y: ey, z: ez }, dir, reach);
+      return !!h && (h.x === x && h.y === y && h.z === z || (avoid && Math.abs(h.x - x) + Math.abs(h.y - y) + Math.abs(h.z - z) === 1));
+    };
+    await moveTo(g, () => ({ x: cx, y, z: cz }), { goal: () => cellOk, until: () => !!ok(), range: 0, timeout: 60, maxN: 6000 });
+  }
+  async function useBlock(g, x, y, z, quiet) {                        // Rechtsklick auf den Block (Tür, Hebel, Bett, Truhe …)
+    await stand(g);
+    const d = findAimBlock(x, y, z); if (!d) fail('Block nicht anvisierbar');
+    setAim(d.x, d.y, d.z); mouse.right = mouse.rightPressed = true; await tk(g); mouse.right = false;
+    if (state !== 'play' && state !== 'dead') setState('play');          // z. B. Werkbank/Ofen öffnen die Oberfläche – der Bot braucht sie nicht
+    return true;
+  }
+
+  B.mine = act(async (g, x, y, z, o) => {
+    o = o || {}; x |= 0; y |= 0; z |= 0; playing();
+    const id0 = world.getBlock(x, y, z);
+    if (id0 < 0) fail('Chunk nicht geladen');
+    if (id0 === AIR) return { ok: true, already: true };
+    const Bk = BLOCKS[id0];
+    if (Bk.hard === Infinity || y <= 0 || id0 === ID.bedrock) fail('unzerstörbar');
+    if (world.dim === 2) fail('in den Backrooms nicht abbaubar');
+    if (boss.on && boss.me && boss.me !== 'out') fail('im Bosskampf unveränderlich');
+    if (LQ[id0]) fail('Flüssigkeit lässt sich nicht abbauen');
+    await reachBlock(g, x, y, z, () => findAimBlock(x, y, z), false, o.walk);
+    await stand(g); holdToolFor(id0);
+    const t0 = botTicks, cap = Math.ceil(((o.timeout || 60)) / BOT_DT);
+    for (;;) {
+      playing();
+      if (world.getBlock(x, y, z) !== id0) break;
+      const d = findAimBlock(x, y, z); if (!d) fail('Block verdeckt oder zu weit');
+      setAim(d.x, d.y, d.z); mouse.left = true; await tk(g);
+      if (botTicks - t0 > cap) fail('Abbau dauert zu lange');
+    }
+    mouse.left = false;
+    if (o.collect !== false) await collectNear(g, 6, x + 0.5, y + 0.5, z + 0.5).catch((e) => { if (e instanceof Cancel) throw e; });
+    return { ok: true, block: Bk.name, ticks: botTicks - t0 };
+  });
+
+  B.place = act(async (g, x, y, z, what, o) => {
+    x |= 0; y |= 0; z |= 0; playing();
+    const id = itemId(what); if (!id) fail('unbekannter Block: ' + what);
+    if (id >= ITEM_BASE && !(ITEMS[id].door || ITEMS[id].key === 'redstone')) fail('kein platzierbarer Block');
+    if (!isCreative() && !countOf(id)) fail('nicht im Inventar: ' + nameOf(id));
+    if (world.dim === 2) fail('in den Backrooms nicht platzierbar');
+    if (y >= world.buildLimit()) fail('Bauhöhe erreicht');
+    const cur = world.getBlock(x, y, z); if (cur < 0) fail('Chunk nicht geladen');
+    if (cur !== AIR && !BLOCKS[cur].liquid && !BLOCKS[cur].plant) fail('Platz belegt');
+    if (!isCreative() || countOf(id)) holdItem(id); else fail('nicht in der Schnellleiste (Kreativ: erst Item beschaffen)');
+    await reachBlock(g, x, y, z, () => findAimPlace(x, y, z), true, o && o.walk);
+    await stand(g);
+    // steht der Bot im Weg? (Kopf-/Fußzelle)
+    if (Math.floor(P.p.x) === x && Math.floor(P.p.z) === z && Math.floor(P.p.y) >= y - 1 && Math.floor(P.p.y) <= y) fail('Bot steht im Zielblock');
+    const d = findAimPlace(x, y, z); if (!d) fail('keine Fläche zum Anklicken erreichbar');
+    const before = countOf(id);
+    setAim(d.x, d.y, d.z); mouse.right = mouse.rightPressed = true; await tk(g); mouse.right = false;
+    await tk(g);
+    const now = world.getBlock(x, y, z);
+    if (now === cur) fail('Platzieren nicht möglich');
+    return { ok: true, block: BLOCKS[now] ? BLOCKS[now].name : now, left: countOf(id), used: before - countOf(id) };
+  });
+
+  B.use = act(async (g, x, y, z) => {
+    x |= 0; y |= 0; z |= 0; playing();
+    await reachBlock(g, x, y, z, () => findAimBlock(x, y, z), false);
+    await useBlock(g, x, y, z); return { ok: true };
+  });
+
+  // ---------- Bewegung ----------
+  B.goto = act(async (g, x, y, z, o) => {
+    playing(); o = o || {};
+    if (typeof x === 'object' && x) { o = y || {}; ({ x, y, z } = posOf(x)); }
+    if (y === null || y === undefined) {                              // ohne Höhe: Boden an dieser Stelle (Laub/Stämme überspringen)
+      const ch = world.getChunk(Math.floor(x) >> 4, Math.floor(z) >> 4); if (!ch) fail('Chunk nicht geladen');
+      let yy = Math.min(CH - 3, colTopY(x, z) + 1); while (yy > 1 && !aiFloor(world.getBlock(Math.floor(x), yy - 1, Math.floor(z))) || (yy > 1 && (LEAFSET.has(world.getBlock(Math.floor(x), yy - 1, Math.floor(z))) || WOODSET.has(world.getBlock(Math.floor(x), yy - 1, Math.floor(z)))))) yy--;
+      y = yy;
+    }
+    const tg = { x: +x, y: +y, z: +z };
+    await moveTo(g, () => tg, { range: o.range === undefined ? 1 : o.range, dy: o.dy, timeout: o.timeout });
+    return { ok: true, pos: { x: rnd1(P.p.x), y: rnd1(P.p.y), z: rnd1(P.p.z) } };
+  });
+  B.follow = act(async (g, who, o) => {
+    o = o || {}; playing();
+    const find = () => { for (const p of mp.players.values()) if (p.name === who && p.have) return p.target || p.p; return null; };
+    const end = botTicks + Math.ceil((o.time || 30) / BOT_DT), dist = o.dist === undefined ? 3 : o.dist;
+    if (!find()) fail('Spieler nicht sichtbar: ' + who);
+    while (botTicks < end) {
+      playing();
+      const tg = find(); if (!tg) { await tk(g); continue; }
+      if (Math.hypot(tg.x - P.p.x, tg.z - P.p.z) > dist + 1 || Math.abs(tg.y - P.p.y) > 3) {
+        try { await moveTo(g, () => find(), { range: dist, dynamic: true, until: (t) => Math.hypot(t.x - P.p.x, t.z - P.p.z) <= dist && Math.abs(t.y - P.p.y) <= 3, timeout: 20 }); }
+        catch (e) { if (e instanceof Cancel) throw e; await waitTicks(g, 10); }
+      } else { release(); setAim(tg.x - P.p.x, tg.y + 1.5 - (P.p.y + EYE), tg.z - P.p.z); await tk(g); }
+    }
+    return { ok: true };
+  });
+  B.look = (x, y, z) => { const e = eyePos(); const p = typeof x === 'object' ? posOf(x) : { x, y, z }; setAim(p.x - e.x, p.y - e.y, p.z - e.z); return { ok: true, yaw: rnd1(P.yaw), pitch: rnd1(P.pitch) }; };
+
+  async function collectNear(g, radius, cx, cy, cz) {
+    for (let k = 0; k < 10; k++) {
+      playing();
+      const ox = cx === undefined ? P.p.x : cx, oy = cy === undefined ? P.p.y : cy, oz = cz === undefined ? P.p.z : cz;
+      const list = drops.filter((d) => Math.hypot(d.p.x - ox, d.p.y - oy, d.p.z - oz) <= radius && Math.hypot(d.p.x - P.p.x, d.p.z - P.p.z) > 0.7).sort((a, b) => Math.hypot(a.p.x - P.p.x, a.p.z - P.p.z) - Math.hypot(b.p.x - P.p.x, b.p.z - P.p.z));
+      if (!list.length) { if (k > 0 || !drops.some((d) => Math.hypot(d.p.x - ox, d.p.y - oy, d.p.z - oz) <= radius)) { await waitTicks(g, 8); if (!drops.some((d) => Math.hypot(d.p.x - ox, d.p.y - oy, d.p.z - oz) <= radius && Math.hypot(d.p.x - P.p.x, d.p.z - P.p.z) > 0.7)) return; continue; } await waitTicks(g, 6); continue; }
+      const d = list[0];
+      try { await moveTo(g, () => (drops.includes(d) ? { x: d.p.x, y: d.p.y, z: d.p.z } : null), { range: 0.6, dy: 2.2, timeout: 12, maxN: 3000 }); }
+      catch (e) { if (e instanceof Cancel) throw e; if (e instanceof Fail && e.message === 'Ziel weg') continue; return; }
+      await waitTicks(g, 3);
+    }
+  }
+  B.collect = act(async (g, radius) => { playing(); const n0 = inv.reduce((n, s) => n + (s ? s.count : 0), 0); await collectNear(g, radius || 8); return { ok: true, gained: inv.reduce((n, s) => n + (s ? s.count : 0), 0) - n0 }; });
+
+  // ---------- Kampf ----------
+  const mobById = (w) => {
+    if (w && typeof w === 'object') return mobs.includes(w) ? w : null;
+    const near = (m) => Math.hypot(m.p.x - P.p.x, m.p.z - P.p.z);
+    const c = mobs.filter((m) => (m.mid !== undefined && String(m.mid) === String(w)) || m.type === w).sort((a, b) => near(a) - near(b));
+    return c[0] || null;
+  };
+  B.attack = act(async (g, who, o) => {
+    o = o || {}; playing();
+    const m = mobById(who); if (!m) fail('Mob nicht gefunden');
+    if (boss.on && boss.me && boss.me !== 'out') fail('im Bosskampf nicht per BOT');
+    holdWeapon();
+    const cap = botTicks + Math.ceil((o.timeout || 25) / BOT_DT), hp0 = P.health;
+    const aimPt = () => ({ x: m.p.x, y: m.p.y + m.h * 0.55, z: m.p.z });
+    const alive = () => mobs.includes(m) && !(m.hp <= 0) && !m.dead;
+    while (alive()) {
+      playing();
+      if (botTicks > cap) fail('Zeitüberschreitung (Mob lebt noch, ' + (m.hp | 0) + ' HP)');
+      const a = aimPt(), e = eyePos(), d = dirTo(e, a.x, a.y, a.z);
+      if (d.l <= reach0() - 1.7) {
+        release(); setAim(d.x, d.y, d.z);
+        mouse.left = true; await tk(g); mouse.left = false;
+      } else {
+        try { await moveTo(g, () => (alive() ? { x: m.p.x, y: m.p.y, z: m.p.z } : null), { dynamic: true, range: 1.5, dy: 1.5, until: () => { if (!alive()) return true; const q = aimPt(), dd = dirTo(eyePos(), q.x, q.y, q.z); return dd.l <= reach0() - 2.1; }, timeout: 15, maxN: 4000 }); }
+        catch (er) { if (er instanceof Cancel) throw er; if (er instanceof Fail && er.message === 'Ziel weg') break; throw er; }
+      }
+    }
+    mouse.left = false;
+    if (o.collect !== false) await collectNear(g, 6, m.p.x, m.p.y, m.p.z);
+    return { ok: true, killed: !alive(), mob: m.type, damageTaken: Math.max(0, hp0 - P.health) };
+  });
+
+  // ---------- Essen / Schlafen / Herstellen ----------
+  B.eat = act(async (g, what) => {
+    playing();
+    if (isCreative()) fail('im Kreativmodus nicht nötig');
+    const deficit = 20 - P.hunger;
+    const want = what ? itemId(what) : 0;
+    let best = -1, bs = Infinity;
+    for (let i = 0; i < 36; i++) {
+      const s = inv[i]; if (!s || s.id < ITEM_BASE) continue; const I = ITEMS[s.id]; if (!I.food || I.potion) continue;
+      if (want && s.id !== want) continue;
+      const waste = I.food > deficit ? I.food - deficit + 100 : deficit - I.food;           // möglichst wenig verschwenden
+      if (waste < bs) { bs = waste; best = i; }
+    }
+    if (best < 0) fail('keine Nahrung im Inventar');
+    if (P.hunger >= 20 && !ITEMS[inv[best].id].always) fail('nicht hungrig');
+    holdSlot(best); await stand(g);
+    const id = inv[P.sel].id, h0 = P.hunger, c0 = countOf(id);
+    if (!aimClear()) fail('keine freie Blickrichtung');
+    mouse.right = mouse.rightPressed = true; await tk(g); mouse.rightPressed = false;
+    for (let i = 0; i < Math.ceil(5 / BOT_DT); i++) { playing(); mouse.right = true; if (countOf(id) < c0) break; await tk(g); }
+    mouse.right = false;
+    if (countOf(id) >= c0) fail('Essen abgebrochen');
+    return { ok: true, hunger: P.hunger, gained: P.hunger - h0, ate: nameOf(id) };
+  });
+
+  B.sleep = act(async (g, o) => {
+    o = o || {}; playing();
+    if (world.dim !== 0) fail('hier kann man nicht schlafen');
+    if (env.dayF >= 0.3) fail('nur nachts');
+    let bed = null, bd = Infinity;
+    const R = 24, px = Math.floor(P.p.x), py = Math.floor(P.p.y), pz = Math.floor(P.p.z);
+    for (let dz = -R; dz <= R; dz++) for (let dy = -6; dy <= 6; dy++) for (let dx = -R; dx <= R; dx++) {
+      const b = world.getBlock(px + dx, py + dy, pz + dz); if (b > 0 && BLOCKS[b].bed) { const d = dx * dx + dy * dy + dz * dz; if (d < bd) { bd = d; bed = [px + dx, py + dy, pz + dz]; } }
+    }
+    if (!bed) fail('kein Bett in 24 Blöcken');
+    await reachBlock(g, bed[0], bed[1], bed[2], () => findAimBlock(bed[0], bed[1], bed[2]), false);
+    await useBlock(g, bed[0], bed[1], bed[2]);
+    await waitTicks(g, 4);
+    if (!P.sleeping) fail('Schlafen nicht möglich (Monster in der Nähe oder zu hell)');
+    if (o.wait === false) return { ok: true, sleeping: true };
+    const cap = botTicks + Math.ceil((o.timeout || 600) / BOT_DT);
+    while (P.sleeping && botTicks < cap) { playing(); await tk(g); }
+    return { ok: true, sleeping: P.sleeping, woke: !P.sleeping };
+  });
+  B.wake = () => { BOTIN.wake = true; setTimeout(() => { BOTIN.wake = false; }, 150); return { ok: true }; };
+
+  const stationNear = () => stations();
+  B.craft = act(async (g, what, n) => {
+    playing(); n = n | 0 || 1;
+    let list = [];
+    if (what && typeof what === 'object' && what.ins) list = [what];
+    else { const id = itemId(what); if (!id) fail('unbekanntes Item: ' + what); list = RECIPES.filter((r) => r.out === id); }
+    if (!list.length) fail('kein Rezept dafür');
+    let made = 0, lastErr = '';
+    for (let k = 0; k < n; k++) {
+      playing();
+      let rec = list.find((r) => !craftBlock(r, stationNear())), need = null;
+      if (!rec) {
+        rec = list.find((r) => { for (const [spec, c] of r.ins) if (countItem(spec) < c) return false; return true; });          // Zutaten da, aber Station fehlt
+        if (!rec) { lastErr = 'Zutaten fehlen'; break; }
+        const blk = rec.st === 'table' ? ID.crafting_table : ID.furnace; need = blk;
+        let found = null, fd = Infinity; const px = Math.floor(P.p.x), py = Math.floor(P.p.y), pz = Math.floor(P.p.z);
+        for (let dz = -24; dz <= 24; dz++) for (let dy = -4; dy <= 4; dy++) for (let dx = -24; dx <= 24; dx++) if (world.getBlock(px + dx, py + dy, pz + dz) === blk) { const d = dx * dx + dy * dy + dz * dz; if (d < fd) { fd = d; found = [px + dx, py + dy, pz + dz]; } }
+        if (!found) { lastErr = (rec.st === 'table' ? 'Werkbank' : 'Ofen') + ' in 24 Blöcken nötig'; break; }
+        await moveTo(g, () => ({ x: found[0] + 0.5, y: found[1], z: found[2] + 0.5 }), { range: 3, dy: 3, until: () => nearBlock(blk, 4), timeout: 40 });
+        release();
+      }
+      const err = craftBlock(rec, stationNear()); if (err) { lastErr = err; break; }
+      craft(rec); made += rec.n; await tk(g);
+    }
+    if (!made) fail(lastErr || 'Herstellen nicht möglich');
+    return { ok: true, made, have: countOf(list[0].out) };
+  });
+
+  B.equip = act(async (g, what) => {
+    playing(); const id = itemId(what); if (!id || id < ITEM_BASE || !ITEMS[id].armor) fail('keine Rüstung');
+    if (!holdItem(id)) fail('nicht im Inventar'); equipFromHand(); return { ok: true };
+  });
+  B.select = (slot) => { if (slot >= 0 && slot < 9) { P.sel = slot | 0; refreshHotbar(); return { ok: true }; } return { ok: false, reason: 'Platz 0–8' }; };
+  B.hold = (what) => { const id = itemId(what); return holdItem(id) ? { ok: true } : { ok: false, reason: 'nicht im Inventar' }; };
+  B.respawn = () => { if (state !== 'dead') return { ok: false, reason: 'lebt' }; respawn(); return { ok: true }; };
+  B.cancel = () => { gen++; release(); return { ok: true }; };
+  B.wait = act(async (g, sec) => { await waitTicks(g, Math.max(1, Math.ceil((sec || 1) / BOT_DT))); return { ok: true }; });
+
+  // ---------- Chat ----------
+  B.chat = (text) => { text = String(text == null ? '' : text); if (!text.trim()) return { ok: false, reason: 'leer' }; try { chatSubmit(text.slice(0, 200)); return { ok: true }; } catch (e) { return { ok: false, reason: String(e.message || e) }; } };
+  B.chats = (since) => { const i = since | 0; return { next: botChat.length, lines: botChat.slice(i) }; };
+
+  // ---------- Abfragen (ohne Wirkung) ----------
+  B.inv = () => {
+    const items = [];
+    inv.forEach((s, i) => { if (s) items.push({ slot: i, id: s.id, name: nameOf(s.id), count: s.count, dur: s.dur, selected: i === P.sel }); });
+    return { items, hotbar: P.sel, armor: armor.map((a) => (a ? nameOf(a.id) : null)), fuel: P.fuel };
+  };
+  B.count = (what) => countOf(itemId(what));
+  B.state = () => ({
+    pos: { x: rnd1(P.p.x), y: rnd1(P.p.y), z: rnd1(P.p.z) }, yaw: rnd1(P.yaw), pitch: rnd1(P.pitch), health: P.health, hunger: P.hunger, xp: P.xpL,
+    onGround: P.onGround, sleeping: !!P.sleeping, dim: world ? world.dim : -1, mode, day: env.dayF, state, tick: botTicks, tps: Math.round(botTps * 10) / 10,
+    held: inv[P.sel] ? nameOf(inv[P.sel].id) : null, online: !!mp.on, room: mp.on ? mp.room : null, name: mp.on ? mp.name : null,
+  });
+  B.nearby = (type, radius) => {
+    radius = radius || 16; const px = P.p.x, py = P.p.y, pz = P.p.z, out = [];
+    const dist = (p) => Math.hypot(p.x - px, p.y - py, p.z - pz);
+    const t = type === undefined ? 'all' : String(type);
+    if (t === 'all' || t === 'mob' || t === 'mobs' || MOBTYPES[t]) for (const m of mobs) { if (MOBTYPES[t] && m.type !== t) continue; const d = dist(m.p); if (d <= radius) out.push({ kind: 'mob', type: m.type, id: m.mid, hostile: m.kind === 'hostile', hp: m.hp, x: rnd1(m.p.x), y: rnd1(m.p.y), z: rnd1(m.p.z), dist: rnd1(d) }); }
+    if (t === 'all' || t === 'player' || t === 'players') for (const p of mp.players.values()) { if (!p.have) continue; const q = p.target || p.p, d = dist(q); if (d <= radius) out.push({ kind: 'player', name: p.name, x: rnd1(q.x), y: rnd1(q.y), z: rnd1(q.z), dist: rnd1(d) }); }
+    if (t === 'all' || t === 'drop' || t === 'drops') for (const d0 of drops) { const d = dist(d0.p); if (d <= radius) out.push({ kind: 'drop', id: d0.id, name: nameOf(d0.id), count: d0.count, x: rnd1(d0.p.x), y: rnd1(d0.p.y), z: rnd1(d0.p.z), dist: rnd1(d) }); }
+    if (t !== 'all' && !/^(mob|mobs|player|players|drop|drops)$/.test(t) && !MOBTYPES[t]) {
+      const nm = norm(t.replace(/^block:/, '')); const ids = new Set();
+      if (TAG[nm]) TAG[nm].forEach((i) => ids.add(i)); else { const i = ID[nm]; if (i !== undefined) ids.add(i); else if (nm === 'oak_log' || nm === 'log') ids.add(WOOD); else for (let i = 1; i < BLOCKS.length; i++) if (BLOCKS[i] && norm(BLOCKS[i].name || '') === nm) ids.add(i); }
+      if (nm === 'bed') for (let i = 1; i < BLOCKS.length; i++) if (BLOCKS[i] && BLOCKS[i].bed) ids.add(i);
+      const R = Math.min(radius, 24), bx = Math.floor(px), by = Math.floor(py), bz = Math.floor(pz);
+      if (ids.size) for (let dz = -R; dz <= R; dz++) for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
+        const b = world.getBlock(bx + dx, by + dy, bz + dz); if (b > 0 && ids.has(b)) { const d = Math.hypot(dx, dy, dz); if (d <= R) out.push({ kind: 'block', id: b, name: BLOCKS[b].name, x: bx + dx, y: by + dy, z: bz + dz, dist: rnd1(d) }); }
+      }
+    }
+    out.sort((a, b) => a.dist - b.dist); return out.slice(0, 200);
+  };
+  B.blockAt = (x, y, z) => { const b = world.getBlock(x | 0, y | 0, z | 0); return { id: b, name: b > 0 ? BLOCKS[b].name : b === 0 ? 'Luft' : null }; };
+
+  // ---------- Verbindung ----------
+  const until = async (fn, ms) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (fn()) return true; await new Promise((r) => setTimeout(r, 100)); } return false; };
+  B.join = async (o) => {
+    o = o || {};
+    try {
+      await new Promise((r) => ATLAS.onReady(r));
+      if (!/^[A-Za-z0-9_]{3,16}$/.test(o.name || '')) return { ok: false, reason: 'Name: 3–16 Zeichen (Buchstaben, Ziffern, _)' };
+      if (!/^[a-z0-9_-]{2,24}$/.test(o.room || '')) return { ok: false, reason: 'Servername: 2–24 Zeichen (a–z, 0–9, - _)' };
+      if (o.token) { try { localStorage.setItem(TOKEN_KEY, o.token); } catch (e) { /* egal */ } }
+      Object.assign(mpCfg, { name: o.name, room: o.room, backend: o.backend || 'online', create: !!o.create, skinKind: 'preset', skinName: o.skin || mpCfg.skinName || 'steve', slim: !!o.slim });
+      mpSaveCfg();
+      await mpJoin({ name: o.name, token: mpToken(), backend: mpCfg.backend, room: o.room, seed: o.seed || String(Math.floor(Math.random() * 1e9)), mode: o.mode || 'survival', create: !!o.create, pub: o.pub !== false, dist: o.dist || 4, skin: currentSkinSpec(), slim: mpCfg.slim });
+      if (!(await until(() => state === 'play', 90000))) return { ok: false, reason: 'Laden dauert zu lange (Zustand: ' + state + ')' };
+      return { ok: true, state: B.state() };
+    } catch (e) {
+      try { await mpLeave(); } catch (e2) { /* egal */ } mp.on = false;
+      return { ok: false, reason: (e && e.message) || 'Verbindung fehlgeschlagen' };
+    }
+  };
+  B.single = async (o) => {                                           // lokale Welt (Einzelspieler) – vor allem für Tests
+    o = o || {}; await new Promise((r) => ATLAS.onReady(r));
+    startGame({ seed: o.seed || String(Math.floor(Math.random() * 1e9)), mode: o.mode || 'survival', dist: o.dist || 4 });
+    if (!(await until(() => state === 'play', 90000))) return { ok: false, reason: 'Laden dauert zu lange (Zustand: ' + state + ')' };
+    return { ok: true, state: B.state() };
+  };
+  B.leave = async () => { B.cancel(); if (mp.on) await mpLeave(); else if (world) saveGame(); setState('menu'); return { ok: true }; };
+  B.ticks = () => botTicks;
+  B.help = () => 'BOT: join/single/leave · goto/follow/collect/look · mine/place/use · attack/eat/sleep/craft/equip/hold/select · chat/chats · inv/count/state/nearby/blockAt · wait/cancel/respawn';
+  return B;
+})();
+if (BOTMODE) window.BOT = BOT;
+
 window.__vc = { AIB, aiBegin, aiEnd, aiOnChat, aiLLM, aiKey, aiObtain, aiSkill, aiFrame, aiTick, aiPath, aiFindBlocks, aiResolveItem, aiState, aiSay, aiParseJson, aiRunPlan, aiApply, aiSources, aiCount, aiAdd, aiMine, aiGotoPos, aiShapeCells, aiGroundY, aiRecv, aiInvText, HB, hbHarm, hbAfterTorch, hbBegin, hbEnd, hbAI, hbShrineAt, hbShrineCheck, hbUndo, hbGround, hbActTunnel, hbActPyramid, hbActTower, hbActSign, hbActTorch, hbActBreakTorches, hbMode, hbVanish, hbSay, hbRecv, tpOffline, bossDown, bossRespawn, bossContain, bossLate, mpSend, signs, signOpen, signClose, signTick, signPlaced, signSetKey, signsPack, signRemove, containerLoad, SIGN_IDS, bookOpen, bookClose, bookSignStart, bookSignDo, bookGo, bookOf, getBK: () => BK, hasGlint, enchLines, placementFor, HW, hwApply, hwTick, hwPoll, boss, bossBegin, bossEnd, bossTick, bossPos, bossRp, bossStartAct, bossDamage, bossPlayersAlive, bossLocked, BACT, blastAsk, askRealBlast, answerRealBlast, chainSet: (n, x, y, z) => { chainLocal = n; chainSum = [n * x, n * y, n * z]; }, blastQ, blastInfo: () => ({ tot: blastTot, done: blastDone, n: blastN, cur: !!blastCur }), bigSt, stepBlast, bigTick, perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
