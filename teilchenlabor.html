@@ -1,0 +1,813 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Teilchenlabor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: Kopfzeile + Reiter, darunter Bühne (3D) links und Messpult rechts; Aufgaben-Reiter ohne Bühne.
+   Palette: Lehrbuchblau als Akzent, Lehrbuchgrün für Aufgaben, kühle Neutraltöne mit Blaustich. */
+:root{
+  --bg:#f3f5fa; --surface:#ffffff; --surface2:#e9eef7; --ink:#0f1b33; --muted:#53617d; --line:#d3dae8;
+  --accent:#0a4ea3; --accent-ink:#ffffff; --accent-soft:#dbe8fb; --green:#4f7d0c; --green-soft:#e6f1d2;
+  --warn:#a8470a; --warn-soft:#fbe8d6; --ok:#17794a; --ok-soft:#d9f1e4; --stage:#0b1322;
+  --sans:"IBM Plex Sans","Segoe UI",system-ui,-apple-system,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0a0f1d; --surface:#121a2f; --surface2:#1a2440; --ink:#e8edf9; --muted:#9aa8c6; --line:#27324f;
+  --accent:#6fa8ff; --accent-ink:#06142e; --accent-soft:#16294d; --green:#a5d65a; --green-soft:#222f10;
+  --warn:#ffa65c; --warn-soft:#3a2410; --ok:#5fd49a; --ok-soft:#10301f; color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --bg:#0a0f1d; --surface:#121a2f; --surface2:#1a2440; --ink:#e8edf9; --muted:#9aa8c6; --line:#27324f;
+  --accent:#6fa8ff; --accent-ink:#06142e; --accent-soft:#16294d; --green:#a5d65a; --green-soft:#222f10;
+  --warn:#ffa65c; --warn-soft:#3a2410; --ok:#5fd49a; --ok-soft:#10301f; color-scheme:dark; }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;
+  padding-inline:clamp(16px,3vw,32px);padding-block:20px 48px}
+.wrap{max-width:1360px;margin-inline:auto;display:flex;flex-direction:column;gap:16px}
+h1,h2,h3{text-wrap:balance;line-height:1.2;margin:0}
+sup{font-size:.7em;line-height:0}
+.top{display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:14px;min-width:0}
+.mark{display:flex;gap:4px;flex:none}.mark i{display:block;width:14px;height:14px;background:var(--accent)}
+.brand h1{font-size:clamp(22px,3.2vw,30px);font-weight:600;letter-spacing:-.01em}
+.brand p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+.tab{flex:none;appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;
+  padding:8px 14px;border-radius:8px;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:0;line-height:1.25}
+.tab b{font-weight:600;font-size:14px}.tab span{font-size:11.5px;color:var(--muted);font-family:var(--mono)}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tab[aria-selected="true"] span{color:inherit;opacity:.85}
+.tab:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.lab{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:20px;align-items:start}
+.lab.nostage{grid-template-columns:minmax(0,1fr)}
+.lab.nostage .stagecol{display:none}
+.stage{position:relative;height:clamp(340px,66vh,700px);background:var(--stage);border-radius:10px;overflow:hidden}
+.stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.stage canvas:active{cursor:grabbing}
+.hud{position:absolute;left:12px;top:12px;display:flex;gap:8px;flex-wrap:wrap;pointer-events:none;max-width:calc(100% - 24px)}
+.hud span{background:rgba(8,14,28,.72);color:#e8edf9;font:500 12.5px/1 var(--mono);padding:7px 10px;border-radius:6px;border:1px solid rgba(160,185,235,.22)}
+.tools{position:absolute;right:10px;bottom:10px;display:flex;gap:6px}
+.tools button{appearance:none;border:1px solid rgba(160,185,235,.35);background:rgba(8,14,28,.72);color:#e8edf9;font:500 13px var(--sans);padding:7px 11px;border-radius:6px;cursor:pointer}
+.tools button:hover{background:rgba(30,50,95,.9)}
+.nogl{position:absolute;inset:0;display:grid;place-items:center;color:#e8edf9;padding:24px;text-align:center}
+.cap{margin:8px 2px 0;font-size:12.5px;color:var(--muted)}
+.panel{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card h3{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.card p{margin:0}
+.card.key{background:var(--accent-soft);border-color:transparent}
+.card.key p{color:var(--ink);font-weight:500}
+.card.green{border-color:var(--green)}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{appearance:none;border:1px solid var(--line);background:var(--surface2);color:var(--ink);font:500 13.5px var(--sans);padding:8px 12px;border-radius:7px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.ctl{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:baseline}
+.ctl label{font-size:13.5px}.ctl output{font:500 13px var(--mono);color:var(--accent)}
+.ctl input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--accent);margin:4px 0 0}
+.chk{display:flex;gap:9px;align-items:flex-start;font-size:13.5px;cursor:pointer}
+.chk input{margin-top:3px;accent-color:var(--accent)}
+select,textarea,input[type=number]{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:7px 9px;width:100%}
+.read{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.read div{background:var(--surface2);border-radius:8px;padding:9px 11px;display:flex;flex-direction:column;gap:1px;min-width:0}
+.read small{font-size:11.5px;color:var(--muted)}.read b{font:500 15px var(--mono);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.pill{display:inline-block;padding:3px 10px;border-radius:99px;font-weight:600;font-size:13px}
+.pill.fest{background:var(--accent-soft);color:var(--accent)}.pill.fl{background:var(--ok-soft);color:var(--ok)}.pill.gas{background:var(--warn-soft);color:var(--warn)}
+canvas.plot{width:100%;height:170px;display:block}
+.note{font-size:13px;color:var(--muted)}
+.note b{color:var(--ink)}
+details summary{cursor:pointer;font-weight:600;font-size:14px}
+details[open] summary{margin-bottom:8px}
+details p+p{margin-top:8px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:12.5px;padding:4px 9px;border-radius:6px;border:1px solid var(--line);background:var(--surface2);color:var(--muted)}
+.chip.yes{background:var(--ok-soft);color:var(--ok);border-color:transparent;font-weight:600}
+.scale{position:relative;height:46px;margin:8px 4px 0}
+.scale .bar{position:absolute;left:0;right:0;top:18px;height:4px;border-radius:2px;background:var(--line)}
+.scale .tk{position:absolute;top:10px;width:1px;height:20px;background:var(--muted)}
+.scale .tk em{position:absolute;top:22px;left:0;transform:translateX(-50%);font:11px var(--mono);font-style:normal;color:var(--muted);white-space:nowrap}
+.scale .tk.hi em{top:-16px}
+.scale .cur{position:absolute;top:12px;width:4px;height:16px;margin-left:-2px;background:var(--accent);border-radius:2px}
+table.t{border-collapse:collapse;width:100%;font-size:13.5px}
+table.t th,table.t td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+table.t th{font-weight:600;color:var(--muted);font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+.tablewrap{overflow-x:auto}
+.tasks{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px}
+.task h2{font-size:18px;color:var(--green)}
+.task .num{display:inline-block;font-weight:700;margin-right:8px;color:var(--green)}
+.sol{background:var(--green-soft);border-radius:8px;padding:12px 14px;font-size:14px}
+.sol ul{margin:6px 0 0;padding-left:18px}
+.quiz{display:flex;flex-direction:column;gap:14px}
+.q{display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+.q:first-child{border-top:0;padding-top:0}
+.q .opt{appearance:none;text-align:left;border:1px solid var(--line);background:var(--surface2);color:var(--ink);font:inherit;font-size:14px;padding:9px 12px;border-radius:7px;cursor:pointer}
+.q .opt:hover:not(:disabled){border-color:var(--accent)}
+.q .opt.right{background:var(--ok-soft);border-color:var(--ok);color:var(--ink)}
+.q .opt.wrong{background:var(--warn-soft);border-color:var(--warn);color:var(--ink)}
+.q .why{font-size:13.5px;color:var(--muted)}
+.foot{font-size:12.5px;color:var(--muted);margin-top:6px}
+@media (max-width:980px){ .lab{grid-template-columns:minmax(0,1fr)} .stage{height:clamp(300px,52vh,520px)} }
+@media (prefers-reduced-motion:reduce){ *{scroll-behavior:auto!important} }
+[hidden]{display:none!important}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><div class="mark" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div><h1>Teilchenlabor</h1><p>Stoffe bestehen aus Teilchen. Eigene Experimente in 3D, die nach physikalischen Gesetzen gerechnet sind.</p></div></div>
+  </header>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Experimente"></nav>
+  <main class="lab" id="lab">
+    <section class="stagecol"><div class="stage" id="stage"><canvas id="cv" aria-label="3D-Ansicht der Teilchen"></canvas><div class="hud" id="hud"></div>
+      <div class="tools"><button id="t-pause">Pause</button><button id="t-view">Ansicht zurücksetzen</button><button id="t-reset">Neustart</button></div></div>
+      <p class="cap" id="cap"></p></section>
+    <aside class="panel" id="panel"></aside>
+  </main>
+  <p class="foot">Alle Simulationen laufen in deinem Browser. Teilchen werden mit Newtons Bewegungsgleichungen (Lennard-Jones-Kräfte, harte Stöße) oder mit der Zufallsbewegung nach Einstein berechnet. Zeiten, Größen und Teilchenzahlen sind verkleinert. Bezug: Fokus Chemie, Kapitel „Was ist Chemie?“, Seiten 14 und 15.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+//#sim-start
+/* ================= Physik-Kerne (ohne Grafik) ================= */
+function randn(){ let u=0; while(u===0) u=Math.random(); const v=Math.random(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+
+/* ---- 1. Lennard-Jones-Teilchen im geschlossenen Behälter (reduzierte Einheiten σ=ε=m=1, k_B=1) ---- */
+class LJSim{
+  constructor(L=11, cells=4){
+    this.L=L; this.hw=L/2-0.5; this.dt=0.005; this.Tset=0.5; this.tau=0.5;
+    const a=Math.cbrt(4/1.07), basis=[[0,0,0],[.5,.5,0],[.5,0,.5],[0,.5,.5]], p=[];
+    const off=-(cells*a)/2+a/4;
+    for(let i=0;i<cells;i++)for(let j=0;j<cells;j++)for(let k=0;k<cells;k++)for(const b of basis)
+      p.push(off+(i+b[0])*a, off+(j+b[1])*a, off+(k+b[2])*a);
+    this.N=p.length/3; this.x=Float64Array.from(p); this.v=new Float64Array(3*this.N); this.f=new Float64Array(3*this.N);
+    this.time=0; this.pe=0; this.reset(this.Tset);
+  }
+  reset(T){
+    const N=this.N, v=this.v, o=this.x; this.Tset=T;
+    // Gitter neu aufbauen
+    const cells=Math.round(Math.cbrt(N/4)), a=Math.cbrt(4/1.07), basis=[[0,0,0],[.5,.5,0],[.5,0,.5],[0,.5,.5]];
+    let n=0; const off=-(cells*a)/2+a/4;
+    for(let i=0;i<cells;i++)for(let j=0;j<cells;j++)for(let k=0;k<cells;k++)for(const b of basis){
+      o[n++]=off+(i+b[0])*a; o[n++]=off+(j+b[1])*a; o[n++]=off+(k+b[2])*a; }
+    const s=Math.sqrt(Math.max(T,0.01)); let m=[0,0,0];
+    for(let i=0;i<N;i++)for(let d=0;d<3;d++){ v[3*i+d]=randn()*s; m[d]+=v[3*i+d]; }
+    for(let i=0;i<N;i++)for(let d=0;d<3;d++) v[3*i+d]-=m[d]/N;
+    this.rescale(T); this.time=0; this.forces();
+  }
+  kinetic(){ let s=0; const v=this.v; for(let i=0;i<v.length;i++) s+=v[i]*v[i]; return 0.5*s; }
+  temperature(){ return 2*this.kinetic()/(3*this.N-3); }
+  rescale(T){ const t=this.temperature(); if(t<1e-9) return; const l=Math.sqrt(T/t); for(let i=0;i<this.v.length;i++) this.v[i]*=l; }
+  forces(){
+    const N=this.N,x=this.x,f=this.f; f.fill(0); let pe=0;
+    for(let i=0;i<N;i++){ const xi=x[3*i],yi=x[3*i+1],zi=x[3*i+2];
+      for(let j=i+1;j<N;j++){
+        const dx=xi-x[3*j],dy=yi-x[3*j+1],dz=zi-x[3*j+2];
+        let r2=dx*dx+dy*dy+dz*dz; if(r2>6.25) continue; if(r2<0.64) r2=0.64;
+        const i2=1/r2, s6=i2*i2*i2, ff=24*i2*(2*s6*s6-s6);
+        f[3*i]+=ff*dx; f[3*i+1]+=ff*dy; f[3*i+2]+=ff*dz; f[3*j]-=ff*dx; f[3*j+1]-=ff*dy; f[3*j+2]-=ff*dz;
+        pe+=4*(s6*s6-s6);
+      } }
+    this.pe=pe;
+  }
+  step(){
+    const N=this.N,x=this.x,v=this.v,f=this.f,dt=this.dt,hw=this.hw;
+    for(let i=0;i<3*N;i++){ v[i]+=0.5*dt*f[i]; x[i]+=dt*v[i];
+      if(x[i]>hw){ x[i]=2*hw-x[i]; v[i]=-v[i]; } else if(x[i]<-hw){ x[i]=-2*hw-x[i]; v[i]=-v[i]; } }
+    this.forces();
+    for(let i=0;i<3*N;i++) v[i]+=0.5*dt*f[i];
+    // Berendsen-Thermostat (Wärmebad der Behälterwand)
+    const T=this.temperature(); let l2=1+(dt/this.tau)*(this.Tset/Math.max(T,1e-6)-1);
+    l2=Math.min(1.21,Math.max(0.81,l2)); const l=Math.sqrt(l2); for(let i=0;i<3*N;i++) v[i]*=l;
+    this.time+=dt;
+  }
+  /* Anteil „verdichteter“ Teilchen (≥3 Nachbarn bei r<1,4σ) und mittlere Nachbarzahl */
+  structure(){
+    const N=this.N,x=this.x; let cond=0,nbs=0;
+    for(let i=0;i<N;i++){ let c=0; for(let j=0;j<N;j++){ if(i===j) continue;
+      const dx=x[3*i]-x[3*j],dy=x[3*i+1]-x[3*j+1],dz=x[3*i+2]-x[3*j+2]; if(dx*dx+dy*dy+dz*dz<1.96) c++; }
+      nbs+=c; if(c>=3) cond++; }
+    return {cond:cond/N, nb:nbs/N};
+  }
+}
+
+/* ---- 2. Brown'sche Bewegung: schweres Teilchen in einem Gas/einer Flüssigkeit aus WCA-Kugeln ---- */
+class BrownSim{
+  constructor({L=12, rho=0.2, R=2, M=60, T=1}={}){
+    this.L=L; this.R=R; this.M=M; this.Tset=T; this.dt=0.004; this.hw=L/2-0.5; this.tau=1.0;
+    this.sigB=R+0.5;
+    const s0=Math.cbrt(1/rho), ng=Math.floor((L-1)/s0), s=(L-1)/ng, pts=[];
+    for(let i=0;i<ng;i++)for(let j=0;j<ng;j++)for(let k=0;k<ng;k++){
+      const px=-(L-1)/2+(i+.5)*s, py=-(L-1)/2+(j+.5)*s, pz=-(L-1)/2+(k+.5)*s;
+      if(px*px+py*py+pz*pz>(this.sigB+0.2)*(this.sigB+0.2)) pts.push(px,py,pz); }
+    const n=pts.length/3, N=n+1; this.N=N; this.n=n;
+    this.x=new Float64Array(3*N); this.v=new Float64Array(3*N); this.f=new Float64Array(3*N);
+    this.x.set(pts); // Index n = großes Teilchen (Mitte)
+    for(let i=0;i<3*n;i++) this.v[i]=randn()*Math.sqrt(T);
+    for(let d=0;d<3;d++) this.v[3*n+d]=randn()*Math.sqrt(T/M);
+    this.nc=Math.max(3,Math.floor(L/1.2)); this.cs=L/this.nc;
+    this.head=new Int32Array(this.nc**3); this.next=new Int32Array(N);
+    this.Fb=[0,0,0]; this.time=0;
+    this.hist=[]; this.histDt=0.25; this.acc=0;
+    this.forces(); for(let i=0;i<300;i++) this.step(true); this.time=0; this.hist.length=0;
+  }
+  cellOf(c){ let k=Math.floor((c+this.L/2)/this.cs); return k<0?0:(k>=this.nc?this.nc-1:k); }
+  forces(){
+    const n=this.n,x=this.x,f=this.f,nc=this.nc; f.fill(0); this.head.fill(-1);
+    for(let i=0;i<n;i++){ const c=this.cellOf(x[3*i])+nc*(this.cellOf(x[3*i+1])+nc*this.cellOf(x[3*i+2])); this.next[i]=this.head[c]; this.head[c]=i; }
+    const rc2=1.2599;
+    for(let i=0;i<n;i++){
+      const cx=this.cellOf(x[3*i]),cy=this.cellOf(x[3*i+1]),cz=this.cellOf(x[3*i+2]);
+      for(let a=Math.max(0,cx-1);a<=Math.min(nc-1,cx+1);a++)for(let b=Math.max(0,cy-1);b<=Math.min(nc-1,cy+1);b++)for(let c=Math.max(0,cz-1);c<=Math.min(nc-1,cz+1);c++){
+        for(let j=this.head[a+nc*(b+nc*c)];j>=0;j=this.next[j]){ if(j<=i) continue;
+          const dx=x[3*i]-x[3*j],dy=x[3*i+1]-x[3*j+1],dz=x[3*i+2]-x[3*j+2]; let r2=dx*dx+dy*dy+dz*dz;
+          if(r2>=rc2) continue; if(r2<0.6) r2=0.6;
+          const i2=1/r2,s6=i2*i2*i2,ff=24*i2*(2*s6*s6-s6);
+          f[3*i]+=ff*dx;f[3*i+1]+=ff*dy;f[3*i+2]+=ff*dz;f[3*j]-=ff*dx;f[3*j+1]-=ff*dy;f[3*j+2]-=ff*dz; } } }
+    // Stöße der kleinen Teilchen auf das große
+    const bx=x[3*n],by=x[3*n+1],bz=x[3*n+2],sg2=this.sigB*this.sigB,rcb2=sg2*1.2599; let Fx=0,Fy=0,Fz=0;
+    for(let i=0;i<n;i++){ const dx=x[3*i]-bx,dy=x[3*i+1]-by,dz=x[3*i+2]-bz; let r2=dx*dx+dy*dy+dz*dz;
+      if(r2>=rcb2) continue; if(r2<0.6*sg2) r2=0.6*sg2;
+      const q=sg2/r2,s6=q*q*q,ff=24*(2*s6*s6-s6)/r2;
+      f[3*i]+=ff*dx;f[3*i+1]+=ff*dy;f[3*i+2]+=ff*dz; Fx-=ff*dx;Fy-=ff*dy;Fz-=ff*dz; }
+    f[3*n]+=Fx;f[3*n+1]+=Fy;f[3*n+2]+=Fz; this.Fb=[Fx,Fy,Fz];
+  }
+  step(warm){
+    const n=this.n,N=this.N,x=this.x,v=this.v,f=this.f,dt=this.dt,hw=this.hw,M=this.M;
+    for(let i=0;i<N;i++){ const m=i===n?M:1, lim=i===n?hw-this.R+0.5:hw;
+      for(let d=0;d<3;d++){ const k=3*i+d; v[k]+=0.5*dt*f[k]/m; if(warm&&Math.abs(v[k])>3) v[k]=Math.sign(v[k])*3; x[k]+=dt*v[k];
+        if(x[k]>lim){x[k]=2*lim-x[k];v[k]=-v[k];}else if(x[k]<-lim){x[k]=-2*lim-x[k];v[k]=-v[k];} } }
+    this.forces();
+    for(let i=0;i<N;i++){ const m=i===n?M:1; for(let d=0;d<3;d++) v[3*i+d]+=0.5*dt*f[3*i+d]/m; }
+    let ke=0; for(let i=0;i<3*n;i++) ke+=v[i]*v[i];
+    const Ts=ke/(3*n); let l2=1+(dt/this.tau)*(this.Tset/Math.max(Ts,1e-6)-1); l2=Math.min(1.21,Math.max(0.81,l2)); const l=Math.sqrt(l2);
+    for(let i=0;i<3*n;i++) v[i]*=l;
+    this.time+=dt; this.acc+=dt;
+    if(this.acc>=this.histDt){ this.acc-=this.histDt; this.hist.push(x[3*n],x[3*n+1],x[3*n+2]); if(this.hist.length>3*1600) this.hist.splice(0,3); }
+  }
+  /* mittleres Verschiebungsquadrat <Δr²>(τ) aus allen Zeitfenstern */
+  msd(maxLag=60){
+    const h=this.hist,m=h.length/3,out=[]; if(m<8) return out; const L=Math.min(maxLag,Math.floor(m/2));
+    for(let lag=1;lag<=L;lag++){ let s=0,c=0; for(let i=0;i+lag<m;i+=2){ const dx=h[3*(i+lag)]-h[3*i],dy=h[3*(i+lag)+1]-h[3*i+1],dz=h[3*(i+lag)+2]-h[3*i+2]; s+=dx*dx+dy*dy+dz*dz; c++; }
+      out.push([lag*this.histDt,s/c]); }
+    return out;
+  }
+}
+
+/* ---- 3. Diffusion eines Farbstoffs in Wasser (Zufallsbewegung, SI-nahe Einheiten: mm, s) ---- */
+const KB=1.380649e-23;
+function waterViscosity(TK){ return 2.414e-5*Math.pow(10,247.8/(TK-140)); } // Pa·s (Vogel-Gleichung)
+function stokesEinsteinD(TK, rh=0.5e-9){ return KB*TK/(6*Math.PI*waterViscosity(TK)*rh)*1e6; } // mm²/s
+class DyeSim{
+  constructor(n, TC, R=30, H=60){
+    this.n=n; this.R=R; this.H=H; this.set(TC); this.p=new Float32Array(3*n); this.t=0; this.reset();
+  }
+  set(TC){ this.TC=TC; this.D=stokesEinsteinD(TC+273.15); this.eta=waterViscosity(TC+273.15); }
+  reset(){ this.t=0; for(let i=0;i<this.n;i++){ // Teebeutel: kleiner Quader 8×8×10 mm unter der Oberfläche
+      this.p[3*i]=(Math.random()-.5)*8; this.p[3*i+1]=this.H-3-Math.random()*10; this.p[3*i+2]=(Math.random()-.5)*8; } }
+  step(dt){ // dt in s; exakter Gauß-Schritt: σ = √(2 D dt) je Achse
+    const s=Math.sqrt(2*this.D*dt),p=this.p,R=this.R,H=this.H;
+    for(let i=0;i<this.n;i++){
+      let x=p[3*i]+s*randn(), y=p[3*i+1]+s*randn(), z=p[3*i+2]+s*randn();
+      const r=Math.hypot(x,z); if(r>R){ const q=(2*R-r)/r; x*=q; z*=q; }
+      for(let k=0;k<4&&(y<0||y>H);k++){ if(y<0) y=-y; if(y>H) y=2*H-y; }
+      p[3*i]=x;p[3*i+1]=y;p[3*i+2]=z; }
+    this.t+=dt;
+  }
+  rms(){ let s=0; const p=this.p; for(let i=0;i<this.n;i++){ const dx=p[3*i]-0,dy=p[3*i+1]-(this.H-8),dz=p[3*i+2]; s+=dx*dx+dy*dy+dz*dz; } return Math.sqrt(s/this.n); }
+}
+
+/* ---- 4. Gasgemisch aus harten Kugeln (Luft + Br₂) in einem Standzylinder ---- */
+class GasSim{
+  constructor({R=6,H=36,air=true,brFrac=0.15,dens=0.2}={}){
+    this.R=R; this.H=H; this.dt=0.02; this.TK=293; this.g=0; this.mass=[1,5.52]; this.dia=[1,1.17];
+    const h0=H*brFrac, V=Math.PI*R*R, nBr=Math.round(dens*V*h0), nAir=air?Math.round(dens*V*(H-h0)):0;
+    const N=nBr+nAir; this.N=N; this.nBr=nBr; this.sp=new Uint8Array(N);
+    this.x=new Float64Array(3*N); this.v=new Float64Array(3*N);
+    const placed=[];
+    for(let i=0;i<N;i++){ const br=i<nBr; this.sp[i]=br?1:0; const d=this.dia[this.sp[i]];
+      for(let tries=0;tries<400;tries++){
+        const rr=(R-d/2)*Math.sqrt(Math.random()), a=Math.random()*2*Math.PI;
+        const y=br? d/2+Math.random()*(h0-d): h0+d/2+Math.random()*(H-h0-d);
+        const px=rr*Math.cos(a),pz=rr*Math.sin(a); let ok=true;
+        for(let j=0;j<i;j++){ const dd=(d+this.dia[this.sp[j]])/2; const dx=px-this.x[3*j],dy=y-this.x[3*j+1],dz=pz-this.x[3*j+2]; if(dx*dx+dy*dy+dz*dz<dd*dd){ok=false;break;} }
+        if(ok||tries===399){ this.x[3*i]=px;this.x[3*i+1]=y;this.x[3*i+2]=pz; break; } }
+      const s=Math.sqrt(1/this.mass[this.sp[i]]); for(let d2=0;d2<3;d2++) this.v[3*i+d2]=randn()*s; }
+    this.nbx=Math.max(2,Math.floor(2*R/1.3)); this.nby=Math.max(2,Math.floor(H/1.3));
+    this.head=new Int32Array(this.nbx*this.nbx*this.nby); this.next=new Int32Array(N); this.time=0;
+  }
+  setT(TK){ const f=Math.sqrt(TK/this.TK); for(let i=0;i<this.v.length;i++) this.v[i]*=f; this.TK=TK; }
+  step(){
+    const N=this.N,x=this.x,v=this.v,dt=this.dt,R=this.R,H=this.H;
+    for(let i=0;i<N;i++){ const rad=this.dia[this.sp[i]]/2; v[3*i+1]-=this.g*dt;
+      x[3*i]+=v[3*i]*dt; x[3*i+1]+=v[3*i+1]*dt; x[3*i+2]+=v[3*i+2]*dt;
+      if(x[3*i+1]<rad){x[3*i+1]=2*rad-x[3*i+1];v[3*i+1]=-v[3*i+1];} else if(x[3*i+1]>H-rad){x[3*i+1]=2*(H-rad)-x[3*i+1];v[3*i+1]=-v[3*i+1];}
+      const lim=R-rad, r2=x[3*i]*x[3*i]+x[3*i+2]*x[3*i+2];
+      if(r2>lim*lim){ const r=Math.sqrt(r2),nx=x[3*i]/r,nz=x[3*i+2]/r,vn=v[3*i]*nx+v[3*i+2]*nz;
+        if(vn>0){v[3*i]-=2*vn*nx;v[3*i+2]-=2*vn*nz;} x[3*i]=nx*lim; x[3*i+2]=nz*lim; } }
+    if(N>1){ this.collide(); }
+    this.time+=dt;
+  }
+  collide(){
+    const N=this.N,x=this.x,v=this.v,nbx=this.nbx,nby=this.nby,R=this.R,H=this.H,cs=1.3; this.head.fill(-1);
+    const cx=i=>Math.min(nbx-1,Math.max(0,Math.floor((x[3*i]+R)/(2*R)*nbx))), cz=i=>Math.min(nbx-1,Math.max(0,Math.floor((x[3*i+2]+R)/(2*R)*nbx))), cy=i=>Math.min(nby-1,Math.max(0,Math.floor(x[3*i+1]/H*nby)));
+    for(let i=0;i<N;i++){ const c=cx(i)+nbx*(cz(i)+nbx*cy(i)); this.next[i]=this.head[c]; this.head[c]=i; }
+    for(let i=0;i<N;i++){ const a0=cx(i),b0=cz(i),c0=cy(i),mi=this.mass[this.sp[i]],di=this.dia[this.sp[i]];
+      for(let a=Math.max(0,a0-1);a<=Math.min(nbx-1,a0+1);a++)for(let b=Math.max(0,b0-1);b<=Math.min(nbx-1,b0+1);b++)for(let c=Math.max(0,c0-1);c<=Math.min(nby-1,c0+1);c++){
+        for(let j=this.head[a+nbx*(b+nbx*c)];j>=0;j=this.next[j]){ if(j<=i) continue;
+          const dd=(di+this.dia[this.sp[j]])/2, dx=x[3*i]-x[3*j],dy=x[3*i+1]-x[3*j+1],dz=x[3*i+2]-x[3*j+2], r2=dx*dx+dy*dy+dz*dz;
+          if(r2>=dd*dd||r2<1e-12) continue; const r=Math.sqrt(r2),nx=dx/r,ny=dy/r,nz=dz/r;
+          const vn=(v[3*i]-v[3*j])*nx+(v[3*i+1]-v[3*j+1])*ny+(v[3*i+2]-v[3*j+2])*nz; if(vn>=0) continue;
+          const mj=this.mass[this.sp[j]], mu=mi*mj/(mi+mj), J=-2*mu*vn;
+          v[3*i]+=J/mi*nx;v[3*i+1]+=J/mi*ny;v[3*i+2]+=J/mi*nz; v[3*j]-=J/mj*nx;v[3*j+1]-=J/mj*ny;v[3*j+2]-=J/mj*nz; } } }
+  }
+  /* Br₂-Teilchen je Höhenintervall, normiert auf gleichmäßige Verteilung (=1) */
+  profile(bins=12){ const out=new Array(bins).fill(0); let n=0;
+    for(let i=0;i<this.N;i++) if(this.sp[i]===1){ const b=Math.min(bins-1,Math.floor(this.x[3*i+1]/this.H*bins)); out[b]++; n++; }
+    return out.map(c=>c/(n/bins||1)); }
+  upperShare(){ let u=0,n=0; for(let i=0;i<this.N;i++) if(this.sp[i]===1){ n++; if(this.x[3*i+1]>this.H/2) u++; } return n?u/n:0; }
+}
+//#sim-end
+
+</script>
+<script>
+/* ================= Oberfläche: Hilfsfunktionen ================= */
+(function(){
+'use strict';
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const nf=(x,d=1)=>x.toLocaleString('de-DE',{minimumFractionDigits:d,maximumFractionDigits:d});
+const sci=(x,d=1)=>{ if(!isFinite(x)||x===0) return '0'; const e=Math.floor(Math.log10(Math.abs(x))); return nf(x/Math.pow(10,e),d)+'·10<sup>'+e+'</sup>'; };
+const lenFmt=m=>{ if(m>=1e-2) return nf(m*100,1)+' cm'; if(m>=1e-3) return nf(m*1e3,m>=1e-2?1:2)+' mm'; if(m>=1e-6) return nf(m*1e6,m>=1e-5?0:1)+' µm'; return nf(m*1e9,m>=1e-8?0:2)+' nm'; };
+const tFmt=s=>{ if(s<60) return nf(s,0)+' s'; if(s<3600) return Math.floor(s/60)+' min'; if(s<86400) return Math.floor(s/3600)+' h '+Math.floor((s%3600)/60)+' min'; return Math.floor(s/86400)+' d '+Math.floor((s%86400)/3600)+' h'; };
+const cssv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const rng=(id,label,min,max,step,val)=>`<div class="ctl"><label for="${id}">${label}</label><output id="${id}-o" for="${id}"></output><input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${val}"></div>`;
+const chk=(id,label,on)=>`<label class="chk"><input type="checkbox" id="${id}"${on?' checked':''}><span>${label}</span></label>`;
+function bind(root,id,fmt,fn){ const el=$('#'+id,root), o=$('#'+id+'-o',root); const f=()=>{ const v=parseFloat(el.value); if(o) o.innerHTML=fmt(v); fn&&fn(v); }; el.addEventListener('input',f); f(); return el; }
+function bindChk(root,id,fn){ const el=$('#'+id,root); el.addEventListener('change',()=>fn(el.checked)); fn(el.checked); return el; }
+function cv2d(c){ const dpr=Math.min(window.devicePixelRatio||1,2), w=c.clientWidth, h=c.clientHeight; if(!w||!h) return null;
+  if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)){ c.width=Math.round(w*dpr); c.height=Math.round(h*dpr); }
+  const g=c.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,w,h); return {g,w,h}; }
+function axes(g,w,h,m,xl,yl,col){ g.strokeStyle=col.line; g.lineWidth=1; g.beginPath(); g.moveTo(m.l,m.t); g.lineTo(m.l,h-m.b); g.lineTo(w-m.r,h-m.b); g.stroke();
+  g.fillStyle=col.muted; g.font='11.5px '+col.mono; g.textAlign='center'; g.fillText(xl,(m.l+w-m.r)/2,h-4); g.save(); g.translate(11,(m.t+h-m.b)/2); g.rotate(-Math.PI/2); g.fillText(yl,0,0); g.restore(); }
+const colors=()=>({ink:cssv('--ink'),muted:cssv('--muted'),line:cssv('--line'),accent:cssv('--accent'),warn:cssv('--warn'),ok:cssv('--ok'),mono:'IBM Plex Mono, ui-monospace, monospace'});
+
+/* ================= Bühne (three.js) ================= */
+const stage=$('#stage'), canvas=$('#cv'), hud=$('#hud');
+let renderer=null, camera=null, orbit=null;
+const HAS3D=typeof THREE!=='undefined';
+class Orbit{
+  constructor(el,cam){ this.el=el; this.cam=cam; this.t=new THREE.Vector3(); this.r=30; this.th=.7; this.ph=1.2; this.min=3; this.max=300; this.auto=0; this.ptrs=new Map(); this.pd=0;
+    el.addEventListener('pointerdown',e=>{ el.setPointerCapture(e.pointerId); this.ptrs.set(e.pointerId,[e.clientX,e.clientY]); if(this.ptrs.size===2) this.pd=this.dist(); });
+    el.addEventListener('pointermove',e=>{ const p=this.ptrs.get(e.pointerId); if(!p) return; const dx=e.clientX-p[0],dy=e.clientY-p[1]; this.ptrs.set(e.pointerId,[e.clientX,e.clientY]);
+      if(this.ptrs.size===1){ this.th-=dx*.007; this.ph=Math.min(3,Math.max(.15,this.ph-dy*.007)); }
+      else if(this.ptrs.size===2){ const d=this.dist(); if(this.pd) this.r*=this.pd/d; this.pd=d; this.clamp(); } });
+    const up=e=>{ this.ptrs.delete(e.pointerId); this.pd=0; }; el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up);
+    el.addEventListener('wheel',e=>{ e.preventDefault(); this.r*=Math.exp(e.deltaY*.0012); this.clamp(); },{passive:false}); }
+  dist(){ const a=[...this.ptrs.values()]; return Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1])||1; }
+  clamp(){ this.r=Math.min(this.max,Math.max(this.min,this.r)); }
+  setView(v){ this.r=v.r; this.th=v.th; this.ph=v.ph; this.t.set(...v.t); this.min=v.min||this.min; this.max=v.max||this.max; this.auto=v.auto||0; }
+  update(dt){ if(this.auto&&!this.ptrs.size) this.th+=this.auto*dt; const s=Math.sin(this.ph), a=this.cam.aspect, r=this.r*(a<1?Math.pow(1/a,.85):1);
+    this.cam.position.set(this.t.x+r*s*Math.sin(this.th),this.t.y+r*Math.cos(this.ph),this.t.z+r*s*Math.cos(this.th)); this.cam.lookAt(this.t); }
+}
+if(HAS3D){
+  try{ renderer=new THREE.WebGLRenderer({canvas,antialias:true}); renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2)); renderer.setClearColor(0x0b1322,1);
+    camera=new THREE.PerspectiveCamera(42,1,.1,3000); orbit=new Orbit(canvas,camera); }
+  catch(e){ renderer=null; }
+}
+if(!renderer){ stage.insertAdjacentHTML('beforeend','<div class="nogl"><p>Die 3D-Ansicht konnte nicht gestartet werden (WebGL oder three.js fehlt). Die Messwerte und Erklärungen funktionieren weiterhin, die Simulation läuft jedoch nur mit 3D-Anzeige.</p></div>'); }
+function resize(){ if(!renderer) return; const w=stage.clientWidth,h=stage.clientHeight; if(!w||!h) return; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
+if(window.ResizeObserver) new ResizeObserver(resize).observe(stage); window.addEventListener('resize',resize);
+
+function lights(scene){ scene.add(new THREE.HemisphereLight(0xdbe8ff,0x1b2540,.95)); const d=new THREE.DirectionalLight(0xffffff,.85); d.position.set(6,10,8); scene.add(d); const d2=new THREE.DirectionalLight(0x88aaff,.3); d2.position.set(-8,-4,-6); scene.add(d2); }
+const sphereGeo=()=>HAS3D?new THREE.SphereGeometry(1,18,14):null;
+let _sg=null;
+function instanced(n,color,opts={}){ _sg=_sg||sphereGeo();
+  const m=new THREE.InstancedMesh(_sg,new THREE.MeshStandardMaterial({roughness:.38,metalness:.05,transparent:!!opts.opacity,opacity:opts.opacity||1}),n);
+  m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.setColorAt(0,new THREE.Color(color)); for(let i=0;i<n;i++) m.setColorAt(i,new THREE.Color(color)); m.frustumCulled=false; return m; }
+function setInst(m,i,x,y,z,s){ const a=m.instanceMatrix.array,o=i*16; a[o]=s;a[o+1]=0;a[o+2]=0;a[o+3]=0;a[o+4]=0;a[o+5]=s;a[o+6]=0;a[o+7]=0;a[o+8]=0;a[o+9]=0;a[o+10]=s;a[o+11]=0;a[o+12]=x;a[o+13]=y;a[o+14]=z;a[o+15]=1; }
+function boxFrame(w,h,d,color=0x4a6fa5){ return new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(w,h,d)),new THREE.LineBasicMaterial({color})); }
+let _dot=null; function dotTex(){ if(_dot) return _dot; const c=document.createElement('canvas'); c.width=c.height=64; const g=c.getContext('2d'); const gr=g.createRadialGradient(32,32,2,32,32,30);
+  gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(.6,'rgba(255,255,255,.95)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.beginPath(); g.arc(32,32,30,0,7); g.fill(); _dot=new THREE.CanvasTexture(c); return _dot; }
+const lerp=(a,b,t)=>a+(b-a)*t;
+const COLD=[.30,.58,1], HOT=[1,.38,.22];
+
+/* ================= Reiter 1: Teilchenmodell (Lennard-Jones-Simulation) ================= */
+const T0K=119.8, VUNIT=157.8; // Argon: ε/k_B = 119,8 K, √(ε/m) = 157,8 m/s
+function mLJ(){
+  const L=13, sim=new LJSim(L), N=sim.N, scene=new THREE.Scene(); lights(scene);
+  const mesh=instanced(N,0x6fb1ff); scene.add(mesh); scene.add(boxFrame(L,L,L));
+  const TR=500, trailGeo=new THREE.BufferGeometry(); trailGeo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(TR*3),3)); trailGeo.setDrawRange(0,0);
+  const trail=new THREE.Line(trailGeo,new THREE.LineBasicMaterial({color:0xffe066})); trail.frustumCulled=false; scene.add(trail);
+  const s={T:30,sp:8,colV:true,small:false,trail:false}; let tracer=0, trailN=0, ref=null, refT=0, state='fest', c6=1, msdI=0, frame=0;
+  const pane=document.createElement('div'); pane.className='panel';
+  pane.innerHTML=`
+  <div class="card"><h3>Experiment</h3>
+    <div class="row"><button class="btn" data-k="30">Fest</button><button class="btn" data-k="80">Flüssig</button><button class="btn" data-k="200">Gasförmig</button></div>
+    ${rng('lj-T','Temperatur',10,300,1,30)}
+    ${rng('lj-sp','Simulationstempo',1,30,1,8)}
+    ${chk('lj-col','Farbe zeigt die Geschwindigkeit (blau langsam, rot schnell)',true)}
+    ${chk('lj-sm','Teilchen verkleinert zeichnen (leeren Raum sichtbar machen)',false)}
+    ${chk('lj-tr','Weg eines einzelnen Teilchens verfolgen',false)}
+    <div class="row"><button class="btn" id="lj-reset">Neustart bei dieser Temperatur</button></div>
+  </div>
+  <div class="card"><h3>Messwerte</h3>
+    <div><span class="pill fest" id="lj-pill">fest</span></div>
+    <p id="lj-expl" class="note"></p>
+    <div class="read"><div><small>Temperatur gemessen</small><b id="lj-m1"></b></div><div><small>mittlere Geschwindigkeit</small><b id="lj-m2"></b></div>
+    <div><small>Nachbarn je Teilchen</small><b id="lj-m3"></b></div><div><small>Teilchen im Behälter</small><b>${N}</b></div></div>
+    <canvas class="plot" id="lj-hist" aria-label="Geschwindigkeitsverteilung"></canvas>
+    <p class="note">Die Balken zeigen, wie schnell die Teilchen gerade sind. Die Kurve ist die Maxwell-Boltzmann-Verteilung für die gemessene Temperatur. Sie gilt in jedem Aggregatzustand für die Bewegungsenergie.</p>
+  </div>
+  <div class="card key"><h3>Merksatz</h3><p>Stoffe bestehen aus kleinsten, unteilbaren Teilchen. Dazwischen ist leerer Raum. Je wärmer der Stoff, desto schneller bewegen sich die Teilchen.</p></div>
+  <details class="card"><summary>Wie genau ist diese Simulation?</summary>
+    <p>Die ${N} Teilchen wechselwirken wie Argonatome (Lennard-Jones-Kräfte: abstoßend bei Berührung, schwach anziehend im Abstand). Sie werden mit dem Velocity-Verlet-Verfahren Schritt für Schritt nach Newton berechnet. Ein Wärmebad regelt die Temperatur.</p>
+    <p>Ein Cluster aus nur 256 Teilchen schmilzt und verdampft früher als ein großer Kristall, weil viele Teilchen an der Oberfläche sitzen. Die Kelvin-Werte gelten deshalb nur ungefähr. Der Übergang fest, flüssig und gasförmig ist aber echt berechnet und nicht einprogrammiert.</p></details>`;
+  const kinds={fest:['fest','fest','Die Teilchen sitzen dicht gepackt auf festen Plätzen in einem regelmäßigen Gitter. Sie schwingen nur um ihre Plätze.'],
+    fl:['flüssig','fl','Die Teilchen berühren sich noch, aber sie gleiten aneinander vorbei und wechseln ständig die Plätze. Es gibt keine feste Ordnung mehr.'],
+    gas:['gasförmig','gas','Die Teilchen sind weit voneinander entfernt und fliegen frei durch den Raum. Sie ändern ihre Richtung nur bei Stößen mit anderen Teilchen oder der Wand.']};
+  function pickTracer(){ let b=1e9; for(let i=0;i<N;i++){ const d=sim.x[3*i]**2+sim.x[3*i+1]**2+sim.x[3*i+2]**2; if(d<b){b=d;tracer=i;} } trailN=0; trailGeo.setDrawRange(0,0); }
+  function reset(){ sim.reset(s.T/T0K); pickTracer(); ref=Float64Array.from(sim.x); refT=sim.time; state=s.T<55?'fest':'fest'; }
+  function classify(){
+    const x=sim.x, nbs=new Int32Array(N); let tot=0, n6=0;
+    for(let i=0;i<N;i++){ let c=0; for(let j=0;j<N;j++){ if(i===j) continue; const dx=x[3*i]-x[3*j],dy=x[3*i+1]-x[3*j+1],dz=x[3*i+2]-x[3*j+2]; if(dx*dx+dy*dy+dz*dz<1.96) c++; } nbs[i]=c; tot+=c; if(c>=6) n6++; }
+    c6=n6/N; const nb=tot/N; let cnt=0, cm=[0,0,0];
+    if(ref){ for(let i=0;i<N;i++) if(nbs[i]>=9){ cnt++; for(let q=0;q<3;q++) cm[q]+=x[3*i+q]-ref[3*i+q]; } for(let q=0;q<3;q++) cm[q]/=Math.max(cnt,1);
+      let m=0; for(let i=0;i<N;i++) if(nbs[i]>=9) for(let q=0;q<3;q++){ const e=x[3*i+q]-ref[3*i+q]-cm[q]; m+=e*e; } msdI=cnt>=15?m/cnt:-1; }
+    state = c6<.15 ? 'gas' : (msdI>=0&&msdI<.3 ? 'fest' : 'fl'); return nb;
+  }
+  function drawHist(){ const c=cv2d($('#lj-hist',pane)); if(!c) return; const {g,w,h}=c, col=colors(), m={l:38,r:8,t:8,b:30};
+    const Tm=Math.max(sim.temperature(),.02), vmax=Math.max(4.2*Math.sqrt(Tm),1.2), nb=26, bins=new Array(nb).fill(0);
+    for(let i=0;i<N;i++){ const v=Math.hypot(sim.v[3*i],sim.v[3*i+1],sim.v[3*i+2]); bins[Math.min(nb-1,Math.floor(v/vmax*nb))]++; }
+    const mb=v=>4*Math.PI*Math.pow(1/(2*Math.PI*Tm),1.5)*v*v*Math.exp(-v*v/(2*Tm)), dv=vmax/nb; let ymax=0; for(let k=0;k<nb;k++) ymax=Math.max(ymax,bins[k]/N/dv,mb((k+.5)*dv)); ymax*=1.12;
+    axes(g,w,h,m,'Geschwindigkeit in m/s','Häufigkeit',col); const pw=w-m.l-m.r, ph=h-m.t-m.b;
+    g.fillStyle=col.accent; g.globalAlpha=.55; for(let k=0;k<nb;k++){ const bh=bins[k]/N/dv/ymax*ph; g.fillRect(m.l+k*pw/nb+1,h-m.b-bh,pw/nb-2,bh); } g.globalAlpha=1;
+    g.strokeStyle=col.warn; g.lineWidth=2; g.beginPath(); for(let k=0;k<=60;k++){ const v=k/60*vmax, X=m.l+v/vmax*pw, Y=h-m.b-mb(v)/ymax*ph; k?g.lineTo(X,Y):g.moveTo(X,Y); } g.stroke();
+    g.fillStyle=col.muted; g.font='11px '+col.mono; g.textAlign='center'; for(let k=0;k<=4;k++){ const v=k/4*vmax; g.fillText(nf(v*VUNIT,0),m.l+k/4*pw,h-m.b+14); } }
+  function measure(){
+    const nb=classify(); const Tm=sim.temperature(); let vs=0; for(let i=0;i<N;i++) vs+=Math.hypot(sim.v[3*i],sim.v[3*i+1],sim.v[3*i+2]);
+    $('#lj-m1',pane).textContent=nf(Tm*T0K,0)+' K'; $('#lj-m2',pane).textContent=nf(vs/N*VUNIT,0)+' m/s'; $('#lj-m3',pane).textContent=nf(nb,1);
+    const k=kinds[state], p=$('#lj-pill',pane); p.textContent=k[0]+(state==='fl'&&c6<.6?' (verdampft teilweise)':''); p.className='pill '+k[1]; $('#lj-expl',pane).textContent=k[2];
+    hudSet(['T = '+nf(s.T,0)+' K (Ziel)',k[0]]); drawHist(); }
+  pane.addEventListener('click',e=>{ const b=e.target.closest('[data-k]'); if(b){ const t=$('#lj-T',pane); t.value=b.dataset.k; t.dispatchEvent(new Event('input')); } });
+  bind(pane,'lj-T',v=>nf(v,0)+' K',v=>{ s.T=v; sim.Tset=v/T0K; });
+  bind(pane,'lj-sp',v=>nf(v,0)+'×',v=>s.sp=v);
+  bindChk(pane,'lj-col',v=>s.colV=v); bindChk(pane,'lj-sm',v=>s.small=v); bindChk(pane,'lj-tr',v=>{ s.trail=v; trail.visible=v; if(v) pickTracer(); });
+  $('#lj-reset',pane).addEventListener('click',reset);
+  const c0=new THREE.Color();
+  return {id:'lj',scene,pane,view:{r:26,th:.7,ph:1.15,t:[0,0,0],min:8,max:70},
+    caption:'Jede Kugel ist ein Teilchen. Ziehen dreht die Ansicht, Mausrad oder zwei Finger zoomen.',
+    reset, onShow(){ measure(); },
+    step(){ for(let k=0;k<s.sp;k++) sim.step(); frame++;
+      const rad=s.small?.2:.5, vref=2.2*Math.sqrt(Math.max(sim.Tset,.2)), ca=mesh.instanceColor.array;
+      for(let i=0;i<N;i++){ setInst(mesh,i,sim.x[3*i],sim.x[3*i+1],sim.x[3*i+2],rad);
+        if(s.colV){ const v=Math.min(1,Math.hypot(sim.v[3*i],sim.v[3*i+1],sim.v[3*i+2])/vref); ca[3*i]=lerp(COLD[0],HOT[0],v);ca[3*i+1]=lerp(COLD[1],HOT[1],v);ca[3*i+2]=lerp(COLD[2],HOT[2],v); }
+        else { ca[3*i]=.44;ca[3*i+1]=.69;ca[3*i+2]=1; } }
+      mesh.instanceMatrix.needsUpdate=true; mesh.instanceColor.needsUpdate=true;
+      if(s.trail){ const tp=trailGeo.attributes.position.array; if(trailN<TR){ trailN++; } else tp.copyWithin(0,3); const o=(trailN-1)*3; tp[o]=sim.x[3*tracer];tp[o+1]=sim.x[3*tracer+1];tp[o+2]=sim.x[3*tracer+2]; trailGeo.attributes.position.needsUpdate=true; trailGeo.setDrawRange(0,trailN); }
+      if(sim.time-refT>=2){ classify(); ref=Float64Array.from(sim.x); refT=sim.time; }
+      if(frame%12===0) measure(); }};
+}
+function hudSet(a){ hud.innerHTML=a.map(t=>'<span>'+t+'</span>').join(''); }
+window.__lab={$,$$,nf,sci,lenFmt,tFmt,cssv,rng,chk,bind,bindChk,cv2d,axes,colors,lights,instanced,setInst,boxFrame,dotTex,lerp,COLD,HOT,hudSet,orbitOf:()=>orbit,HAS3D,renderer:()=>renderer,camera:()=>camera,stage,canvas,hud,resize,mods:{}};
+window.__lab.mods.lj=mLJ;
+})();
+
+(function(){
+'use strict';
+const X=window.__lab, {$,$$,nf,sci,lenFmt,tFmt,rng,chk,bind,bindChk,cv2d,axes,colors,lights,instanced,setInst,boxFrame,dotTex,lerp,COLD,HOT,hudSet}=X;
+
+/* ================= Reiter 2: Teilbarkeit (Zuckerkristall halbieren) ================= */
+const D_PART=0.71e-9, RHO=1587; // Saccharose: Gitterabstand je Teilchen (aus Zellvolumen 0,7154 nm³ / 2) und Dichte
+function mSplit(){
+  const scene=new THREE.Scene(); lights(scene); const M=8, mesh=instanced(M*M*M,0xe9f0ff); scene.add(mesh);
+  const frame=boxFrame(1,1,1,0x6f8fc9); scene.add(frame);
+  const starts={cube:[15e-3,'Zuckerwürfel (Kante 15 mm)'],grain:[1e-3,'Zuckerkristall (Kante 1 mm)'],powder:[2e-5,'Puderzucker-Körnchen (Kante 20 µm)']};
+  const s={start:'grain',k:0}; const K=()=>Math.floor(Math.log2(starts[s.start][0]/D_PART));
+  const pane=document.createElement('div'); pane.className='panel';
+  pane.innerHTML=`
+  <div class="card"><h3>Experiment</h3>
+    <label for="sp-start" class="note">Du startest mit</label>
+    <select id="sp-start">${Object.entries(starts).map(([k,v])=>`<option value="${k}"${k==='grain'?' selected':''}>${v[1]}</option>`).join('')}</select>
+    <div class="ctl"><label for="sp-k">Wie oft hast du den Kristall halbiert?</label><output id="sp-k-o"></output><input type="range" id="sp-k" min="0" max="20" step="1" value="0"></div>
+    <p class="note">Jede Halbierung teilt die Kantenlänge durch zwei. Irgendwann bleibt ein einzelnes Teilchen übrig.</p>
+  </div>
+  <div class="card"><h3>Messwerte</h3>
+    <div class="read"><div><small>Kantenlänge</small><b id="sp-e"></b></div><div><small>Teilchen je Kante</small><b id="sp-m"></b></div><div><small>Teilchen insgesamt</small><b id="sp-n"></b></div><div><small>Masse</small><b id="sp-mass"></b></div></div>
+    <div class="scale" id="sp-scale"><div class="bar"></div><div class="cur" id="sp-cur"></div></div>
+    <p class="note" style="margin-top:8px">Wer kann das noch sehen?</p>
+    <div class="chips" id="sp-chips"></div>
+    <p id="sp-say"></p>
+  </div>
+  <div class="card key"><h3>Merksatz</h3><p>Die Vorstellung vom Bau der Stoffe besagt: Stoffe bestehen aus kleinsten, unteilbaren Teilchen.</p></div>
+  <details class="card"><summary>Was ist hier ein Zuckerteilchen?</summary>
+    <p>Im Teilchenmodell ist ein Zuckerteilchen ein Saccharose-Molekül, C<sub>12</sub>H<sub>22</sub>O<sub>11</sub> (342,3 u). Es besteht selbst aus 45 Atomen. Teilt man es weiter, entsteht kein Zucker mehr. Die Kugeln sind also eine vereinfachte Darstellung.</p>
+    <p>Aus der Kristallstruktur (Zellvolumen 0,715 nm³ für 2 Moleküle) folgt ein mittlerer Abstand von etwa 0,71 nm. Ein Kristall von 1 mm Kantenlänge enthält damit rund 2,8·10<sup>18</sup> Teilchen. Das passt zur Dichte von 1,587 g/cm³.</p></details>`;
+  const tools=[['bloßes Auge',1e-4],['Lupe (10×)',1e-5],['Lichtmikroskop',2e-7],['Elektronenmikroskop',1e-10]];
+  const ticks=[[D_PART,'1 Teilchen',0],[2e-7,'Lichtmikr.-Grenze',1],[1e-4,'Auge',0],[1.5e-2,'Würfel',1]], lo=Math.log10(3e-10), hi=Math.log10(3e-2), pos=e=>(Math.log10(e)-lo)/(hi-lo)*100;
+  $('#sp-scale',pane).insertAdjacentHTML('beforeend',ticks.map(t=>`<div class="tk${t[2]?' hi':''}" style="left:${pos(t[0])}%"><em>${t[1]}</em></div>`).join(''));
+  const edge=()=>s.k>=K()?D_PART:starts[s.start][0]/Math.pow(2,s.k);
+  function build(){ const e=edge(), m=e/D_PART, n=Math.max(1,Math.min(M,Math.round(m))); let i=0;
+    for(let a=0;a<M;a++)for(let b=0;b<M;b++)for(let c=0;c<M;c++){ if(a<n&&b<n&&c<n){ setInst(mesh,a*M*M+b*M+c,a-(n-1)/2,b-(n-1)/2,c-(n-1)/2,.46); } else setInst(mesh,a*M*M+b*M+c,0,0,0,0); }
+    mesh.instanceMatrix.needsUpdate=true; frame.scale.set(n,n,n); frame.visible=n>1; return {e,m,n}; }
+  function update(){ const {e,m,n}=build(), N=Math.pow(m,3), mass=RHO*Math.pow(e,3);
+    $('#sp-e',pane).textContent=lenFmt(e); $('#sp-m',pane).innerHTML=m<1.5?'1':sci(m,1); $('#sp-n',pane).innerHTML=m<1.5?'1':sci(N,1);
+    { const gm=mass*1e3; $('#sp-mass',pane).innerHTML=gm>=.1?nf(gm,2)+' g':gm>=1e-4?nf(gm*1e3,2)+' mg':sci(gm,1)+' g'; }
+    $('#sp-cur',pane).style.left=Math.min(100,Math.max(0,pos(e)))+'%';
+    $('#sp-chips',pane).innerHTML=tools.map(t=>`<span class="chip${e>=t[1]?' yes':''}">${t[0]}: ${e>=t[1]?'sichtbar':'zu klein'}</span>`).join('');
+    const say=e>=1e-4?'Du erkennst den Kristall mit bloßem Auge.':e>=2e-7?'Nur noch mit Lupe oder Mikroskop zu sehen.':e>D_PART*1.5?'Optische Mikroskope reichen nicht mehr. Mit Elektronenmikroskopen siehst du noch Abbilder der Teilchen. Gelöst im Wasser schmeckst du den Zucker, siehst ihn aber nicht.':'Ein einzelnes Teilchen. Es lässt sich nicht weiter zerlegen, ohne dass der Stoff Zucker verschwindet.';
+    $('#sp-say',pane).textContent=say;
+    $('#sp-k-o',pane).textContent=s.k>=K()?'ein Teilchen':s.k+'×';
+    hudSet([lenFmt(e)+' Kante', m<1.5?'1 Teilchen':(n<M?n+'³':'Ausschnitt '+M+'³ von '+sci(m,1))+' Teilchen je Kante']); }
+  function setK(){ const k=K(), el=$('#sp-k',pane); el.max=k; if(s.k>k) s.k=k; el.value=s.k; update(); }
+  $('#sp-start',pane).addEventListener('change',e=>{ s.start=e.target.value; s.k=0; setK(); });
+  $('#sp-k',pane).addEventListener('input',e=>{ s.k=parseInt(e.target.value); update(); });
+  setK();
+  return {id:'split',scene,pane,view:{r:16,th:.7,ph:1.15,t:[0,0,0],min:3,max:40,auto:.25},caption:'Die Kugeln zeigen bis zu 8×8×8 Teilchen. Ist der Kristall größer, siehst du nur einen winzigen Ausschnitt.',reset(){ s.k=0; setK(); },onShow(){ update(); },step(){}};
+}
+
+/* ================= Reiter 3: Brown'sche Bewegung ================= */
+function mBrown(){
+  const scene=new THREE.Scene(); lights(scene); const s={rho:.2,M:60,T:1,sp:12,show:true,trail:true,arrow:true};
+  let sim=null, small=null, big=null, trail=null, trailGeo=null, arrow=null, Fs=[0,0,0], frame=0, lastHist=0; const L=12, group=new THREE.Group(); scene.add(group); group.add(boxFrame(L,L,L));
+  const pane=document.createElement('div'); pane.className='panel';
+  pane.innerHTML=`
+  <div class="card"><h3>Experiment</h3>
+    <label for="br-med" class="note">Umgebung des Pollenkorns</label>
+    <select id="br-med"><option value="0.2" selected>Gas (dünn, Teilchen weit auseinander)</option><option value="0.6">Flüssigkeit (dicht, Teilchen berühren sich)</option></select>
+    ${rng('br-M','Masse des Pollenkorns (Vielfaches eines Wasserteilchens)',20,200,5,60)}
+    ${rng('br-T','Temperatur (relativ)',.3,3,.1,1)}
+    ${rng('br-sp','Simulationstempo',2,40,1,12)}
+    ${chk('br-show','Wasserteilchen anzeigen (im Mikroskop sind sie unsichtbar)',true)}
+    ${chk('br-tr','Spur des Pollenkorns zeigen',true)}
+    ${chk('br-ar','Kraftpfeil: Summe aller Stöße im Moment',true)}
+    <div class="row"><button class="btn" id="br-reset">Neustart</button></div>
+  </div>
+  <div class="card"><h3>Messwerte</h3>
+    <div class="read"><div><small>Stoßkraft gerade</small><b id="br-F"></b></div><div><small>Zeit</small><b id="br-t"></b></div><div><small>Diffusionskoeffizient D</small><b id="br-D"></b></div></div>
+    <canvas class="plot" id="br-plot" aria-label="Mittleres Verschiebungsquadrat"></canvas>
+    <p class="note">Nach langer Zeit wächst das mittlere Verschiebungsquadrat ⟨r²⟩ linear mit der Zeit: ⟨r²⟩ = 6·D·t. Das ist das Kennzeichen einer Zufallsbewegung. Bei sehr kurzen Zeiten fliegt das Korn noch fast geradeaus.</p>
+  </div>
+  <div class="card key"><h3>Merksatz</h3><p>Die ständige, ungeordnete Bewegung kleiner sichtbarer Teilchen in Gasen und Flüssigkeiten heißt Brown'sche Bewegung. Sie entsteht durch die Stöße der nicht sichtbaren Teilchen.</p></div>
+  <details class="card"><summary>Warum wackelt das Korn?</summary>
+    <p>Von allen Seiten prallen Teilchen auf das Korn. Im Mittel heben sich die Stöße auf, aber in jedem Moment treffen zufällig mehr Teilchen von der einen Seite. Der Pfeil zeigt diese Restkraft. Sie wechselt ständig Richtung und Betrag.</p>
+    <p>Das schwere Korn hat im Mittel dieselbe Bewegungsenergie wie ein Wasserteilchen, ist aber viel langsamer. Wähle eine kleinere Masse, dann zittert es lebhafter. Robert Brown beobachtete 1827 Pollenkörner. Albert Einstein erklärte die Bewegung 1905 mit den Stößen der Moleküle.</p></details>`;
+  const col=new THREE.Color();
+  function build(){
+    if(small){ group.remove(small); group.remove(big); group.remove(trail); if(arrow) group.remove(arrow); }
+    sim=new BrownSim({L,rho:s.rho,M:s.M,T:s.T}); sim.Tset=s.T;
+    small=instanced(sim.n,0x74b4ff,{opacity:.55}); group.add(small);
+    big=new THREE.Mesh(new THREE.SphereGeometry(sim.R,40,28),new THREE.MeshStandardMaterial({color:0xf2c14e,roughness:.45,metalness:.05})); group.add(big);
+    trailGeo=new THREE.BufferGeometry(); trailGeo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(1600*3),3)); trailGeo.setDrawRange(0,0);
+    trail=new THREE.Line(trailGeo,new THREE.LineBasicMaterial({color:0xff7a59})); trail.frustumCulled=false; group.add(trail);
+    arrow=new THREE.ArrowHelper(new THREE.Vector3(1,0,0),new THREE.Vector3(),3,0xff4d6d,.9,.55); group.add(arrow); Fs=[0,0,0]; lastHist=0;
+    small.visible=s.show; trail.visible=s.trail; arrow.visible=s.arrow; }
+  function drawPlot(){ const c=cv2d($('#br-plot',pane)); if(!c) return; const {g,w,h}=c, co=colors(), m={l:40,r:10,t:10,b:30}, d=sim.msd(70);
+    axes(g,w,h,m,'Zeit t (Modelleinheiten)','⟨r²⟩',co); if(d.length<4){ g.fillStyle=co.muted; g.font='12px sans-serif'; g.textAlign='center'; g.fillText('Daten werden gesammelt …',w/2,h/2); return; }
+    const tmax=d[d.length-1][0], ymax=Math.max(...d.map(a=>a[1]))*1.1, pw=w-m.l-m.r, ph=h-m.t-m.b;
+    g.strokeStyle=co.accent; g.lineWidth=2; g.beginPath(); d.forEach((a,i)=>{ const X=m.l+a[0]/tmax*pw, Y=h-m.b-a[1]/ymax*ph; i?g.lineTo(X,Y):g.moveTo(X,Y); }); g.stroke();
+    // lineare Anpassung durch den Ursprung über die zweite Hälfte
+    const part=d.slice(Math.floor(d.length/2)); let sxy=0,sxx=0; for(const a of part){ sxy+=a[0]*a[1]; sxx+=a[0]*a[0]; } const slope=sxy/sxx;
+    g.strokeStyle=co.warn; g.setLineDash([6,4]); g.lineWidth=1.5; g.beginPath(); g.moveTo(m.l,h-m.b); g.lineTo(m.l+pw,h-m.b-slope*tmax/ymax*ph); g.stroke(); g.setLineDash([]);
+    g.fillStyle=co.muted; g.font='11px '+co.mono; g.textAlign='center'; for(let k=0;k<=4;k++) g.fillText(nf(k/4*tmax,0),m.l+k/4*pw,h-m.b+14); g.textAlign='right'; for(let k=0;k<=3;k++) g.fillText(nf(k/3*ymax,1),m.l-4,h-m.b-k/3*ph+4);
+    $('#br-D',pane).textContent=nf(slope/6,3); }
+  $('#br-med',pane).addEventListener('change',e=>{ s.rho=parseFloat(e.target.value); build(); });
+  bind(pane,'br-M',v=>nf(v,0)+'×',v=>{ if(sim&&s.M!==v){ s.M=v; build(); } else s.M=v; });
+  bind(pane,'br-T',v=>nf(v,1),v=>{ s.T=v; if(sim) sim.Tset=v; });
+  bind(pane,'br-sp',v=>nf(v,0)+'×',v=>s.sp=v);
+  bindChk(pane,'br-show',v=>{ s.show=v; if(small) small.visible=v; }); bindChk(pane,'br-tr',v=>{ s.trail=v; if(trail) trail.visible=v; }); bindChk(pane,'br-ar',v=>{ s.arrow=v; if(arrow) arrow.visible=v; });
+  $('#br-reset',pane).addEventListener('click',build); build();
+  const dir=new THREE.Vector3();
+  return {id:'brown',scene,pane,view:{r:24,th:.7,ph:1.2,t:[0,0,0],min:8,max:70},caption:'Das große gelbe Korn ist das Pollenkorn. Die kleinen blauen Kugeln sind Wasserteilchen, die man im Mikroskop nicht sieht.',reset:build,onShow(){ hudSet(['Pollenkorn im Teilchenbad']); },
+    step(){ for(let k=0;k<s.sp;k++) sim.step(); frame++;
+      if(s.show){ for(let i=0;i<sim.n;i++) setInst(small,i,sim.x[3*i],sim.x[3*i+1],sim.x[3*i+2],.5); small.instanceMatrix.needsUpdate=true; }
+      const n=sim.n; big.position.set(sim.x[3*n],sim.x[3*n+1],sim.x[3*n+2]);
+      for(let d=0;d<3;d++) Fs[d]=.85*Fs[d]+.15*sim.Fb[d]; const F=Math.hypot(Fs[0],Fs[1],Fs[2]);
+      if(s.arrow){ arrow.position.copy(big.position); if(F>1e-6){ dir.set(Fs[0],Fs[1],Fs[2]).normalize(); arrow.setDirection(dir); } arrow.setLength(Math.min(7,.3+F*.12)+sim.R,.9,.55); }
+      const hl=sim.hist.length/3; if(s.trail&&hl!==lastHist){ const a=trailGeo.attributes.position.array; for(let i=0;i<sim.hist.length;i++) a[i]=sim.hist[i]; trailGeo.attributes.position.needsUpdate=true; trailGeo.setDrawRange(0,hl); lastHist=hl; }
+      if(frame%10===0){ $('#br-F',pane).textContent=nf(F,1); $('#br-t',pane).textContent=nf(sim.time,0); drawPlot(); } }};
+}
+
+/* ================= Reiter 4: Diffusion in Wasser (Teebeutel, Exp. 3) ================= */
+function mDye(){
+  const scene=new THREE.Scene(); lights(scene); const n=2500, H=60, R=30, GX=40;
+  const s={Tc:5,Tw:60,accel:3600}; const sims=[new DyeSim(n,s.Tc),new DyeSim(n,s.Tw)], pts=[];
+  const groups=[-GX,GX].map((x,i)=>{ const g=new THREE.Group(); g.position.set(x,-H/2,0); scene.add(g);
+    const glass=new THREE.Mesh(new THREE.CylinderGeometry(R+1.5,R+1.5,H+8,56,1,true),new THREE.MeshPhysicalMaterial({color:0xcfe4ff,transparent:true,opacity:.14,roughness:.1,side:THREE.DoubleSide,depthWrite:false})); glass.position.y=H/2+4; g.add(glass);
+    const water=new THREE.Mesh(new THREE.CylinderGeometry(R,R,H,56),new THREE.MeshBasicMaterial({color:i?0x4a7fc0:0x3a78d8,transparent:true,opacity:.2,depthWrite:false})); water.position.y=H/2; g.add(water);
+    const base=new THREE.Mesh(new THREE.CylinderGeometry(R+1.5,R+1.5,1.5,56),new THREE.MeshStandardMaterial({color:0x9fb7dc,transparent:true,opacity:.5})); base.position.y=-.8; g.add(base);
+    const bag=new THREE.Mesh(new THREE.BoxGeometry(8,10,8),new THREE.MeshStandardMaterial({color:0xcdb892,roughness:.9,transparent:true,opacity:.55})); bag.position.y=H-22; g.add(bag);
+    const str=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,H-17,0),new THREE.Vector3(0,H+10,0)]),new THREE.LineBasicMaterial({color:0xcdb892})); g.add(str);
+    const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.BufferAttribute(sims[i].p,3));
+    const p=new THREE.Points(geo,new THREE.PointsMaterial({color:i?0xff9d2e:0xd9822b,size:1.7,sizeAttenuation:true,map:dotTex(),transparent:true,opacity:.85,depthWrite:false,alphaTest:.02})); p.frustumCulled=false; g.add(p); pts.push(p); return g; });
+  const pane=document.createElement('div'); pane.className='panel';
+  pane.innerHTML=`
+  <div class="card"><h3>Experiment: Tee in kaltem und warmem Wasser</h3>
+    ${rng('dy-c','Linkes Becherglas (kalt)',0,40,1,5)}
+    ${rng('dy-w','Rechtes Becherglas (warm)',30,95,1,60)}
+    <label for="dy-a" class="note">Zeitraffer</label>
+    <select id="dy-a"><option value="60">1 Sekunde = 1 Minute</option><option value="600">1 Sekunde = 10 Minuten</option><option value="3600" selected>1 Sekunde = 1 Stunde</option><option value="21600">1 Sekunde = 6 Stunden</option><option value="86400">1 Sekunde = 1 Tag</option></select>
+    <div class="row"><button class="btn" id="dy-reset">Teebeutel neu hineinhängen</button></div>
+  </div>
+  <div class="card"><h3>Messwerte</h3>
+    <div class="read"><div><small>Echte Zeit</small><b id="dy-t"></b></div><div><small>Zähigkeit η kalt / warm</small><b id="dy-eta"></b></div>
+    <div><small>D kalt (mm²/s)</small><b id="dy-d1"></b></div><div><small>D warm (mm²/s)</small><b id="dy-d2"></b></div>
+    <div><small>Ausbreitung kalt</small><b id="dy-r1"></b></div><div><small>Ausbreitung warm</small><b id="dy-r2"></b></div></div>
+    <canvas class="plot" id="dy-plot" aria-label="Ausbreitung des Farbstoffs"></canvas>
+    <p class="note">Die Ausbreitung ist der mittlere Abstand der Farbstoffteilchen von ihrer Startwolke. Ohne Strömung wächst sie mit der Wurzel aus der Zeit: √(6·D·t).</p>
+  </div>
+  <div class="card key"><h3>Merksatz</h3><p>Diffusion ist das selbstständige Durchmischen zweier Stoffe. Diese Durchmischung erfolgt durch die ständige, regellose Bewegung der Teilchen der Stoffe.</p></div>
+  <details class="card"><summary>Wie ist das gerechnet?</summary>
+    <p>Jedes Farbstoffteilchen macht in jedem Zeitschritt einen zufälligen Sprung, dessen Streuung √(2·D·Δt) je Richtung beträgt. Der Diffusionskoeffizient folgt aus der Stokes-Einstein-Gleichung D = k<sub>B</sub>·T / (6π·η·r) mit dem Teilchenradius r = 0,5 nm und der temperaturabhängigen Zähigkeit η von Wasser (Vogel-Gleichung).</p>
+    <p>Wärmeres Wasser ist weniger zäh und die Teilchen sind schneller. Beides lässt D steigen. Im echten Becherglas kommt Strömung durch Temperaturunterschiede und Rühren hinzu. Reine Diffusion braucht dort Tage, um einige Zentimeter zu überbrücken. Das Experiment im Buch läuft schneller, weil auch Strömung mischt.</p></details>`;
+  const ser=[[],[]]; let lastS=-1e9, rms0=[0,0], frame=0;
+  function reset(){ sims.forEach(x=>x.reset()); ser[0]=[]; ser[1]=[]; lastS=-1e9; rms0=sims.map(x=>x.rms()); sims.forEach((x,i)=>{ x.p&&(pts[i].geometry.attributes.position.needsUpdate=true); }); }
+  const spread=i=>Math.sqrt(Math.max(0,sims[i].rms()**2-rms0[i]**2));
+  function plot(){ const c=cv2d($('#dy-plot',pane)); if(!c) return; const {g,w,h}=c, co=colors(), m={l:40,r:10,t:10,b:30}; axes(g,w,h,m,'echte Zeit','Ausbreitung (mm)',co);
+    const tmax=Math.max(3600,sims[0].t), ymax=Math.max(5,spread(0),spread(1))*1.15, pw=w-m.l-m.r, ph=h-m.t-m.b;
+    [[0,co.accent],[1,co.warn]].forEach(([i,cl])=>{ g.strokeStyle=cl; g.lineWidth=2; g.beginPath(); ser[i].forEach((a,k)=>{ const X=m.l+a[0]/tmax*pw, Y=h-m.b-a[1]/ymax*ph; k?g.lineTo(X,Y):g.moveTo(X,Y); }); g.stroke(); });
+    g.fillStyle=co.muted; g.font='11px '+co.mono; g.textAlign='center'; for(let k=0;k<=4;k++) g.fillText(tFmt(k/4*tmax),m.l+k/4*pw,h-m.b+14); g.textAlign='right'; for(let k=0;k<=3;k++) g.fillText(nf(k/3*ymax,0),m.l-4,h-m.b-k/3*ph+4);
+    g.textAlign='left'; g.fillStyle=co.accent; g.fillText('kalt',m.l+8,m.t+10); g.fillStyle=co.warn; g.fillText('warm',m.l+46,m.t+10); }
+  function readouts(){ const t=sims[0].t; $('#dy-t',pane).textContent=tFmt(t); $('#dy-eta',pane).innerHTML=nf(sims[0].eta*1e3,2)+' / '+nf(sims[1].eta*1e3,2)+' mPa·s';
+    $('#dy-d1',pane).innerHTML=sci(sims[0].D,2); $('#dy-d2',pane).innerHTML=sci(sims[1].D,2); $('#dy-r1',pane).textContent=nf(spread(0),1)+' mm'; $('#dy-r2',pane).textContent=nf(spread(1),1)+' mm';
+    hudSet(['kalt '+s.Tc+' °C','warm '+s.Tw+' °C',tFmt(t)]); plot(); }
+  bind(pane,'dy-c',v=>v+' °C',v=>{ s.Tc=v; sims[0].set(v); }); bind(pane,'dy-w',v=>v+' °C',v=>{ s.Tw=v; sims[1].set(v); });
+  $('#dy-a',pane).addEventListener('change',e=>s.accel=parseFloat(e.target.value)); $('#dy-reset',pane).addEventListener('click',()=>{ reset(); readouts(); });
+  reset();
+  return {id:'dye',scene,pane,view:{r:195,th:0,ph:1.35,t:[0,0,0],min:50,max:400},caption:'Links kaltes, rechts warmes Wasser. Jeder orange Punkt ist ein Farbstoffteilchen aus dem Teebeutel.',reset(){ reset(); readouts(); },onShow(){ readouts(); },
+    step(){ const dt=s.accel/60; const sub=Math.max(1,Math.ceil(dt/120)), d=dt/sub; for(let k=0;k<sub;k++) sims.forEach(x=>x.step(d)); pts.forEach(p=>p.geometry.attributes.position.needsUpdate=true); frame++;
+      if(sims[0].t-lastS>=Math.max(60,s.accel/30)){ lastS=sims[0].t; ser[0].push([sims[0].t,spread(0)]); ser[1].push([sims[1].t,spread(1)]); }
+      if(frame%6===0) readouts(); }};
+}
+
+/* ================= Reiter 5: Diffusion von Bromdampf in Luft ================= */
+function mGas(){
+  const scene=new THREE.Scene(); lights(scene); const R=6,H=36,s={air:true,T:293,gb:0,sp:8,showAir:true}; let sim=null, air=null, br=null, frame=0, hist=[], t45=null; const results={};
+  const g=new THREE.Group(); g.position.y=-H/2; scene.add(g);
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(R+.3,R+.3,H,56,1,true),new THREE.MeshPhysicalMaterial({color:0xcfe4ff,transparent:true,opacity:.12,roughness:.1,side:THREE.DoubleSide,depthWrite:false}))); g.children[0].position.y=H/2;
+  const bot=new THREE.Mesh(new THREE.CylinderGeometry(R+.6,R+.6,.8,56),new THREE.MeshStandardMaterial({color:0x9fb7dc,transparent:true,opacity:.6})); bot.position.y=-.4; g.add(bot);
+  const pane=document.createElement('div'); pane.className='panel';
+  pane.innerHTML=`
+  <div class="card"><h3>Experiment: Bromdampf im Standzylinder</h3>
+    <label for="gs-air" class="note">Inhalt über dem Brom</label>
+    <select id="gs-air"><option value="1" selected>Luft (normaler Druck)</option><option value="0">Vakuum (keine Luft)</option></select>
+    ${rng('gs-T','Temperatur',273,373,1,293)}
+    ${rng('gs-sp','Simulationstempo',1,30,1,8)}
+    <label for="gs-g" class="note">Schwerkraft auf die Teilchen</label>
+    <select id="gs-g"><option value="0" selected>aus</option><option value="1">wie in Wirklichkeit (g = 9,81 m/s²)</option><option value="10000">10 000-fach verstärkt (zum Vergleich)</option></select>
+    ${chk('gs-show','Luftteilchen anzeigen',true)}
+    <div class="row"><button class="btn" id="gs-reset">Neustart</button></div>
+  </div>
+  <div class="card"><h3>Messwerte</h3>
+    <div class="read"><div><small>Brom in oberer Hälfte</small><b id="gs-up"></b></div><div><small>Zeit (Modelleinheiten)</small><b id="gs-t"></b></div><div><small>Zeit bis 45 % oben</small><b id="gs-t45"></b></div></div>
+    <canvas class="plot" id="gs-plot" aria-label="Höhenprofil der Bromteilchen"></canvas>
+    <p class="note">Das Profil zeigt, wie viele Bromteilchen je Höhe vorhanden sind. Die gestrichelte Linie ist die gleichmäßige Verteilung. Bei vollständiger Durchmischung sind 50 % oben.</p>
+    <div class="tablewrap"><table class="t"><thead><tr><th>Versuch</th><th>Zeit bis 45 % oben</th></tr></thead><tbody id="gs-res"><tr><td colspan="2" class="note">Noch kein Versuch beendet.</td></tr></tbody></table></div>
+  </div>
+  <div class="card key"><h3>Merksatz</h3><p>Brom ist schwerer als Luft und breitet sich trotzdem im ganzen Zylinder aus, auch nach oben. Die Bromteilchen bewegen sich ständig und stoßen dabei mit den Luftteilchen zusammen.</p></div>
+  <details class="card"><summary>Was zeigt der Vergleich Luft und Vakuum?</summary>
+    <p>Im Vakuum fliegen die Bromteilchen ohne Zusammenstöße durch den Zylinder. Die Durchmischung ist in Bruchteilen einer Sekunde fertig. In Luft stoßen sie ständig an Luftteilchen und kommen nur im Zickzack voran. Deshalb dauert es dort Minuten bis Stunden.</p>
+    <p>Die Schwerkraft wirkt auf die Teilchen, ist aber winzig gegenüber ihrer Wärmebewegung. Mit der echten Schwerkraft siehst du keinen Unterschied. Erst bei 10 000-facher Verstärkung sinken die schweren Bromteilchen merklich nach unten. Das entspricht der Luftdruckabnahme mit der Höhe (barometrische Höhenformel).</p>
+    <p>Zeit, Größe und Teilchenzahl sind verkleinert. Die Massen (Luft 29 u, Br<sub>2</sub> 160 u) und das Verhältnis der Durchmesser stimmen etwa.</p></details>`;
+  const nm=()=>(s.air?'Luft':'Vakuum')+', '+s.T+' K'+(s.gb?', Schwerkraft ×'+s.gb:'');
+  function gAcc(){ return s.gb*3.4e-5/H; } // reale Schwerkraft bezogen auf 30-cm-Zylinder (g·L·m/kT = 3,4·10⁻⁵ für Luft bei 293 K)
+  function build(){ if(air){ g.remove(air); g.remove(br); } sim=new GasSim({R,H,air:s.air}); sim.setT(s.T); sim.g=gAcc();
+    const nA=sim.N-sim.nBr; air=instanced(Math.max(1,nA),0x9db6e0,{opacity:.4}); br=instanced(sim.nBr,0xb5301f); g.add(air,br); air.visible=s.showAir&&nA>0; hist=[]; t45=null; $('#gs-t45',pane).textContent='–'; }
+  function plot(){ const c=cv2d($('#gs-plot',pane)); if(!c) return; const {g:cx,w,h}=c, co=colors(), m={l:40,r:10,t:10,b:30}; axes(cx,w,h,m,'Höhe im Zylinder (unten → oben)','Brom relativ',co);
+    const p=sim.profile(12), ymax=Math.max(2,...p)*1.1, pw=w-m.l-m.r, ph=h-m.t-m.b; cx.fillStyle='#b5301f'; cx.globalAlpha=.8; p.forEach((v,i)=>{ const bw=pw/12, bh=v/ymax*ph; cx.fillRect(m.l+i*bw+1,h-m.b-bh,bw-2,bh); }); cx.globalAlpha=1;
+    cx.strokeStyle=co.ink; cx.setLineDash([5,4]); cx.beginPath(); cx.moveTo(m.l,h-m.b-ph/ymax); cx.lineTo(m.l+pw,h-m.b-ph/ymax); cx.stroke(); cx.setLineDash([]);
+    cx.fillStyle=co.muted; cx.font='11px '+co.mono; cx.textAlign='right'; for(let k=0;k<=2;k++) cx.fillText(nf(k/2*ymax,1),m.l-4,h-m.b-k/2*ph+4); }
+  function readouts(){ const up=sim.upperShare(); hist.push(up); if(hist.length>8) hist.shift(); const avg=hist.reduce((a,b)=>a+b,0)/hist.length;
+    $('#gs-up',pane).textContent=nf(up*100,0)+' %'; $('#gs-t',pane).textContent=nf(sim.time,0);
+    if(t45===null&&hist.length>=6&&avg>=.45&&s.gb===0){ t45=sim.time; results[nm()]=t45; $('#gs-t45',pane).textContent=nf(t45,1); $('#gs-res',pane).innerHTML=Object.entries(results).map(([k,v])=>`<tr><td>${k}</td><td>${nf(v,1)}</td></tr>`).join(''); }
+    hudSet([s.air?'Luft':'Vakuum',s.T+' K','oben: '+nf(up*100,0)+' %']); plot(); }
+  $('#gs-air',pane).addEventListener('change',e=>{ s.air=e.target.value==='1'; build(); });
+  bind(pane,'gs-T',v=>nf(v,0)+' K ('+nf(v-273.15,0)+' °C)',v=>{ if(sim&&v!==s.T){ sim.setT(v); } s.T=v; });
+  bind(pane,'gs-sp',v=>nf(v,0)+'×',v=>s.sp=v);
+  $('#gs-g',pane).addEventListener('change',e=>{ s.gb=parseFloat(e.target.value); sim.g=gAcc(); });
+  bindChk(pane,'gs-show',v=>{ s.showAir=v; if(air) air.visible=v&&s.air; });
+  $('#gs-reset',pane).addEventListener('click',build); build();
+  return {id:'gas',scene,pane,view:{r:62,th:.5,ph:1.4,t:[0,0,0],min:20,max:150},caption:'Rote Kugeln sind Brom-Teilchen (Br₂), die blassen blauen sind Luftteilchen. Gestartet wird mit Brom im unteren Siebtel.',reset:build,onShow(){ readouts(); },
+    step(){ for(let k=0;k<s.sp;k++) sim.step(); frame++; let ia=0,ib=0;
+      for(let i=0;i<sim.N;i++){ if(sim.sp[i]===1) setInst(br,ib++,sim.x[3*i],sim.x[3*i+1],sim.x[3*i+2],.585); else setInst(air,ia++,sim.x[3*i],sim.x[3*i+1],sim.x[3*i+2],.5); }
+      br.instanceMatrix.needsUpdate=true; if(air.visible) air.instanceMatrix.needsUpdate=true; if(frame%10===0) readouts(); }};
+}
+X.mods.split=mSplit; X.mods.brown=mBrown; X.mods.dye=mDye; X.mods.gas=mGas;
+})();
+
+(function(){
+'use strict';
+const X=window.__lab, {$,$$,nf,sci,lenFmt,rng,chk,bind,bindChk,lights,hudSet,HAS3D}=X;
+
+/* ================= Reiter 6: Modelle und ihre Grenzen ================= */
+const VDW={H:1.20,C:1.70,O:1.52}, COL={H:0xf1f5f9,C:0x4b5563,O:0xe63946};
+const q=Math.sqrt(1/3)*1.087;
+const MOLS={
+  h2o:{name:'Wasser',f:'H<sub>2</sub>O',kd:2.65,note:'gewinkelt (104,5°), polar: eine Seite leicht negativ, die andere leicht positiv',
+    atoms:[['O',0,0,0],['H',.958*Math.sin(52.25*Math.PI/180),-.958*Math.cos(52.25*Math.PI/180),0],['H',-.958*Math.sin(52.25*Math.PI/180),-.958*Math.cos(52.25*Math.PI/180),0]],bonds:[[0,1],[0,2]]},
+  co2:{name:'Kohlenstoffdioxid',f:'CO<sub>2</sub>',kd:3.30,note:'gestreckt (180°), nach außen unpolar',
+    atoms:[['C',0,0,0],['O',1.162,0,0],['O',-1.162,0,0]],bonds:[[0,1],[0,2]]},
+  ch4:{name:'Methan',f:'CH<sub>4</sub>',kd:3.80,note:'Tetraeder (109,5°), unpolar',
+    atoms:[['C',0,0,0],['H',q,q,q],['H',q,-q,-q],['H',-q,q,-q],['H',-q,-q,q]],bonds:[[0,1],[0,2],[0,3],[0,4]]}};
+function mLimits(){
+  const scene=new THREE.Scene(); lights(scene); const holder=new THREE.Group(); scene.add(holder); const s={mol:'h2o',mode:'ball'};
+  const pane=document.createElement('div'); pane.className='panel';
+  pane.innerHTML=`
+  <div class="card"><h3>Ein Teilchen, drei Darstellungen</h3>
+    <label for="lm-mol" class="note">Stoff</label>
+    <select id="lm-mol">${Object.entries(MOLS).map(([k,v])=>`<option value="${k}">${v.name} (${v.f.replace(/<[^>]+>/g,'')})</option>`).join('')}</select>
+    <div class="row" id="lm-modes"><button class="btn on" data-m="ball">Teilchenmodell: Kugel</button><button class="btn" data-m="stick">Kugel-Stab-Modell</button><button class="btn" data-m="space">Kalottenmodell</button></div>
+    <p class="note" id="lm-info"></p>
+  </div>
+  <div class="card key"><h3>Merksatz: Modelle und ihre Grenzen</h3><p>Ein Modell stimmt nie vollständig mit der Wirklichkeit überein. Jedes Modell hat Grenzen. Reichen die Möglichkeiten eines Modells nicht mehr aus, muss man es erweitern oder durch ein neues ersetzen.</p></div>
+  <div class="card"><h3>Was das Kugelmodell kann und was nicht</h3>
+    <table class="t"><thead><tr><th>Kann es erklären</th><th>Zeigt es nicht</th></tr></thead><tbody>
+    <tr><td>Fest, flüssig, gasförmig</td><td>Form und Aufbau der Teilchen aus Atomen</td></tr>
+    <tr><td>Diffusion und Brown'sche Bewegung</td><td>Ladungen und Anziehungskräfte zwischen unterschiedlichen Teilchen</td></tr>
+    <tr><td>Ausdehnung bei Erwärmung</td><td>Chemische Reaktionen, bei denen Teilchen zerlegt werden</td></tr>
+    <tr><td>Zusammendrückbarkeit der Gase</td><td>Verschiedene Teilchengrößen im selben Stoff und im Gemisch</td></tr></tbody></table>
+    <p class="note">Beispiel: 50 mL Ethanol und 50 mL Wasser ergeben nur etwa 96 mL Gemisch. Mit gleich großen Kugeln ist das nicht zu erklären. Mit Teilchen unterschiedlicher Größe, die sich ineinander schieben, schon. Das Modell wird dann erweitert.</p>
+  </div>
+  <div class="card"><h3>Wie viele Zuckerteilchen stecken in …?</h3>
+    ${rng('lm-g','Masse Zucker',0.001,10,0.001,3)}
+    <div class="read"><div><small>Stoffmenge</small><b id="lm-mol1"></b></div><div><small>Zuckerteilchen</small><b id="lm-n"></b></div><div><small>Würfelzucker ca.</small><b>3 g</b></div></div>
+    <p class="note">Rechnung: N = m / M · N<sub>A</sub> mit M = 342,3 g/mol und N<sub>A</sub> = 6,022·10<sup>23</sup>/mol. Die Zahl ist so groß, dass man sie sich kaum vorstellen kann. Das macht verständlich, warum man einzelne Teilchen nicht sieht.</p>
+  </div>`;
+  function addAtom(el,x,y,z,r){ const m=new THREE.Mesh(new THREE.SphereGeometry(r,32,24),new THREE.MeshStandardMaterial({color:COL[el],roughness:.4,metalness:.05})); m.position.set(x,y,z); holder.add(m); }
+  function addBond(a,b,r){ const A=new THREE.Vector3(a[1],a[2],a[3]),B=new THREE.Vector3(b[1],b[2],b[3]), d=B.clone().sub(A), len=d.length();
+    const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,len,16),new THREE.MeshStandardMaterial({color:0xaab4c8,roughness:.5})); m.position.copy(A.clone().add(B).multiplyScalar(.5)); m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize()); holder.add(m); }
+  function build(){ while(holder.children.length) holder.remove(holder.children[0]); const M=MOLS[s.mol];
+    if(s.mode==='ball'){ const r=M.kd/2, m=new THREE.Mesh(new THREE.SphereGeometry(r,48,32),new THREE.MeshStandardMaterial({color:0x6fb1ff,roughness:.35})); holder.add(m); }
+    else if(s.mode==='stick'){ M.atoms.forEach(a=>addAtom(a[0],a[1],a[2],a[3],a[0]==='H'?.28:.4)); M.bonds.forEach(b=>addBond(M.atoms[b[0]],M.atoms[b[1]],.08)); }
+    else { M.atoms.forEach(a=>addAtom(a[0],a[1],a[2],a[3],VDW[a[0]])); }
+    const infos={ball:`Teilchenmodell: eine Kugel mit dem Stoßdurchmesser ${nf(M.kd/10,2)} nm. Von Aufbau und Form des Teilchens ist nichts mehr zu sehen.`,
+      stick:`Kugel-Stab-Modell: zeigt, welche Atome wie verbunden sind. Das Teilchen ist ${M.note}.`,
+      space:`Kalottenmodell: Die Kugeln haben die Größe der Atomhüllen (Van-der-Waals-Radien). So füllt das Teilchen tatsächlich den Raum aus.`};
+    $('#lm-info',pane).innerHTML=infos[s.mode]; hudSet([M.name+' '+M.f, {ball:'Kugel',stick:'Kugel-Stab',space:'Kalotten'}[s.mode]]); }
+  $('#lm-mol',pane).addEventListener('change',e=>{ s.mol=e.target.value; build(); });
+  $('#lm-modes',pane).addEventListener('click',e=>{ const b=e.target.closest('[data-m]'); if(!b) return; s.mode=b.dataset.m; $$('#lm-modes .btn',pane).forEach(x=>x.classList.toggle('on',x===b)); build(); });
+  bind(pane,'lm-g',v=>nf(v,3)+' g',v=>{ const mol=v/342.3; $('#lm-mol1',pane).innerHTML=sci(mol,2)+' mol'; $('#lm-n',pane).innerHTML=sci(mol*6.022e23,2); });
+  build();
+  return {id:'limits',scene,pane,view:{r:9,th:.6,ph:1.3,t:[0,0,0],min:3,max:30,auto:.5},caption:'Das Teilchen dreht sich langsam. Zieh mit der Maus, um es selbst zu drehen.',reset:build,onShow(){ build(); },step(){}};
+}
+X.mods.limits=mLimits;
+
+/* ================= Reiter 7: Aufgaben ================= */
+function mTasks(){
+  const pane=document.createElement('div'); pane.className='panel';
+  const tasks=[
+    {t:'Beschreibe den Aufbau eines festen Stoffes mithilfe des Teilchenmodells.',hint:'Probiere es im Reiter „Teilchenmodell“ bei 30 K.',
+     sol:['Der Stoff besteht aus sehr vielen kleinen, unteilbaren Teilchen. Sie sind kugelförmig gedacht und haben je Stoff dieselbe Größe und Masse.','Die Teilchen liegen dicht gepackt und meist regelmäßig angeordnet. Zwischen ihnen ist leerer Raum.','Sie bleiben an ihrem Platz und schwingen nur um ihre Ruhelage. Deshalb haben feste Stoffe eine feste Form und ein festes Volumen.']},
+    {t:'Beschreibe den Vorgang der Diffusion anhand eines selbst gewählten Beispiels.',hint:'Schau dir die Reiter „Diffusion in Wasser“ und „Diffusion in Gasen“ an.',
+     sol:['Beispiel Tee: Ein Teebeutel hängt im Wasser. Die Farbstoffteilchen lösen sich aus dem Beutel und bewegen sich ständig und ungeordnet. Sie stoßen dabei an die Wasserteilchen.','Die Wasserteilchen bewegen sich ebenfalls. So wandern Farbstoff- und Wasserteilchen zufällig zwischen einander hindurch.','Nach einiger Zeit sind beide Stoffe gleichmäßig durchmischt, ohne dass jemand rührt. Diese selbstständige Durchmischung heißt Diffusion. Bei Wärme geht es schneller, weil sich die Teilchen schneller bewegen.']},
+    {t:'Kennzeichne den Unterschied zwischen einem kleinen Zuckerkristall und einem Zuckerteilchen.',hint:'Probiere den Reiter „Teilbarkeit“ aus.',
+     sol:['Ein Zuckerkristall besteht aus sehr vielen Zuckerteilchen (schon in einem Kristall von 1 mm Kantenlänge sind es etwa 10<sup>18</sup>). Er ist mit bloßem Auge oder mit der Lupe sichtbar und hat eine Kristallform.','Ein Zuckerteilchen ist die kleinste Einheit des Zuckers, etwa 1 nm groß. Man kann es nicht sehen und nicht weiter teilen, ohne dass der Stoff verschwindet. Form, Härte und Aggregatzustand sind Eigenschaften vieler Teilchen zusammen.']}];
+  const qs=[
+    {q:'Warum riecht man ein Parfüm nach einiger Zeit auch am anderen Ende eines Raumes?',o:['Die Duftteilchen bewegen sich ständig und verteilen sich dabei im Raum (Diffusion).','Die Duftteilchen sind leichter als Luft und steigen nach oben.','Das Parfüm wird durch die Raumluft immer kleiner.'],a:0,w:'Auch ohne Luftströmung verteilen sich die Teilchen selbstständig durch ihre Bewegung und ihre Stöße.'},
+    {q:'Wodurch entsteht die Brown\'sche Bewegung eines Pollenkorns in Wasser?',o:['Das Pollenkorn ist lebendig und schwimmt aktiv.','Es wird von unsichtbaren Wasserteilchen ungleichmäßig angestoßen.','Das Wasser fließt ständig im Kreis.'],a:1,w:'In jedem Augenblick treffen auf einer Seite zufällig mehr Teilchen. Die Restkraft wechselt dauernd ihre Richtung.'},
+    {q:'Was passiert bei höherer Temperatur im Teilchenmodell?',o:['Die Teilchen werden größer.','Die Teilchen bewegen sich im Mittel schneller.','Es kommen neue Teilchen hinzu.'],a:1,w:'Temperatur ist ein Maß für die mittlere Bewegungsenergie. Die Teilchengröße und -zahl bleiben gleich.'},
+    {q:'Welche Aussage über das Teilchenmodell stimmt?',o:['Es zeigt die Teilchen genau so, wie sie wirklich aussehen.','Es ist eine Denkhilfe, die vieles erklärt, aber nicht alles.','Es wurde widerlegt und wird nicht mehr benutzt.'],a:1,w:'Jedes Modell vereinfacht und hat Grenzen. Reicht es nicht mehr aus, wird es erweitert.'},
+    {q:'Warum breitet sich Bromdampf im Vakuum viel schneller aus als in Luft?',o:['Im Vakuum ist es wärmer.','Im Vakuum stoßen die Bromteilchen nicht ständig mit Luftteilchen zusammen.','Im Vakuum ist Brom leichter.'],a:1,w:'In Luft kommen die Bromteilchen nur im Zickzack voran. Im Vakuum fliegen sie geradlinig bis zur Wand.'}];
+  pane.innerHTML=`
+  <div class="card"><h3>Aufgaben zu „Erinnere dich – Stoffe bestehen aus Teilchen“</h3><p class="note">Schreibe zuerst deine eigene Antwort. Erst danach kannst du die Musterlösung ansehen. Deine Texte bleiben in diesem Browser gespeichert.</p></div>
+  <div class="tasks">${tasks.map((k,i)=>`<div class="card green task"><h2><span class="num">${i+1}</span>${k.t}</h2><p class="note">${k.hint}</p>
+    <textarea id="ts-${i}" rows="5" placeholder="Deine Antwort"></textarea>
+    <div class="row"><button class="btn" data-sol="${i}">Musterlösung anzeigen</button></div><div class="sol" id="sol-${i}" hidden><ul>${k.sol.map(x=>'<li>'+x+'</li>').join('')}</ul></div></div>`).join('')}</div>
+  <div class="card"><h3>Kurzer Test</h3><div class="quiz" id="quiz">${qs.map((k,i)=>`<div class="q" data-i="${i}"><b>${i+1}. ${k.q}</b>${k.o.map((o,j)=>`<button class="opt" data-j="${j}">${o}</button>`).join('')}<div class="why" hidden></div></div>`).join('')}</div>
+    <p class="note" id="score"></p></div>`;
+  tasks.forEach((_,i)=>{ const ta=$('#ts-'+i,pane); try{ ta.value=localStorage.getItem('tl-task-'+i)||''; }catch(e){} ta.addEventListener('input',()=>{ try{ localStorage.setItem('tl-task-'+i,ta.value); }catch(e){} }); });
+  pane.addEventListener('click',e=>{ const b=e.target.closest('[data-sol]'); if(b){ const el=$('#sol-'+b.dataset.sol,pane); el.hidden=!el.hidden; b.textContent=el.hidden?'Musterlösung anzeigen':'Musterlösung verbergen'; return; }
+    const o=e.target.closest('.opt'); if(!o) return; const box=o.closest('.q'), k=qs[+box.dataset.i], j=+o.dataset.j;
+    $$('.opt',box).forEach((x,idx)=>{ x.disabled=true; if(idx===k.a) x.classList.add('right'); else if(idx===j) x.classList.add('wrong'); }); const w=$('.why',box); w.hidden=false; w.textContent=(j===k.a?'Richtig. ':'Nicht ganz. ')+k.w; box.dataset.done=j===k.a?'1':'0';
+    const done=$$('.q[data-done]',pane); if(done.length===qs.length) $('#score',pane).textContent=done.filter(d=>d.dataset.done==='1').length+' von '+qs.length+' richtig.'; });
+  return {id:'tasks',noStage:true,pane,reset(){},onShow(){},step(){}};
+}
+X.mods.tasks=mTasks;
+
+/* ================= Steuerung: Reiter, Schleife ================= */
+const order=[['lj','Teilchenmodell','S. 14 · Aufbau der Stoffe'],['split','Teilbarkeit','S. 14 · Zucker teilen'],['brown','Brown\'sche Bewegung','S. 15 · Abb. 4'],['dye','Diffusion in Wasser','S. 14 · Exp. 3'],['gas','Diffusion in Gasen','S. 15 · Abb. 5'],['limits','Modelle und Grenzen','S. 15 · Kasten'],['tasks','Aufgaben','S. 15 · 1 bis 3']];
+const tabsEl=$('#tabs'), panelEl=$('#panel'), cap=$('#cap'), lab=$('#lab'); const cache={}; let active=null, paused=false, last=performance.now();
+tabsEl.innerHTML=order.map(o=>`<button class="tab" role="tab" data-id="${o[0]}" aria-selected="false"><b>${o[1]}</b><span>${o[2]}</span></button>`).join('');
+function show(id){
+  let m=cache[id]; if(!m){ try{ m=cache[id]=X.mods[id](); }catch(e){ console.error(e); panelEl.innerHTML='<div class="card"><p>Dieser Reiter konnte nicht gestartet werden.</p></div>'; return; } m.pane.hidden=true; panelEl.appendChild(m.pane); }
+  Object.values(cache).forEach(c=>c.pane.hidden=true); m.pane.hidden=false; active=m; lab.classList.toggle('nostage',!!m.noStage);
+  $$('.tab',tabsEl).forEach(t=>t.setAttribute('aria-selected',String(t.dataset.id===id)));
+  if(!m.noStage){ cap.textContent=m.caption||''; if(X.orbitOf()) X.orbitOf().setView(m.view); X.resize(); } else hudSet([]);
+  m.onShow&&m.onShow(); try{ history.replaceState(null,'','#'+id); }catch(e){}
+}
+tabsEl.addEventListener('click',e=>{ const b=e.target.closest('.tab'); if(b) show(b.dataset.id); });
+$('#t-pause').addEventListener('click',e=>{ paused=!paused; e.target.textContent=paused?'Weiter':'Pause'; });
+$('#t-view').addEventListener('click',()=>{ if(active&&active.view&&X.orbitOf()) X.orbitOf().setView(active.view); });
+$('#t-reset').addEventListener('click',()=>{ if(active&&active.reset) active.reset(); });
+function loop(now){ requestAnimationFrame(loop); const dt=Math.min(.05,(now-last)/1000); last=now; if(!active||active.noStage||document.hidden) return;
+  if(!paused) active.step(dt); const r=X.renderer(); if(r){ X.orbitOf().update(dt); r.render(active.scene,X.camera()); } }
+const start=(location.hash||'').slice(1); show(order.some(o=>o[0]===start)?start:'lj'); requestAnimationFrame(loop);
+window.__app={show,get active(){return active;}};
+})();
+
+</script>
+</body>
+</html>
