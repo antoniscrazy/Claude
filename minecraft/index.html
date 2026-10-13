@@ -70,6 +70,7 @@ h2{font-size:26px;margin-bottom:14px;text-shadow:2px 2px #333}
 #bookNav{display:flex;align-items:center;justify-content:center;gap:10px}#bookNav .btn{width:auto;min-width:56px;margin:4px 0}#bookPg{min-width:96px;text-align:center}
 #bookSignBox{margin-top:8px;border-top:2px solid #666;padding-top:6px}
 #bookSignBox .warn{color:#ffb347;font-size:14px;margin:8px 0}
+.cl.hb b{color:#ff5a5a}.cl.hb{color:#ffd0d0;text-shadow:0 0 6px rgba(255,0,0,.6)}
 .row{display:flex;gap:10px}
 .row .btn{margin:6px 0}
 label{display:block;text-align:left;font-size:14px;margin:12px 0 4px;color:#d6d6d6}
@@ -1350,6 +1351,11 @@ const SIGN_IDS = [];                                    // 0–3 Standschild (Vo
   SIGN_IDS.forEach((id) => { BLOCKS[id].drop = SIGN_IDS[0]; });
   ID.sign = SIGN_IDS[0]; BLOCKS[ID.sign].wallIds = SIGN_IDS.slice(4); BLOCKS[ID.sign].standIds = SIGN_IDS.slice(0, 4);
 }
+// --- Feuer (angehängt): brennt auf Netherrack (Herobrine-Schrein), verbrennt Spieler, mit der Hand löschbar ---
+{
+  const ft = tile('campfire_fire');
+  add('fire', 'Feuer', allSides(ft), { solid: false, opaque: false, hard: 0, emit: true, light: 15, cross: { s: 1, lift: 0 }, aabbs: [[0.15, 0, 0.15, 0.85, 0.9, 0.85]], support: 'below', drop: 0, flat: ft });
+}
 if (nextId >= 4000) throw new Error('Zu viele Blöcke');
 // ---------- Items (Nicht-Blöcke, IDs ab 1000) ----------
 const ITEM_BASE = 5000;
@@ -2041,7 +2047,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-05.35';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-10-05.36';            // Spielversion (nur Anzeige)
 // Mehrspieler-Kompatibilität: NUR wenn sich das Netzwerkformat oder die Welt-Speicherung unverträglich ändert, MP_PROTO erhöhen. Normale Versionen (neue Blöcke, Rezepte, Mobs, Befehle …) vertragen sich untereinander –
 // dafür gibt es keine Warnung mehr. Clients ohne MP_PROTO (vor 2026-10-05.17) gelten ab MP_MIN_VER als kompatibel.
 const MP_PROTO = 1, MP_MIN_VER = '2026-10-05.1';
@@ -5102,7 +5108,7 @@ function updateInteraction(dt) {
   const reach = reach0();
   target = raycastBlocks(eyeV, dirV, reach); if (boss.on && boss.me && boss.me !== 'out') target = null;          // Boss-Kampf: Bühne unveränderlich (auch nichts setzen/abbauen)
   mobTarget = raycastMobs(eyeV, dirV, Math.min(reach - 1.5, target ? target.dist : 99));
-  playerTarget = mp.on && !isCreative() ? raycastPlayers(eyeV, dirV, Math.min(reach - 1.5, target ? target.dist : 99)) : null;
+  playerTarget = (mp.on || HB.on) && !isCreative() ? raycastPlayers(eyeV, dirV, Math.min(reach - 1.5, target ? target.dist : 99)) : null;
   if (playerTarget && mobTarget) { const dm = Math.hypot(mobTarget.p.x - P.p.x, mobTarget.p.z - P.p.z), dp = Math.hypot(playerTarget.p.x - P.p.x, playerTarget.p.z - P.p.z); if (dp < dm) mobTarget = null; else playerTarget = null; }
 
   vehTarget = P.ride ? null : raycastVeh(eyeV, dirV, Math.min(reach - 1.5, target ? target.dist : 99));
@@ -5198,6 +5204,7 @@ function breakBlock(hit, noDrop) {
 }
 
 function attackPlayer(rp) {
+  if (rp === HB.rp) { rp.flash = 0.3; sfx('hit'); handSwing(); const tl = toolOf(inv[P.sel]); if (tl) damageHeld(tl.type === 'sword' ? 1 : 2); if (HB.me) hbOnHit(mp.on ? mp.name : (mpCfg.name || 'Du')); else mpSend('hb', { a: 'hit' }); return; }
   const tool = toolOf(inv[P.sel]);
   let dmg = (tool ? tool.dmg : 1) + 3 * fxAmp('strength');
   if (!P.onGround && P.v.y < -0.5 && !P.flying && !P.inWater) dmg *= 1.5;
@@ -5357,6 +5364,10 @@ function useItem(pressed) {
         world.setBlock(target.x, target.y, target.z, AIR); igniteTNT(target.x, target.y, target.z, 4);
         damageHeld(1); refreshHotbar();
       }
+      if (pressed && target && target.id === ID.netherrack && target.ny > 0 && world.getBlock(target.x, target.y + 1, target.z) === AIR) {           // Netherrack anzünden (Herobrine-Schrein)
+        world.setBlock(target.x, target.y + 1, target.z, ID.fire); blockSfx('place', ID.fire); damageHeld(1); refreshHotbar(); handSwing();
+        hbShrineCheck(target.x, target.y, target.z);
+      }
       return;
     }
     if (I.pearl) { if (pressed) throwPearl(slot); return; }
@@ -5421,6 +5432,7 @@ function useItem(pressed) {
   blockSfx('place', pl.id); handSwing(); if (mp.on) mp.swing = true;
   if (!isCreative() && --slot.count <= 0) inv[P.sel] = null;
   if (pb.sign) signPlaced(x, y, z);
+  if (hbIsRedTorch(pl.id)) hbAfterTorch(x, y, z);
   refreshHotbar();
 }
 
@@ -8796,7 +8808,7 @@ function findSpawn() {
 function startGame(opts) {
   if (world) { world.dispose(); clearMobs(); clearDrops(); clearPrimed(); clearArrows(); clearFallers(); clearThrown(); clearOrbs(); }
   endDead.clear(); vehStash = null; P.creditsSeen = false; rsQ.clear(); rsTimers.length = 0; rsPrev.clear(); rsHop.clear(); rsBtn.clear(); rsPl.clear(); endT = 0;
-  mode = opts.mode; renderDist = opts.dist; buildJob = null; blastAbort(); bigSt.active = false; perfReset(); bossReset();
+  mode = opts.mode; renderDist = opts.dist; buildJob = null; blastAbort(); bigSt.active = false; perfReset(); bossReset(); hbReset();
   const save = opts.save;
   if (!opts.mp) { mp.on = false; $('btnQuit').textContent = 'Speichern & Beenden'; spLoadPolicy(); }
   world = new World(save ? save.seed : opts.seed, scene, save ? (save.gv || 1) : opts.gv || 4);          // Welten ohne gv-Eintrag = alte Biome
@@ -9125,7 +9137,7 @@ function frame(now) {
     camera.position.x += (Math.random() - 0.5) * P.shake * 0.4; camera.position.y += (Math.random() - 0.5) * P.shake * 0.4;
     camera.rotation.z = (Math.random() - 0.5) * P.shake * 0.08; P.shake = Math.max(0, P.shake - dt * 1.4);
   } else camera.rotation.z = 0;
-  updateEmote(dt); stepBuildJob(); stepBlast(); bigTick(); perfTick(dt); bossTick(dt); hwTick(dt); signTick(dt);
+  updateEmote(dt); stepBuildJob(); stepBlast(); bigTick(); perfTick(dt); bossTick(dt); hwTick(dt); signTick(dt); hbTick(dt); fireTick(dt);
   const sprinting = state === 'play' && P.sprinting;
   const zooming = state === 'play' && mouse.right && inv[P.sel] && inv[P.sel].id >= ITEM_BASE && ITEMS[inv[P.sel].id].spyglass;
   fovCur = lerp(fovCur, zooming ? 14 : sprinting ? settings.fov + 9 : settings.fov, Math.min(1, 8 * dt));
@@ -9588,6 +9600,12 @@ function raycastPlayers(o, d, max) {
       if (Math.abs(dd[i]) < 1e-8) { if (oo[i] < min[i] || oo[i] > mx[i]) ok = false; }
       else { let a = (min[i] - oo[i]) / dd[i], b = (mx[i] - oo[i]) / dd[i]; if (a > b) { const t = a; a = b; b = t; } t0 = Math.max(t0, a); t1 = Math.min(t1, b); if (t0 > t1) ok = false; }
     }
+    if (ok && t0 < bt) { bt = t0; best = rp; }
+  }
+  if (HB.on && HB.vis && HB.rp && HB.rp.have && world.dim === 0) {                                     // Herobrine ist schlagbar (unverwundbar, aber er reagiert)
+    const rp = HB.rp, min = [HB.x - 0.3, HB.y, HB.z - 0.3], mx = [HB.x + 0.3, HB.y + 1.8, HB.z + 0.3], oo = [o.x, o.y, o.z], dd = [d.x, d.y, d.z];
+    let t0 = 0, t1 = bt, ok = true;
+    for (let i = 0; i < 3 && ok; i++) { if (Math.abs(dd[i]) < 1e-8) { if (oo[i] < min[i] || oo[i] > mx[i]) ok = false; } else { let a = (min[i] - oo[i]) / dd[i], b = (mx[i] - oo[i]) / dd[i]; if (a > b) { const t = a; a = b; b = t; } t0 = Math.max(t0, a); t1 = Math.min(t1, b); if (t0 > t1) ok = false; } }
     if (ok && t0 < bt) { bt = t0; best = rp; }
   }
   return best;
@@ -10208,6 +10226,8 @@ class SupabaseDB {
   register(name, token, skin, slim) { return this.rpc('vc_register', { p_name: name, p_token: token, p_skin: skin, p_slim: slim }); }
   accountStatus(name, token) { return this.rpc('vc_account_status', { p_name: name, p_token: token }); }
   commandPolicy(name, token) { return this.rpc('vc_command_policy', { p_name: name, p_token: token }); }
+  adminPlayerPos(room, name, token, target) { return this.rpc('vc_admin_player_pos', { p_room: room, p_name: name, p_token: token, p_target: target }); }
+  adminRoomPlayers(room, name, token) { return this.rpc('vc_admin_room_players', { p_room: room, p_name: name, p_token: token }); }
   getEvent() { return this.rpc('vc_event_get', {}); }
   setEvent(name, token, key, on) { return this.rpc('vc_event_set', { p_name: name, p_token: token, p_key: key, p_on: on }); }
   createRoom(room, seed, mode, name, token, pub) { return this.rpc('vc_create_room', { p_room: room, p_seed: seed, p_mode: mode, p_name: name, p_token: token, p_public: pub }); }
@@ -10252,6 +10272,13 @@ class LocalNet {
 class LocalDB {
   async accountStatus() { return { ok: true, banned: false }; }
   async commandPolicy() { return { ok: true, unlimited: false, warn: 100000 }; }
+  async adminPlayerPos(room, name, token, target) {
+    if (String(name).toLowerCase() !== 'anton') return { ok: false, error: 'unauthorized' };
+    const st = this.load().states || {}, k = Object.keys(st).find((q) => q.startsWith(room + '|') && q.slice(room.length + 1) === String(target).toLowerCase());
+    if (!k) return { ok: false, error: 'unknown_player' }; const v = st[k];
+    return { ok: true, name: target, pos: v.pos, dim: v.dim || 0, yaw: v.yaw, pitch: v.pitch };
+  }
+  async adminRoomPlayers(room, name) { if (String(name).toLowerCase() !== 'anton') return { ok: false }; return { ok: true, names: Object.keys(this.load().states || {}).filter((q) => q.startsWith(room + '|')).map((q) => q.slice(room.length + 1)) }; }
   async getEvent() { const d = this.load(); return { ok: true, halloween: !!(d.event && d.event.halloween) }; }
   async setEvent(name, token, key, on) { const d = this.load(); d.event = Object.assign(d.event || {}, { [key]: !!on }); this.save(d); return { ok: true }; }
   constructor() { this.key = 'voxelcraft_localdb_v1'; }
@@ -10308,6 +10335,7 @@ function mpSend(e, p) {
   if (e === 'pos') { mp.posPend = p; return; }                       // nur der neueste Positionsstand zählt
   const dm = world ? world.dim : 0;
   if (e === 'mobs') { const i = mp.out.findIndex((q) => q[0] === 'mobs'); if (i >= 0) { mp.out[i] = [e, p, dm]; return; } }
+  if (e === 'hb' && p.a === 'st') { const i = mp.out.findIndex((q) => q[0] === 'hb' && q[1].a === 'st'); if (i >= 0) { mp.out[i] = [e, p, dm]; return; } }
   if (e === 'veh') { const i = mp.out.findIndex((q) => q[0] === 'veh' && q[1].i === p.i); if (i >= 0) { mp.out[i] = [e, p, dm]; return; } }
   mp.out.push([e, p, dm]);                                          // 3. Eintrag: Dimension, in der das Ereignis passiert ist
 }
@@ -10594,6 +10622,7 @@ const T = {                                                       // Argumenttyp
 };
 
 // ----- Vorschläge -----
+let sugCmd = '';
 function argSuggestions(a, partial) {
   const pl = partial.toLowerCase(), out = [];
   const pick = (arr, desc) => arr.filter((s) => s.toLowerCase().startsWith(pl)).forEach((s) => out.push({ ins: s, label: s, desc: desc && desc(s) }));
@@ -10606,6 +10635,7 @@ function argSuggestions(a, partial) {
     }
     case 'player': {
       const names = [...(mp.on ? [mp.name] : []), ...[...mp.players.values()].map((p) => p.name)];
+      if (mp.admin && mp.offNames && sugCmd === 'tp') for (const n of mp.offNames) if (!names.some((q) => q.toLowerCase() === n.toLowerCase())) names.push(n);
       pick(names, () => 'Spieler'); break;
     }
     case 'cmd': pick([...new Set(visibleCmds().flatMap((s) => [s.name, ...s.aliases]))], (k) => CMDS[k].desc); break;
@@ -10646,6 +10676,7 @@ function chatSuggest(text) {
   // Argumente können durch fest verdrahtete Formen variieren (z. B. /tp): dynamisch bestimmen
   const spec = c.argsFor ? c.argsFor(parts.slice(1, idx)) : args;
   const a = spec[idx - 1];
+  sugCmd = c.name; if (c.name === 'tp' && mp.admin && !mp.offNamesAt) { mp.offNamesAt = 1; loadOfflineNames(); }
   let items = a ? argSuggestions(a, partial) : [];
   const last = args[args.length - 1];
   const hint = usageOf(c) + '  –  ' + c.desc + (a ? '   ▸ ' + a.name : '');
@@ -10860,6 +10891,17 @@ cmd(['effect', 'effekt'], {
 cmd(['nv', 'nachtsicht'], { desc: 'Nachtsicht für 10 Minuten', cheat: true, run() { addEffect('night_vision', 600, 0); chatOk('Nachtsicht aktiv.'); } });
 
 // ----- Teleport -----
+async function tpOffline(name) {                                      // nur Admin-Modus: zur Position, an der der Spieler das Spiel verlassen hat
+  try {
+    const r = await mp.db.adminPlayerPos(mp.room, mp.name, mp.token, name);
+    if (!r || !r.ok) { chatErr(r && r.error === 'unknown_player' ? 'Spieler „' + name + '“ nicht gefunden (weder online noch mit gespeicherter Position).' : r && r.error === 'unauthorized' ? 'Keine Berechtigung (Admin-Modus an?).' : 'Fehler: ' + ((r && r.error) || 'unbekannt')); return; }
+    const p = r.pos; if (!Array.isArray(p) || p.length < 3 || !p.every((v) => Number.isFinite(+v))) { chatErr(r.name + ' hat noch keine gespeicherte Position.'); return; }
+    const dim = r.dim | 0, ago = r.updated ? Math.max(0, Math.round((Date.now() - new Date(r.updated).getTime()) / 60000)) : null;
+    if (dim !== world.dim) enterDimension(dim, +p[0], +p[1] + 0.1, +p[2], { exact: true }); else tpTo(+p[0], +p[1] + 0.1, +p[2]);
+    chatOk('Zu ' + r.name + ' (offline' + (ago !== null ? ', zuletzt vor ' + (ago >= 120 ? Math.round(ago / 60) + ' Std.' : ago + ' Min.') : '') + ') teleportiert: ' + Math.floor(+p[0]) + ' ' + Math.floor(+p[1]) + ' ' + Math.floor(+p[2]));
+  } catch (e) { chatErr('Offline-Teleport fehlgeschlagen – ist supabase/dev_console_part8.sql ausgeführt? (' + (e.message || e) + ')'); }
+}
+async function loadOfflineNames() { try { if (!mp.on || !mp.admin || !mp.db) return; const r = await mp.db.adminRoomPlayers(mp.room, mp.name, mp.token); if (r && r.ok) mp.offNames = r.names.filter((n) => n.toLowerCase() !== mp.name.toLowerCase()); } catch (e) { /* SQL fehlt: egal */ } }
 cmd(['tp', 'teleport'], {
   desc: 'Teleportiert: /tp <spieler> (zu ihm) · /tp <spieler> zu <spieler2> · /tp <x> <y> <z> (~ = relativ)', needs: 1,
   args: [T.player('spieler / x'), T.player('zu spieler / y', true), T.player('spieler / z', true)],
@@ -10874,7 +10916,8 @@ cmd(['tp', 'teleport'], {
     if (!a.length) fail('Benutzung: /tp <spieler> · /tp <spieler> zu <spieler2> · /tp <x> <y> <z>');
     const toPlayer = (name) => {                                    // zu einem Spieler reisen (auch in dessen Dimension)
       if (!mp.on) fail('Ohne Mitspieler: /tp <x> <y> <z> oder /tp <x> <z>');
-      const t = findPlayer(name); if (!t.have) fail(t.name + ' ist noch nicht sichtbar.');
+      let t; try { t = findPlayer(name); } catch (e) { if (mp.admin && mp.db) { tpOffline(name); return; } throw e; }       // Admin: auch zu Offline-Spielern (letzte gespeicherte Position)
+      if (!t.have) fail(t.name + ' ist noch nicht sichtbar.');
       if ((t.dim || 0) !== world.dim) { enterDimension(t.dim || 0, t.target.x, t.target.y + 0.1, t.target.z, { exact: true }); chatOk('Zu ' + t.name + ' in die andere Dimension gereist'); return; }
       tpTo(t.p.x, t.p.y, t.p.z); chatOk('Zu ' + t.name + ' teleportiert');
     };
@@ -11752,7 +11795,7 @@ function applyWeatherSky() {
   } else { sunMesh.material.opacity = 1; moonMesh.material.opacity = 1; }
   if (weather.fogF > 0.001) { tmpCol.setRGB(0.72, 0.75, 0.78).multiplyScalar(0.2 + 0.8 * env.dayF); skyCol.lerp(tmpCol, 0.85 * weather.fogF); sunMesh.material.opacity *= 1 - 0.8 * weather.fogF; moonMesh.material.opacity *= 1 - 0.8 * weather.fogF; starMat.opacity *= 1 - weather.fogF; uni.uDay.value *= 1 - 0.12 * weather.fogF; }
   if (weather.sand > 0.001) { tmpCol.setRGB(0.82, 0.66, 0.42).multiplyScalar(0.2 + 0.8 * env.dayF); skyCol.lerp(tmpCol, 0.9 * weather.sand); sunMesh.material.opacity *= 1 - 0.85 * weather.sand; moonMesh.material.opacity *= 1 - 0.85 * weather.sand; starMat.opacity *= 1 - weather.sand; uni.uDay.value *= 1 - 0.2 * weather.sand; }
-  hwSkyTint();
+  hwSkyTint(); hbSkyTint();
   if (weather.flash > 0) { skyCol.lerp(FLASH_COL, weather.flash * 0.6); uni.uDay.value = Math.min(1.4, uni.uDay.value + weather.flash * 0.5); }
   $('flash').style.opacity = weather.flash * 0.45;
 }
@@ -12284,6 +12327,7 @@ function renderTabList() {
   box.innerHTML = '<h2>Spieler online</h2>';
   const mk = (n) => rankMark(n) + n;
   const rows = [{ name: mk(mp.name) + ' (du)', face: mp.myFace, mode, ping: pingMs() }, ...[...mp.players.values()].map((p) => ({ name: mk(p.name), face: p.faceURL, mode: p.mode, ping: p.rtt === undefined ? null : Math.round(p.rtt) }))];
+  if (HB.on) rows.push({ name: 'Herobrine', face: HB.rp && HB.rp.faceURL, mode: 'survival', ping: 0 });
   rows.forEach((r) => {
     const d = document.createElement('div'); d.className = 'trow';
     const img = document.createElement('img'); if (r.face) img.src = r.face; d.appendChild(img);
@@ -12308,6 +12352,7 @@ const mpHandlers = {
       if ((o.joinedAt || 0) <= (meta.joinedAt || 0)) { o.dispose(); mp.players.delete(oid); } else return;
     }
     const rp = new RemotePlayer(id, meta.name, meta.joinedAt); mp.players.set(id, rp); rp.ver = meta.v; if (boss.on && meta.name === boss.admin) boss.goneAt = 0; if (boss.on && boss.me === 'boss' && boss.fight !== 'end') bossLate(meta.name);
+    if (HB.on && HB.me) setTimeout(() => { if (HB.on && HB.me) mpSend('hb', { a: 'start', n: HB.ctl, x: r2(HB.x), y: r2(HB.y), z: r2(HB.z) }); }, 2500);       // Spätbeitritt: Herobrine anzeigen
     { const bad = mpCompat(meta); if (bad) mpVersionWarn(rp, bad); }                              // nur bei wirklich unverträglichen Versionen
     chatSys(meta.name + ' ist beigetreten'); achGive('mp'); mpEnsureProfile(rp); mpStatusHud(); if (mp.tab) renderTabList();
     if (isHost()) {                                                    // der Host bringt Neulinge auf den aktuellen Stand (Uhrzeit, Regeln, Wetter)
@@ -12317,6 +12362,7 @@ const mpHandlers = {
   },
   leave(id) {
     const rp = mp.players.get(id); if (!rp) return;
+    if (HB.on && !HB.me && rp.name === HB.ctl) hbEnd(true);
     chatSys(rp.name + ' hat das Spiel verlassen'); if (boss.on) { if (rp.name === boss.admin) boss.goneAt = performance.now(); else boss.out.add(rp.name); } rp.dispose(); mp.players.delete(id); mpStatusHud(); if (mp.tab) renderTabList();
   },
   closed() { netBad = Math.max(netBad, 1); },                     // supabase-js verbindet selbst neu; nur wenn es länger dauert, wird angehalten
@@ -12375,6 +12421,7 @@ const mpHandlers = {
         if (p.wk) weather.override = { kind: p.wk, until: gameTime + (p.wd || 900) };
         break;
       case 'bolt': strikeLightning(p.x, p.z, true); break;
+      case 'hb': hbRecv(p, from); break;
       case 'boss': bossRecv(p, from); break;
       case 'hw': { const sn = mp.players.get(from); if (sn && isAdminName(sn.name)) hwApply(!!p.on); break; }
       case 'emote': { const rp = mp.players.get(from); if (rp) rp.emote = p && Number.isInteger(p.e) && EMOTES[p.e] ? { id: p.e, t: 0 } : null; break; }
@@ -12540,7 +12587,7 @@ async function mpJoin(cfg) {
 }
 async function mpLeave() {
   if (!mp.on) return;
-  cmdPolicy.unlimited = false; if (buildJob) finishBuildJob(true); bossReset();
+  cmdPolicy.unlimited = false; if (buildJob) finishBuildJob(true); bossReset(); if (HB.on && HB.me) mpSend('hb', { a: 'stop' }); hbReset();
   try { mpFlush(); } catch (e) { /* egal */ }
   mp.on = false; mp.offline = false; $('netLost').classList.add('hidden'); mp.out = []; mp.posPend = null;
   try { mpFlushBlocks(); await Promise.race([Promise.all([mpFlushDb(), mpSaveState()]), new Promise((r) => setTimeout(r, 2500))]); } catch (e) { /* egal */ }
@@ -13542,7 +13589,338 @@ function showBreakOver() {
 setInterval(() => { classGateCheck(); }, 1000);
 classGateCheck();
 
-window.__vc = { bossDown, bossRespawn, bossContain, bossLate, mpSend, signs, signOpen, signClose, signTick, signPlaced, signSetKey, signsPack, signRemove, containerLoad, SIGN_IDS, bookOpen, bookClose, bookSignStart, bookSignDo, bookGo, bookOf, getBK: () => BK, hasGlint, enchLines, placementFor, HW, hwApply, hwTick, hwPoll, boss, bossBegin, bossEnd, bossTick, bossPos, bossRp, bossStartAct, bossDamage, bossPlayersAlive, bossLocked, BACT, blastAsk, askRealBlast, answerRealBlast, chainSet: (n, x, y, z) => { chainLocal = n; chainSum = [n * x, n * y, n * z]; }, blastQ, blastInfo: () => ({ tot: blastTot, done: blastDone, n: blastN, cur: !!blastCur }), bigSt, stepBlast, bigTick, perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+/* =====================================================================
+   HEROBRINE – wird am Schrein beschworen: 3×3 Goldblöcke, Netherrack in der Mitte, 4 Redstone-Fackeln um das Netherrack, Feuer auf dem Netherrack
+   (Feuerzeug auf das Netherrack). Er erscheint als echter Spieler (Skin, Namensschild, Spielerliste, Chat), beobachtet, verschwindet, baut Tunnel/
+   Pyramiden/Türme, stellt Schilder und Fackeln auf, ruft Blitze und Monster und jagt Angreifer. OPs stoppen ihn mit /herobrine stop (und machen
+   seine Bauwerke mit /herobrine undo rückgängig). Läuft auch im Einzelspieler. Der Beschwörer ist der „Steuerer“: seine Seite simuliert die KI und
+   sendet Position/Aktionen; alle anderen zeigen nur an. Verlässt der Steuerer das Spiel, verschwindet Herobrine.
+===================================================================== */
+const HB_SKIN = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAFcUlEQVR4Xu2a22tcVRTG86hJJzZFMSS9BKfGMbaMtXnpFDQae0UUGhStpYVGrCYNhaH6YBGiFtsoVOlDYMpYQRAGUfrg7UHiY5/yPy351sy3u2bl7DNJJ3Gmk7PgY9/W3nN+397nnHSmfX0tYmJPTqD9w49pyTq0b+eAfHKimKqw0KMaBC7ue0JlDYAAOTf1onw9MxlKqKcMIPz4SH/UgHw+3yT09cQJAKTded4G7Ot5AywsTgBPw7YygPAbMeBMYbw3bgG788/v3qF1PP29AUnqiWcAIAluhX4akKauf/sVRvsFAtRzowMK+1J+pxwcq6s4lpMX9tafA4XdA/ogRC76YADzMAdzsQbGuS6Nsg9QvkFwkjpukDUAOrB3UEEAeHj/kJYU2q9N7JJXJp7SPBjCHMxBH9exBvBNwtuGBkAdN0Averi+a3XwQSmMYqfZzslfS5dl5VZZ7i8vysq3ZVm5dVV+/fSsTD67S3OQizmYi7aaMDyghgCY8OjvOgN0p0ZycnDPYH1XR+u3AurFZ4bkl88/lD+uL2j52+KCVMvn5J+lslQ/fkOFHORiDuaijrWwJtrcfYKjpCkoO34CeFSh8ZEdkn/6cbnxbkmqs8ekVHhS4Rl/Xruk8AyYghzkYg7mYg27poXl7cET0V0GjOQax3ZIrp85JMsXXpWbZ49Idfa4/H7tovz9ZTm83v69eVl+mjshizOTmoNczMFcrMHdpwFJ8F1jAI89ju3F6aL8MPeW3Jl9PfyD5vvz07J8YUqmxvrlxumSCvXvzr8sX8wc0RzkYg7mYg29BRq3A+EBzOeD/Tui47cA//VG6Oqlk7qj37x3VK6eLMqVYwdkYXpCoa2+evuofPbmYc1B7o8fndK5dz44XS8b69FIngCKxnXcAB/vnFoVq0Kh0KSQGIvV1fBHkBfGjpd+TlVYJxa1mq6jqtX0ObR85f1QhryHjc0wwP9JTG2KAYRvaHsbUKs17T7KYNTDxmacAH/0t/IWaNsAfnDp0NKai2k1hv6+e/ce6PZt6atUpO/uXX1D4FWJEkKfyuZD6AMUxX7f9vnM8eNerYIgMUiO+z5KP8TC8cIbJgR4e1HMtzBeZp0gO4aSfX7cqlUAIg0QShtPvECIF48TYSFtvp/jZUGZa9ei0tZqFYBIA4TSxvXY8wJQtx+OPhhg+2L5zAOgraNkPuucY/tsv1WrAEQaIMUclFb6wQChcPEWmnX221wIYx7azMeDjeKDrlWfVQCNhYWzsLbPtlmnmmBgBkE9DOvWMO5a0pzG7lsY/8T3/UkKoLEgFGGTlDa+BoggBGuArDEAJQ1w0FpvrGPhvAG+tHnsC6Cx8EBJSjUAF2xhWhlg8znH50YM8PIGJOUG0Fh4oI2qCYgwSVBso4zlJygNzvf5NhRAYzE/Py+QB/NinpdeqN9Jyu4+x5jPOTbfthvz0uBisqYF0Fh4oI0K5vAWid0q+rA0BqBtc9kOt0mlEsY9lG/70vcF0Fh4oI2KAISJSQErlVD34z6HIlQSHJWWE0CzyCKLLLLIIossssgiiyyyyCKLLLYq2v5xFd8KbeaPn/93tG2A+e0f2n4G2BOwFf8BYquj7RPgboGuN8B+oWm/zLSyYz5Pvy22sl+lr+e3g05HDMwKY7FxhbC/E7CkEXY8yZBOB0FigFRsvAnQw9GE2DjU6SBIDJCKja8BtKC2r5sNiMFZMQelFR5yFJ/2rfqsOn0A9AQQxsLaNvvsGEUQD+rf/zF1hQEWMKbYOEE8sC99H+uPjAEenPKgFtgraaxrDPBg65WH8m3blzTWcQPsr8Rp8r8qUx4oSRbcm9E1Bniw9SoJyu90zxtgQSkPbnNs2e4J+A+WDG5eCmh30gAAAABJRU5ErkJggg==';
+const HB = { on: false, me: false, ctl: '', rp: null, vis: false, x: 0, y: 0, z: 0, yaw: 0, pitch: 0, vx: 0, vz: 0, k: 0, mode: '', t: 0, tgt: '', anger: 0, undo: [], signs: [], msgT: 30, sendT: 0, seenT: 0, atkT: 0, tgtT: 0, goal: null, act: null, stormT: 0, hidFor: 0, scareT: 0, lx: 0, lz: 0, whT: 8, hbT: 0, started: 0 };
+const HB_SAY = ['Ich beobachte dich.', 'Du bist nicht allein.', 'Dreh dich nicht um …', '{n}.', '{n} … ich sehe dich.', 'Warum bist du hier?', 'Diese Welt gehört mir.', 'Es gibt kein Entkommen.', 'Hinter dir.', 'Ich war schon immer hier.', 'Lauf, {n}.', 'Du hättest mich nicht rufen sollen.', 'Ich kenne deinen Namen, {n}.', '…', 'Bald.', 'Schläfst du gut, {n}?', 'Hast du meine Fackeln gesehen?', 'Es ist so still hier.'];
+const HB_SAY_ANGRY = ['DAS WAR EIN FEHLER.', 'Du wirst es bereuen, {n}!', 'Jetzt gehörst du mir.', 'LAUF!', 'Du kannst mich nicht töten.', 'Das tat nicht weh.'];
+const HB_SIGNS = [['ICH SEHE', 'DICH'], ['HINTER', 'DIR'], ['LAUF', '', '', ''], ['{n}', '', 'ist bald', 'allein'], ['HERO', 'WAR HIER'], ['ES GIBT', 'KEIN', 'ENTKOMMEN'], ['DREH DICH', 'NICHT UM']];
+const HB_NOGROUND = new Set(Object.keys(ID).filter((k) => /(^|_)(log|wood|leaves|stem|planks|fence|sign)/.test(k)).map((k) => ID[k]));
+const hbRand = (a) => a[(Math.random() * a.length) | 0];
+const hbName = (s) => String(s || '').replace(/[<>\u0000-\u001f]/g, '').slice(0, 24);
+const hbSay = (t, who) => { const n = who || (HB.tgt || 'du'); t = t.replace(/\{n\}/g, n); chatAdd('Herobrine', t, 'hb'); if (HB.me && mp.on) mpSend('hb', { a: 'say', t }); };
+function hbPlayers() {                                                   // Spieler in der Oberwelt (nur Position, sichtbar für die KI)
+  const out = [];
+  if (world && world.dim === 0) out.push({ name: mp.on ? mp.name : (mpCfg.name || 'Du'), p: P.p, me: true, yaw: P.yaw, pitch: P.pitch });
+  if (mp.on) for (const rp of mp.players.values()) if (rp.have && (rp.dim || 0) === 0 && rp.mode !== 'spectator') out.push({ name: rp.name, p: rp.target, me: false, yaw: rp.tyaw, pitch: rp.pitch });
+  return out;
+}
+function hbGround(x, z) {                                                // y der ersten freien Zelle über festem Boden (Bäume/Laub zählen nicht), -1 = unbekannt
+  x = Math.floor(x); z = Math.floor(z); if (!world.getChunk(x >> 4, z >> 4)) return -1;
+  let y = Math.min(world.buildLimit() - 2, colTopY(x, z) + 1);
+  for (let i = 0; i < 80 && y > 1; i++, y--) { const b = world.getBlock(x, y - 1, z); if (b > 0 && BLOCKS[b].solid && BLOCKS[b].opaque !== false && !HB_NOGROUND.has(b) && !BLOCKS[b].liquid) return y; if (b === ID.water || (b > 0 && BLOCKS[b].liquid)) return -1; }
+  return -1;
+}
+function hbSet(x, y, z, id) {                                            // Welt verändern (rückgängig machbar, schützt Kisten, Betten, Türen, Schilder …)
+  const b = world.getBlock(x, y, z); if (b < 0 || b === id || y < 2 || y >= world.buildLimit() - 2 || boss.on) return false;
+  if (b > 0) { const B = BLOCKS[b]; if (B.container || B.loot || B.bed || B.door || B.spawner || B.sign || B.liquid || b === ID.bedrock || b === ID.obsidian || b === ID.fire) return false; }
+  if (HB.undo.length < 9000) HB.undo.push([x, y, z, b]);
+  world.setBlock(x, y, z, id); return true;
+}
+function hbUndo() {
+  let n = 0; for (let i = HB.undo.length - 1; i >= 0; i--) { const [x, y, z, b] = HB.undo[i]; if (world.getBlock(x, y, z) >= 0) { world.setBlock(x, y, z, b); n++; } }
+  HB.undo = []; for (const k of HB.signs) { const q = k.split(','); signRemove(+q[0], +q[1], +q[2]); } HB.signs = [];
+  return n;
+}
+// ---------- Beschwören / Beenden ----------
+const hbIsRedTorch = (b) => b === ID.redstone_torch || (b > 0 && BLOCKS[ID.redstone_torch].wallIds.includes(b));
+function hbShrineAt(nx, ny, nz) {                                        // Netherrack-Zelle: Gold 3×3 darunter, 4 Redstone-Fackeln ringsum
+  if (world.getBlock(nx, ny, nz) !== ID.netherrack) return false;
+  for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) if (world.getBlock(nx + dx, ny - 1, nz + dz) !== ID.gold_block) return false;
+  for (const [dx, dz] of DIRS4) if (!hbIsRedTorch(world.getBlock(nx + dx, ny, nz + dz))) return false;
+  return true;
+}
+function hbAfterTorch(x, y, z) {                                         // letzte Fackel gesetzt: brennt schon ein Netherrack daneben?
+  for (const [dx, dz] of DIRS4) { const nx = x + dx, nz = z + dz; if (world.getBlock(nx, y, nz) === ID.netherrack && world.getBlock(nx, y + 1, nz) === ID.fire) hbShrineCheck(nx, y, nz); }
+}
+function hbShrineCheck(nx, ny, nz) {                                     // nach dem Anzünden des Netherracks
+  if (!hbShrineAt(nx, ny, nz) || world.dim !== 0) return;
+  if (HB.on) { toast('Herobrine ist schon hier …'); return; }
+  strikeLightning(nx + 0.5, nz + 0.5, false); setTimeout(() => strikeLightning(nx + 0.5, nz + 0.5, false), 700);
+  hbBegin(mp.on ? mp.name : (mpCfg.name || 'Du'), nx + 0.5, ny, nz + 0.5, true);
+}
+function hbEnsureRp() {
+  if (HB.rp) return;
+  const rp = new RemotePlayer('herobrine', 'Herobrine', 0); rp.setSkin({ kind: 'data', data: HB_SKIN }, false); rp.have = false; rp.group.visible = false; HB.rp = rp;
+}
+function hbBegin(ctl, x, y, z, mine) {
+  if (HB.on) return; hbEnsureRp();
+  Object.assign(HB, { lastRx: performance.now(), on: true, me: !!mine, ctl, vis: false, k: HB.k, mode: 'appear', t: 0, anger: 0, tgt: '', msgT: 18 + Math.random() * 14, goal: null, act: null, stormT: 0, hbT: 0, started: performance.now(), x, y, z });
+  if (HB.rp) { HB.rp.have = false; HB.rp.group.visible = false; }
+  chatSys('Herobrine ist beigetreten'); if (mp.on && mp.tab) renderTabList();
+  if (mine) { mpSend('hb', { a: 'start', n: ctl, x: r2(x), y: r2(y), z: r2(z) }); hbToneStart(); }
+  else hbToneStart();
+}
+function hbEnd(remote, byName) {
+  if (!HB.on) return;
+  HB.on = false; HB.me = false; HB.vis = false; HB.mode = ''; HB.act = null;
+  if (HB.rp) { HB.rp.have = false; HB.rp.group.visible = false; }
+  if (HB.storm && weather.override && weather.override.hb) weather.override = null; HB.storm = false;
+  chatSys('Herobrine hat das Spiel verlassen' + (byName ? ' (gestoppt von ' + byName + ')' : '')); if (mp.on && mp.tab) renderTabList();
+  tone(180, 60, 1.2, 'sine', 0.1);
+}
+function hbToneStart() { tone(80, 40, 2.4, 'sawtooth', 0.08); for (let i = 0; i < 3; i++) setTimeout(() => tone(60 + i * 8, 50, 0.9, 'sine', 0.12), i * 700); }
+function hbWhisper(near) { const a = near ? 0.09 : 0.04; noise(1.1, 1900, 'bandpass', a); setTimeout(() => noise(0.7, 2600, 'bandpass', a * 0.7), 450); }
+function hbScareSound() { noise(0.35, 5200, 'highpass', 0.18); tone(920, 160, 0.5, 'sawtooth', 0.12); tone(1380, 220, 0.4, 'square', 0.06); }
+// ---------- Wirkung für alle (Atmosphäre) ----------
+const HB_SKY = new THREE.Color(0.09, 0.05, 0.07), HB_CLOUD = new THREE.Color(0.25, 0.2, 0.22);
+function hbSkyTint() {
+  if (!(HB.k > 0.001) || !world || world.dim !== 0) return;
+  tmpCol.copy(HB_SKY); skyCol.lerp(tmpCol, 0.6 * HB.k); cloudMat.color.lerp(HB_CLOUD, 0.55 * HB.k);
+  uni.uDay.value = Math.max(0.3, uni.uDay.value * (1 - 0.45 * HB.k));
+}
+function hbFx(k, x, y, z) {                                              // Effekte, die alle sehen/hören
+  const d = Math.hypot(x - P.p.x, z - P.p.z);
+  if (k === 'vanish') { for (let i = 0; i < 28; i++) emitFx(x + (Math.random() - 0.5) * 0.8, y + Math.random() * 2, z + (Math.random() - 0.5) * 0.8, new THREE.Color(0.9, 0.9, 0.95), (Math.random() - 0.5) * 1.5, 0.8 + Math.random(), (Math.random() - 0.5) * 1.5, 1.2, 0.1, 1.4); if (d < 60) hbWhisper(d < 14); }
+  else if (k === 'scare') { if (d < 40) { weather.flash = 0.9; hbScareSound(); } }
+  else if (k === 'whisper') { if (d < 70) hbWhisper(d < 12); }
+  else if (k === 'storm') { weather.override = { kind: 'thunder', until: gameTime + 60, hb: true }; HB.storm = true; }
+  else if (k === 'calm') { if (weather.override && weather.override.hb) weather.override = null; HB.storm = false; }
+}
+function hbHurtMe(p) {                                                   // Schaden von Herobrine (vom Steuerer an genau diesen Spieler geschickt)
+  mp.lastHit = { by: 'Herobrine', t: Date.now() };
+  hurt(Math.min(12, +p.d || 4)); P.v.x += +p.kx || 0; P.v.z += +p.kz || 0; P.v.y = Math.max(P.v.y, +p.ky || 0); P.shake = Math.max(P.shake || 0, 0.8); weather.flash = Math.max(weather.flash, 0.4);
+}
+function hbHarm(pl, d) {
+  const dx = pl.p.x - HB.x, dz = pl.p.z - HB.z, l = Math.hypot(dx, dz) || 1, kx = dx / l * 7, kz = dz / l * 7;
+  if (pl.me) hbHurtMe({ d, kx, kz, ky: 5 }); else mpSend('hb', { a: 'dmg', to: pl.name, d, kx: r2(kx), kz: r2(kz), ky: 5 });
+}
+function hbOnHit(by) {                                                   // jemand hat Herobrine geschlagen (nur der Steuerer wertet aus)
+  if (!HB.me || !HB.on || performance.now() - HB.lastHitAt < 600) return; HB.lastHitAt = performance.now();
+  HB.anger++; HB.tgt = by || HB.tgt; spawnParticles(HB.x - 0.5, HB.y + 0.8, HB.z - 0.5, new THREE.Color(1, 1, 1), 10, 3, 0.5);
+  if (Math.random() < 0.6) hbSay(hbRand(HB_SAY_ANGRY), HB.tgt);
+  if (HB.anger >= 2 && HB.mode !== 'chase') hbMode('chase'); else if (HB.mode !== 'chase') { hbVanish(); }
+}
+
+// ---------- KI (nur beim Steuerer) ----------
+const _hbO = new THREE.Vector3(), _hbD = new THREE.Vector3();
+function hbMode(m) { HB.mode = m; HB.t = 0; HB.goal = null; HB.seenT = 0; HB.hold = 9 + Math.random() * 8; }
+function hbFace(p) { HB.yaw = Math.atan2(-(p.x - HB.x), -(p.z - HB.z)); HB.pitch = Math.max(-0.6, Math.min(0.6, Math.atan2((p.y + 1.6) - (HB.y + 1.6), Math.hypot(p.x - HB.x, p.z - HB.z) || 1))); }
+function hbPlace(x, z) { const y = hbGround(x, z); if (y < 0) return false; HB.x = x; HB.y = y; HB.z = z; HB.vx = HB.vz = 0; return true; }
+function hbSees(pl) {                                                    // schaut der Spieler Herobrine an (mit freier Sicht)?
+  const dx = HB.x - pl.p.x, dy = HB.y + 1.2 - (pl.p.y + 1.6), dz = HB.z - pl.p.z, d = Math.hypot(dx, dy, dz); if (d < 1 || d > 70) return false;
+  const cp = Math.cos(pl.pitch || 0), fx = -Math.sin(pl.yaw || 0) * cp, fy = Math.sin(pl.pitch || 0), fz = -Math.cos(pl.yaw || 0) * cp;
+  if ((dx * fx + dy * fy + dz * fz) / d < 0.93) return false;
+  if (pl.me) { _hbO.set(pl.p.x, pl.p.y + EYE, pl.p.z); _hbD.set(dx / d, dy / d, dz / d); const h = raycastBlocks(_hbO, _hbD, d); if (h && h.dist < d - 1.5) return false; }
+  return true;
+}
+function hbVanish() {                                                    // verschwindet im Rauch, tut unsichtbar etwas, kommt später wieder
+  if (HB.vis) { hbFx('vanish', HB.x, HB.y, HB.z); if (mp.on) mpSend('hb', { a: 'fx', k: 'vanish', x: r2(HB.x), y: r2(HB.y), z: r2(HB.z) }); }
+  HB.vis = false; hbMode('hidden'); HB.hidFor = 4 + Math.random() * 6; HB.act = null; HB.didAct = false;
+}
+function hbPickNext(tg) {                                                // nächster sichtbarer Auftritt
+  const r = Math.random(), a = HB.anger;
+  if (a >= 3) return hbMode('chase');
+  if (r < 0.22 + 0.1 * a) return hbMode('lurk');
+  if (r < 0.34 + 0.1 * a) return hbMode('barrage');
+  if (r < 0.5) return hbMode('walk');
+  return hbMode('stalk');
+}
+function hbStep(dt, speed, gx, gz) {                                     // laufen (am Boden entlang, steigt Hänge hinauf)
+  const dx = gx - HB.x, dz = gz - HB.z, d = Math.hypot(dx, dz); if (d < 0.05) { HB.vx = HB.vz = 0; return d; }
+  const s = Math.min(d, speed * dt), nx = HB.x + dx / d * s, nz = HB.z + dz / d * s, gy = hbGround(nx, nz);
+  if (gy < 0) { HB.vx = HB.vz = 0; return d; }
+  HB.x = nx; HB.z = nz; HB.y += (gy - HB.y) * Math.min(1, dt * 14); if (Math.abs(gy - HB.y) < 0.05) HB.y = gy;
+  HB.vx = dx / d * speed; HB.vz = dz / d * speed; HB.yaw = Math.atan2(-dx, -dz); return d - s;
+}
+// --- Aktionen im Verborgenen ---
+function hbNear(tp, rMin, rMax) { const a = Math.random() * Math.PI * 2, r = rMin + Math.random() * (rMax - rMin); return [Math.floor(tp.x + Math.cos(a) * r), Math.floor(tp.z + Math.sin(a) * r)]; }
+function hbActTorch(tp) {
+  for (let i = 0; i < 6; i++) { const [x, z] = hbNear(tp, 6, 18), y = hbGround(x, z); if (y > 0 && world.getBlock(x, y, z) === AIR && hbSet(x, y, z, ID.redstone_torch)) return true; }
+  return false;
+}
+function hbActBreakTorches(tp) {
+  let n = 0; const R = 12, cx = Math.floor(tp.x), cy = Math.floor(tp.y), cz = Math.floor(tp.z);
+  for (let y = cy - 4; y <= cy + 6 && n < 5; y++) for (let z = cz - R; z <= cz + R && n < 5; z++) for (let x = cx - R; x <= cx + R && n < 5; x++) {
+    const b = world.getBlock(x, y, z); if (b > 0 && BLOCKS[b].torch && !hbIsRedTorch(b) && hbSet(x, y, z, AIR)) n++;
+  }
+  return n > 0;
+}
+function hbActSign(tp) {
+  for (let i = 0; i < 6; i++) {
+    const [x, z] = hbNear(tp, 5, 14), y = hbGround(x, z); if (y < 0 || world.getBlock(x, y, z) !== AIR) continue;
+    const dx = tp.x - (x + 0.5), dz = tp.z - (z + 0.5), n = Math.abs(dx) > Math.abs(dz) ? (dx > 0 ? 1 : 3) : (dz > 0 ? 2 : 0);
+    if (!hbSet(x, y, z, SIGN_IDS[n])) continue;
+    const txt = hbRand(HB_SIGNS).map((l) => l.replace(/\{n\}/g, HB.tgt.toUpperCase().slice(0, 15))), key = ckeyOf(x, y, z);
+    signSetKey(key, txt); mpSaveSign(x, y, z, signClean(txt)); HB.signs.push(x + ',' + y + ',' + z); return true;
+  }
+  return false;
+}
+function hbActTunnel(tp) {                                               // 1×2-Tunnel, schnurgerade, mit Redstone-Fackeln
+  for (let tries = 0; tries < 6; tries++) {
+    const [sx, sz] = hbNear(tp, 12, 26), g0 = hbGround(sx, sz); if (g0 < 0) continue;
+    const [dx, dz] = hbRand(DIRS4), L = 16 + ((Math.random() * 22) | 0), y0 = g0 - 3; let n = 0, i = 0;
+    for (; i < L; i++) {
+      const x = sx + dx * i, z = sz + dz * i, g = hbGround(x, z); if (g < 0 || g <= y0 + 2) break;                 // Hang zu Ende / Chunk fehlt: aufhören
+      for (const y of [y0, y0 + 1]) { const b = world.getBlock(x, y, z); if (b > 0 && hbSet(x, y, z, AIR)) n++; }
+      if (i % 7 === 3 && world.getBlock(x, y0 - 1, z) > 0 && BLOCKS[world.getBlock(x, y0 - 1, z)].solid) hbSet(x, y0, z, ID.redstone_torch);
+    }
+    if (n > 8) return true;
+  }
+  return false;
+}
+function hbActPyramid(tp) {
+  for (let tries = 0; tries < 6; tries++) {
+    const [cx, cz] = hbNear(tp, 12, 26), gy = hbGround(cx, cz); if (gy < 0) continue;
+    for (let L = 0; L < 3; L++) { const h = 2 - L; for (let z = -h; z <= h; z++) for (let x = -h; x <= h; x++) hbSet(cx + x, gy + L, cz + z, ID.sandstone); }
+    for (let z = -2; z <= 2; z++) for (let x = -2; x <= 2; x++) { for (let y = gy - 1; y >= gy - 3; y--) { const b = world.getBlock(cx + x, y, cz + z); if (b > 0 && BLOCKS[b].solid) break; if (b === AIR) hbSet(cx + x, y, cz + z, ID.sandstone); } }
+    hbSet(cx, gy + 3, cz, ID.redstone_torch); return true;
+  }
+  return false;
+}
+function hbActTower(tp) {
+  for (let tries = 0; tries < 6; tries++) {
+    const [cx, cz] = hbNear(tp, 12, 26), gy = hbGround(cx, cz); if (gy < 0) continue;
+    const H = 8 + ((Math.random() * 8) | 0);
+    for (let z = 0; z < 2; z++) for (let x = 0; x < 2; x++) for (let y = 0; y < H; y++) hbSet(cx + x, gy + y, cz + z, ID.cobble);
+    hbSet(cx, gy + H, cz, ID.redstone_torch); hbSet(cx + 1, gy + H, cz + 1, ID.redstone_torch); return true;
+  }
+  return false;
+}
+function hbActMobs(tp) {
+  const n = 2 + ((Math.random() * 3) | 0), [x, z] = hbNear(tp, 9, 16), y = hbGround(x, z); if (y < 0) return false;
+  const t = hbRand(['zombie', 'skeleton', 'zombie', 'spider']); if (!MOBTYPES[t]) return false;
+  strikeLightning(x + 0.5, z + 0.5, false);
+  const c = { k: 'summon', t, n, x: x + 0.5, y, z: z + 0.5 }; if (!mp.on || isHost()) hostCommand(c); else mpSend('cmd', c);
+  return true;
+}
+function hbHiddenAct(tg) {                                               // zufällige Aktion, gewichtet
+  const tp = tg.p, r = Math.random(), a = HB.anger;
+  if (r < 0.2) return hbActTunnel(tp);
+  if (r < 0.34) return hbActPyramid(tp);
+  if (r < 0.46) return hbActTower(tp);
+  if (r < 0.62) return hbActTorch(tp);
+  if (r < 0.74) return hbActSign(tp);
+  if (r < 0.84) return hbActBreakTorches(tp);
+  if (r < 0.9 + 0.05 * a) return hbActMobs(tp);
+  const [x, z] = hbNear(tp, 7, 14); strikeLightning(x, z, false); return true;
+}
+function hbAI(dt) {
+  if (boss.on || !world || world.dim !== 0) { HB.vis = false; return; }
+  const pls = hbPlayers(); if (!pls.length) { HB.vis = false; return; }
+  HB.t += dt; HB.tgtT -= dt;
+  let tg = pls.find((q) => q.name === HB.tgt); if (!tg || HB.tgtT <= 0) { tg = hbRand(pls); HB.tgt = tg.name; HB.tgtT = 50 + Math.random() * 60; }
+  const tp = tg.p;
+  HB.msgT -= dt; if (HB.msgT <= 0) { HB.msgT = 26 + Math.random() * 50; if (HB.mode !== 'appear') hbSay(hbRand(HB_SAY), tg.name); }
+  HB.whT -= dt; if (HB.whT <= 0) { HB.whT = 10 + Math.random() * 18; hbFx('whisper', tp.x, tp.y, tp.z); if (mp.on) mpSend('hb', { a: 'fx', k: 'whisper', x: r2(tp.x), y: r2(tp.y), z: r2(tp.z) }); }
+  const dist = Math.hypot(tp.x - HB.x, tp.z - HB.z);
+  let nearest = 999; for (const q of pls) nearest = Math.min(nearest, Math.hypot(q.p.x - HB.x, q.p.z - HB.z));
+  const watched = () => pls.some((q) => hbSees(q));
+  switch (HB.mode) {
+    case 'appear': {                                                     // Schrein-Zauber, dann erscheint er in der Ferne
+      if (HB.t > 4.5) { const [x, z] = hbNear(tp, 24, 34); if (hbPlace(x, z)) { HB.vis = true; hbFace(tp); hbFx('vanish', HB.x, HB.y, HB.z); if (mp.on) mpSend('hb', { a: 'fx', k: 'vanish', x: r2(HB.x), y: r2(HB.y), z: r2(HB.z) }); hbSay('Du hast mich gerufen.', tg.name); hbMode('stalk'); HB.t = 0; } else HB.t = 4; }
+      break;
+    }
+    case 'stalk': case 'walk': {
+      HB.vis = true;
+      if (HB.mode === 'stalk') { hbFace(tp); HB.vx = HB.vz = 0; }
+      else {
+        if (!HB.goal || HB.t % 5 < dt) { const a = Math.atan2(HB.z - tp.z, HB.x - tp.x) + (Math.random() < 0.5 ? 1 : -1) * (0.6 + Math.random() * 0.6); HB.goal = [tp.x + Math.cos(a) * 22, tp.z + Math.sin(a) * 22]; }
+        if (hbStep(dt, 3.4, HB.goal[0], HB.goal[1]) < 1) HB.goal = null;
+      }
+      if (nearest < 12) { hbVanish(); break; }
+      if (watched()) HB.seenT += dt; else HB.seenT = Math.max(0, HB.seenT - dt * 0.5);
+      if (HB.seenT > 3.2) { hbVanish(); break; }
+      if (dist > 70) { const [x, z] = hbNear(tp, 24, 34); hbPlace(x, z); }
+      if (HB.t > (HB.mode === 'walk' ? 9 : HB.hold)) { if (HB.mode === 'stalk' && Math.random() < 0.35) hbMode('walk'); else hbVanish(); }
+      break;
+    }
+    case 'hidden': {
+      HB.vis = false;
+      if (!HB.didAct && HB.t > 0.8) { HB.didAct = true; try { hbHiddenAct(tg); } catch (e) { /* egal */ } }
+      if (HB.t > HB.hidFor) hbPickNext(tg);
+      break;
+    }
+    case 'lurk': {                                                       // taucht hinter dem Spieler auf
+      if (!HB.goal) {
+        const bx = Math.sin(tg.yaw || 0), bz = Math.cos(tg.yaw || 0), far = Math.random() < 0.7, d = far ? 10 + Math.random() * 3 : 3.2;     // yaw: Blick = (-sin, -cos) → hinten = (+sin, +cos)
+        if (!hbPlace(tp.x + bx * d + (Math.random() - 0.5) * 3, tp.z + bz * d + (Math.random() - 0.5) * 3)) { hbVanish(); break; }
+        HB.goal = [far ? 0 : 1]; HB.vis = true; hbFace(tp);
+        if (!far) { weather.flash = 0.7; hbScareSound(); if (mp.on) mpSend('hb', { a: 'fx', k: 'scare', x: r2(HB.x), y: r2(HB.y), z: r2(HB.z) }); hbSay(hbRand(['Hinter dir.', 'Hab ich dich?', '{n}.']), tg.name); }
+        else if (Math.random() < 0.5) hbSay(hbRand(['Dreh dich um.', 'Hinter dir, {n}.']), tg.name);
+      }
+      hbFace(tp);
+      if (watched()) HB.seenT += dt; if (HB.seenT > 1.0 || HB.t > (HB.goal[0] ? 1.2 : 6)) { if (HB.seenT > 0.2 && !HB.goal[0]) { weather.flash = 0.8; hbScareSound(); if (mp.on) mpSend('hb', { a: 'fx', k: 'scare', x: r2(HB.x), y: r2(HB.y), z: r2(HB.z) }); } hbVanish(); }
+      break;
+    }
+    case 'barrage': {                                                    // Blitzhagel rund um den Spieler
+      HB.vis = false;
+      if (!HB.goal) { HB.goal = [0]; hbSay(hbRand(['Hör auf!', 'Genug!', 'ZITTERE.']), tg.name); }
+      HB.goal[0] += dt; if (HB.goal[0] > 0.55 && HB.t < 6) { HB.goal[0] = 0; const [x, z] = hbNear(tp, 4, 9); strikeLightning(x, z, false); }
+      if (HB.t > 5.5) hbVanish();
+      break;
+    }
+    case 'chase': {                                                      // jagt den Spieler und schlägt zu
+      if (!HB.goal) { HB.goal = [1]; HB.vis = true; if (!hbPlace(tp.x + (Math.random() - 0.5) * 30, tp.z + 18 + Math.random() * 10)) hbPlace(tp.x - 22, tp.z - 22); hbFx('storm'); if (mp.on) mpSend('hb', { a: 'fx', k: 'storm' }); hbSay(hbRand(HB_SAY_ANGRY), tg.name); HB.atkT = 0; }
+      HB.vis = true; hbFace(tp); const left = hbStep(dt, 7.2, tp.x, tp.z);
+      HB.atkT -= dt;
+      for (const q of pls) { const dd = Math.hypot(q.p.x - HB.x, q.p.z - HB.z); if (dd < 2.4 && Math.abs(q.p.y - HB.y) < 2.4 && HB.atkT <= 0) { HB.atkT = 1.0; hbHarm(q, 5); if (HB.rp) HB.rp.swing = 1; noise(0.18, 600, 'bandpass', 0.25); } }
+      void left;
+      if (HB.t > 16 || dist > 80) { HB.anger = Math.max(0, HB.anger - 2); hbFx('calm'); if (mp.on) mpSend('hb', { a: 'fx', k: 'calm' }); hbSay(hbRand(['Wir sehen uns wieder.', 'Das war erst der Anfang.', '…']), tg.name); hbVanish(); }
+      break;
+    }
+    default: hbMode('stalk');
+  }
+  if (!['hidden', 'barrage'].includes(HB.mode) && HB.vis && HB.mode !== 'chase') HB.whT = Math.max(HB.whT, 2);
+}
+function hbSendState(dt) {
+  HB.sendT -= dt; if (HB.sendT > 0 || !mp.on) return; HB.sendT = 0.15;
+  mpSend('hb', { a: 'st', x: r2(HB.x), y: r2(HB.y), z: r2(HB.z), yw: r2(HB.yaw), pt: r2(HB.pitch), v: HB.vis ? 1 : 0, vx: r2(HB.vx), vz: r2(HB.vz), m: HB.mode === 'chase' ? 1 : 0 });
+}
+function hbRecv(p, from) {
+  if (!p || !p.a) return;
+  const s = mp.players.get(from), name = s ? s.name : '';
+  switch (p.a) {
+    case 'start': if (!HB.on && world && world.dim >= 0) hbBegin(hbName(p.n || name), +p.x || 0, +p.y || 0, +p.z || 0, false); break;
+    case 'stop': if (HB.on && (name === HB.ctl || isOp(name) || isAdminName(name) || isOwnerName(name))) hbEnd(true, name); break;
+    case 'st': if (!HB.on || HB.me || name !== HB.ctl) break; HB.x = +p.x || 0; HB.y = +p.y || 0; HB.z = +p.z || 0; HB.yaw = +p.yw || 0; HB.pitch = +p.pt || 0; HB.vis = !!p.v; HB.vx = +p.vx || 0; HB.vz = +p.vz || 0; HB.mode = p.m ? 'chase' : 'x'; HB.lastRx = performance.now(); break;
+    case 'say': if (HB.on && name === HB.ctl) chatAdd('Herobrine', String(p.t || '').slice(0, 140), 'hb'); break;
+    case 'fx': if (HB.on && name === HB.ctl) hbFx(String(p.k), +p.x || 0, +p.y || 0, +p.z || 0); break;
+    case 'dmg': if (HB.on && name === HB.ctl && p.to === mp.name) hbHurtMe(p); break;
+    case 'hit': if (HB.on && HB.me) hbOnHit(name); break;
+    case 'undo': if (HB.me && (isOp(name) || isAdminName(name) || isOwnerName(name))) { const n = hbUndo(); chatSys('Herobrines Veränderungen rückgängig gemacht (' + n + ' Blöcke).'); } break;
+  }
+}
+function hbReset() { if (HB.on) { HB.on = false; HB.me = false; HB.vis = false; if (HB.rp) { HB.rp.have = false; HB.rp.group.visible = false; } } HB.undo = []; HB.signs = []; HB.storm = false; HB.k = 0; }
+function hbTick(dt) {
+  HB.k += ((HB.on ? (HB.mode === 'chase' ? 1 : 0.7) : 0) - HB.k) * Math.min(1, dt * 0.5); if (HB.k < 0.002 && !HB.on) HB.k = 0;
+  if (!HB.on) return;
+  if (!world || state === 'menu' || state === 'loading') return;
+  if (HB.me) { hbAI(dt); hbSendState(dt); }
+  else if (HB.lastRx && performance.now() - HB.lastRx > 15000 && mp.on) { hbEnd(true); return; }                 // Steuerer weg / Verbindung tot
+  const rp = HB.rp; if (!rp) return;
+  const show = HB.vis && world.dim === 0;
+  if (show) {
+    rp.have = true; rp.dim = 0; rp.mode = 'survival'; rp.target.set(HB.x, HB.y, HB.z); rp.vel.set(HB.vx, 0, HB.vz); rp.tAt = performance.now(); rp.tyaw = HB.yaw; rp.pitch = HB.pitch;
+    if (!rp.p.lengthSq()) rp.p.copy(rp.target);
+    rp.update(dt, lerp(0.42, 1, env.dayF)); rp.group.visible = true;
+  } else rp.group.visible = false;
+}
+let hbFireT = 0;
+function fireTick(dt) {                                                  // Feuerblock verbrennt den Spieler
+  if (!world || state !== 'play' || isCreative()) return; hbFireT -= dt; if (hbFireT > 0) return; hbFireT = 0.6;
+  const x = Math.floor(P.p.x), y = Math.floor(P.p.y + 0.2), z = Math.floor(P.p.z);
+  if (world.getBlock(x, y, z) === ID.fire || world.getBlock(x, y + 1, z) === ID.fire) { hurt(2, true); sfx('hurt'); }
+}
+
+cmd(['herobrine', 'herobrien', 'herebrien'], {
+  desc: 'Herobrine (nur OPs): stop = jederzeit stoppen · undo = seine Bauwerke rückgängig machen · summon = ohne Schrein rufen · status. Beschwörung: Schrein bauen und Netherrack anzünden.', cheat: true, args: [T.opt('aktion', [['stop', 'Herobrine sofort stoppen'], ['undo', 'Veränderungen von Herobrine rückgängig'], ['summon', 'Herobrine ohne Schrein rufen'], ['status', 'Zustand']], true)],
+  run(a) {
+    const w = (a[0] || 'status').toLowerCase(), me = mp.on ? mp.name : (mpCfg.name || 'Du');
+    if (['stop', 'stopp', 'off', 'aus'].includes(w)) { if (!HB.on) fail('Herobrine ist nicht da.'); if (mp.on) mpSend('hb', { a: 'stop' }); hbEnd(false, mp.on ? me : ''); chatOk('Herobrine wurde gestoppt.'); }
+    else if (w === 'undo') { if (HB.me || !mp.on) { const n = hbUndo(); chatOk('Herobrines Veränderungen rückgängig gemacht (' + n + ' Blöcke).'); } else if (mp.on) { mpSend('hb', { a: 'undo' }); chatOk('Rückgängig-Befehl gesendet – das geht nur, solange der Beschwörer-Client noch läuft.'); } }
+    else if (w === 'summon' || w === 'start') { if (HB.on) fail('Herobrine ist schon da (/herobrine stop beendet ihn).'); if (world.dim !== 0) fail('Herobrine gibt es nur in der Oberwelt.'); hbBegin(me, P.p.x, P.p.y, P.p.z, true); chatOk('Herobrine erwacht …'); }
+    else if (w === 'status') chatAdd(null, 'Herobrine: ' + (HB.on ? 'AKTIV (Beschwörer ' + HB.ctl + ', Zorn ' + HB.anger + ', ' + HB.mode + ')' : 'nicht da') + ' · Rückgängig-Liste: ' + HB.undo.length + ' Blöcke', 'sys');
+    else fail('/herobrine stop | undo | summon | status');
+  },
+});
+window.__vc = { HB, hbHarm, hbAfterTorch, hbBegin, hbEnd, hbAI, hbShrineAt, hbShrineCheck, hbUndo, hbGround, hbActTunnel, hbActPyramid, hbActTower, hbActSign, hbActTorch, hbActBreakTorches, hbMode, hbVanish, hbSay, hbRecv, tpOffline, bossDown, bossRespawn, bossContain, bossLate, mpSend, signs, signOpen, signClose, signTick, signPlaced, signSetKey, signsPack, signRemove, containerLoad, SIGN_IDS, bookOpen, bookClose, bookSignStart, bookSignDo, bookGo, bookOf, getBK: () => BK, hasGlint, enchLines, placementFor, HW, hwApply, hwTick, hwPoll, boss, bossBegin, bossEnd, bossTick, bossPos, bossRp, bossStartAct, bossDamage, bossPlayersAlive, bossLocked, BACT, blastAsk, askRealBlast, answerRealBlast, chainSet: (n, x, y, z) => { chainLocal = n; chainSum = [n * x, n * y, n * z]; }, blastQ, blastInfo: () => ({ tot: blastTot, done: blastDone, n: blastN, cur: !!blastCur }), bigSt, stepBlast, bigTick, perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>
