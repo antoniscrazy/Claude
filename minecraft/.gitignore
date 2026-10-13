@@ -1,0 +1,4 @@
+
+# Datei mit eingebautem Groq-Schlüssel (nie committen)
+index.keyed.html
+*.keyed.html
