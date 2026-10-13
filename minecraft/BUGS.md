@@ -278,3 +278,8 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * 🔧 **Intern: verdeckter Bot-Modus** für automatisierte Spieler (nur per URL-Parameter, in der Oberfläche nicht sichtbar): läuft ohne Darstellung mit festem 20-Ticks-Takt unabhängig von der Bildrate und wird über eine Programmierschnittstelle gesteuert, die dieselben Spielregeln nutzt wie normale Spieler (Reichweite, Abbauzeit, Schaden, Hunger, Rezepte) – siehe `tools/BOT_API.md`. Normale Spieler merken nichts davon.
 * `aiPath` (Wegfindung des `/ai`-Spielers) akzeptiert jetzt optional eine eigene Startposition/Kostenfunktion (für den Bot-Modus: ohne Graben); das Verhalten von `/ai` ist unverändert.
 
+## 2026-10-13.40
+
+* 🔌 **Beitreten bei „Realtime-Fehler: CHANNEL_ERROR“ / Zeitüberschreitung:** Das Spiel versucht es jetzt automatisch bis zu 3-mal (mit Pause, Statusmeldung „Verbindung wackelt – neuer Versuch …“) und räumt dazwischen die fehlgeschlagenen Kanäle weg; vorher blieb ein kaputter Kanal gleichen Namens zurück und löste bei jedem weiteren Versuch denselben Fehler aus, bis man die Seite neu lud. Außerdem werden vor jedem Beitritt übrig gebliebene Kanäle desselben Servers entfernt.
+* Ursache der Fehler selbst liegt bei Supabase Realtime (kurzzeitig abgelehnte Kanal-Beitritte); das lässt sich im Spiel nur abfangen, nicht beheben. Spieler, die schon drin sind, verbindet supabase-js bei Abbrüchen weiterhin selbst neu.
+
