@@ -7,11 +7,11 @@ Aufruf: `index.html?bot=1` (ohne den Parameter gibt es weder `window.BOT` noch i
 * **Gleiche Regeln wie ein Mensch:** die Aktionen setzen nur Blickrichtung + Bewegungs-/Klick-Eingaben (`BOTIN`, `mouse`) und laufen durch dieselbe Pipeline wie normale Spieler (`updatePlayer`, `updateInteraction`, `useItem`, `craft`): Reichweite (5, Kreativ 6), Abbauzeit je Werkzeug/Stufe, Schaden/Abklingzeit, Hunger/Sprinten, Rezepte mit Werkbank/Ofen in der Nähe, Bauhöhe, Boss-/Backrooms-Sperren. Kein Teleport, kein Fliegen, kein Graben beim Gehen, kein Gratis-Inventar. Keine Tasten-/Maus-DOM-Ereignisse.
 * **Mehrspieler:** weil es der normale Spieler ist, sehen alle Position, Schwingen, Essen, Schlafen, Rüstung, Blockänderungen, Chat und Tab-Eintrag.
 
-Alle Aktionen sind `async` und liefern `{ ok, reason?, … }`. Eine neue Aktion bricht die laufende ab (`BOT.cancel()`).
+Der Bot setzt sich nach Pausen (Verbindungsabbruch, fehlende Maus-Sperre, Fenster-Fokus) selbst fort. Synchron (liefern direkt ein Objekt, kein Promise): `chat`, `chats`, `look`, `hold`, `select`, `respawn`, `cancel`, `wake`, `inv`, `count`, `state`, `nearby`, `blockAt`, `ticks`. Alle anderen Aktionen sind `async` und liefern `{ ok, reason?, … }`. Eine neue Aktion bricht die laufende ab (`BOT.cancel()`).
 
 | Aufruf | Wirkung |
 |---|---|
-| `join({name, room, backend:'online'\|'local', create, seed, mode, dist, skin, token})` | Server beitreten/erstellen (wie das Menü) |
+| `join({name, room, backend:'online'\|'local', create, seed, mode, dist, skin, skinData, slim, token})` | Server beitreten/erstellen (wie das Menü) |
 | `single({seed, mode, dist})` | lokale Welt starten (Tests) |
 | `leave()`, `respawn()`, `cancel()`, `wait(sek)` | |
 | `goto(x,y,z,{range,timeout})` / `goto(x,null,z)` / `goto({x,y,z})` | A\*-Weg, nur Gehen/Springen/Fallen ≤ 3, öffnet Türen |

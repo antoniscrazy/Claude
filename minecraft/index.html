@@ -2047,7 +2047,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-13.40';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-10-13.41';            // Spielversion (nur Anzeige)
 // Verdeckter Bot-Modus (nur per URL ?bot=1, nirgends in der Oberfläche erwähnt): läuft ohne Darstellung mit festem 20-Ticks-Takt, Steuerung über window.BOT (siehe Abschnitt BOT)
 const botChat = [];
 const BOTMODE = /[?&]bot=1(?:&|#|$)/.test(location.search);
@@ -8747,14 +8747,14 @@ function setState(s) {
   updateTouchUI();
 }
 function lockPointer() {
-  if (touchMode) return;              // Touch-Geräte brauchen keinen Pointer-Lock
+  if (touchMode || BOTMODE) return;              // Touch-Geräte brauchen keinen Pointer-Lock
   // Ohne frischen Klick (z. B. nach dem Laden einer Mehrspieler-Welt) verweigert der Browser die Maus-Sperre –
   // das ist kein Grund zu pausieren: weiterspielen und per Klick ins Spiel die Maus fangen.
   const fail = () => { if (state === 'play' && !document.pointerLockElement) toast('Klicke ins Spiel, um die Maus zu steuern'); };
   try { const r = canvas.requestPointerLock && canvas.requestPointerLock(); if (r && r.catch) r.catch(fail); } catch (e) { fail(); }
 }
 document.addEventListener('pointerlockchange', () => {
-  if (!document.pointerLockElement && state === 'play') setState('pause');
+  if (!document.pointerLockElement && state === 'play' && !BOTMODE) setState('pause');
 });
 let lockErrN = 0;
 document.addEventListener('pointerlockerror', () => { if (state === 'play') toast(++lockErrN > 1 ? 'Der Browser sperrt die Maus nicht (Vorschau/Frame?). Öffne die Datei direkt im Browser – Pfeiltasten drehen die Kamera.' : 'Klicke ins Spiel, um die Maus zu steuern'); });
@@ -9061,7 +9061,7 @@ document.addEventListener('keydown', (e) => {
   if (e.code === 'F3' && state !== 'play') $('debug').classList.toggle('hidden');
 });
 document.addEventListener('keyup', (e) => { keys[e.code] = false; if (e.code === 'KeyR' && emote.wheel && !emote.sticky) { if (emote.sel < 0 && performance.now() - emote.openAt < 260 && !touchMode) emote.sticky = true; else closeWheel(true); } if (e.code === 'KeyW') P.dblW = 0; if (e.code === 'Tab' && mp.tab) { mp.tab = false; $('tablist').classList.add('hidden'); } });
-window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; mouse.left = mouse.right = false; if (state === 'play') setState('pause'); });
+window.addEventListener('blur', () => { if (BOTMODE) return; for (const k in keys) keys[k] = false; mouse.left = mouse.right = false; if (state === 'play') setState('pause'); });
 document.addEventListener('mousemove', (e) => {
   if (state !== 'play' || !document.pointerLockElement) return;
   if (Math.abs(e.movementX) > 300 || Math.abs(e.movementY) > 300) return; // Chrome-Ausreißer
@@ -9212,6 +9212,7 @@ function botFrame(dt) {
   } else simTick(dt);
   camera.position.set(P.p.x, P.p.y + EYE, P.p.z); camera.rotation.y = P.yaw; camera.rotation.x = P.pitch;
   updateEmote(dt); stepBuildJob(); stepBlast(); bigTick(); bossTick(dt); hwTick(dt); signTick(dt); hbTick(dt); fireTick(dt); aiTick(dt);
+  if (state === 'pause' && world && !mp.offline && $('credits').classList.contains('hidden') && $('blastAsk').classList.contains('hidden')) setState('play');          // der Bot hat keine Maus-Sperre/kein Fenster: nach Verbindungsabbruch o. Ä. selbst weiterspielen
   updateSky(((gameTime / DAY_LEN) % 1 + 1) % 1); applyWeatherSky();
 }
 const botWaiters = [];
@@ -15151,7 +15152,8 @@ const BOT = (() => {
       if (!/^[A-Za-z0-9_]{3,16}$/.test(o.name || '')) return { ok: false, reason: 'Name: 3–16 Zeichen (Buchstaben, Ziffern, _)' };
       if (!/^[a-z0-9_-]{2,24}$/.test(o.room || '')) return { ok: false, reason: 'Servername: 2–24 Zeichen (a–z, 0–9, - _)' };
       if (o.token) { try { localStorage.setItem(TOKEN_KEY, o.token); } catch (e) { /* egal */ } }
-      Object.assign(mpCfg, { name: o.name, room: o.room, backend: o.backend || 'online', create: !!o.create, skinKind: 'preset', skinName: o.skin || mpCfg.skinName || 'steve', slim: !!o.slim });
+      Object.assign(mpCfg, { name: o.name, room: o.room, backend: o.backend || 'online', create: !!o.create, skinKind: o.skinData ? 'data' : 'preset', skinName: o.skin || mpCfg.skinName || 'steve', slim: !!o.slim });
+      if (o.skinData) mpCfg.skinData = String(o.skinData);                // eigener Skin als PNG-Data-URL (64×64 / 64×32)
       mpSaveCfg();
       await mpJoin({ name: o.name, token: mpToken(), backend: mpCfg.backend, room: o.room, seed: o.seed || String(Math.floor(Math.random() * 1e9)), mode: o.mode || 'survival', create: !!o.create, pub: o.pub !== false, dist: o.dist || 4, skin: currentSkinSpec(), slim: mpCfg.slim });
       if (!(await until(() => state === 'play', 90000))) return { ok: false, reason: 'Laden dauert zu lange (Zustand: ' + state + ')' };

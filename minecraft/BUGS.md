@@ -283,3 +283,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * 🔌 **Beitreten bei „Realtime-Fehler: CHANNEL_ERROR“ / Zeitüberschreitung:** Das Spiel versucht es jetzt automatisch bis zu 3-mal (mit Pause, Statusmeldung „Verbindung wackelt – neuer Versuch …“) und räumt dazwischen die fehlgeschlagenen Kanäle weg; vorher blieb ein kaputter Kanal gleichen Namens zurück und löste bei jedem weiteren Versuch denselben Fehler aus, bis man die Seite neu lud. Außerdem werden vor jedem Beitritt übrig gebliebene Kanäle desselben Servers entfernt.
 * Ursache der Fehler selbst liegt bei Supabase Realtime (kurzzeitig abgelehnte Kanal-Beitritte); das lässt sich im Spiel nur abfangen, nicht beheben. Spieler, die schon drin sind, verbindet supabase-js bei Abbrüchen weiterhin selbst neu.
 
+## 2026-10-13.41
+
+* 🔧 **Intern (Bot-Modus):** Der Bot pausiert nicht mehr, wenn die Maus-Sperre fehlt, das Fenster den Fokus verliert oder die Verbindung kurz abbricht – er spielt danach selbst weiter. `BOT.join` nimmt einen eigenen Skin (`skinData`). Doku: welche Aufrufe synchron sind.
+
