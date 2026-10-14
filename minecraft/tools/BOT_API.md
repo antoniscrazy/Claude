@@ -43,3 +43,13 @@ Der Name ist an einen Browser-Schlüssel (Token) des Kontos gebunden – andere 
 ## Anti-Cheat (für alle anderen)
 
 Siehe Kommentar „ANTI-CHEAT“ in `index.html`: Selbstkontrolle (Flug/Tempo/Gott/Modus/Inventar/Schweben/Noclip/Reichweite), gegenseitige Kontrolle im Mehrspielermodus (auffällige Spieler werden ignoriert und von OPs/Besitzer rausgeworfen) und `window.__vc` nur lokal (Datei/localhost). Für Tests: `__vc.AC.off = true` schaltet die eigene Kontrolle lokal aus.
+
+## Selbstschutz und Aufgaben (2026-10-14.44)
+
+* **Auto-Respawn:** Stirbt der Bot, respawnt er nach ca. 2 s von selbst. Laufende Aktionen enden mit `{ok:false, died:true, reason:"tot …"}`; `BOT.state()` zeigt `deaths`. Mit **`BOT.run([{tool,args},…])`** laufen Aufgabenlisten, die beim Tod pausieren, nach dem Respawn denselben Schritt wiederholen (positionsbezogene Schritte laufen einfach weiter) und erst bei echtem Fehlschlag abbrechen.
+* **Selbstverteidigung:** Feindliche Mobs im Umkreis von `defendRange` (6) pausieren die laufende Aktion: der Bot nimmt die beste Waffe, kämpft und zieht sich bei wenig Leben (≤ 6, oder ≤ 10 bei 3+ Gegnern / Creeper nah) zurück. Im Kreativmodus aus. **Auto-Essen** bei Hunger ≤ 12 (wenn Nahrung da und kein Feind). `BOT.config({autoRespawn, autoDefend, autoEat, flee, defendRange})`.
+* **Schutz fremder Bauten:** `mine`/`gather` bauen keine Blöcke ab, die ein Spieler gesetzt hat (stehen in den Weltänderungen), außer eigenen Blöcken des Bots. Nur mit `{force:true}` und ausdrücklicher Erlaubnis. `BOT.isPlayerBuilt(x,y,z)` fragt ab.
+* **Bauen:** `BOT.shape(kind, {x,y,z,w,d,h,item,…})` liefert Zellenlisten (`floor, box, walls, line, pyramid, circle, cylinder, gable_roof, house`), `BOT.needs(cells)` prüft das Material, **`BOT.build(cells, {partial, replace, scaffold, cleanup, max})`** baut Ebene für Ebene mit kürzesten Wegen, beachtet die Blickrichtung (`facing: 'n'|'e'|'s'|'w'` für Treppen/Türen), baut bei Bedarf Gerüst (`BOT.pillar(n)` = springen und Block unter sich setzen) und räumt es wieder ab (`BOT.cleanup()`). Das Setzen prüft vorher exakt dieselbe Sichtlinie wie das Spiel und steht nie im Zielfeld.
+* **Weitere Werkzeuge:** `gather(was, n)` (n Blöcke einer Sorte), `items(suche)`, `jump`, `sneak`, `emote`, `ride`/`dismount`, `skin(name | {data, slim})` / `skins()` (Skin wechseln, andere laden ihn neu), **`screenshot({w,h,radius,yaw,pitch,look})`** → JPEG-Data-URL aus der Sicht des Spielers (rendert nur auf Anfrage; sonst weiter ohne Darstellung).
+* Für den Agent-Player gibt es `play/bshot.sh [w] [h] [yaw] [pitch]` → speichert das Bild als Datei (Pfad in der Antwort, mit dem Bild-Lesen ansehen).
+

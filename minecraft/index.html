@@ -2047,7 +2047,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-14.43';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-10-14.44';            // Spielversion (nur Anzeige)
 // Verdeckter Bot-Modus (nur per URL ?bot=1, nirgends in der Oberfläche erwähnt): läuft ohne Darstellung mit festem 20-Ticks-Takt, Steuerung über window.BOT (siehe Abschnitt BOT)
 const botChat = [];
 const BOTMODE = /[?&]bot=1(?:&|#|$)/.test(location.search);
@@ -3951,7 +3951,8 @@ function emitWallTorch(bd, x, y, z, t, d) {
 }
 
 function buildChunkMesh(world, c) {
-  if (BOTMODE) { world.disposeChunk(c); c.lights = []; c.meshed = true; c.dirty = false; return; }          // Bot-Modus: keine Geometrie, nur Blockdaten
+  if (BOTMODE && !botRender) { world.disposeChunk(c); c.lights = []; c.meshed = true; c.dirty = false; c.botStub = true; return; }          // Bot-Modus: keine Geometrie, nur Blockdaten (nur für Screenshots wird gemesht)
+  c.botStub = false;
   fillPad(world, c); computeBlockLight(world, c);
   solidB.reset(); transB.reset();
   const data = c.data, maxY = c.maxY, lights = [], lavaLights = [];
@@ -8598,13 +8599,13 @@ Object.assign(VOICES, {
 // ---------- Auftauchen während des Events ----------
 function hwHostile(type) {
   const cnt = (t) => { let n = 0; for (const m of mobs) if (m.type === t) n++; return n; }, r = Math.random(), dark = env.dayF < 0.3;
-  if (r < 0.10 && cnt('hw_ghost') < 4) return 'hw_ghost';
-  if (r < 0.15 && cnt('hw_witch') < 2) return 'hw_witch';
-  if (r < 0.21 && dark && cnt('hw_werewolf') < 2) return 'hw_werewolf';
-  if (r < 0.27 && cnt('hw_scarecrow') < 3) return 'hw_scarecrow';
-  if (r < 0.285 && dark && cnt('hw_reaper') < 1) return 'hw_reaper';
+  if (r < 0.045 && cnt('hw_ghost') < 2) return 'hw_ghost';                    // Halloween-Sondermobs: deutlich seltener, Gesamtlimit 7 Feinde
+  if (r < 0.07 && cnt('hw_witch') < 1) return 'hw_witch';
+  if (r < 0.095 && dark && cnt('hw_werewolf') < 1) return 'hw_werewolf';
+  if (r < 0.13 && cnt('hw_scarecrow') < 2) return 'hw_scarecrow';
+  if (r < 0.137 && dark && cnt('hw_reaper') < 1) return 'hw_reaper';
   const m = { zombie: 'hw_zombie', husk: 'hw_zombie', skeleton: 'hw_skeleton', spider: 'hw_spider', creeper: 'hw_creeper' }[type];
-  return m && Math.random() < 0.8 ? m : type;
+  return m && Math.random() < 0.6 ? m : type;
 }
 
 function updateMobs(dt) {
@@ -8683,8 +8684,8 @@ function trySpawnMob() {
   if (world.dim === 2) return trySpawnBackrooms();
   const passive = mobs.filter((m) => m.kind === 'passive' && !m.T.keep && !m.T.fly).length, hostile = mobs.filter((m) => m.kind === 'hostile').length;
   if (HW.on) hwAmbientSpawn();
-  const night = env.dayF < (HW.on ? 0.45 : 0.3);
-  const wantP = env.dayF > 0.3 && passive < 14, wantH = !isCreative() && hostile < (HW.on ? 14 : 9) && rules.difficulty !== 'peaceful';
+  const night = env.dayF < 0.3;
+  const wantP = env.dayF > 0.3 && passive < 14, wantH = !isCreative() && hostile < (HW.on ? 7 : 9) && rules.difficulty !== 'peaceful';
   const cave = wantH && Math.random() < 0.4;                              // manchmal Höhlen-Spawn (rund um die Uhr)
   const surfaceH = wantH && night && !cave;
   if (!wantP && !surfaceH && !cave) return;
@@ -8723,6 +8724,30 @@ function trySpawnMob() {
   if (type === 'wolf') for (let i = 0; i < 1 + ((Math.random() * 2) | 0); i++) mobs.push(new Mob('wolf', x + 0.5 + (Math.random() - 0.5) * 3, y, z + 0.5 + (Math.random() - 0.5) * 3));
 }
 function clearMobs() { mobs.forEach((m) => m.dispose()); mobs.length = 0; mp.mobsById.clear(); }
+// ----- Mobwelt speichern: Tiere/Dorfbewohner bleiben nach Verlassen und Sterben erhalten -----
+let pendingMobs = [];
+function mobSnapshot(maxN, noTame) {
+  const out = [];
+  for (const m of mobs) {
+    if (m.hp <= 0 || m.dead || !(m.kind === 'passive' || m.tame) || m.T.fly || m.T.big || String(m.type).startsWith('hw_')) continue;
+    if (noTame && (m.tame || m.owner)) continue;
+    out.push([m.type, r2(m.p.x), r2(m.p.y), r2(m.p.z), Math.round(m.hp), m.ex | 0, m.owner || '', m.tame ? 1 : 0, world.dim]);
+    if (out.length >= maxN) break;
+  }
+  return out;
+}
+function spawnSnapshot(list) {
+  if (!world || !Array.isArray(list)) return 0; let n = 0;
+  for (const e of list.slice(0, 120)) {
+    if (!Array.isArray(e)) continue; const [type, x, y, z, hp, ex, owner, tame, dim] = e;
+    if (!MOBTYPES[type] || (dim | 0) !== world.dim || !isFinite(x + y + z) || !world.getChunk(Math.floor(x) >> 4, Math.floor(z) >> 4)) continue;
+    const m = new Mob(type, +x, +y, +z, undefined, ex | 0); m.hp = clamp(+hp || m.T.hp, 1, m.T.hp);
+    if (tame || owner) { m.tame = !!tame; m.owner = owner || ''; if (m.syncEx) m.syncEx(); }
+    mobs.push(m); n++;
+  }
+  return n;
+}
+function spawnPendingMobs() { if (pendingMobs.length) { const l = pendingMobs; pendingMobs = []; spawnSnapshot(l); } }
 
 /* =====================================================================
    K. SPIELZUSTÄNDE, SPEICHERN/LADEN, HAUPTSCHLEIFE
@@ -8788,7 +8813,8 @@ function respawn() {
   wakeUp(); clearEffects(); P.health = 20; P.hunger = 20; P.exhaust = 0; P.v.set(0, 0, 0); { const t0 = xpTotal(); xpSetTotal(Math.round(t0 * 0.5)); if (t0 >= 2 && !isCreative()) toast('Du hast die Hälfte deiner Erfahrung verloren'); } clearOrbs();                  // beim Tod gehen 50 % der Erfahrung verloren
   if (P.bedPos && !(BLOCKS[world.getBlock(P.bedPos[0], P.bedPos[1], P.bedPos[2])] || {}).bed) { P.bedPos = null; P.spawn.copy(P.worldSpawn); toast('Dein Bett fehlt – du startest am Weltspawn'); }
   P.p.copy(P.spawn); P.fallPeak = P.p.y; hudStatsDirty = true;
-  clearMobs(); clearDrops(); clearPrimed(); clearArrows(); clearFallers(); clearThrown();
+  clearArrows(); clearThrown();                                       // Mobs, Beute und Fahrzeuge bleiben erhalten (früher verschwand beim Sterben die ganze Mobwelt)
+  if (isHost()) for (const m of mobs) if (!m.remote && m.kind === 'hostile' && Math.hypot(m.p.x - P.spawn.x, m.p.z - P.spawn.z) < 14) { m.hp = 0; m.exploded = true; }      // Respawn-Schutz: Monster direkt am Startpunkt weg
   if (world.dim !== 0) { enterDimension(0, P.spawn.x, P.spawn.y, P.spawn.z, { exact: true }); return; }
   resume();
 }
@@ -8817,7 +8843,7 @@ function startGame(opts) {
   if (world) { world.dispose(); clearMobs(); clearDrops(); clearPrimed(); clearArrows(); clearFallers(); clearThrown(); clearOrbs(); }
   endDead.clear(); vehStash = null; P.creditsSeen = false; rsQ.clear(); rsTimers.length = 0; rsPrev.clear(); rsHop.clear(); rsBtn.clear(); rsPl.clear(); endT = 0;
   mode = opts.mode; renderDist = opts.dist; buildJob = null; blastAbort(); bigSt.active = false; perfReset(); bossReset(); hbReset(); aiReset(); acReset();
-  const save = opts.save;
+  const save = opts.save; pendingMobs = save && Array.isArray(save.mobs) ? save.mobs : [];
   if (!opts.mp) { mp.on = false; $('btnQuit').textContent = 'Speichern & Beenden'; spLoadPolicy(); }
   world = new World(save ? save.seed : opts.seed, scene, save ? (save.gv || 1) : opts.gv || 4);          // Welten ohne gv-Eintrag = alte Biome
   setWorldKeys(world.gv);
@@ -8871,6 +8897,7 @@ function saveGame() {
     inv: packItems(inv), fuel: P.fuel, armor: packItems(armor), spawn: [P.spawn.x, P.spawn.y, P.spawn.z], bed: P.bedPos,
     containers: Object.fromEntries([...containers].map(([k, v]) => [k, packItems(v)])), signs: signsPack(),
     edits: world.serializeEdits(0), edits1: world.serializeEdits(1), edits2: world.serializeEdits(2), edits3: world.serializeEdits(3), dim: world.dim, endDead: [...endDead],
+    mobs: mobSnapshot(80, false),
   };
   try { const txt = JSON.stringify(data); localStorage.setItem(SAVE_KEY, txt); if (txt.length > 4200000) toast('⚠ Spielstand ist sehr groß (' + (txt.length / 1e6).toFixed(1) + ' MB) – der Browser-Speicher ist bald voll'); return true; }
   catch (e) { toast('Speichern fehlgeschlagen (Speicher voll?) – die alte Sicherung bleibt erhalten'); return false; }
@@ -9244,7 +9271,7 @@ function simTick(dt) {
   world.update(P.p.x, P.p.z, 5, 7);
 }
 function frame(now) {
-  requestAnimationFrame(frame);
+  if (!BOTMODE) requestAnimationFrame(frame);
   const dt = Math.min(0.05, (now - last) / 1000); last = now; frameDt = dt;
   fpsAcc += dt; fpsN++; if (fpsAcc >= 0.5) { fps = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; }
   if (!world || state === 'menu' || state === 'mpmenu' || (state === 'settings' && settingsFrom === 'menu')) { renderer.render(scene, camera); return; }
@@ -9257,9 +9284,9 @@ function frame(now) {
       const c = world.getChunk(world.lcx + o[0], world.lcz + o[1]); if (c && c.meshed) have++;
     }
     $('loadBar').style.width = Math.round(have / need * 100) + '%';
-    if (have >= need) { P.v.set(0, 0, 0); finishArrival(); resume(); }
+    if (have >= need) { P.v.set(0, 0, 0); finishArrival(); spawnPendingMobs(); resume(); }
   } else {
-    simTick(dt);
+    if (!botShotNoSim) simTick(dt);
   }
   updateParticles(dt); updateClouds(dt);
 
@@ -9327,14 +9354,19 @@ if (!BOTMODE) requestAnimationFrame(frame);
 // ----- Bot-Modus: gleiche Simulation wie frame(), aber ohne Darstellung und mit festem Zeitschritt (20 Ticks/s), unabhängig von FPS -----
 const BOT_DT = 0.05;
 let botTicks = 0, botTps = 0;
+const botCfg = { autoRespawn: true, autoDefend: true, autoEat: true, flee: true, defendRange: 6 };         // Selbstschutz des Bots (BOT.config)
+const botDef = { active: false, mode: '', t: 0, fleeT: 0, cool: 0 };
+const botHeld = [];
+let botRender = false, botShotNoSim = false;
 function botFrame(dt) {
   frameDt = dt;
+  BOT._pre(dt);                                                         // Auto-Respawn, Selbstverteidigung, Auto-Essen (siehe BOT)
   if (!world || state === 'menu' || state === 'mpmenu' || (state === 'settings' && settingsFrom === 'menu')) return;
   if (state === 'loading') {
     world.update(P.p.x, P.p.z, 30, 30);
     let need = 0, have = 0;
     for (const o of world.offsets) { if (o[2] > 4) break; need++; const c = world.getChunk(world.lcx + o[0], world.lcz + o[1]); if (c && c.meshed) have++; }
-    if (have >= need) { P.v.set(0, 0, 0); finishArrival(); resume(); }
+    if (have >= need) { P.v.set(0, 0, 0); finishArrival(); spawnPendingMobs(); resume(); }
   } else simTick(dt);
   camera.position.set(P.p.x, P.p.y + EYE, P.p.z); camera.rotation.y = P.yaw; camera.rotation.x = P.pitch;
   updateEmote(dt); stepBuildJob(); stepBlast(); bigTick(); bossTick(dt); hwTick(dt); signTick(dt); hbTick(dt); fireTick(dt); aiTick(dt);
@@ -9354,7 +9386,9 @@ if (BOTMODE) {
       for (let n = 0; acc >= BOT_DT * 1000 && n < 6; n++) {
         acc -= BOT_DT * 1000; botTicks++; tpsN++;
         try { botFrame(BOT_DT); } catch (e) { console.error(e); }
-        const w = botWaiters.splice(0); for (const f of w) { try { f(); } catch (e) { console.error(e); } }
+        const w0 = botWaiters.splice(0);
+        if (botDef.active) botHeld.push(...w0);                          // während der Selbstverteidigung/des Essens pausieren laufende Aktionen
+        else { const w = botHeld.splice(0).concat(w0); for (const f of w) { try { f(); } catch (e) { console.error(e); } } }
         await macro();
       }
       if (acc > 200) acc = 200;
@@ -10309,7 +10343,7 @@ function hwAmbientSpawn() {                                               // Kü
   const spots = allPlayerSpots(), b = spots[(Math.random() * spots.length) | 0], a = Math.random() * 6.28, d = 8 + Math.random() * 14, x = Math.floor(b.x + Math.cos(a) * d), z = Math.floor(b.z + Math.sin(a) * d);
   if (!world.getChunk(x >> 4, z >> 4)) return;
   let y = CH - 1; while (y > 0 && world.getBlock(x, y, z) === AIR) y--; y++;
-  if (env.dayF < 0.6 && cnt('hw_bat') < 7 && Math.random() < 0.35) { if (world.getBlock(x, y + 5, z) === AIR) mobs.push(new Mob('hw_bat', x + 0.5, y + 4 + Math.random() * 3, z + 0.5)); }
+  if (env.dayF < 0.6 && cnt('hw_bat') < 4 && Math.random() < 0.2) { if (world.getBlock(x, y + 5, z) === AIR) mobs.push(new Mob('hw_bat', x + 0.5, y + 4 + Math.random() * 3, z + 0.5)); }
   else if (env.dayF > 0.3 && cnt('hw_cat') < 3 && Math.random() < 0.2 && world.getBlock(x, y - 1, z) === GRASS && world.getBlock(x, y, z) === AIR) mobs.push(new Mob('hw_cat', x + 0.5, y, z + 0.5));
 }
 function hwWorldSwitch(on) {                                              // Event an/aus: Halloween-Mobs verschwinden, entfernte Chunks werden neu erzeugt (mit/ohne Deko; Änderungen der Spieler bleiben)
@@ -12741,6 +12775,19 @@ const mpHandlers = {
         }
         break;
       case 'mobs': if (!isHost()) mpApplyMobs(p.m); break;
+      case 'skin': {                                                  // ein Spieler hat seinen Skin gewechselt: Profil neu laden
+        const rp = mp.players.get(from); if (rp && !rp.isBot) { mp.skinCache.delete(rp.name.toLowerCase()); mpEnsureProfile(rp); }
+        break;
+      }
+      case 'mobhand': {                                               // ein jüngerer Spieler war zwischenzeitlich Host und übergibt die Mobs an mich (den eigentlichen Host)
+        if (!isHost() || !Array.isArray(p.m) || !(+p.j > mp.joinedAt)) break;
+        if (mobs.filter((m) => !m.remote).length >= 4) break;           // ich habe schon eine eigene Mobwelt (Geister-Fall): nichts übernehmen
+        for (const [mid, type, x, y, z, yaw, hp, , , , ex, owner] of p.m.slice(0, 120)) {
+          if (!MOBTYPES[type] || (mid && mp.mobsById.has(mid)) || !isFinite(x + y + z)) continue;
+          const m = new Mob(type, x, y, z, mid, ex); m.hp = hp; m.yaw = yaw || 0; if (owner) { m.owner = owner; m.tame = true; } mobs.push(m); if (mid) mp.mobsById.set(mid, m);
+        }
+        break;
+      }
       case 'mobuse': { if (!isHost()) break; const m = mp.mobsById.get(p.id); if (m && !m.remote) m.interact(p.act, p.by); break; }
       case 'veh': mpVehRecv(p, from); break;
       case 'petspawn': { if (!isHost() || !p || !Array.isArray(p.e)) break; const o = mp.players.get(from); if (o) mpPetSpawn(o.name, p.e, +p.x, +p.y, +p.z); break; }
@@ -12791,6 +12838,8 @@ function mpPetSpawn(owner, e, px, py, pz) {                                  // 
   const m = new Mob(type, px, py, pz, undefined, ex | 0); m.tame = true; m.owner = owner; m.hp = clamp(+hp || m.T.hp, 1, m.T.hp); m.syncEx(); mobs.push(m);
 }
 function mpRestorePets() {
+  if (mp.animalQueue && mp.animalQueue.length && mp.on && world && isHost() && mp.players.size === 0 && !mobs.some((m) => m.kind === 'passive')) spawnSnapshot(mp.animalQueue);     // allein auf dem Server: Tiere von vor dem letzten Verlassen zurückholen
+  mp.animalQueue = [];
   const q = mp.petQueue; if (!mp.on || !q || !world || state === 'dead') return;
   const dm = world.dim, keepP = [], keepV = [], me = myName();
   for (const e of q.pets) {
@@ -12805,8 +12854,9 @@ function mpRestorePets() {
   }
   mp.petQueue = { pets: keepP, veh: keepV };
 }
+const mobRow = (m) => [m.mid, m.type, r2(m.p.x), r2(m.p.y), r2(m.p.z), r2(m.yaw), m.hp, r2(m.fuse || 0), m.moving ? 1 : 0, m.flash > 0 ? 1 : 0, m.ex, m.owner, m.type === 'ender_dragon' && m.dr ? [DRAGON_PH.indexOf(m.dr.ph), m.dr.landed ? 1 : 0, m.dr.roar === undefined ? -1 : r2(m.dr.roar), m.dr.fb === undefined ? -1 : r2(m.dr.fb), m.tgt ? r2(m.tgt.x) : 0, m.tgt ? r2(m.tgt.z) : 0] : 0];
 function mpSendMobs() {
-  const list = mobs.filter((m) => !m.remote).map((m) => [m.mid, m.type, r2(m.p.x), r2(m.p.y), r2(m.p.z), r2(m.yaw), m.hp, r2(m.fuse || 0), m.moving ? 1 : 0, m.flash > 0 ? 1 : 0, m.ex, m.owner, m.type === 'ender_dragon' && m.dr ? [DRAGON_PH.indexOf(m.dr.ph), m.dr.landed ? 1 : 0, m.dr.roar === undefined ? -1 : r2(m.dr.roar), m.dr.fb === undefined ? -1 : r2(m.dr.fb), m.tgt ? r2(m.tgt.x) : 0, m.tgt ? r2(m.tgt.z) : 0] : 0]);
+  const list = mobs.filter((m) => !m.remote).map(mobRow);
   mpSend('mobs', { m: list });
 }
 function mpApplyMobs(list) {
@@ -12829,7 +12879,7 @@ function mpApplyMobs(list) {
 
 // --- Zustand speichern / laden ---
 const mpStateData = () => ({ dim: world ? world.dim : 0, inv: packItems(inv), armor: packItems(armor), hp: boss.on && boss.ret ? Math.max(1, boss.ret.hp) : P.health, hunger: P.hunger, xpL: P.xpL, xpP: P.xpP, pos: boss.on && boss.ret ? [boss.ret.x, boss.ret.y, boss.ret.z] : [P.p.x, P.p.y, P.p.z], yaw: P.yaw, pitch: P.pitch,
-  sel: P.sel, fuel: P.fuel, spawn: [P.spawn.x, P.spawn.y, P.spawn.z], bed: P.bedPos, ...mpPetData() });
+  sel: P.sel, fuel: P.fuel, spawn: [P.spawn.x, P.spawn.y, P.spawn.z], bed: P.bedPos, an: world ? mobSnapshot(40, true) : [], ...mpPetData() });
 function applyMpState(d) {
   if (!d) return;
   try {
@@ -12884,6 +12934,7 @@ async function mpJoin(cfg) {
   mp.mySkin = cfg.skin; mp.mySlim = cfg.slim; mp.mySkinCv = await skinCanvas(cfg.skin, cfg.slim); mp.myFace = skinFaceDataURL(mp.mySkinCv, 32); handSkinDirty = true;
   startGame({ seed: info.seed, mode: info.mode, dist: cfg.dist, gv: (info.epoch_ms || 0) >= GEN4_START ? 4 : (info.epoch_ms || 0) >= GEN3_START ? 3 : (info.epoch_ms || 0) >= GEN2_START ? 2 : 1, mp: true, mpEdits: edits, mpContainers: conts, mpState: state });
   mp.on = true; mp.wasHost = isHost(); mp.mode = info.mode; updateTouchUI(); mpLoadPolicy();
+  mp.animalQueue = state && Array.isArray(state.an) ? state.an.slice(0, 60) : [];
   mp.petQueue = state && (Array.isArray(state.pets) || Array.isArray(state.veh)) ? { pets: (state.pets || []).filter(Array.isArray).slice(0, 24), veh: (state.veh || []).filter(Array.isArray).slice(0, 24) } : { pets: [], veh: [] };
   setTimeout(mpRestorePets, 4500);
   world.onEdit = mpQueueBlock; $('btnQuit').textContent = 'Verlassen';
@@ -12979,7 +13030,11 @@ function mpTick(dt) {
   const host = isHost();
   world.anchors = (host ? [...mp.players.values()].filter((q) => q.have).map((q) => [Math.floor(q.target.x / CS), Math.floor(q.target.z / CS)]) : []).concat(AIB.on && AIB.me ? [[Math.floor(AIB.p.x / CS), Math.floor(AIB.p.z / CS)]] : []);
   if (host && !mp.wasHost) mobs.forEach((m) => { m.remote = false; });        // Host-Wechsel: Puppen werden echte Mobs
-  if (!host && mp.wasHost) { for (let i = mobs.length - 1; i >= 0; i--) if (!mobs[i].remote) { mobs[i].dispose(); mobs.splice(i, 1); } }       // nicht mehr Host: eigene Mobs waren Geister, ab jetzt gibt es nur noch Puppen des Hosts
+  if (!host && mp.wasHost) {                                                  // nicht mehr Host (z. B. der ältere Spieler kommt aus einer anderen Dimension zurück): Mobs an den neuen Host übergeben, hier werden sie zu Puppen
+    const own = mobs.filter((m) => !m.remote);
+    if (own.length) mpSend('mobhand', { m: own.map(mobRow), j: mp.joinedAt });
+    for (const m of own) { m.remote = true; m.target = new THREE.Vector3(m.p.x, m.p.y, m.p.z); m.tyaw = m.yaw; m.tAt = 0; if (m.mid) mp.mobsById.set(m.mid, m); }
+  }
   mp.wasHost = host;
   if (host && mp.mobT <= 0) { mp.mobT = 0.3; mpSendMobs(); }
   if (mp.flushT <= 0) { mp.flushT = mpFlushInterval(); mpFlush(); }
@@ -14990,14 +15045,14 @@ const BOT = (() => {
   const fail = (m) => { throw new Fail(m); };
   const tk = (g) => new Promise((res, rej) => { botWaiters.push(() => { if (g !== gen) rej(new Cancel()); else res(); }); });
   const rnd1 = (n) => Math.round(n * 100) / 100;
-  const playing = () => { if (!world) fail('keine Welt geladen'); if (state === 'dead') fail('tot (BOT.respawn())'); if (state !== 'play') fail('nicht im Spiel (Zustand: ' + state + ')'); };
+  const playing = () => { if (!world) fail('keine Welt geladen'); if (state === 'dead') fail('tot' + (botCfg.autoRespawn ? ' – respawnt automatisch, Aufgabe pausiert (danach erneut starten oder BOT.run nutzen)' : ' (BOT.respawn())')); if (state !== 'play') fail('nicht im Spiel (Zustand: ' + state + ')'); };
   const release = () => { BOTIN.fwd = BOTIN.str = 0; BOTIN.jump = BOTIN.sneak = BOTIN.sprint = BOTIN.wake = false; mouse.left = mouse.right = mouse.leftPressed = mouse.rightPressed = false; };
   const act = (fn) => async (...a) => {
-    const g = ++gen; release();
+    const nested = B._nest; B._nest = false; const g = nested ? gen : ++gen; release();
     try { return await fn(g, ...a); }
     catch (e) {
       if (e instanceof Cancel) return { ok: false, reason: 'abgebrochen' };
-      if (e instanceof Fail) return { ok: false, reason: e.message };
+      if (e instanceof Fail) return /^tot/.test(e.message) ? { ok: false, reason: e.message, died: true } : { ok: false, reason: e.message };
       console.error(e); return { ok: false, reason: String((e && e.message) || e) };
     } finally { if (g === gen) release(); }
   };
@@ -15013,13 +15068,19 @@ const BOT = (() => {
     if (typeof x === 'number') return x;
     if (x && typeof x === 'object' && x.id !== undefined) return x.id | 0;
     const k = norm(x);
-    const alias = { oak_planks: PLANKS, planks: PLANKS, oak_log: WOOD, log: WOOD, wood: WOOD, chest: CHEST_IDS[0], truhe: CHEST_IDS[0], stone: STONE, stein: STONE, grass: GRASS, grass_block: GRASS, dirt: DIRT, erde: DIRT, sand: SAND, glass: GLASS, snow: SNOW, water: WATER }[k]; if (alias) return alias;
+    const alias = { oak_planks: PLANKS, planks: PLANKS, oak_log: WOOD, log: WOOD, wood: WOOD, chest: CHEST_IDS[0], truhe: CHEST_IDS[0], stone: STONE, stein: STONE, cobblestone: ID.cobble, bruchstein: ID.cobble, stone_brick: ID.stone_bricks, stone_bricks: ID.stone_bricks, grass: GRASS, grass_block: GRASS, dirt: DIRT, erde: DIRT, sand: SAND, glass: GLASS, snow: SNOW, water: WATER }[k]; if (alias) return alias;
     if (IID[k] !== undefined) return IID[k];
     if (ID[k] !== undefined) return ID[k];
     for (let i = 1; i < BLOCKS.length; i++) if (BLOCKS[i] && norm(BLOCKS[i].name || '') === k) return i;
     for (const i in ITEMS) if (norm(ITEMS[i].name || '') === k) return +i;
     return 0;
   }
+  B.items = (q) => {                                                  // Items/Blöcke nach Namen suchen (Schlüssel oder deutscher Name)
+    const k = norm(q || ''), out = [];
+    for (const key of Object.keys(ID)) if (key.includes(k) || norm(nameOf(ID[key])).includes(k)) out.push({ key, id: ID[key], name: nameOf(ID[key]) });
+    for (const key of Object.keys(IID)) if (key.includes(k) || norm(nameOf(IID[key])).includes(k)) out.push({ key, id: IID[key], name: nameOf(IID[key]) });
+    return out.slice(0, 40);
+  };
   const nameOf = (id) => { try { return itemName(id); } catch (e) { return String(id); } };
   const countOf = (id) => inv.reduce((n, s) => n + (s && s.id === id ? s.count : 0), 0);
 
@@ -15040,8 +15101,8 @@ const BOT = (() => {
 
   // ---------- Zielen ----------
   const FACE_PT = [0.5, 0.25, 0.75];
-  function findAimBlock(x, y, z, want) {                              // Blickrichtung, bei der der Strahl (wie beim Spieler) genau diesen Block trifft
-    const e = eyePos(), reach = reach0(), pts = [];
+  function findAimBlock(x, y, z, want, e0) {                          // Blickrichtung, bei der der Strahl (wie beim Spieler) genau diesen Block trifft (e0: von dieser Augenposition aus, sonst von der aktuellen)
+    const e = e0 || eyePos(), reach = reach0(), pts = [];
     for (const a of FACE_PT) for (const b of FACE_PT) for (const c of FACE_PT) pts.push([x + a, y + b, z + c]);
     pts.sort((p, q) => Math.hypot(p[0] - x - 0.5, p[1] - y - 0.5, p[2] - z - 0.5) - Math.hypot(q[0] - x - 0.5, q[1] - y - 0.5, q[2] - z - 0.5));
     for (const q of pts) {
@@ -15051,8 +15112,8 @@ const BOT = (() => {
     return null;
   }
   const PLACE_DIRS = [[0, -1, 0], [1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1], [0, 1, 0]];
-  function findAimPlace(x, y, z) {                                    // an welcher Nachbarfläche kann man klicken, damit der Block bei (x,y,z) entsteht?
-    const e = eyePos(), reach = reach0();
+  function findAimPlace(x, y, z, e0) {                                // an welcher Nachbarfläche kann man klicken, damit der Block bei (x,y,z) entsteht?
+    const e = e0 || eyePos(), reach = reach0();
     for (const [dx, dy, dz] of PLACE_DIRS) {
       const nx = x + dx, ny = y + dy, nz = z + dz, nb = world.getBlock(nx, ny, nz);
       if (!(nb > 0) || BLOCKS[nb].liquid || BLOCKS[nb].plant) continue;
@@ -15110,6 +15171,14 @@ const BOT = (() => {
         const goalFn = o.goal ? o.goal(tg) : (x, y, z) => Math.hypot(x + 0.5 - tg.x, z + 0.5 - tg.z) <= Math.max(range, 0.9) && Math.abs(y - tg.y) <= (o.dy === undefined ? 2 : o.dy);
         const path = planPath(goalFn, tg.x, tg.y, tg.z, o.maxN);
         planAt = botTicks;
+        if (path && !path.nodes.length && !path.partial && o.goal && o.until) {                     // Ziel-Zelle ist die aktuelle: zur Zellenmitte gehen (die Bedingung gilt für die Mitte, nicht für die jetzige Stelle)
+          const cx0 = Math.floor(P.p.x) + 0.5, cz0 = Math.floor(P.p.z) + 0.5;
+          if (Math.hypot(cx0 - P.p.x, cz0 - P.p.z) < 0.1) fail('Position nicht erreichbar');
+          for (let i = 0; i < 40 && Math.hypot(cx0 - P.p.x, cz0 - P.p.z) > 0.07; i++) {
+            const ddx = cx0 - P.p.x, ddz = cz0 - P.p.z, dd = Math.hypot(ddx, ddz); P.yaw = Math.atan2(-ddx, -ddz); BOTIN.fwd = Math.min(1, dd * 2.5); BOTIN.sprint = false; BOTIN.jump = false; await tk(g);
+          }
+          release(); nodes = null; continue;
+        }
         if (!path || !path.nodes.length) { if (path && !path.partial) { release(); return true; } fail('kein Weg zum Ziel'); }
         if (path.partial && path.nodes.length < 2) fail('Ziel nicht erreichbar');
         nodes = path.nodes; ni = 0; nodes.partial = path.partial;
@@ -15144,16 +15213,19 @@ const BOT = (() => {
     BOTIN.fwd = BOTIN.str = 0; BOTIN.jump = BOTIN.sprint = false;
     for (let i = 0; i < 24; i++) { if (Math.hypot(P.v.x, P.v.z) < 0.04 && (P.onGround || P.inWater || P.flying)) return; await tk(g); }
   }
-  async function reachBlock(g, x, y, z, finder, avoid, walk) {        // so nah herangehen, dass der Block erreichbar und sichtbar ist
-    const ok = () => { const d = finder(); return d ? d : null; };
+  const overlapsCell = (x, y, z, m) => { m = m || 0; return P.p.x + P.hw + m > x && P.p.x - P.hw - m < x + 1 && P.p.z + P.hw + m > z && P.p.z - P.hw - m < z + 1 && P.p.y < y + 1 && P.p.y + P.h > y; };
+  async function reachBlock(g, x, y, z, finder, avoid, walk, facing) {        // so nah herangehen, dass der Block erreichbar und sichtbar ist (facing: aus dieser Himmelsrichtung ansehen, für Treppen/Türen)
+    const faceOk = (sx, sz) => { if (facing === undefined) return true; const dx = x - sx, dz = z - sz; return facing === 0 ? dz < 0 && -dz >= Math.abs(dx) : facing === 2 ? dz > 0 && dz >= Math.abs(dx) : facing === 1 ? dx > 0 && dx >= Math.abs(dz) : dx < 0 && -dx >= Math.abs(dz); };
+    const inside = () => avoid && overlapsCell(x, y, z, 0.15);                 // der Spieler würde den neuen Block berühren (das Spiel verbietet es dann)
+    const ok = () => { if (inside()) return null; const d = finder(); return d && faceOk(Math.floor(P.p.x), Math.floor(P.p.z)) ? d : null; };
     if (ok()) return;
     if (walk === false) fail('außer Reichweite oder verdeckt');
     const cx = x + 0.5, cy = y + 0.5, cz = z + 0.5, reach = reach0();
     const cellOk = (sx, sy, sz) => {
-      if (avoid && sx === x && sz === z && sy >= y - 1 && sy <= y) return false;
-      const ex = sx + 0.5, ey = sy + 1.62, ez = sz + 0.5, d = Math.hypot(ex - cx, ey - cy, ez - cz); if (d > reach - 0.7) return false;
-      const dir = dirTo({ x: ex, y: ey, z: ez }, cx, cy, cz), h = raycastBlocks({ x: ex, y: ey, z: ez }, dir, reach);
-      return !!h && (h.x === x && h.y === y && h.z === z || (avoid && Math.abs(h.x - x) + Math.abs(h.y - y) + Math.abs(h.z - z) === 1));
+      if (avoid && (sx + 0.5 + P.hw + 0.15 > x && sx + 0.5 - P.hw - 0.15 < x + 1 && sz + 0.5 + P.hw + 0.15 > z && sz + 0.5 - P.hw - 0.15 < z + 1 && sy < y + 1 && sy + P.h > y)) return false;          // dort würde der Spieler im neuen Block stehen
+      if (!faceOk(sx, sz)) return false;
+      const ex = sx + 0.5, ey = sy + 1.62, ez = sz + 0.5; if (Math.hypot(ex - cx, ey - cy, ez - cz) > reach - 0.7) return false;
+      return !!finder({ x: ex, y: ey, z: ez });                          // genau die Prüfung, die später beim Anklicken gilt (Sichtlinie, Reichweite)
     };
     await moveTo(g, () => ({ x: cx, y, z: cz }), { goal: () => cellOk, until: () => !!ok(), range: 0, timeout: 60, maxN: 6000 });
   }
@@ -15170,12 +15242,13 @@ const BOT = (() => {
     const id0 = world.getBlock(x, y, z);
     if (id0 < 0) fail('Chunk nicht geladen');
     if (id0 === AIR) return { ok: true, already: true };
+    B._guard(x, y, z, o);
     const Bk = BLOCKS[id0];
     if (Bk.hard === Infinity || y <= 0 || id0 === ID.bedrock) fail('unzerstörbar');
     if (world.dim === 2) fail('in den Backrooms nicht abbaubar');
     if (boss.on && boss.me && boss.me !== 'out') fail('im Bosskampf unveränderlich');
     if (LQ[id0]) fail('Flüssigkeit lässt sich nicht abbauen');
-    await reachBlock(g, x, y, z, () => findAimBlock(x, y, z), false, o.walk);
+    await reachBlock(g, x, y, z, (e) => findAimBlock(x, y, z, null, e), false, o.walk);
     await stand(g); holdToolFor(id0);
     const t0 = botTicks, cap = Math.ceil(((o.timeout || 60)) / BOT_DT);
     for (;;) {
@@ -15201,23 +15274,26 @@ const BOT = (() => {
     const cur = world.getBlock(x, y, z); if (cur < 0) fail('Chunk nicht geladen');
     if (cur !== AIR && !BLOCKS[cur].liquid && !BLOCKS[cur].plant) fail('Platz belegt');
     if (!isCreative() || countOf(id)) holdItem(id); else fail('nicht in der Schnellleiste (Kreativ: erst Item beschaffen)');
-    await reachBlock(g, x, y, z, () => findAimPlace(x, y, z), true, o && o.walk);
-    await stand(g);
+    for (let a = 0; a < 3; a++) {                                       // heranlaufen, zur Ruhe kommen, erneut prüfen (Schwung kann in das Zielfeld tragen)
+      await reachBlock(g, x, y, z, (e) => findAimPlace(x, y, z, e), true, o && o.walk, o && facingOf(o.facing));
+      await stand(g); if (!overlapsCell(x, y, z) && findAimPlace(x, y, z)) break;
+    }
     // steht der Bot im Weg? (Kopf-/Fußzelle)
-    if (Math.floor(P.p.x) === x && Math.floor(P.p.z) === z && Math.floor(P.p.y) >= y - 1 && Math.floor(P.p.y) <= y) fail('Bot steht im Zielblock');
+    if (overlapsCell(x, y, z)) fail('Bot steht im Zielblock');
     const d = findAimPlace(x, y, z); if (!d) fail('keine Fläche zum Anklicken erreichbar');
     const before = countOf(id);
     setAim(d.x, d.y, d.z); mouse.right = mouse.rightPressed = true; await tk(g); mouse.right = false;
     await tk(g);
     const now = world.getBlock(x, y, z);
     if (now === cur) fail('Platzieren nicht möglich');
+    botOwn.add(keyOf(x, y, z));
     return { ok: true, block: BLOCKS[now] ? BLOCKS[now].name : now, left: countOf(id), used: before - countOf(id) };
   };
   B.place = act(async (g, ...a) => doPlace(g, ...a));
 
   B.use = act(async (g, x, y, z) => {
     x |= 0; y |= 0; z |= 0; playing();
-    await reachBlock(g, x, y, z, () => findAimBlock(x, y, z), false);
+    await reachBlock(g, x, y, z, (e) => findAimBlock(x, y, z, null, e), false);
     await useBlock(g, x, y, z); return { ok: true };
   });
 
@@ -15332,7 +15408,7 @@ const BOT = (() => {
       const b = world.getBlock(px + dx, py + dy, pz + dz); if (b > 0 && BLOCKS[b].bed) { const d = dx * dx + dy * dy + dz * dz; if (d < bd) { bd = d; bed = [px + dx, py + dy, pz + dz]; } }
     }
     if (!bed) fail('kein Bett in 24 Blöcken');
-    await reachBlock(g, bed[0], bed[1], bed[2], () => findAimBlock(bed[0], bed[1], bed[2]), false);
+    await reachBlock(g, bed[0], bed[1], bed[2], (e) => findAimBlock(bed[0], bed[1], bed[2], null, e), false);
     await useBlock(g, bed[0], bed[1], bed[2]);
     await waitTicks(g, 4);
     if (!P.sleeping) fail('Schlafen nicht möglich (Monster in der Nähe oder zu hell)');
@@ -15395,7 +15471,7 @@ const BOT = (() => {
   B.state = () => ({
     pos: { x: rnd1(P.p.x), y: rnd1(P.p.y), z: rnd1(P.p.z) }, yaw: rnd1(P.yaw), pitch: rnd1(P.pitch), health: P.health, hunger: P.hunger, xp: P.xpL,
     onGround: P.onGround, sleeping: !!P.sleeping, dim: world ? world.dim : -1, mode, day: env.dayF, state, tick: botTicks, tps: Math.round(botTps * 10) / 10,
-    held: inv[P.sel] ? nameOf(inv[P.sel].id) : null, online: !!mp.on, room: mp.on ? mp.room : null, name: mp.on ? mp.name : null,
+    held: inv[P.sel] ? nameOf(inv[P.sel].id) : null, deaths: B.deaths, defending: botDef.active, config: { ...botCfg }, online: !!mp.on, room: mp.on ? mp.room : null, name: mp.on ? mp.name : null,
   });
   B.nearby = (type, radius) => {
     radius = radius || 16; const px = P.p.x, py = P.p.y, pz = P.p.z, out = [];
@@ -15460,13 +15536,13 @@ const BOT = (() => {
   const chestSave = (x, y, z) => { const arr = containers.get(ckeyOf(x, y, z)); if (arr && arr.every((s) => !s)) containers.delete(ckeyOf(x, y, z)); if (mp.on) mpSaveContainer(x, y, z, arr || []); };
   B.chest = act(async (g, x, y, z) => {
     x |= 0; y |= 0; z |= 0; playing(); chestAt(x, y, z);
-    await reachBlock(g, x, y, z, () => findAimBlock(x, y, z), false);
+    await reachBlock(g, x, y, z, (e) => findAimBlock(x, y, z, null, e), false);
     const arr = chestAt(x, y, z);
     return { ok: true, items: arr.map((s, i) => s && { slot: i, id: s.id, name: nameOf(s.id), count: s.count }).filter(Boolean), size: arr.length };
   });
   B.take = act(async (g, x, y, z, what, n) => {
     x |= 0; y |= 0; z |= 0; playing(); const id = itemId(what); if (!id) fail('unbekanntes Item'); chestAt(x, y, z);
-    await reachBlock(g, x, y, z, () => findAimBlock(x, y, z), false);
+    await reachBlock(g, x, y, z, (e) => findAimBlock(x, y, z, null, e), false);
     const arr = chestAt(x, y, z); let want = n === undefined || n === 'all' ? Infinity : Math.max(1, n | 0), got = 0;
     for (let i = 0; i < arr.length && want > 0; i++) {
       const s = arr[i]; if (!s || s.id !== id) continue;
@@ -15478,7 +15554,7 @@ const BOT = (() => {
   });
   B.put = act(async (g, x, y, z, what, n) => {
     x |= 0; y |= 0; z |= 0; playing(); const id = itemId(what); if (!id) fail('unbekanntes Item'); chestAt(x, y, z);
-    await reachBlock(g, x, y, z, () => findAimBlock(x, y, z), false);
+    await reachBlock(g, x, y, z, (e) => findAimBlock(x, y, z, null, e), false);
     const arr = chestAt(x, y, z); let want = n === undefined || n === 'all' ? Infinity : Math.max(1, n | 0), put = 0;
     for (let i = 0; i < 36 && want > 0; i++) {
       const s = inv[i]; if (!s || s.id !== id) continue;
@@ -15581,6 +15657,20 @@ const BOT = (() => {
   // ---------- Werkzeugliste für KI-Aufrufe: BOT.tools() beschreibt, BOT.call(name, {args}) führt aus ----------
   const TOOLS = [
     ['goto', 'Zu einer Position laufen (Weg wird gesucht). y darf null sein = Bodenhöhe.', ['x', 'y', 'z'], false],
+    ['build', 'Bauplan ausführen: Liste von Zellen {x,y,z,id,facing?}, sortiert Ebene für Ebene, baut bei Bedarf Gerüst (pillar) und räumt es auf.', ['cells', 'opts'], false],
+    ['shape', 'Zellenliste für eine Form erzeugen: floor, box, walls, line, pyramid, circle, cylinder, gable_roof, house (opts: x,y,z,w,d,h,item,hollow,wall,floor,roof,glass,stairs).', ['kind', 'opts'], false],
+    ['needs', 'Materialbedarf einer Zellenliste gegen das Inventar prüfen.', ['cells'], false],
+    ['pillar', 'Hochbauen: n Blöcke nach oben (springen + Block unter sich setzen).', ['height', 'item'], false],
+    ['cleanup', 'Gerüstblöcke von oben nach unten wieder abbauen.', [], false],
+    ['gather', 'n Blöcke einer Sorte (z. B. "logs", "stone", "iron_ore") abbauen und einsammeln – nur natürliches Gelände.', ['what', 'n', 'opts'], false],
+    ['run', 'Aufgabenliste [{tool,args},…] ausführen; pausiert beim Tod bis zum Respawn und wiederholt den Schritt.', ['steps', 'opts'], false],
+    ['jump', 'n-mal springen.', ['n'], false], ['sneak', 'Schleichen an/aus.', ['on'], false], ['emote', 'Emote abspielen (Zahl).', ['id'], false],
+    ['ride', 'Auf ein Tier steigen (Pferd, Schwein …).', ['target'], false], ['dismount', 'Absteigen.', [], false],
+    ['skins', 'Verfügbare Skin-Vorlagen anzeigen.', [], false], ['skin', 'Skin wechseln: Vorlagenname oder {data: PNG-Data-URL, slim}.', ['spec'], false],
+    ['screenshot', 'Bild der Spielwelt aus Spielersicht (JPEG als Data-URL; opts: w,h,radius,look,yaw,pitch).', ['opts'], false],
+    ['config', 'Selbstschutz einstellen: autoRespawn, autoDefend, autoEat, flee, defendRange.', ['opts'], false],
+    ['items', 'Items/Blöcke nach Namen suchen (englischer Schlüssel oder deutscher Name).', ['query'], false],
+    ['isPlayerBuilt', 'Ist der Block von einem Spieler gesetzt (geschützt)?', ['x', 'y', 'z'], false],
     ['follow', 'Einem Spieler folgen.', ['name', 'opts'], false],
     ['collect', 'Herumliegende Gegenstände einsammeln.', ['radius'], false],
     ['mine', 'Einen Block abbauen (geht heran, nimmt Werkzeug, sammelt Beute).', ['x', 'y', 'z', 'opts'], false],
@@ -15625,6 +15715,263 @@ const BOT = (() => {
     try { const r = await fn(...a); return r && typeof r === 'object' && 'ok' in r ? r : { ok: true, result: r }; } catch (e) { return { ok: false, reason: String((e && e.message) || e) }; }
   };
 
+  // =====================================================================
+  //  Teil 2: Selbstschutz, Auto-Respawn, Bauen mit Planer, Screenshot, Skin, Aufgabenlisten
+  // =====================================================================
+  B.deaths = 0; B.lastDeath = null; B.defended = 0;
+  B.config = (o) => { if (o && typeof o === 'object') for (const k of Object.keys(botCfg)) if (k in o) botCfg[k] = typeof botCfg[k] === 'number' ? +o[k] : !!o[k]; return { ok: true, config: { ...botCfg } }; };
+  const botOwn = new Set();                                            // vom Bot selbst gesetzte Blöcke (dürfen wieder abgebaut werden)
+  const keyOf = (x, y, z) => x + ',' + y + ',' + z;
+  const playerBuilt = (x, y, z) => {                                   // wurde dieser Block von einem Spieler gesetzt (steht in den Weltänderungen)?
+    try {
+      const e = world.dimData[world.dim].edits.get(ckey(x >> 4, z >> 4)); if (!e) return false;
+      const v = e.m.get((x & 15) + ((z & 15) << 4) + (y << 8)); return v !== undefined && v !== AIR && !botOwn.has(keyOf(x, y, z));
+    } catch (er) { return false; }
+  };
+  B.isPlayerBuilt = (x, y, z) => playerBuilt(x | 0, y | 0, z | 0);
+
+  let deadT = 0, lastState = '';
+  const hostileNear = (range) => {
+    let best = null, bd = Infinity, n = 0;
+    for (const m of mobs) {
+      if (m.kind !== 'hostile' || !(m.hp > 0) || m.dead || m.T.fly && m.type === 'bat') continue;
+      const dx = m.p.x - P.p.x, dz = m.p.z - P.p.z, d = Math.hypot(dx, dz);
+      if (d <= range && Math.abs(m.p.y - P.p.y) < 4) { n++; if (d < bd) { bd = d; best = m; } }
+    }
+    return { m: best, d: bd, n };
+  };
+  const foodSlot = () => { let bi = -1, bv = -1; for (let i = 0; i < 36; i++) { const s = inv[i]; if (!s || s.id < ITEM_BASE) continue; const I = ITEMS[s.id]; if (I.food && !I.potion && !(I.effects && I.effects.length) && I.food > bv) { bv = I.food; bi = i; } } return bi; };
+  function defenseStep(dt) {                                           // läuft vor jedem Tick und hat Vorrang vor der laufenden Aktion
+    if (state !== 'play' || P.sleeping || boss.on || !world) { if (botDef.active) { botDef.active = false; release(); } return; }
+    botDef.cool -= dt;
+    if (botDef.active && botDef.mode === 'eat') {                       // Essen läuft
+      if (!aimClear() || P.hunger >= 20 || foodSlot() < 0 || (botDef.t += dt) > 4) { botDef.active = false; botDef.cool = 6; mouse.right = false; return; }
+      mouse.right = true; return;
+    }
+    const survival = !isCreative();
+    const th = botCfg.autoDefend && survival && world.dim !== 2 ? hostileNear(botCfg.defendRange) : { m: null, d: 0, n: 0 };
+    if (!botDef.active) {
+      if (th.m && botDef.cool <= 0) { botDef.active = true; botDef.mode = 'fight'; botDef.t = 0; botDef.fleeT = 0; release(); B.defended++; }
+      else if (survival && botCfg.autoEat && botDef.cool <= 0 && !th.m && P.hunger <= 12 && P.hunger < 20 && foodSlot() >= 0 && !P.eat) {
+        const i = foodSlot(); holdSlot(i); botDef.active = true; botDef.mode = 'eat'; botDef.t = 0; release(); mouse.right = mouse.rightPressed = true; return;
+      } else return;
+    }
+    if (!th.m) { botDef.active = false; botDef.cool = 0.6; release(); return; }
+    botDef.t += dt;
+    if (botDef.t > 25) { botDef.active = false; botDef.cool = 10; release(); return; }          // Zeitlimit: danach geht die Arbeit weiter
+    const m = th.m, away = Math.atan2(-(P.p.x - m.p.x), -(P.p.z - m.p.z));
+    const low = P.health <= 6 || (P.health <= 10 && th.n >= 3) || (m.base === 'creeper' && th.d < 3.6 && P.health <= 12);
+    if (botCfg.flee && low && botDef.fleeT < 7) {                       // Rückzug: vom nächsten Feind weglaufen
+      botDef.fleeT += dt; P.yaw = away; BOTIN.fwd = 1; BOTIN.sprint = P.hunger > 6; BOTIN.jump = P.inWater || (P.onGround && P.hitH); mouse.left = false; return;
+    }
+    if (((botDef.t * 20) | 0) % 40 === 1) holdWeapon();
+    const a = { x: m.p.x, y: m.p.y + m.h * 0.55, z: m.p.z }, e = eyePos(), d = dirTo(e, a.x, a.y, a.z);
+    setAim(d.x, d.y, d.z);
+    if (d.l <= reach0() - 1.7) { BOTIN.fwd = 0; BOTIN.sprint = false; BOTIN.jump = false; mouse.left = true; }
+    else { BOTIN.fwd = 1; BOTIN.sprint = false; BOTIN.jump = P.onGround && P.hitH; mouse.left = false; }
+  }
+  B._pre = (dt) => {
+    if (state === 'dead') {
+      if (lastState !== 'dead') { B.deaths++; B.lastDeath = { tick: botTicks, pos: { x: rnd1(P.p.x), y: rnd1(P.p.y), z: rnd1(P.p.z) } }; release(); botDef.active = false; }
+      deadT += dt; if (botCfg.autoRespawn && deadT > 2) { deadT = 0; try { respawn(); } catch (e) { console.error(e); } }
+    } else deadT = 0;
+    lastState = state;
+    try { defenseStep(dt); } catch (e) { console.error(e); botDef.active = false; }
+  };
+
+  // ---------- Schutz fremder Bauten beim Abbauen ----------
+  B._guard = (x, y, z, o) => { if (playerBuilt(x, y, z) && !(o && o.force)) fail('Block gehört zu einem Bauwerk (von einem Spieler gesetzt) – nicht abgebaut. Nur mit {force:true} und ausdrücklicher Erlaubnis.'); };
+
+  // ---------- Bauen mit Planer ----------
+  const FACING = { n: 0, north: 0, norden: 0, e: 1, east: 1, osten: 1, s: 2, south: 2, sueden: 2, süden: 2, w: 3, west: 3, westen: 3 };
+  const facingOf = (f) => (f === undefined || f === null ? undefined : typeof f === 'number' ? f & 3 : FACING[String(f).toLowerCase()]);
+  const scaffold = [];                                                  // Hilfsblöcke fürs Hochbauen (werden mit BOT.cleanup() wieder entfernt)
+  async function pillarUp(g, targetY, id) {                             // wie ein Spieler: springen und den Block unter sich setzen
+    if (!holdItem(id)) fail('Gerüstmaterial fehlt');
+    for (let k = 0; k < 40 && P.p.y < targetY - 0.2; k++) {
+      playing(); const fx = Math.floor(P.p.x), fz = Math.floor(P.p.z), y0 = Math.floor(P.p.y);
+      if (world.getBlock(fx, y0 + 2, fz) > 0 && BLOCKS[world.getBlock(fx, y0 + 2, fz)].solid) fail('Kopf stößt an – kein Platz zum Hochbauen');
+      BOTIN.fwd = BOTIN.str = 0; BOTIN.sprint = false; P.pitch = -1.45;
+      if (!P.onGround) { await tk(g); continue; }
+      BOTIN.jump = true; let up = false;
+      for (let t = 0; t < 14; t++) { await tk(g); if (P.p.y >= y0 + 1.05) { up = true; break; } }
+      BOTIN.jump = false; if (!up) fail('Hochbauen: Sprung zu niedrig');
+      P.pitch = -1.45; mouse.right = mouse.rightPressed = true; await tk(g); mouse.right = false;
+      if (world.getBlock(fx, y0, fz) === AIR) { await tk(g); }
+      if (world.getBlock(fx, y0, fz) === AIR) fail('Hochbauen: Block konnte nicht gesetzt werden');
+      scaffold.push([fx, y0, fz]); botOwn.add(keyOf(fx, y0, fz));
+      for (let t = 0; t < 20 && !P.onGround; t++) await tk(g);
+    }
+  }
+  B.pillar = act(async (g, height, what) => {
+    playing(); const id = itemId(what || 'dirt') || itemId('dirt'); if (!isCreative() && !countOf(id)) fail('nicht im Inventar: ' + nameOf(id));
+    const target = P.p.y + Math.max(1, Math.min(40, height | 0 || 1)); await pillarUp(g, target, id); return { ok: true, y: rnd1(P.p.y), scaffold: scaffold.length };
+  });
+  B.cleanup = act(async (g) => {                                        // Gerüst von oben nach unten wieder abbauen
+    playing(); let n = 0; scaffold.sort((a, b) => b[1] - a[1]);
+    while (scaffold.length) { const [x, y, z] = scaffold.shift(); if (world.getBlock(x, y, z) <= 0) continue; try { await doMine(g, x, y, z, { collect: true }); n++; } catch (e) { if (e instanceof Cancel) throw e; } }
+    return { ok: true, removed: n };
+  });
+
+  // Formen: liefern Zellenlisten [{x,y,z,id,facing?}]
+  const cell = (x, y, z, id, facing) => ({ x: x | 0, y: y | 0, z: z | 0, id, facing });
+  B.shape = (kind, o) => {
+    o = o || {}; const out = [], X = o.x | 0, Y = o.y | 0, Z = o.z | 0, W = Math.max(1, o.w | 0 || 5), D = Math.max(1, o.d | 0 || 5), H = Math.max(1, o.h | 0 || 3), id = o.item || o.id || 'cobblestone';
+    if (kind === 'floor') { for (let x = 0; x < W; x++) for (let z = 0; z < D; z++) out.push(cell(X + x, Y, Z + z, id)); }
+    else if (kind === 'box') { for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) for (let z = 0; z < D; z++) { if (o.hollow !== false && x > 0 && x < W - 1 && z > 0 && z < D - 1 && y > 0 && y < H - 1) continue; out.push(cell(X + x, Y + y, Z + z, id)); } }
+    else if (kind === 'walls') { for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) for (let z = 0; z < D; z++) if (x === 0 || x === W - 1 || z === 0 || z === D - 1) out.push(cell(X + x, Y + y, Z + z, id)); }
+    else if (kind === 'line') { const n = Math.max(W, D, H); const dx = o.dx | 0 || (W > 1 ? 1 : 0), dz = o.dz | 0 || 0, dy = o.dy | 0 || 0; for (let i = 0; i < n; i++) out.push(cell(X + dx * i, Y + dy * i, Z + dz * i, id)); }
+    else if (kind === 'pyramid') { for (let l = 0; l < Math.ceil(Math.min(W, D) / 2); l++) for (let x = l; x < W - l; x++) for (let z = l; z < D - l; z++) { if (o.hollow !== false && x > l && x < W - l - 1 && z > l && z < D - l - 1) continue; out.push(cell(X + x, Y + l, Z + z, id)); } }
+    else if (kind === 'circle' || kind === 'cylinder') { const r = Math.max(1, W >> 1), hh = kind === 'cylinder' ? H : 1; for (let y = 0; y < hh; y++) for (let x = -r; x <= r; x++) for (let z = -r; z <= r; z++) { const q = Math.hypot(x, z); if (q <= r + 0.3 && (o.hollow === false || q >= r - 0.7)) out.push(cell(X + r + x, Y + y, Z + r + z, id)); } }
+    else if (kind === 'gable_roof') {                                   // Satteldach über W×D (Firstrichtung entlang z), Treppen zeigen nach außen
+      const stairs = o.stairs || id, full = o.full || id, half = Math.ceil(W / 2);
+      for (let l = 0; l < half; l++) for (let z = -1; z <= D; z++) {
+        const xl = l - 1, xr = W - l;
+        if (xl < xr - 1 || (W % 2 === 1 && xl === xr - 2)) { out.push(cell(X + xl, Y + l, Z + z, stairs, 'e')); }
+        if (xr > xl + 1 && !(W % 2 === 1 && l === half - 1)) { out.push(cell(X + xr, Y + l, Z + z, stairs, 'w')); }
+        if (W % 2 === 1 && l === half - 1) out.push(cell(X + half - 1, Y + l, Z + z, full));
+      }
+    } else if (kind === 'house') {                                      // kleines Haus: Boden, Wände, Fensterlücken, Tür, flaches Dach
+      const wall = o.wall || id, floor = o.floor || 'planks', roof = o.roof || wall;
+      for (let x = 0; x < W; x++) for (let z = 0; z < D; z++) out.push(cell(X + x, Y, Z + z, floor));
+      for (let y = 1; y <= H; y++) for (let x = 0; x < W; x++) for (let z = 0; z < D; z++) {
+        if (!(x === 0 || x === W - 1 || z === 0 || z === D - 1)) continue;
+        const doorway = x === (W >> 1) && z === D - 1 && y <= 2, win = y === 2 && ((x === 0 || x === W - 1) && z % 2 === 1 || (z === 0) && x % 2 === 1);
+        if (doorway) continue; out.push(cell(X + x, Y + y, Z + z, win ? (o.glass || 'glass') : wall));
+      }
+      for (let x = -1; x <= W; x++) for (let z = -1; z <= D; z++) out.push(cell(X + x, Y + H + 1, Z + z, roof));
+    } else return { ok: false, reason: 'Formen: floor, box, walls, line, pyramid, circle, cylinder, gable_roof, house' };
+    return out;
+  };
+  const needsOf = (cells) => { const need = {}; for (const c of cells) { const id = itemId(c.id); if (id) need[id] = (need[id] || 0) + 1; } return need; };
+  B.needs = (cells) => { if (!Array.isArray(cells)) return { ok: false, reason: 'Zellenliste erwartet' }; const need = needsOf(cells), out = {}; for (const id in need) out[nameOf(+id)] = { need: need[id], have: countOf(+id), missing: Math.max(0, need[id] - countOf(+id)) }; return { ok: true, items: out }; };
+  B.build = act(async (g, cells, o) => {                                // Planer: sortiert Ebene für Ebene, kürzeste Wege, baut bei Bedarf Gerüst
+    o = o || {}; playing(); if (!Array.isArray(cells) || !cells.length) fail('Zellenliste erwartet (siehe BOT.shape)');
+    if (cells.length > (o.max || 1500)) fail('zu groß (max. ' + (o.max || 1500) + ' Blöcke)');
+    const todo = cells.map((c) => ({ x: c.x | 0, y: c.y | 0, z: c.z | 0, id: itemId(c.id), facing: facingOf(c.facing), raw: c.id })).filter((c) => c.id);
+    if (todo.length !== cells.length) fail('unbekannter Block in der Liste');
+    const need = needsOf(cells); const miss = []; if (!isCreative()) for (const id in need) if (countOf(+id) < need[id]) miss.push(nameOf(+id) + ' (' + (need[id] - countOf(+id)) + ' fehlen)');
+    if (miss.length && !o.partial) fail('Material fehlt: ' + miss.join(', '));
+    const bufferId = o.scaffold === false ? 0 : itemId(o.scaffoldItem || 'dirt');
+    // Reihenfolge: nach Höhe, innerhalb einer Ebene Nachbar nach Nachbar (kürzeste Wege)
+    todo.sort((a, b) => a.y - b.y); const ordered = []; let cur = { x: P.p.x, z: P.p.z };
+    for (let i = 0; i < todo.length;) {
+      let j = i; while (j < todo.length && todo[j].y === todo[i].y) j++;
+      const layer = todo.slice(i, j); while (layer.length) { let bi = 0, bd = Infinity; for (let k = 0; k < layer.length; k++) { const d = Math.abs(layer[k].x - cur.x) + Math.abs(layer[k].z - cur.z); if (d < bd) { bd = d; bi = k; } } cur = layer.splice(bi, 1)[0]; ordered.push(cur); }
+      i = j;
+    }
+    let placed = 0, skipped = 0; const failed = [];
+    for (const c of ordered) {
+      playing(); const now = world.getBlock(c.x, c.y, c.z);
+      if (now === c.id) { skipped++; continue; }
+      if (now < 0) { failed.push([c.x, c.y, c.z, 'Chunk nicht geladen']); continue; }
+      if (now !== AIR && !BLOCKS[now].liquid && !BLOCKS[now].plant) { if (o.replace && !playerBuilt(c.x, c.y, c.z)) { try { await doMine(g, c.x, c.y, c.z, {}); } catch (e) { if (e instanceof Cancel) throw e; failed.push([c.x, c.y, c.z, e.message]); continue; } } else { failed.push([c.x, c.y, c.z, 'Platz belegt']); continue; } }
+      if (!isCreative() && !countOf(c.id)) { failed.push([c.x, c.y, c.z, 'Material aufgebraucht']); if (!o.partial) break; continue; }
+      let ok = false, err = '';
+      for (let attempt = 0; attempt < 3 && !ok; attempt++) {
+        try { await doPlace(g, c.x, c.y, c.z, c.id, { walk: true, facing: c.facing }); ok = true; }
+        catch (e) {
+          if (e instanceof Cancel || (e instanceof Fail && /^tot/.test(e.message))) throw e;
+          err = e.message;
+          if (bufferId && attempt === 0 && /nicht erreichbar|kein Weg|Fläche|außer Reichweite/.test(err) && c.y > P.p.y + 1.5) { try { await pillarUp(g, c.y - 0.5, bufferId); } catch (e2) { if (e2 instanceof Cancel) throw e2; err = e2.message; } }
+        }
+      }
+      if (ok) placed++; else failed.push([c.x, c.y, c.z, err]);
+      if (failed.length > 40) break;
+    }
+    if (o.cleanup !== false && scaffold.length) { try { await B.cleanupInner(g); } catch (e) { if (e instanceof Cancel) throw e; } }
+    return { ok: placed > 0 || (skipped > 0 && !failed.length), placed, skipped, failed: failed.slice(0, 15), failedCount: failed.length, scaffoldLeft: scaffold.length };
+  });
+  B.cleanupInner = async (g) => { scaffold.sort((a, b) => b[1] - a[1]); while (scaffold.length) { const [x, y, z] = scaffold.shift(); if (world.getBlock(x, y, z) > 0) { try { await doMine(g, x, y, z, { collect: true }); } catch (e) { if (e instanceof Cancel) throw e; } } } };
+
+  // ---------- Selbst weiterarbeiten: Aufgabenlisten mit Pause bei Tod ----------
+  B.run = act(async (g, steps, o) => {
+    o = o || {}; if (!Array.isArray(steps) || !steps.length) fail('Schritte erwartet: [{tool, args}, …]');
+    const results = [];
+    for (let i = 0; i < steps.length; i++) {
+      const st = Array.isArray(steps[i]) ? { tool: steps[i][0], args: steps[i][1] } : steps[i]; let r = null;
+      for (let attempt = 0; attempt < (o.retries === undefined ? 2 : o.retries) + 1; attempt++) {
+        while (state === 'dead' || (state !== 'play' && state !== 'loading')) { if (botTicks % 400 === 399 && !botCfg.autoRespawn) fail('tot und Auto-Respawn aus'); await tk(g); }       // Aufgabe pausiert, bis der Bot wieder lebt
+        while (botDef.active) await tk(g);
+        B._nest = true;                                                  // der verschachtelte Aufruf teilt sich die Abbruch-Nummer mit diesem Lauf
+        r = await B.call(st.tool, st.args || {});
+        B._nest = false;
+        if (r && r.ok) break;
+        if (g !== gen) throw new Cancel();
+        if (r && (r.died || /^tot|gestorben|nicht im Spiel/.test(String(r.reason)))) { await waitTicks(g, 60); continue; }
+        break;
+      }
+      results.push({ step: i, tool: st.tool, ...r });
+      if (!(r && r.ok) && !o.continue) return { ok: false, failedAt: i, results };
+    }
+    return { ok: true, results };
+  });
+
+  // ---------- Weitere Aktionen ----------
+  B.gather = act(async (g, what, n, o) => {                              // n Blöcke einer Sorte abbauen und einsammeln (nur natürliches Gelände)
+    o = o || {}; playing(); n = Math.max(1, Math.min(256, n | 0 || 1)); const radius = o.radius || 24; let got = 0, tries = 0; botSkip.clear();
+    while (got < n && tries < n * 3 + 6) {
+      tries++; playing();
+      const list = B.nearby(what, radius).filter((b) => b.kind === 'block' && !playerBuilt(b.x, b.y, b.z) && !botSkip.has(keyOf(b.x, b.y, b.z)));
+      if (!list.length) break; const b = list[0];
+      try { await doMine(g, b.x, b.y, b.z, { collect: true }); got++; } catch (e) { if (e instanceof Cancel || (e instanceof Fail && /^tot/.test(e.message))) throw e; botSkip.add(keyOf(b.x, b.y, b.z)); }
+    }
+    return { ok: got > 0, mined: got, wanted: n, reason: got ? undefined : 'nichts gefunden/erreichbar in ' + radius + ' Blöcken' };
+  });
+  const botSkip = new Set();
+  B.jump = act(async (g, n) => { playing(); for (let i = 0; i < Math.max(1, Math.min(20, n | 0 || 1)); i++) { BOTIN.jump = true; await waitTicks(g, 3); BOTIN.jump = false; await waitTicks(g, 8); } return { ok: true }; });
+  B.sneak = (on) => { BOTIN.sneak = on !== false; return { ok: true, sneak: BOTIN.sneak }; };
+  B.emote = (id) => { try { return playEmote(id | 0) ? { ok: true } : { ok: false, reason: 'Emote nicht möglich (nur im Mehrspielermodus, nicht im Kampf)' }; } catch (e) { return { ok: false, reason: String(e.message || e) }; } };
+  B.ride = act(async (g, who) => {
+    playing(); const m = mobById(who); if (!m) fail('Mob nicht gefunden'); 
+    await moveTo(g, () => ({ x: m.p.x, y: m.p.y, z: m.p.z }), { dynamic: true, range: 2, dy: 2, timeout: 20, until: () => Math.hypot(m.p.x - P.p.x, m.p.z - P.p.z) < 2.5 });
+    mountMob(m); await tk(g); return { ok: !!P.ride, riding: !!P.ride };
+  });
+  B.dismount = () => { try { if (P.ride) dismountVehicle(); return { ok: true }; } catch (e) { return { ok: false, reason: String(e.message || e) }; } };
+  B.skins = () => ({ presets: SKIN_NAMES.slice(), current: mp.mySkin || null });
+  B.skin = async (spec) => {                                           // Skin wechseln: Vorlage (Name) oder eigenes Bild (PNG-Data-URL, 64×64)
+    try {
+      if (!spec) return { ok: false, reason: 'Name (' + SKIN_NAMES.join(', ') + ') oder {data: "data:image/png;base64,…", slim: bool}' };
+      const sp = typeof spec === 'string' ? { kind: 'preset', name: spec.toLowerCase() } : spec.data ? { kind: 'data', data: String(spec.data) } : { kind: 'preset', name: String(spec.preset || spec.name || 'steve').toLowerCase() };
+      if (sp.kind === 'preset' && !SKIN_NAMES.includes(sp.name)) return { ok: false, reason: 'unbekannte Vorlage – erlaubt: ' + SKIN_NAMES.join(', ') };
+      if (sp.kind === 'data' && (!/^data:image\/png;base64,/.test(sp.data) || sp.data.length > 39000)) return { ok: false, reason: 'PNG-Data-URL erwartet (max. 39 kB)' };
+      const slim = !!(typeof spec === 'object' && spec.slim);
+      if (mp.on) { const r = await mp.db.register(mp.name, mp.token, skinToDb(sp), slim); if (!r || !r.ok) return { ok: false, reason: 'Server hat den Skin abgelehnt' }; }
+      Object.assign(mpCfg, { skinKind: sp.kind === 'data' ? 'data' : 'preset', skinName: sp.name || mpCfg.skinName, skinData: sp.data || '', slim }); mpSaveCfg();
+      mp.mySkin = sp; mp.mySlim = slim; mp.mySkinCv = await skinCanvas(sp, slim); mp.myFace = skinFaceDataURL(mp.mySkinCv, 32); handSkinDirty = true;
+      if (mp.on) mpSend('skin', { n: mp.name });
+      return { ok: true, skin: sp.kind === 'preset' ? sp.name : 'eigenes Bild' };
+    } catch (e) { return { ok: false, reason: String((e && e.message) || e) }; }
+  };
+  B.screenshot = (o) => {                                               // Bild der Spielwelt aus Sicht des Spielers (rendert nur auf Anfrage; JPEG als Data-URL)
+    o = o || {};
+    try {
+      if (!world) return { ok: false, reason: 'keine Welt geladen' };
+      const w = clamp(o.w | 0 || 640, 160, 1280), h = clamp(o.h | 0 || 360, 90, 720), R = clamp(o.radius | 0 || 5, 2, 8);
+      const oy = P.yaw, op = P.pitch;
+      if (o.look) { const e = eyePos(), p = posOf(o.look); setAim(p.x - e.x, p.y - e.y, p.z - e.z); } if (typeof o.yaw === 'number') P.yaw = o.yaw; if (typeof o.pitch === 'number') P.pitch = o.pitch;
+      botRender = true; botShotNoSim = true;
+      try {
+        const pcx = Math.floor(P.p.x) >> 4, pcz = Math.floor(P.p.z) >> 4; let built = 0;
+        for (const c of world.chunks.values()) if (Math.abs(c.cx - pcx) <= R && Math.abs(c.cz - pcz) <= R && (c.botStub || c.dirty || !c.meshed) && world.hasNeighbors(c)) { buildChunkMesh(world, c); built++; }
+        renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); fovCur = settings.fov;
+        frame(last); frameDt = BOT_DT;
+        frameDt = BOT_DT; const url = canvas.toDataURL('image/jpeg', clamp(+o.quality || 0.85, 0.3, 0.95));
+        return { ok: true, dataUrl: url, w, h, chunks: built, pos: B.state().pos, yaw: rnd1(P.yaw), pitch: rnd1(P.pitch) };
+      } finally { botRender = false; botShotNoSim = false; P.yaw = oy; P.pitch = op; }
+    } catch (e) { return { ok: false, reason: String((e && e.message) || e) }; }
+  };
+
+  B._dbgPlace = (x, y, z) => {                                          // Diagnose: von welchen Zellen aus ließe sich der Block setzen?
+    const out = [];
+    for (let sx = x - 5; sx <= x + 5; sx++) for (let sz = z - 5; sz <= z + 5; sz++) for (let sy = y - 1; sy <= y + 1; sy++) {
+      const feet = world.getBlock(sx, sy, sz), head = world.getBlock(sx, sy + 1, sz), fl = world.getBlock(sx, sy - 1, sz);
+      if (!(aiPass(feet) && aiPass(head) && aiFloor(fl))) continue;
+      const aim = findAimPlace(x, y, z, { x: sx + 0.5, y: sy + 1.62, z: sz + 0.5 });
+      if (aim) out.push([sx, sy, sz]);
+    }
+    return out;
+  };
   B.ticks = () => botTicks;
   B.help = () => 'BOT.tools() listet alle Werkzeuge, BOT.call(name, {args}) führt sie aus; BOT.admin.* nur für das KI-Konto.';
   return B;
