@@ -2047,7 +2047,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-13.41';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-10-14.42';            // Spielversion (nur Anzeige)
 // Verdeckter Bot-Modus (nur per URL ?bot=1, nirgends in der Oberfläche erwähnt): läuft ohne Darstellung mit festem 20-Ticks-Takt, Steuerung über window.BOT (siehe Abschnitt BOT)
 const botChat = [];
 const BOTMODE = /[?&]bot=1(?:&|#|$)/.test(location.search);
@@ -5189,6 +5189,7 @@ function updateInteraction(dt) {
 
 function breakBlock(hit, noDrop) {
   const id = hit.id;
+  if (!isCreative() && !acTrusted() && Math.hypot(hit.x + 0.5 - P.p.x, hit.y + 0.5 - (P.p.y + EYE), hit.z + 0.5 - P.p.z) > reach0() + 2.5) { acViolation('Abbau außerhalb der Reichweite'); return; }
   spawnParticles(hit.x, hit.y, hit.z, ATLAS.colors[id] || new THREE.Color(1, 1, 1));
   blockSfx('break', id);
   if (BLOCKS[id].loot && !isCreative() && !noDrop) rollLoot(BLOCKS[id].loot.kind, hit.x, hit.y, hit.z).forEach(([i, n]) => spawnDrop(i, n, hit.x + 0.5, hit.y + 0.5, hit.z + 0.5));
@@ -8783,6 +8784,7 @@ function die() {
   }
 }
 function respawn() {
+  AC.last = null; AC.safe = null;
   wakeUp(); clearEffects(); P.health = 20; P.hunger = 20; P.exhaust = 0; P.v.set(0, 0, 0); { const t0 = xpTotal(); xpSetTotal(Math.round(t0 * 0.5)); if (t0 >= 2 && !isCreative()) toast('Du hast die Hälfte deiner Erfahrung verloren'); } clearOrbs();                  // beim Tod gehen 50 % der Erfahrung verloren
   if (P.bedPos && !(BLOCKS[world.getBlock(P.bedPos[0], P.bedPos[1], P.bedPos[2])] || {}).bed) { P.bedPos = null; P.spawn.copy(P.worldSpawn); toast('Dein Bett fehlt – du startest am Weltspawn'); }
   P.p.copy(P.spawn); P.fallPeak = P.p.y; hudStatsDirty = true;
@@ -8814,7 +8816,7 @@ function findSpawn() {
 function startGame(opts) {
   if (world) { world.dispose(); clearMobs(); clearDrops(); clearPrimed(); clearArrows(); clearFallers(); clearThrown(); clearOrbs(); }
   endDead.clear(); vehStash = null; P.creditsSeen = false; rsQ.clear(); rsTimers.length = 0; rsPrev.clear(); rsHop.clear(); rsBtn.clear(); rsPl.clear(); endT = 0;
-  mode = opts.mode; renderDist = opts.dist; buildJob = null; blastAbort(); bigSt.active = false; perfReset(); bossReset(); hbReset(); aiReset();
+  mode = opts.mode; renderDist = opts.dist; buildJob = null; blastAbort(); bigSt.active = false; perfReset(); bossReset(); hbReset(); aiReset(); acReset();
   const save = opts.save;
   if (!opts.mp) { mp.on = false; $('btnQuit').textContent = 'Speichern & Beenden'; spLoadPolicy(); }
   world = new World(save ? save.seed : opts.seed, scene, save ? (save.gv || 1) : opts.gv || 4);          // Welten ohne gv-Eintrag = alte Biome
@@ -8852,7 +8854,7 @@ function startGame(opts) {
     if (isCreative()) [GRASS, STONE, WOOD, PLANKS, GLASS, ID.torch, ID.tnt, IID.flint_and_steel, IID.iron_sword].forEach((id, i) => { inv[i] = newStack(id, maxStack(id) > 1 ? 64 : 1); });
   }
   if (opts.mpState) applyMpState(opts.mpState);
-  P.fallPeak = P.p.y; P.wasGround = false;
+  P.fallPeak = P.p.y; P.wasGround = false; acSync();
   $('modeTag').textContent = MODE_DE[mode] || 'Überleben';
   lastSelName = -1; hudStatsDirty = true;
   refreshHotbar();
@@ -9102,12 +9104,136 @@ function updatePlayerIdle(dt) {                                      // Spielerp
   touchMove.x = touchMove.y = 0; touchSprint = false; touchSneak = false; P.dblW = 0;
   try { updatePlayer(dt); } finally { for (const k in sk) keys[k] = sk[k]; touchMove.x = tx; touchMove.y = ty; touchSprint = ts; touchSneak = tn; P.dblW = dw; Object.assign(BOTIN, bi); }
 }
+/* =====================================================================
+   ANTI-CHEAT (läuft im Browser jedes Spielers – eine Abschreckung, kein Ersatz für einen eigenen Server)
+   1. Selbstkontrolle: Fliegen, Tempo, Unverwundbarkeit, Spielmodus und Inventar dürfen sich nur über erlaubte Wege ändern
+      (Spielmodus, /fly, /god, /speed – die Befehle sind weiter nur für OPs bzw. im Einzelspieler). Abweichungen werden zurückgesetzt.
+   2. Bewegungskontrolle: zu schnell, in der Luft schweben, in Blöcken stecken (Noclip) → zurück zur letzten sicheren Position.
+   3. Reichweite beim Abbauen, Schadens-Obergrenze bei Treffern.
+   4. Gegenseitige Kontrolle im Mehrspielermodus: die Clients prüfen die gemeldeten Positionen der anderen. Wer dauerhaft schwebt oder zu schnell ist,
+      wird ignoriert (keine Blöcke, Treffer, Chat-Befehle) und von OPs/dem Besitzer automatisch rausgeworfen.
+   5. Die Debug-Schnittstelle window.__vc gibt es nur lokal (Datei/localhost), nicht auf der veröffentlichten Seite.
+   Ausnahme: Konten in AC_TRUSTED (die Claude-KI) im Bot-Modus – dort ist Spielmanipulation erlaubt (siehe window.BOT.admin).
+===================================================================== */
+const AC_TRUSTED = new Set(['claudeai']);
+const AC_DEV = location.protocol === 'file:' || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+const AC = { g: { canFly: false, god: false, speed: 1, mode: 'survival' }, strikes: 0, t: 0, msgT: -99, last: null, wd: 0, wt: 0, fast: 0, air: 0, airY: null, inside: 0, safe: null, safeT: 0, dim: 0, invT: 0, peers: new Map(), grants: new Set() };
+const acTrusted = () => (BOTMODE && (!mp.on || AC_TRUSTED.has(String(mp.name).toLowerCase()))) || (AC_DEV && AC.off === true);          // AC.off: nur lokal für Tests
+function acSync() { AC.g.canFly = !!P.canFly; AC.g.god = !!P.god; AC.g.speed = P.speedMul; AC.g.mode = mode; }
+function acReset() { acSync(); AC.last = null; AC.wd = AC.wt = AC.fast = AC.air = AC.inside = 0; AC.airY = null; AC.safe = null; AC.peers.clear(); AC.grants.clear(); }
+function acViolation(why) {
+  AC.strikes++; AC.strikeT = AC.t; (AC.log = AC.log || []).push(why); if (AC.log.length > 30) AC.log.shift();
+  if (AC.t - AC.msgT > 4) { AC.msgT = AC.t; try { toast('🛡 Anti-Cheat: ' + why); } catch (e) { /* egal */ } }
+  if (mp.on && AC.strikes >= 8) { AC.strikes = 0; kickedFromServer('Anti-Cheat: wiederholte Manipulation'); }
+}
+function acBack() {                                                    // zurück zur letzten sicheren Position
+  if (AC.safe && AC.safe.dim === world.dim) { P.p.set(AC.safe.x, AC.safe.y, AC.safe.z); P.v.set(0, 0, 0); P.fallPeak = P.p.y; }
+  AC.last = null; AC.wd = AC.wt = AC.fast = AC.air = AC.inside = 0; AC.airY = null;
+}
+function acInside() {                                                  // steckt der Spieler in einem vollen Block?
+  const x = P.p.x, y = P.p.y, z = P.p.z, h = P.hw - 0.02;
+  for (const dy of [0.25, 1.0, 1.65]) for (const dx of [-h, h]) for (const dz of [-h, h]) {
+    const b = world.getBlock(Math.floor(x + dx), Math.floor(y + dy), Math.floor(z + dz));
+    if (b > 0 && BLOCKS[b].solid && !BLOCKS[b].aabbs && !BLOCKS[b].liquid && !BLOCKS[b].plant && !LEAFSET.has(b)) return true;
+  }
+  return false;
+}
+function acCheck(dt) {
+  if (!world || acTrusted() || state !== 'play') return;
+  AC.t += dt; if (AC.t - (AC.strikeT || 0) > 40 && AC.strikes > 0) { AC.strikes--; AC.strikeT = AC.t; }
+  // 1) Berechtigungen
+  if (P.canFly !== AC.g.canFly) { P.canFly = AC.g.canFly; if (!P.canFly && !isCreative()) P.flying = false; acViolation('Flug-Berechtigung manipuliert'); }
+  if (P.god !== AC.g.god) { P.god = AC.g.god; acViolation('Unverwundbarkeit manipuliert'); }
+  if (!boss.on && (P.speedMul > Math.max(1, AC.g.speed) + 1e-6 || !isFinite(P.speedMul))) { P.speedMul = AC.g.speed; acViolation('Tempo manipuliert'); }
+  if (mode !== AC.g.mode) { mode = AC.g.mode; $('modeTag').textContent = MODE_DE[mode] || 'Überleben'; updateTouchUI(); hudStatsDirty = true; acViolation('Spielmodus manipuliert'); }
+  if (P.flying && !isCreative() && !AC.g.canFly && !P.ride) { P.flying = false; acViolation('Fliegen ist hier nicht erlaubt'); }
+  if (!(P.health >= 0 && P.health <= 20)) { P.health = clamp(+P.health || 20, 0, 20); acViolation('Leben manipuliert'); }
+  if (!(P.hunger >= 0 && P.hunger <= 20)) { P.hunger = clamp(+P.hunger || 20, 0, 20); acViolation('Hunger manipuliert'); }
+  if (!(isFinite(P.p.x) && isFinite(P.p.y) && isFinite(P.p.z))) { acBack(); acViolation('Ungültige Position'); return; }
+  // 2) Inventar (1×/s)
+  if ((AC.invT -= dt) <= 0) {
+    AC.invT = 1;
+    for (const arr of [inv, armor]) for (let i = 0; i < arr.length; i++) {
+      const s = arr[i]; if (!s) continue;
+      if (!validId(s.id) || !(s.count >= 1)) { arr[i] = null; acViolation('Ungültiger Gegenstand entfernt'); }
+      else if (s.count > maxStack(s.id) || s.count !== Math.floor(s.count)) { s.count = clamp(Math.floor(s.count) || 1, 1, maxStack(s.id)); acViolation('Stapelgröße manipuliert'); }
+    }
+  }
+  // 3) Bewegung
+  if (AC.dim !== world.dim) { AC.dim = world.dim; AC.last = null; AC.safe = null; AC.wd = AC.wt = AC.fast = AC.air = AC.inside = 0; AC.airY = null; }
+  const p = P.p, ride = !!P.ride || !!P.sleeping || isSpectator();
+  if (AC.last) {
+    const d = Math.hypot(p.x - AC.last.x, p.z - AC.last.z);
+    if (d > 6 || Math.abs(p.y - AC.last.y) > 40) { AC.wd = AC.wt = AC.fast = AC.air = 0; AC.airY = null; }                 // Teleport (Befehl, Perle, Portal, Respawn): kein Verstoß
+    else if (!ride) {
+      AC.wd += d; AC.wt += dt;
+      if (AC.wt >= 1) {
+        const lim = (P.flying ? 22 : 5.9) * (1 + 0.2 * fxAmp('speed')) * Math.max(1, AC.g.speed, P.speedMul || 1) * 1.35 + 2.5, sp = AC.wd / AC.wt;
+        AC.wd = AC.wt = 0;
+        if (sp > lim && !boss.on) { if (++AC.fast >= 3) { acBack(); acViolation('Zu schnell (' + sp.toFixed(1) + ' m/s)'); } } else AC.fast = Math.max(0, AC.fast - 1);
+      }
+    }
+  }
+  AC.last = AC.last || { x: 0, y: 0, z: 0 }; AC.last.x = p.x; AC.last.y = p.y; AC.last.z = p.z;
+  // Schweben: lange in der Luft ohne zu fallen
+  const feet = world.getBlock(Math.floor(p.x), Math.floor(p.y), Math.floor(p.z)), head = world.getBlock(Math.floor(p.x), Math.floor(p.y + 1), Math.floor(p.z));
+  const loose = (b) => b > 0 && !BLOCKS[b].solid;                                    // Spinnennetz, Leiter, Wasser, Pflanzen … halten oder bremsen
+  const supported = P.onGround || P.inWater || P.inLava || P.onLadder || P.flying || ride || P.fx.levitation || P.fx.slow_falling || loose(feet) || loose(head) || boss.on || P.v.y > 0.5;
+  if (supported) { AC.air = 0; AC.airY = null; }
+  else {
+    AC.air += dt;
+    if (AC.air > 1.0 && AC.airY === null) AC.airY = p.y;
+    if (AC.air > 3.0 && AC.airY !== null) { if (Math.abs(p.y - AC.airY) < 0.4) { acBack(); acViolation('Schweben ist nicht erlaubt'); } else { AC.airY = p.y; AC.air = 1.0; } }
+  }
+  // Noclip
+  if (!P.noclipOut && !ride && !sandBuried()) {
+    if (acInside()) { if ((AC.inside += dt) > 0.5) { acBack(); acViolation('Durch Blöcke laufen ist nicht erlaubt'); } } else AC.inside = 0;
+  }
+  // letzte sichere Position
+  if (P.onGround && AC.inside === 0 && (AC.safeT -= dt) <= 0) { AC.safeT = 1; AC.safe = { x: p.x, y: p.y, z: p.z, dim: world.dim }; }
+}
+// ---- gegenseitige Kontrolle (Mehrspieler) ----
+const acFlaggedName = (n) => AC.peers.has(String(n).toLowerCase());
+function acPeerExempt(rp) {
+  const n = rp.name; return AC_TRUSTED.has(n.toLowerCase()) || isOp(n) || isOwnerName(n) || isAdminName(n) || AC.grants.has(n.toLowerCase()) || (mp.mode === 'creative') || rp.mode === 'spectator' || rp.sleeping || !!rp.admin;
+}
+function acPeerFlag(rp, kind) {
+  const key = rp.name.toLowerCase(); if (AC.peers.has(key)) return; AC.peers.set(key, kind);
+  chatSys('🛡 Anti-Cheat: ' + rp.name + ' verhält sich auffällig (' + kind + ') und wird ignoriert.');
+  if (mp.on && (isOp(mp.name) || isOwnerName(mp.name)) && !isOwnerName(rp.name) && !isAdminName(rp.name) && !(isOp(rp.name) && !isOwnerName(mp.name))) mpSend('kick', { to: rp.name, why: 'Anti-Cheat: ' + kind });
+}
+function acPeer(rp, p, now) {
+  if (rp.dim !== world.dim || boss.on || acPeerExempt(rp)) { rp.ac = null; return; }          // im Bosskampf werden Spieler gefressen, zurückgestoßen und umgesetzt – dann nicht prüfen
+  const A = rp.ac || (rp.ac = { t: now, x: p.x, y: p.y, z: p.z, fast: 0, hover: 0, vw: 0 });
+  const dt = (now - A.t) / 1000;
+  if (dt < 0.05) return;
+  const d = Math.hypot(p.x - A.x, p.z - A.z);
+  const vh = Math.hypot(p.vx || 0, p.vz || 0);
+  if (d > 12 || Math.abs(p.y - A.y) > 30) { A.t = now; A.x = p.x; A.y = p.y; A.z = p.z; A.fast = A.fastV = A.hover = 0; return; }       // Teleport
+  A.vw += vh * dt; A.dsum = (A.dsum || 0) + d; A.tsum = (A.tsum || 0) + dt;
+  A.t = now; A.x = p.x; A.y = p.y; A.z = p.z;
+  if (A.tsum >= 2) {                                                   // 2-Sekunden-Fenster
+    const sp = A.dsum / A.tsum, vv = A.vw / A.tsum; A.dsum = A.tsum = A.vw = 0;
+    if (sp > 28 || vv > 18) { if (++A.fast >= 3) return acPeerFlag(rp, 'zu schnell'); } else A.fast = Math.max(0, A.fast - 1);
+  }
+  // Schweben: kaum vertikale Bewegung und kein fester Boden / keine Flüssigkeit / Leiter in der Nähe
+  const by = Math.floor(p.y);
+  let hang = true, known = true;
+  { const f0 = world.getBlock(Math.floor(p.x), by, Math.floor(p.z)), h0 = world.getBlock(Math.floor(p.x), by + 1, Math.floor(p.z)); if (f0 < 0) known = false; else if (f0 > 0 || h0 > 0) hang = false; }          // Spinnennetz, Wasser, Leitern, Pflanzen … halten fest
+  for (const cx of [-0.3, 0, 0.3]) for (const cz of [-0.3, 0, 0.3]) for (let dy = 0; dy >= -3 && hang; dy--) {
+    const b = world.getBlock(Math.floor(p.x + cx), by + dy, Math.floor(p.z + cz)); if (b < 0) { known = false; break; }
+    if (b > 0 && (BLOCKS[b].solid || BLOCKS[b].liquid || BLOCKS[b].climb)) hang = false;
+  }
+  if (known && hang && !rp.sleeping) {
+    if (A.hy === undefined || Math.abs(p.y - A.hy) > 0.6) { A.hy = p.y; A.hover = 0; } else { A.hover += dt; if (A.hover > 6) acPeerFlag(rp, 'schwebt'); }
+  } else { A.hover = 0; A.hy = undefined; }
+}
 function simTick(dt) {
   const frozen = mp.on && mp.offline;                                // Internet weg: Mehrspieler-Welt ist angehalten
   const live = !frozen && state === 'play', simOnly = !frozen && mp.on && (state === 'inv' || state === 'pause' || state === 'chat' || state === 'dead' || state === 'settings' || state === 'trade');
   if (live) {
     if (!mp.on && rules.daycycle) gameTime += dt;
-    updateSandBurial(dt); updateGaze(dt); if (bossLocked()) updatePlayerIdle(dt); else if (P.ride) updatePlayerRide(dt); else updatePlayer(dt); updateEffects(dt); updatePortal(dt);
+    updateSandBurial(dt); updateGaze(dt); if (bossLocked()) updatePlayerIdle(dt); else if (P.ride) updatePlayerRide(dt); else updatePlayer(dt); updateEffects(dt); acCheck(dt); updatePortal(dt);
     if (boss.on && (bossLocked() || boss.me === 'boss')) bossNoInteract(boss.me === 'boss'); else updateInteraction(dt); ambientTick(dt); musicTick(dt); fxTick(dt); { const bo = $('btnBackOut'); bo.classList.toggle('hidden', !(world.dim === 2 && state === 'play')); }
     saveTimer += dt; if (saveTimer > 45) { saveTimer = 0; saveGame(); }
   } else if (simOnly && state !== 'dead') { if (P.ride) updatePlayerRide(dt); else updatePlayerIdle(dt); updateEffects(dt); }
@@ -10773,6 +10899,7 @@ function chatCommand(body) {
   if (c.needs && args.length < c.needs) return chatErr('Benutzung: ' + usageOf(c) + '   – ' + c.desc);
   try { c.run(args, args.join(' ')); }
   catch (e) { if (e instanceof CmdError) chatErr(e.message); else { console.error(e); chatErr('Fehler: ' + e.message); } }
+  finally { acSync(); }                                                // erlaubte Änderung (Flug, Tempo, Modus …) als neuen Soll-Zustand merken
 }
 function chatSubmit(text) {
   text = text.trim(); if (!text) return;
@@ -11260,7 +11387,7 @@ function runRemoteCommand(name, args, by) {                 // Ein OP hat einen 
   const c = CMDS[name]; if (!c || !c.remote) return;
   remoteExec = true;
   try { c.run(args || [], (args || []).join(' ')); chatSys(by + ' hat /' + name + ' ' + (args || []).join(' ') + ' bei dir ausgeführt'); }
-  catch (e) { chatErr(e.message); } finally { remoteExec = false; }
+  catch (e) { chatErr(e.message); } finally { remoteExec = false; acSync(); }
 }
 function mpLoadPolicy() {                                               // Befehls-Limits für diesen Spieler holen (Dev-Konsole → Einstellungen)
   if (!mp.on || !mp.db) return;
@@ -12439,6 +12566,7 @@ const mpHandlers = {
   rateLimited() { mpRateLimited(); },
   event(e, p, from, viaBatch, dm) {
     if (dm !== undefined && DIM_EVENTS.has(e) && dm !== (world ? world.dim : 0)) return;           // Ereignis aus der anderen Dimension: nicht für mich
+    if (AC.peers.size && e !== 'pos' && e !== 'chat' && e !== 'kick') { const sp0 = mp.players.get(from); if (sp0 && AC.peers.has(sp0.name.toLowerCase())) return; }          // Anti-Cheat: Aktionen auffälliger Spieler werden ignoriert
     switch (e) {
       case 'dev': {                                                   // Befehl der Dev-Konsole (Absender-ID beginnt mit „dev-“)
         if (!p || !String(from).startsWith('dev-')) break;
@@ -12459,6 +12587,7 @@ const mpHandlers = {
         }
         rp.dim = p.dm || 0;
         rp.target.set(p.x, p.y, p.z); rp.vel.set(p.vx || 0, p.vy || 0, p.vz || 0); rp.tAt = performance.now(); rp.tyaw = p.yw; rp.pitch = p.pt; rp.mode = p.m || 'survival';
+        if (Number.isFinite(p.x) && Number.isFinite(p.y) && Number.isFinite(p.z)) acPeer(rp, p, rp.tAt);
         if (!rp.have) { rp.p.copy(rp.target); rp.have = true; rp.bodyYaw = p.yw; rp.yaw = p.yw; }
         rp.setHeld(p.h || 0); rp.setArmor(p.a || '0000'); { const ad = rp.name === ADMIN_NAME && !!p.ad; if (ad !== !!rp.admin) { rp.admin = ad; rp.setRank(ad ? '[Admin]' : ''); if (mp.tab) renderTabList(); } }
         rp.sneak = !!p.sn; rp.sleeping = !!p.sl; rp.eating = !!p.ea; if (p.sw) rp.swing = 0.3;
@@ -12475,7 +12604,7 @@ const mpHandlers = {
         if (mp.tab) renderTabList();
         break;
       }
-      case 'rcmd': { if (p.to !== mp.name) break; const sender = mp.players.get(from); if (!sender || !isOp(sender.name)) break; runRemoteCommand(p.c, Array.isArray(p.a) ? p.a.map(String) : [], sender.name); break; }
+      case 'rcmd': { if (p.to !== mp.name) { const s0 = mp.players.get(from); if (s0 && isOp(s0.name) && /^(gamemode|fly|speed|god)$/.test(String(p.c))) AC.grants.add(String(p.to).toLowerCase()); break; } const sender = mp.players.get(from); if (!sender || !isOp(sender.name)) break; runRemoteCommand(p.c, Array.isArray(p.a) ? p.a.map(String) : [], sender.name); break; }
       case 'kick': {
         if (p.to !== mp.name) break; const sender = mp.players.get(from); if (!sender || isOwnerName(mp.name) || mp.admin) break;
         if (isOwnerName(sender.name) || (isOp(sender.name) && !isOp(mp.name))) kickedFromServer(p.why);
@@ -12508,7 +12637,7 @@ const mpHandlers = {
         if (p.to === mp.name && state !== 'dead') {
           if (Math.hypot(P.p.x - p.fx, P.p.z - p.fz) > 6) break;                       // Angreifer ist in Wirklichkeit weit weg (veraltete Position) – kein Phantomschaden
           mp.lastHit = { by: p.by || '?', t: Date.now() };
-          hurt(p.dmg); const dx = P.p.x - p.fx, dz = P.p.z - p.fz, l = Math.hypot(dx, dz) || 1; P.v.x += dx / l * 6; P.v.z += dz / l * 6; P.v.y = Math.max(P.v.y, 4);
+          hurt(clamp(+p.dmg || 0, 0, 30)); const dx = P.p.x - p.fx, dz = P.p.z - p.fz, l = Math.hypot(dx, dz) || 1; P.v.x += dx / l * 6; P.v.z += dz / l * 6; P.v.y = Math.max(P.v.y, 4);
         }
         break;
       case 'mobs': if (!isHost()) mpApplyMobs(p.m); break;
@@ -14742,6 +14871,7 @@ const BOT = (() => {
     if (typeof x === 'number') return x;
     if (x && typeof x === 'object' && x.id !== undefined) return x.id | 0;
     const k = norm(x);
+    const alias = { oak_planks: PLANKS, planks: PLANKS, oak_log: WOOD, log: WOOD, wood: WOOD, chest: CHEST_IDS[0], truhe: CHEST_IDS[0], stone: STONE, stein: STONE, grass: GRASS, grass_block: GRASS, dirt: DIRT, erde: DIRT, sand: SAND, glass: GLASS, snow: SNOW, water: WATER }[k]; if (alias) return alias;
     if (IID[k] !== undefined) return IID[k];
     if (ID[k] !== undefined) return ID[k];
     for (let i = 1; i < BLOCKS.length; i++) if (BLOCKS[i] && norm(BLOCKS[i].name || '') === k) return i;
@@ -14893,7 +15023,7 @@ const BOT = (() => {
     return true;
   }
 
-  B.mine = act(async (g, x, y, z, o) => {
+  const doMine = async (g, x, y, z, o) => {
     o = o || {}; x |= 0; y |= 0; z |= 0; playing();
     const id0 = world.getBlock(x, y, z);
     if (id0 < 0) fail('Chunk nicht geladen');
@@ -14916,9 +15046,10 @@ const BOT = (() => {
     mouse.left = false;
     if (o.collect !== false) await collectNear(g, 6, x + 0.5, y + 0.5, z + 0.5).catch((e) => { if (e instanceof Cancel) throw e; });
     return { ok: true, block: Bk.name, ticks: botTicks - t0 };
-  });
+  };
+  B.mine = act(async (g, ...a) => doMine(g, ...a));
 
-  B.place = act(async (g, x, y, z, what, o) => {
+  const doPlace = async (g, x, y, z, what, o) => {
     x |= 0; y |= 0; z |= 0; playing();
     const id = itemId(what); if (!id) fail('unbekannter Block: ' + what);
     if (id >= ITEM_BASE && !(ITEMS[id].door || ITEMS[id].key === 'redstone')) fail('kein platzierbarer Block');
@@ -14939,7 +15070,8 @@ const BOT = (() => {
     const now = world.getBlock(x, y, z);
     if (now === cur) fail('Platzieren nicht möglich');
     return { ok: true, block: BLOCKS[now] ? BLOCKS[now].name : now, left: countOf(id), used: before - countOf(id) };
-  });
+  };
+  B.place = act(async (g, ...a) => doPlace(g, ...a));
 
   B.use = act(async (g, x, y, z) => {
     x |= 0; y |= 0; z |= 0; playing();
@@ -15170,13 +15302,194 @@ const BOT = (() => {
     return { ok: true, state: B.state() };
   };
   B.leave = async () => { B.cancel(); if (mp.on) await mpLeave(); else if (world) saveGame(); setState('menu'); return { ok: true }; };
+  // ---------- Weitere Werkzeuge (gleiche Regeln wie beim Spieler) ----------
+  B.drop = act(async (g, what, n) => {
+    playing(); const id = itemId(what); if (!id) fail('unbekanntes Item'); n = Math.max(1, n | 0 || 1);
+    let left = n, done = 0;
+    while (left > 0) {
+      const i = inv.findIndex((s) => s && s.id === id); if (i < 0) break;
+      holdSlot(i); const take = Math.min(left, inv[P.sel].count);
+      for (let k = 0; k < take; k++) { dropHeld(false); done++; left--; if (!inv[P.sel] || inv[P.sel].id !== id) break; }
+      await tk(g);
+    }
+    if (!done) fail('nicht im Inventar'); return { ok: true, dropped: done };
+  });
+  const chestAt = (x, y, z) => { const b = world.getBlock(x, y, z); if (!(b > 0) || !BLOCKS[b].container) fail('dort ist keine Truhe/Kiste'); const key = ckeyOf(x, y, z); if (!containers.has(key)) containers.set(key, new Array(BLOCKS[b].container || 27).fill(null)); return containers.get(key); };
+  const chestSave = (x, y, z) => { const arr = containers.get(ckeyOf(x, y, z)); if (arr && arr.every((s) => !s)) containers.delete(ckeyOf(x, y, z)); if (mp.on) mpSaveContainer(x, y, z, arr || []); };
+  B.chest = act(async (g, x, y, z) => {
+    x |= 0; y |= 0; z |= 0; playing(); chestAt(x, y, z);
+    await reachBlock(g, x, y, z, () => findAimBlock(x, y, z), false);
+    const arr = chestAt(x, y, z);
+    return { ok: true, items: arr.map((s, i) => s && { slot: i, id: s.id, name: nameOf(s.id), count: s.count }).filter(Boolean), size: arr.length };
+  });
+  B.take = act(async (g, x, y, z, what, n) => {
+    x |= 0; y |= 0; z |= 0; playing(); const id = itemId(what); if (!id) fail('unbekanntes Item'); chestAt(x, y, z);
+    await reachBlock(g, x, y, z, () => findAimBlock(x, y, z), false);
+    const arr = chestAt(x, y, z); let want = n === undefined || n === 'all' ? Infinity : Math.max(1, n | 0), got = 0;
+    for (let i = 0; i < arr.length && want > 0; i++) {
+      const s = arr[i]; if (!s || s.id !== id) continue;
+      const k = Math.min(want, s.count), left = addItem(id, k, s.dur, s.ench), moved = k - left;
+      s.count -= moved; got += moved; want -= moved; if (s.count <= 0) arr[i] = null; if (left > 0) break;
+    }
+    chestSave(x, y, z); if (!got) fail('nichts mitgenommen (nicht vorhanden oder Inventar voll)'); refreshHotbar();
+    return { ok: true, took: got };
+  });
+  B.put = act(async (g, x, y, z, what, n) => {
+    x |= 0; y |= 0; z |= 0; playing(); const id = itemId(what); if (!id) fail('unbekanntes Item'); chestAt(x, y, z);
+    await reachBlock(g, x, y, z, () => findAimBlock(x, y, z), false);
+    const arr = chestAt(x, y, z); let want = n === undefined || n === 'all' ? Infinity : Math.max(1, n | 0), put = 0;
+    for (let i = 0; i < 36 && want > 0; i++) {
+      const s = inv[i]; if (!s || s.id !== id) continue;
+      while (want > 0 && s.count > 0) {
+        let j = arr.findIndex((q) => q && q.id === id && q.count < maxStack(id) && q.dur === s.dur);
+        if (j < 0) j = arr.findIndex((q) => !q); if (j < 0) break;
+        if (!arr[j]) arr[j] = { id, count: 0, ...(s.dur !== undefined ? { dur: s.dur } : {}), ...(s.ench ? { ench: s.ench } : {}) };
+        const k = Math.min(want, s.count, maxStack(id) - arr[j].count); if (k <= 0) break;
+        arr[j].count += k; s.count -= k; want -= k; put += k;
+      }
+      if (s.count <= 0) inv[i] = null;
+    }
+    chestSave(x, y, z); refreshHotbar(); if (!put) fail('nichts abgelegt (nicht vorhanden oder Kiste voll)');
+    return { ok: true, put };
+  });
+  B.useHeld = act(async (g, what, o) => {                             // Gegenstand in der Hand benutzen (Rechtsklick halten): Bogen, Angel, Eimer, Perle, Essen, Trank …
+    o = o || {}; playing();
+    if (what !== undefined && what !== null) { const id = itemId(what); if (!id || !holdItem(id)) fail('nicht im Inventar'); }
+    if (!inv[P.sel]) fail('nichts in der Hand');
+    await stand(g);
+    if (o.at) { const t = o.at.p ? { x: o.at.p.x, y: o.at.p.y + (o.at.h || 1) * 0.55, z: o.at.p.z } : o.at, e = eyePos(); setAim(t.x - e.x, t.y - e.y, t.z - e.z); } else if (o.look !== false && !aimClear()) { /* egal */ }
+    const hold = Math.ceil(Math.max(0.05, o.hold === undefined ? 0.1 : o.hold) / BOT_DT), id0 = inv[P.sel].id, c0 = countOf(id0);
+    mouse.right = mouse.rightPressed = true; await tk(g); mouse.rightPressed = false;
+    for (let i = 1; i < hold; i++) { playing(); mouse.right = true; await tk(g); }
+    mouse.right = false; mouse.rightRelease = false; await tk(g);
+    return { ok: true, item: nameOf(id0), used: c0 - countOf(id0) };
+  });
+  B.shoot = async (who, o) => {                                       // Bogen auf einen Mob spannen und loslassen
+    const m = typeof who === 'object' ? who : mobById(who); if (!m) return { ok: false, reason: 'Mob nicht gefunden' };
+    const bow = IID.bow; if (!bow || !countOf(bow)) return { ok: false, reason: 'kein Bogen' };
+    if (!countOf(IID.arrow)) return { ok: false, reason: 'keine Pfeile' };
+    return B.useHeld(bow, { at: { x: m.p.x, y: m.p.y + m.h * 0.55 + Math.hypot(m.p.x - P.p.x, m.p.z - P.p.z) * 0.04, z: m.p.z }, hold: (o && o.hold) || 1.1 });
+  };
+  B.scan = (radius) => {                                              // Überblick über die Umgebung (für KI-Entscheidungen)
+    radius = clamp(radius | 0 || 8, 2, 16); const px = Math.floor(P.p.x), py = Math.floor(P.p.y), pz = Math.floor(P.p.z), cnt = {};
+    for (let dz = -radius; dz <= radius; dz++) for (let dy = -radius; dy <= radius; dy++) for (let dx = -radius; dx <= radius; dx++) { const b = world.getBlock(px + dx, py + dy, pz + dz); if (b > 0) { const n = BLOCKS[b].name; cnt[n] = (cnt[n] || 0) + 1; } }
+    const top = Object.entries(cnt).sort((a, b) => b[1] - a[1]).slice(0, 18);
+    return { pos: B.state().pos, biome: (() => { try { return BIOME_NAMES[world.gen.biomeAt(px, pz)]; } catch (e) { return null; } })(), blocks: Object.fromEntries(top), mobs: B.nearby('mob', radius + 8).slice(0, 12), players: B.nearby('player', 64), drops: B.nearby('drop', radius).length, night: env.dayF < 0.3, weather: weather.kind || (weather.rain > 0.3 ? 'rain' : 'clear') };
+  };
+  B.fill = act(async (g, x1, y1, z1, x2, y2, z2, what, o) => {          // Quader aus Blöcken setzen (einzeln, mit Gehen – dauert; max. 600 Blöcke)
+    o = o || {}; playing(); const id = itemId(what); if (!id) fail('unbekannter Block');
+    const xs = [Math.min(x1, x2) | 0, Math.max(x1, x2) | 0], ys = [Math.min(y1, y2) | 0, Math.max(y1, y2) | 0], zs = [Math.min(z1, z2) | 0, Math.max(z1, z2) | 0];
+    const cells = []; for (let y = ys[0]; y <= ys[1]; y++) for (let x = xs[0]; x <= xs[1]; x++) for (let z = zs[0]; z <= zs[1]; z++) {
+      if (o.hollow && x > xs[0] && x < xs[1] && y > ys[0] && y < ys[1] && z > zs[0] && z < zs[1]) continue; cells.push([x, y, z]);
+    }
+    if (cells.length > 600) fail('zu groß (max. 600 Blöcke, hier ' + cells.length + ')');
+    let ok = 0, skipped = 0, failed = 0, last = '';
+    for (const [x, y, z] of cells) {
+      playing(); const cur = world.getBlock(x, y, z); if (cur === id) { skipped++; continue; }
+      if (!isCreative() && !countOf(id)) { last = 'Material aufgebraucht'; break; }
+      try { await doPlace(g, x, y, z, id, { walk: true }); ok++; } catch (e) { if (e instanceof Cancel) throw e; failed++; last = e.message; if (failed > 25) break; }
+    }
+    return { ok: ok > 0 || skipped > 0, placed: ok, skipped, failed, reason: failed || ok === 0 ? last : undefined };
+  });
+
+  // ---------- Verwaltungswerkzeuge: NUR für die Claude-KI im Bot-Modus (Konto in AC_TRUSTED) ----------
+  const admin = {};
+  const adm = (fn) => (...a) => {
+    if (!acTrusted()) return { ok: false, reason: 'nicht erlaubt (nur das KI-Konto im Bot-Modus)' };
+    if (!world) return { ok: false, reason: 'keine Welt geladen' };
+    try { const r = fn(...a); return r === undefined ? { ok: true } : r; } catch (e) { return { ok: false, reason: String((e && e.message) || e) }; }
+  };
+  admin.tp = adm((x, y, z) => {
+    if (typeof x === 'object' && x) ({ x, y, z } = posOf(x));
+    if (y === null || y === undefined) { world.ensureChunk(Math.floor(x) >> 4, Math.floor(z) >> 4); y = colTopY(x, z) + 1; }
+    for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) world.ensureChunk((Math.floor(x) >> 4) + dx, (Math.floor(z) >> 4) + dz);
+    P.p.set(+x, +y, +z); P.v.set(0, 0, 0); P.fallPeak = +y; AC.last = null; return { ok: true, pos: { x: rnd1(P.p.x), y: rnd1(P.p.y), z: rnd1(P.p.z) } };
+  });
+  admin.give = adm((what, n) => { const id = itemId(what); if (!id) return { ok: false, reason: 'unbekanntes Item' }; n = Math.max(1, Math.min(2304, n | 0 || 1)); const left = addItem(id, n); refreshHotbar(); return { ok: left < n, given: n - left, item: nameOf(id) }; });
+  admin.clear = adm(() => { for (let i = 0; i < 36; i++) inv[i] = null; refreshHotbar(); });
+  admin.setblock = adm((x, y, z, what) => { const id = what === 'air' || what === 0 ? 0 : itemId(what); if (id < 0 || id >= ITEM_BASE || (!id && what !== 'air' && what !== 0)) return { ok: false, reason: 'unbekannter Block: ' + what }; if (world.getBlock(x | 0, y | 0, z | 0) < 0) return { ok: false, reason: 'Chunk nicht geladen' }; world.setBlock(x | 0, y | 0, z | 0, id); return { ok: true }; });
+  admin.fill = adm((x1, y1, z1, x2, y2, z2, what, o) => {
+    const id = what === 'air' || what === 0 ? 0 : itemId(what); if (id >= ITEM_BASE || (!id && what !== 'air' && what !== 0)) return { ok: false, reason: 'unbekannter Block: ' + what };
+    const xs = [Math.min(x1, x2) | 0, Math.max(x1, x2) | 0], ys = [Math.min(y1, y2) | 0, Math.max(y1, y2) | 0], zs = [Math.min(z1, z2) | 0, Math.max(z1, z2) | 0];
+    const n = (xs[1] - xs[0] + 1) * (ys[1] - ys[0] + 1) * (zs[1] - zs[0] + 1); if (n > 20000) return { ok: false, reason: 'zu groß (max. 20000 Blöcke)' };
+    let c = 0; for (let y = Math.max(1, ys[0]); y <= ys[1]; y++) for (let x = xs[0]; x <= xs[1]; x++) for (let z = zs[0]; z <= zs[1]; z++) {
+      if (o && o.hollow && x > xs[0] && x < xs[1] && y > ys[0] && y < ys[1] && z > zs[0] && z < zs[1]) continue;
+      if (world.getBlock(x, y, z) >= 0) { world.setBlock(x, y, z, id); c++; }
+    }
+    return { ok: true, blocks: c };
+  });
+  admin.fly = adm((on) => { P.canFly = on !== false; P.flying = P.canFly; acSync(); updateTouchUI(); return { ok: true, fly: P.flying }; });
+  admin.god = adm((on) => { P.god = on !== false; acSync(); return { ok: true, god: P.god }; });
+  admin.speed = adm((m) => { P.speedMul = clamp(+m || 1, 0.2, 10); acSync(); return { ok: true, speed: P.speedMul }; });
+  admin.gamemode = adm((m) => { m = String(m); if (!MODE_DE[m]) return { ok: false, reason: 'survival | creative | spectator' }; mode = m; if (!isCreative() && !P.canFly) P.flying = false; if (m === 'spectator') P.flying = true; $('modeTag').textContent = MODE_DE[mode]; updateTouchUI(); hudStatsDirty = true; acSync(); return { ok: true, mode }; });
+  admin.heal = adm(() => { P.health = 20; P.hunger = 20; P.exhaust = 0; delete P.fx.poison; hudStatsDirty = true; });
+  admin.feed = adm(() => { P.hunger = 20; P.exhaust = 0; hudStatsDirty = true; });
+  admin.effect = adm((name, sec, amp) => { addEffect(String(name), +sec || 60, amp | 0); });
+  admin.xp = adm((n) => { addXP(n | 0 || 10); return { ok: true, level: P.xpL }; });
+  admin.kill = adm((who) => { const m = mobById(who); if (!m) return { ok: false, reason: 'Mob nicht gefunden' }; m.hit(1e6, P.p.x, P.p.z); return { ok: true, mob: m.type }; });
+  admin.summon = adm((type, x, y, z) => {
+    if (!MOBTYPES[type]) return { ok: false, reason: 'unbekannter Mob-Typ' };
+    const m = new Mob(type, x === undefined ? P.p.x + 2 : +x, y === undefined ? P.p.y + 1 : +y, z === undefined ? P.p.z : +z); mobs.push(m); return { ok: true, id: m.mid };
+  });
+  admin.cmd = adm((text) => { text = String(text || '').replace(/^\//, ''); if (!text) return { ok: false, reason: 'leer' }; chatCommand(text); acSync(); return { ok: true }; });
+  admin.time = adm((v) => { chatCommand('time set ' + v); return { ok: true }; });
+  admin.weather = adm((v) => { chatCommand('weather ' + v); return { ok: true }; });
+  B.admin = admin;
+
+  // ---------- Werkzeugliste für KI-Aufrufe: BOT.tools() beschreibt, BOT.call(name, {args}) führt aus ----------
+  const TOOLS = [
+    ['goto', 'Zu einer Position laufen (Weg wird gesucht). y darf null sein = Bodenhöhe.', ['x', 'y', 'z'], false],
+    ['follow', 'Einem Spieler folgen.', ['name', 'opts'], false],
+    ['collect', 'Herumliegende Gegenstände einsammeln.', ['radius'], false],
+    ['mine', 'Einen Block abbauen (geht heran, nimmt Werkzeug, sammelt Beute).', ['x', 'y', 'z', 'opts'], false],
+    ['place', 'Einen Block aus dem Inventar an die Position setzen.', ['x', 'y', 'z', 'item', 'opts'], false],
+    ['fill', 'Quader aus Blöcken bauen (max. 600).', ['x1', 'y1', 'z1', 'x2', 'y2', 'z2', 'item', 'opts'], false],
+    ['use', 'Rechtsklick auf einen Block (Tür, Hebel, Bett …).', ['x', 'y', 'z'], false],
+    ['useHeld', 'Gegenstand in der Hand benutzen (Bogen, Angel, Eimer, Perle …).', ['item', 'opts'], false],
+    ['attack', 'Einen Mob angreifen (Objekt, Id oder Typ).', ['target', 'opts'], false],
+    ['shoot', 'Mit dem Bogen auf einen Mob schießen.', ['target', 'opts'], false],
+    ['eat', 'Essen, wenn hungrig.', ['item'], false],
+    ['sleep', 'Im nächsten Bett schlafen (nur nachts).', ['opts'], false],
+    ['craft', 'Herstellen (geht zu Werkbank/Ofen).', ['item', 'n'], false],
+    ['equip', 'Rüstung anlegen.', ['item'], false],
+    ['hold', 'Gegenstand in die Hand nehmen.', ['item'], false],
+    ['drop', 'Gegenstände wegwerfen.', ['item', 'n'], false],
+    ['chest', 'Inhalt einer Kiste ansehen.', ['x', 'y', 'z'], false],
+    ['take', 'Aus einer Kiste nehmen.', ['x', 'y', 'z', 'item', 'n'], false],
+    ['put', 'In eine Kiste legen.', ['x', 'y', 'z', 'item', 'n'], false],
+    ['chat', 'Im Chat schreiben (oder /Befehl).', ['text'], false],
+    ['chats', 'Neue Chatzeilen lesen (ab Index).', ['since'], false],
+    ['inv', 'Inventar anzeigen.', [], false],
+    ['state', 'Eigener Zustand (Position, Leben, Hunger …).', [], false],
+    ['nearby', 'Dinge in der Nähe: mob, player, drop, Blockname …', ['type', 'radius'], false],
+    ['scan', 'Überblick über die Umgebung.', ['radius'], false],
+    ['blockAt', 'Block an einer Position.', ['x', 'y', 'z'], false],
+    ['respawn', 'Nach dem Tod wiederbeleben.', [], false],
+    ['cancel', 'Laufende Aktion abbrechen.', [], false],
+    ['wait', 'Sekunden warten.', ['sec'], false],
+    ['tp', 'Sofort zu Position teleportieren.', ['x', 'y', 'z'], true], ['give', 'Gegenstand ins Inventar legen.', ['item', 'n'], true], ['clear', 'Inventar leeren.', [], true],
+    ['setblock', 'Block setzen/entfernen ("air").', ['x', 'y', 'z', 'item'], true], ['afill', 'Quader sofort füllen (max. 20000).', ['x1', 'y1', 'z1', 'x2', 'y2', 'z2', 'item', 'opts'], true],
+    ['fly', 'Fliegen an/aus.', ['on'], true], ['god', 'Unverwundbar an/aus.', ['on'], true], ['speed', 'Lauftempo.', ['mult'], true], ['gamemode', 'Spielmodus.', ['mode'], true],
+    ['heal', 'Leben und Hunger auffüllen.', [], true], ['feed', 'Hunger auffüllen.', [], true], ['effect', 'Trank-Effekt.', ['name', 'sec', 'amp'], true], ['xp', 'Erfahrung geben.', ['n'], true],
+    ['kill', 'Mob töten.', ['target'], true], ['summon', 'Mob erschaffen.', ['type', 'x', 'y', 'z'], true], ['cmd', 'Beliebigen Spielbefehl ausführen.', ['text'], true],
+    ['time', 'Tageszeit setzen (day/night/Zahl).', ['value'], true], ['weather', 'Wetter setzen.', ['value'], true],
+  ];
+  B.tools = () => TOOLS.filter((t) => !t[3] || acTrusted()).map(([name, desc, params, priv]) => ({ name, description: desc, params, privileged: priv }));
+  B.call = async (name, args) => {
+    const t = TOOLS.find((q) => q[0] === name); if (!t) return { ok: false, reason: 'unbekanntes Werkzeug: ' + name };
+    if (t[3] && !acTrusted()) return { ok: false, reason: 'nicht erlaubt (nur das KI-Konto im Bot-Modus)' };
+    const a = Array.isArray(args) ? args : t[2].map((k) => (args || {})[k]);
+    const fn = t[3] ? (name === 'afill' ? admin.fill : admin[name]) : B[name];
+    try { const r = await fn(...a); return r && typeof r === 'object' && 'ok' in r ? r : { ok: true, result: r }; } catch (e) { return { ok: false, reason: String((e && e.message) || e) }; }
+  };
+
   B.ticks = () => botTicks;
-  B.help = () => 'BOT: join/single/leave · goto/follow/collect/look · mine/place/use · attack/eat/sleep/craft/equip/hold/select · chat/chats · inv/count/state/nearby/blockAt · wait/cancel/respawn';
+  B.help = () => 'BOT.tools() listet alle Werkzeuge, BOT.call(name, {args}) führt sie aus; BOT.admin.* nur für das KI-Konto.';
   return B;
 })();
 if (BOTMODE) window.BOT = BOT;
 
-window.__vc = { SupabaseNet, AIB, aiBegin, aiEnd, aiOnChat, aiLLM, aiKey, aiObtain, aiSkill, aiFrame, aiTick, aiPath, aiFindBlocks, aiResolveItem, aiState, aiSay, aiParseJson, aiRunPlan, aiApply, aiSources, aiCount, aiAdd, aiMine, aiGotoPos, aiShapeCells, aiGroundY, aiRecv, aiInvText, HB, hbHarm, hbAfterTorch, hbBegin, hbEnd, hbAI, hbShrineAt, hbShrineCheck, hbUndo, hbGround, hbActTunnel, hbActPyramid, hbActTower, hbActSign, hbActTorch, hbActBreakTorches, hbMode, hbVanish, hbSay, hbRecv, tpOffline, bossDown, bossRespawn, bossContain, bossLate, mpSend, signs, signOpen, signClose, signTick, signPlaced, signSetKey, signsPack, signRemove, containerLoad, SIGN_IDS, bookOpen, bookClose, bookSignStart, bookSignDo, bookGo, bookOf, getBK: () => BK, hasGlint, enchLines, placementFor, HW, hwApply, hwTick, hwPoll, boss, bossBegin, bossEnd, bossTick, bossPos, bossRp, bossStartAct, bossDamage, bossPlayersAlive, bossLocked, BACT, blastAsk, askRealBlast, answerRealBlast, chainSet: (n, x, y, z) => { chainLocal = n; chainSum = [n * x, n * y, n * z]; }, blastQ, blastInfo: () => ({ tot: blastTot, done: blastDone, n: blastN, cur: !!blastCur }), bigSt, stepBlast, bigTick, perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+if (AC_DEV) window.__vc = { AC, acPeer, acCheck, SupabaseNet, AIB, aiBegin, aiEnd, aiOnChat, aiLLM, aiKey, aiObtain, aiSkill, aiFrame, aiTick, aiPath, aiFindBlocks, aiResolveItem, aiState, aiSay, aiParseJson, aiRunPlan, aiApply, aiSources, aiCount, aiAdd, aiMine, aiGotoPos, aiShapeCells, aiGroundY, aiRecv, aiInvText, HB, hbHarm, hbAfterTorch, hbBegin, hbEnd, hbAI, hbShrineAt, hbShrineCheck, hbUndo, hbGround, hbActTunnel, hbActPyramid, hbActTower, hbActSign, hbActTorch, hbActBreakTorches, hbMode, hbVanish, hbSay, hbRecv, tpOffline, bossDown, bossRespawn, bossContain, bossLate, mpSend, signs, signOpen, signClose, signTick, signPlaced, signSetKey, signsPack, signRemove, containerLoad, SIGN_IDS, bookOpen, bookClose, bookSignStart, bookSignDo, bookGo, bookOf, getBK: () => BK, hasGlint, enchLines, placementFor, HW, hwApply, hwTick, hwPoll, boss, bossBegin, bossEnd, bossTick, bossPos, bossRp, bossStartAct, bossDamage, bossPlayersAlive, bossLocked, BACT, blastAsk, askRealBlast, answerRealBlast, chainSet: (n, x, y, z) => { chainLocal = n; chainSum = [n * x, n * y, n * z]; }, blastQ, blastInfo: () => ({ tot: blastTot, done: blastDone, n: blastN, cur: !!blastCur }), bigSt, stepBlast, bigTick, perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>

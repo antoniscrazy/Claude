@@ -287,3 +287,11 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * 🔧 **Intern (Bot-Modus):** Der Bot pausiert nicht mehr, wenn die Maus-Sperre fehlt, das Fenster den Fokus verliert oder die Verbindung kurz abbricht – er spielt danach selbst weiter. `BOT.join` nimmt einen eigenen Skin (`skinData`). Doku: welche Aufrufe synchron sind.
 
+## 2026-10-14.42
+
+* 🛡 **Anti-Cheat:** Fliegen, Tempo, Unverwundbarkeit und Spielmodus lassen sich nur noch über die erlaubten Wege ändern (die Befehle `/fly`, `/speed`, `/god`, `/gamemode` bleiben für OPs bzw. im Einzelspieler); Manipulationen werden zurückgesetzt und zählen als Verstoß (Hinweis „🛡 Anti-Cheat …“, bei wiederholten Verstößen im Mehrspielermodus fliegt man raus). Außerdem geprüft: zu schnell laufen, in der Luft schweben, durch Blöcke laufen (Noclip → zurück zur letzten sicheren Stelle), Abbau außerhalb der Reichweite, unmögliche Stapelgrößen/Gegenstände, Schadens-Obergrenze bei Treffern.
+* 👀 **Gegenseitige Kontrolle im Mehrspielermodus:** Die Spiele prüfen die gemeldeten Positionen der Mitspieler. Wer dauerhaft schwebt oder zu schnell ist, wird ignoriert (keine Blöcke, Treffer, Befehle) und von OPs/dem Besitzer automatisch rausgeworfen. OPs, Besitzer, Admins und per `@Spieler /fly|/gamemode|/speed` freigegebene Spieler sind ausgenommen.
+* 🔒 `window.__vc` (Debug-Zugriff auf das Spiel) gibt es nur noch lokal (Datei/localhost), nicht mehr auf der veröffentlichten Seite.
+* 🤖 **Bot-Modus (intern):** mehr Werkzeuge für die KI (`drop`, Kisten `chest/take/put`, `useHeld`, `shoot`, `fill`, `scan`, `BOT.tools()`/`BOT.call()`). Das Konto `ClaudeAI` darf im Bot-Modus zusätzlich Verwaltungswerkzeuge nutzen (`BOT.admin`: teleportieren, Items geben, Blöcke setzen, Fliegen, Tempo, Befehle …) und wird vom Anti-Cheat der anderen nicht beanstandet.
+* ⚠ Grenzen: Der Anti-Cheat läuft im Browser der Spieler – ein Server-seitiger Schutz ist das nicht. Wer eine veränderte Kopie des Spiels benutzt, kann Prüfungen auf dem eigenen Rechner umgehen; die gegenseitige Kontrolle fängt dann sichtbare Folgen (Schweben, Rasen) bei den anderen ab.
+
