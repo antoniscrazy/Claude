@@ -15045,7 +15045,7 @@ const BOT = (() => {
   const fail = (m) => { throw new Fail(m); };
   const tk = (g) => new Promise((res, rej) => { botWaiters.push(() => { if (g !== gen) rej(new Cancel()); else res(); }); });
   const rnd1 = (n) => Math.round(n * 100) / 100;
-  const playing = () => { if (!world) fail('keine Welt geladen'); if (state === 'dead') fail('tot' + (botCfg.autoRespawn ? ' – respawnt automatisch, Aufgabe pausiert (danach erneut starten oder BOT.run nutzen)' : ' (BOT.respawn())')); if (state !== 'play') fail('nicht im Spiel (Zustand: ' + state + ')'); };
+  const playing = () => { if (!world) fail('keine Welt geladen'); if (state === 'sign') { try { signClose(false); } catch (e) { setState('play'); } } else if (state === 'inv' || state === 'chat' || state === 'trade' || state === 'emotes') setState('play'); /* Oberflächen, die der Bot nicht braucht (Schild-Editor, Inventar …), werden geschlossen */ if (state === 'dead') fail('tot' + (botCfg.autoRespawn ? ' – respawnt automatisch, Aufgabe pausiert (danach erneut starten oder BOT.run nutzen)' : ' (BOT.respawn())')); if (state !== 'play') fail('nicht im Spiel (Zustand: ' + state + ')'); };
   const release = () => { BOTIN.fwd = BOTIN.str = 0; BOTIN.jump = BOTIN.sneak = BOTIN.sprint = BOTIN.wake = false; mouse.left = mouse.right = mouse.leftPressed = mouse.rightPressed = false; };
   const act = (fn) => async (...a) => {
     const nested = B._nest; B._nest = false; const g = nested ? gen : ++gen; release();
@@ -15664,7 +15664,7 @@ const BOT = (() => {
     ['cleanup', 'Gerüstblöcke von oben nach unten wieder abbauen.', [], false],
     ['gather', 'n Blöcke einer Sorte (z. B. "logs", "stone", "iron_ore") abbauen und einsammeln – nur natürliches Gelände.', ['what', 'n', 'opts'], false],
     ['run', 'Aufgabenliste [{tool,args},…] ausführen; pausiert beim Tod bis zum Respawn und wiederholt den Schritt.', ['steps', 'opts'], false],
-    ['jump', 'n-mal springen.', ['n'], false], ['sneak', 'Schleichen an/aus.', ['on'], false], ['emote', 'Emote abspielen (Zahl).', ['id'], false],
+    ['sign', 'Schild beschriften: x,y,z, lines (Liste mit bis zu 4 Zeilen).', ['x', 'y', 'z', 'lines'], false], ['jump', 'n-mal springen.', ['n'], false], ['sneak', 'Schleichen an/aus.', ['on'], false], ['emote', 'Emote abspielen (Zahl).', ['id'], false],
     ['ride', 'Auf ein Tier steigen (Pferd, Schwein …).', ['target'], false], ['dismount', 'Absteigen.', [], false],
     ['skins', 'Verfügbare Skin-Vorlagen anzeigen.', [], false], ['skin', 'Skin wechseln: Vorlagenname oder {data: PNG-Data-URL, slim}.', ['spec'], false],
     ['screenshot', 'Bild der Spielwelt aus Spielersicht (JPEG als Data-URL; opts: w,h,radius,look,yaw,pitch).', ['opts'], false],
@@ -15919,6 +15919,12 @@ const BOT = (() => {
     return { ok: got > 0, mined: got, wanted: n, reason: got ? undefined : 'nichts gefunden/erreichbar in ' + radius + ' Blöcken' };
   });
   const botSkip = new Set();
+  B.sign = act(async (g, x, y, z, lines) => {                           // ein gesetztes Schild beschriften (bis 4 Zeilen)
+    x |= 0; y |= 0; z |= 0; playing(); const b = world.getBlock(x, y, z); if (!(b > 0) || !BLOCKS[b].sign) fail('dort ist kein Schild (erst BOT.place mit "sign")');
+    await reachBlock(g, x, y, z, (e) => findAimBlock(x, y, z, null, e), false);
+    const L = signClean((Array.isArray(lines) ? lines : String(lines || '').split('\n')).slice(0, 4).map((t) => String(t == null ? '' : t)));
+    signSetKey(ckeyOf(x, y, z), L); mpSaveSign(x, y, z, L.some(Boolean) ? L : null); sfx('place'); return { ok: true, lines: L };
+  });
   B.jump = act(async (g, n) => { playing(); for (let i = 0; i < Math.max(1, Math.min(20, n | 0 || 1)); i++) { BOTIN.jump = true; await waitTicks(g, 3); BOTIN.jump = false; await waitTicks(g, 8); } return { ok: true }; });
   B.sneak = (on) => { BOTIN.sneak = on !== false; return { ok: true, sneak: BOTIN.sneak }; };
   B.emote = (id) => { try { return playEmote(id | 0) ? { ok: true } : { ok: false, reason: 'Emote nicht möglich (nur im Mehrspielermodus, nicht im Kampf)' }; } catch (e) { return { ok: false, reason: String(e.message || e) }; } };
