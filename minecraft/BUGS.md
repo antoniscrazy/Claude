@@ -321,3 +321,8 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * ⛏ **Abbau:** Schere lässt Gras, Farn, toten Busch, Spinnennetz und Laub ganz fallen; toter Busch gibt Stöcke, Spinnennetz Faden; Tiefenschiefer lässt sich mit Behutsamkeit abbauen.
 * ✅ Prüfung aller ~2500 Block-IDs und 194 Items: alles Übrige ist Weltgenerierung/Mob-Beute/Handel/Angeln. Bewusst nur Kreativ bleiben Grundgestein, Spawner, Lava, Ackerland, Netherportal, Drachenei.
 
+
+## 2026-10-14.47
+
+* 👁 **`/spectate <spieler>` (nur Admin-Modus):** setzt dich in den Zuschauer-Modus und die Kamera folgt dem Spieler automatisch (hinter ihm, nicht in Wänden, auch in andere Dimensionen). Sobald du etwas tust (Taste, Maus, Touch), hast du die freie Zuschauer-Kamera; nach **10 Sekunden ohne Eingabe** geht es wieder automatisch zurück. `/spectate stop` beendet das Folgen und stellt den vorherigen Spielmodus wieder her; verlässt der Spieler den Server, endet es von selbst. Anzeige oben rechts: „Zuschauer · folgt Name“.
+* 📋 **Checkliste für den KI-Agenten (nur auf Wunsch):** Sagst du dem Agenten „mach mir dafür eine Checkliste“, zeigt er auf **deinem** Bildschirm links oben eine Liste an (☐/☑) und hakt Punkte ab, während er arbeitet. Nur das Konto `ClaudeAI` kann sie senden, und nur an den genannten Spieler; andere sehen sie nicht. Werkzeuge: `BOT.checklist(to, title, items)`, `BOT.check(nummer|text, done)`, `BOT.checklistClear()`. Mit `/checkliste aus|an|leeren` blendest du sie selbst aus oder weg.

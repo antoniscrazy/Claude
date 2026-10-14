@@ -2052,7 +2052,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-14.46';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-10-14.47';            // Spielversion (nur Anzeige)
 // Verdeckter Bot-Modus (nur per URL ?bot=1, nirgends in der Oberfläche erwähnt): läuft ohne Darstellung mit festem 20-Ticks-Takt, Steuerung über window.BOT (siehe Abschnitt BOT)
 const botChat = [];
 const BOTMODE = /[?&]bot=1(?:&|#|$)/.test(location.search);
@@ -9290,12 +9290,75 @@ function acPeer(rp, p, now) {
     if (A.hy === undefined || Math.abs(p.y - A.hy) > 0.6) { A.hy = p.y; A.hover = 0; } else { A.hover += dt; if (A.hover > 6) acPeerFlag(rp, 'schwebt'); }
   } else { A.hover = 0; A.hy = undefined; }
 }
+// ---------- Admin: /spectate <spieler> – Zuschauer folgt automatisch; eigene Eingabe = freie Kamera, nach 10 s Ruhe wieder automatisch ----------
+const SPEC = { name: '', auto: true, idle: 0, touch: false, prev: 'creative', dimT: 0 };
+const specLabel = () => { $('modeTag').textContent = SPEC.name ? (SPEC.auto ? 'Zuschauer · folgt ' + SPEC.name : 'Zuschauer · frei (' + SPEC.name + ' nach ' + Math.max(1, Math.ceil(10 - SPEC.idle)) + ' s)') : (MODE_DE[mode] || 'Überleben'); };
+function specStop(restore, msg) {
+  if (!SPEC.name) return;
+  SPEC.name = '';
+  if (restore && mode === 'spectator') { try { CMDS.gamemode.run([SPEC.prev || 'creative']); } finally { acSync(); } } else specLabel();
+  if (msg) { toast(msg); chatOk(msg); }
+}
+function specStart(name) {
+  const rp = findPlayer(name);
+  if (mode !== 'spectator') { SPEC.prev = mode === 'survival' ? 'survival' : 'creative'; CMDS.gamemode.run(['spectator']); }
+  Object.assign(SPEC, { name: rp.name, auto: true, idle: 0, touch: false, dimT: 0 });
+  specLabel(); chatOk('👁 Du folgst ' + rp.name + ' – bewege dich oder die Maus für freie Kamera (nach 10 s Ruhe geht es automatisch weiter). /spectate stop beendet es.');
+}
+['keydown', 'wheel', 'mousedown', 'pointerdown', 'touchstart'].forEach((ev) => document.addEventListener(ev, () => { if (SPEC.name && state === 'play') SPEC.touch = true; }, true));
+document.addEventListener('mousemove', (e) => { if (SPEC.name && state === 'play' && Math.abs(e.movementX || 0) + Math.abs(e.movementY || 0) > 1) SPEC.touch = true; }, true);
+function specTick(dt) {
+  if (!SPEC.name) return;
+  if (mode !== 'spectator' || !mp.on) { SPEC.name = ''; specLabel(); return; }
+  const rp = [...mp.players.values()].find((q) => q.name === SPEC.name);
+  if (!rp) { specStop(false, SPEC.name + ' hat den Server verlassen – Folgen beendet.'); return; }
+  const wasAuto = SPEC.auto;
+  if (SPEC.touch || touchMove.x || touchMove.y) { SPEC.touch = false; SPEC.idle = 0; SPEC.auto = false; }
+  else if (!SPEC.auto) { SPEC.idle += dt; if (SPEC.idle >= 10) { SPEC.auto = true; SPEC.idle = 0; } }
+  if (wasAuto !== SPEC.auto || (!SPEC.auto && (SPEC.lblT = (SPEC.lblT || 0) - dt) <= 0)) { SPEC.lblT = 1; specLabel(); }
+  if (!SPEC.auto || !rp.have) return;
+  if ((rp.dim || 0) !== world.dim) {
+    if ((SPEC.dimT -= dt) <= 0) { SPEC.dimT = 6; enterDimension(rp.dim || 0, rp.target.x, rp.target.y + 2, rp.target.z, { exact: true }); }
+    return;
+  }
+  const yaw = rp.yaw, tx = rp.p.x, ty = rp.p.y + 1.6, tz = rp.p.z, dist = 3.6;
+  const o = new THREE.Vector3(tx, ty, tz), d = new THREE.Vector3(Math.sin(yaw) * 0.9, 0.45, Math.cos(yaw) * 0.9).normalize();
+  const hit = raycastBlocks(o, d, dist), L = hit ? Math.max(1.2, hit.dist - 0.35) : dist;                // Kamera nicht in Wänden
+  const cx = tx + d.x * L, cy = ty + d.y * L, cz = tz + d.z * L, far = Math.hypot(cx - (P.p.x), cz - P.p.z) > 14;
+  const k = far ? 1 : Math.min(1, dt * 5);
+  world.ensureChunk(Math.floor(cx) >> 4, Math.floor(cz) >> 4);
+  P.p.x += (cx - P.p.x) * k; P.p.y += (cy - EYE - P.p.y) * k; P.p.z += (cz - P.p.z) * k; P.v.set(0, 0, 0); P.fallPeak = P.p.y;
+  const wy = Math.atan2(tx - P.p.x, tz - P.p.z) + Math.PI, wp = Math.atan2(ty - (P.p.y + EYE), Math.hypot(tx - P.p.x, tz - P.p.z));
+  let dy = wy - P.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); P.yaw += dy * Math.min(1, dt * 7);
+  P.pitch += (clamp(wp, -1.3, 1.3) - P.pitch) * Math.min(1, dt * 7);
+}
+// ---------- Checkliste auf dem Bildschirm (kommt nur auf Wunsch vom KI-Konto, siehe BOT.checklist) ----------
+const CKL = { to: '', title: '', items: [], el: null, hidden: false };
+function cklRender() {
+  if (!CKL.el) {
+    const el = CKL.el = document.createElement('div'); el.id = 'ckl';
+    el.style.cssText = 'position:fixed;top:96px;left:10px;z-index:14;max-width:min(340px,70vw);background:rgba(10,12,16,.78);border:2px solid #000;color:#e6ecf0;font:13px/1.35 monospace;padding:7px 10px;pointer-events:none;display:none;text-align:left';
+    document.body.appendChild(el);
+  }
+  const el = CKL.el; el.textContent = '';
+  if (!CKL.items.length || CKL.hidden || state === 'menu') { el.style.display = 'none'; return; }
+  const h = document.createElement('div'); h.style.cssText = 'font-weight:bold;color:#9fd37a;margin-bottom:3px'; h.textContent = '📋 ' + (CKL.title || 'Checkliste'); el.appendChild(h);
+  for (const it of CKL.items) { const r = document.createElement('div'); r.style.cssText = it.done ? 'color:#8a9a8a;text-decoration:line-through' : ''; r.textContent = (it.done ? '☑ ' : '☐ ') + it.text; el.appendChild(r); }
+  el.style.display = 'block';
+}
+function cklApply(p) {
+  if (p.a === 'clear') { CKL.items = []; CKL.title = ''; }
+  else if (p.a === 'set' && Array.isArray(p.i)) { CKL.title = String(p.t || '').slice(0, 60); CKL.items = p.i.slice(0, 30).map((q) => Array.isArray(q) ? { text: String(q[0]).slice(0, 120), done: !!q[1] } : { text: String(q).slice(0, 120), done: false }); CKL.hidden = false; }
+  else if (p.a === 'chk') { const it = CKL.items[p.i | 0]; if (it) it.done = !!p.d; }
+  cklRender();
+}
+setInterval(() => { if (CKL.el) cklRender(); }, 700);
 function simTick(dt) {
   const frozen = mp.on && mp.offline;                                // Internet weg: Mehrspieler-Welt ist angehalten
   const live = !frozen && state === 'play', simOnly = !frozen && mp.on && (state === 'inv' || state === 'pause' || state === 'chat' || state === 'dead' || state === 'settings' || state === 'trade');
   if (live) {
     if (!mp.on && rules.daycycle) gameTime += dt;
-    updateSandBurial(dt); updateGaze(dt); if (bossLocked()) updatePlayerIdle(dt); else if (P.ride) updatePlayerRide(dt); else updatePlayer(dt); updateEffects(dt); acCheck(dt); updatePortal(dt);
+    updateSandBurial(dt); updateGaze(dt); if (bossLocked()) updatePlayerIdle(dt); else if (P.ride) updatePlayerRide(dt); else updatePlayer(dt); updateEffects(dt); acCheck(dt); specTick(dt); updatePortal(dt);
     if (boss.on && (bossLocked() || boss.me === 'boss')) bossNoInteract(boss.me === 'boss'); else updateInteraction(dt); ambientTick(dt); musicTick(dt); fxTick(dt); { const bo = $('btnBackOut'); bo.classList.toggle('hidden', !(world.dim === 2 && state === 'play')); }
     saveTimer += dt; if (saveTimer > 45) { saveTimer = 0; saveGame(); }
   } else if (simOnly && state !== 'dead') { if (P.ride) updatePlayerRide(dt); else updatePlayerIdle(dt); updateEffects(dt); }
@@ -11452,6 +11515,26 @@ cmd(['event', 'ereignis'], {
     else fail('/event halloween oder /event off');
   },
 });
+cmd(['spectate', 'spec', 'folgen'], {
+  desc: 'Admin: Einem Spieler als Zuschauer folgen – /spectate <spieler> (Kamera folgt automatisch; eigene Eingabe = freie Kamera, nach 10 s Ruhe wieder automatisch) · /spectate stop', hidden: true, mpOnly: true, needs: 1, args: [T.player('spieler / stop')],
+  run(a) {
+    if (!adminEligible()) fail('Unbekannter Befehl.');
+    if (!mp.admin) fail('Dazu musst du im Admin-Modus sein (/admin).');
+    if (/^(stop|aus|off|ende)$/i.test(a[0])) { if (!SPEC.name) fail('Du folgst gerade niemandem.'); specStop(true, 'Folgen beendet.'); return; }
+    if (a[0].toLowerCase() === mp.name.toLowerCase()) fail('Du kannst dir nicht selbst folgen.');
+    specStart(a[0]);
+  },
+});
+cmd(['checkliste', 'checklist'], {
+  desc: 'Checkliste des KI-Spielers auf dem Bildschirm aus-/einblenden: /checkliste aus · an · leeren', args: [T.opt('aktion', ['aus', 'an', 'leeren'], true)],
+  run(a) {
+    const w = (a[0] || '').toLowerCase();
+    if (['leeren', 'clear', 'loeschen'].includes(w)) { CKL.items = []; CKL.title = ''; cklRender(); chatOk('Checkliste geleert.'); return; }
+    if (['aus', 'off', 'hide'].includes(w)) { CKL.hidden = true; cklRender(); chatOk('Checkliste ausgeblendet (/checkliste an).'); return; }
+    if (['an', 'on', 'show'].includes(w) || !w) { CKL.hidden = false; cklRender(); chatOk(CKL.items.length ? 'Checkliste eingeblendet.' : 'Keine Checkliste vorhanden – der KI-Spieler macht nur auf Wunsch eine.'); return; }
+    fail('/checkliste aus | an | leeren');
+  },
+});
 cmd(['animation', 'riese'], {
   desc: 'Admin: Boss-Kampf – du wirst ein 10× großer Riese, alle anderen müssen dich besiegen (/animation [leben] oder /animation stop)', hidden: true, mpOnly: true, args: [T.opt('leben', ['stop'], true)],
   run(a) {
@@ -12756,6 +12839,11 @@ const mpHandlers = {
         rp.setHeld(p.h || 0); rp.setArmor(p.a || '0000'); { const ad = rp.name === ADMIN_NAME && !!p.ad; if (ad !== !!rp.admin) { rp.admin = ad; rp.setRank(ad ? '[Admin]' : ''); if (mp.tab) renderTabList(); } }
         rp.sneak = !!p.sn; rp.sleeping = !!p.sl; rp.eating = !!p.ea; if (p.sw) rp.swing = 0.3;
         break;
+      }
+      case 'ckl': {                                                   // Checkliste vom KI-Konto (nur wenn sie ausdrücklich an mich gerichtet ist)
+        const sn = mp.players.get(from);
+        if (!p || !sn || !AC_TRUSTED.has(sn.name.toLowerCase()) || String(p.to || '').toLowerCase() !== String(mp.name || '').toLowerCase()) break;
+        cklApply(p); break;
       }
       case 'blocks': for (const [x, Y, z, id] of p.b) { const [d, y] = fromKeyY(Y); world.setBlockDim(d, x, y, z, id); } break;
       case 'chat':
@@ -15504,6 +15592,20 @@ const BOT = (() => {
   B.wait = act(async (g, sec) => { await waitTicks(g, Math.max(1, Math.ceil((sec || 1) / BOT_DT))); return { ok: true }; });
 
   // ---------- Chat ----------
+  // Checkliste: erscheint auf dem Bildschirm EINES Spielers – nur auf dessen ausdrücklichen Wunsch benutzen
+  const ckl = { to: '', title: '', items: [] };
+  const cklSend = (p) => { if (!ckl.to) return { ok: false, reason: 'kein Empfänger (to)' }; mpSend('ckl', Object.assign({ to: ckl.to }, p)); return { ok: true }; };
+  B.checklist = (to, title, items) => {
+    if (!to || !Array.isArray(items) || !items.length) return { ok: false, reason: 'checklist(to, title, items[]) – items = Liste von Texten oder [Text, erledigt]' };
+    ckl.to = String(to); ckl.title = String(title || 'Checkliste').slice(0, 60); ckl.items = items.slice(0, 30).map((q) => Array.isArray(q) ? [String(q[0]).slice(0, 120), !!q[1]] : typeof q === 'object' && q ? [String(q.text || '').slice(0, 120), !!q.done] : [String(q).slice(0, 120), false]);
+    return cklSend({ a: 'set', t: ckl.title, i: ckl.items });
+  };
+  B.check = (which, done) => {                                         // which: Nummer (ab 0) oder Text des Punktes
+    const i = typeof which === 'number' ? which : ckl.items.findIndex((q) => q[0] === String(which));
+    if (!(i >= 0 && i < ckl.items.length)) return { ok: false, reason: 'Punkt nicht gefunden' };
+    ckl.items[i][1] = done === undefined ? true : !!done; return cklSend({ a: 'chk', i, d: ckl.items[i][1] });
+  };
+  B.checklistClear = () => { const r = cklSend({ a: 'clear' }); ckl.items = []; return r; };
   B.chat = (text) => { text = String(text == null ? '' : text); if (!text.trim()) return { ok: false, reason: 'leer' }; try { chatSubmit(text.slice(0, 200)); return { ok: true }; } catch (e) { return { ok: false, reason: String(e.message || e) }; } };
   B.chats = (since) => { const i = since | 0; return { next: botChat.length, lines: botChat.slice(i) }; };
 
@@ -15741,6 +15843,8 @@ const BOT = (() => {
     ['take', 'Aus einer Kiste nehmen.', ['x', 'y', 'z', 'item', 'n'], false],
     ['put', 'In eine Kiste legen.', ['x', 'y', 'z', 'item', 'n'], false],
     ['chat', 'Im Chat schreiben (oder /Befehl).', ['text'], false],
+    ['checklist', 'NUR auf Wunsch eines Spielers: Checkliste auf SEINEM Bildschirm anzeigen (to = Spielername, title, items = Liste von Texten).', ['to', 'title', 'items'], false],
+    ['check', 'Punkt der Checkliste abhaken (Nummer ab 0 oder Text; done=false nimmt den Haken weg).', ['which', 'done'], false], ['checklistClear', 'Checkliste vom Bildschirm entfernen.', [], false],
     ['chats', 'Neue Chatzeilen lesen (ab Index).', ['since'], false],
     ['inv', 'Inventar anzeigen.', [], false],
     ['state', 'Eigener Zustand (Position, Leben, Hunger …).', [], false],
@@ -16115,7 +16219,7 @@ const BOT = (() => {
 })();
 if (BOTMODE) window.BOT = BOT;
 
-if (AC_DEV) window.__vc = { PALETTE, AC, acPeer, acCheck, SupabaseNet, AIB, aiBegin, aiEnd, aiOnChat, aiLLM, aiKey, aiObtain, aiSkill, aiFrame, aiTick, aiPath, aiFindBlocks, aiResolveItem, aiState, aiSay, aiParseJson, aiRunPlan, aiApply, aiSources, aiCount, aiAdd, aiMine, aiGotoPos, aiShapeCells, aiGroundY, aiRecv, aiInvText, HB, hbHarm, hbAfterTorch, hbBegin, hbEnd, hbAI, hbShrineAt, hbShrineCheck, hbUndo, hbGround, hbActTunnel, hbActPyramid, hbActTower, hbActSign, hbActTorch, hbActBreakTorches, hbMode, hbVanish, hbSay, hbRecv, tpOffline, bossDown, bossRespawn, bossContain, bossLate, mpSend, signs, signOpen, signClose, signTick, signPlaced, signSetKey, signsPack, signRemove, containerLoad, SIGN_IDS, bookOpen, bookClose, bookSignStart, bookSignDo, bookGo, bookOf, getBK: () => BK, hasGlint, enchLines, placementFor, HW, hwApply, hwTick, hwPoll, boss, bossBegin, bossEnd, bossTick, bossPos, bossRp, bossStartAct, bossDamage, bossPlayersAlive, bossLocked, BACT, blastAsk, askRealBlast, answerRealBlast, chainSet: (n, x, y, z) => { chainLocal = n; chainSum = [n * x, n * y, n * z]; }, blastQ, blastInfo: () => ({ tot: blastTot, done: blastDone, n: blastN, cur: !!blastCur }), bigSt, stepBlast, bigTick, perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+if (AC_DEV) window.__vc = { PALETTE, SPEC, CKL, cklApply, AC, acPeer, acCheck, SupabaseNet, AIB, aiBegin, aiEnd, aiOnChat, aiLLM, aiKey, aiObtain, aiSkill, aiFrame, aiTick, aiPath, aiFindBlocks, aiResolveItem, aiState, aiSay, aiParseJson, aiRunPlan, aiApply, aiSources, aiCount, aiAdd, aiMine, aiGotoPos, aiShapeCells, aiGroundY, aiRecv, aiInvText, HB, hbHarm, hbAfterTorch, hbBegin, hbEnd, hbAI, hbShrineAt, hbShrineCheck, hbUndo, hbGround, hbActTunnel, hbActPyramid, hbActTower, hbActSign, hbActTorch, hbActBreakTorches, hbMode, hbVanish, hbSay, hbRecv, tpOffline, bossDown, bossRespawn, bossContain, bossLate, mpSend, signs, signOpen, signClose, signTick, signPlaced, signSetKey, signsPack, signRemove, containerLoad, SIGN_IDS, bookOpen, bookClose, bookSignStart, bookSignDo, bookGo, bookOf, getBK: () => BK, hasGlint, enchLines, placementFor, HW, hwApply, hwTick, hwPoll, boss, bossBegin, bossEnd, bossTick, bossPos, bossRp, bossStartAct, bossDamage, bossPlayersAlive, bossLocked, BACT, blastAsk, askRealBlast, answerRealBlast, chainSet: (n, x, y, z) => { chainLocal = n; chainSum = [n * x, n * y, n * z]; }, blastQ, blastInfo: () => ({ tot: blastTot, done: blastDone, n: blastN, cur: !!blastCur }), bigSt, stepBlast, bigTick, perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>

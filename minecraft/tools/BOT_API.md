@@ -66,3 +66,9 @@ Siehe Kommentar „ANTI-CHEAT“ in `index.html`: Selbstkontrolle (Flug/Tempo/Go
 * **`admin.tp`** schaltet bei Zielen in der Luft automatisch Fliegen an (`fly:false` verhindert es).
 * Hinweis: `BOT.call(...)` liefert ein Promise – mit `.then(r => JSON.stringify(r))` oder `await` auswerten.
 
+
+## Checkliste (v47) – NUR auf ausdrücklichen Wunsch eines Spielers
+
+* `BOT.checklist(to, title, items)` zeigt auf dem Bildschirm des Spielers `to` eine Checkliste (links oben). `items` = Liste von Texten oder `[Text, erledigt]` (max. 30 Punkte, 120 Zeichen).
+* `BOT.check(nummer | text, done=true)` hakt einen Punkt ab (Nummer ab 0), `BOT.checklistClear()` entfernt die Liste. Auch über `BOT.call('checklist' | 'check' | 'checklistClear', {...})`.
+* Nur das Konto `ClaudeAI` darf senden, angezeigt wird sie nur beim genannten Spieler (`/checkliste aus` blendet sie dort aus). Nicht ungefragt benutzen.
