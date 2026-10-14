@@ -2047,7 +2047,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-14.42';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-10-14.43';            // Spielversion (nur Anzeige)
 // Verdeckter Bot-Modus (nur per URL ?bot=1, nirgends in der Oberfläche erwähnt): läuft ohne Darstellung mit festem 20-Ticks-Takt, Steuerung über window.BOT (siehe Abschnitt BOT)
 const botChat = [];
 const BOTMODE = /[?&]bot=1(?:&|#|$)/.test(location.search);
@@ -10424,6 +10424,10 @@ class SupabaseDB {
   createRoom(room, seed, mode, name, token, pub) { return this.rpc('vc_create_room', { p_room: room, p_seed: seed, p_mode: mode, p_name: name, p_token: token, p_public: pub }); }
   joinRoom(room, name, token) { return this.rpc('vc_join_room', { p_room: room, p_name: name, p_token: token }); }
   setOp(room, name, token, target, op) { return this.rpc('vc_set_op', { p_room: room, p_name: name, p_token: token, p_target: target, p_op: op }); }
+  deviceJoin(room, name, token, device, fp) { return this.rpc('vc_device_join', { p_room: room, p_name: name, p_token: token, p_device: device, p_fp: fp }); }
+  roomBan(room, name, token, target, reason) { return this.rpc('vc_room_ban', { p_room: room, p_name: name, p_token: token, p_target: target, p_reason: reason || '' }); }
+  roomUnban(room, name, token, target) { return this.rpc('vc_room_unban', { p_room: room, p_name: name, p_token: token, p_target: target }); }
+  roomBanlist(room, name, token) { return this.rpc('vc_room_banlist', { p_room: room, p_name: name, p_token: token }); }
   deleteRoom(room, name, token) { return this.rpc('vc_delete_room', { p_room: room, p_name: name, p_token: token }); }
   listRooms() { return this.rpc('vc_list_rooms', {}); }
   getEdits(room) { return this.rpc('vc_get_edits', { p_room: room }); }
@@ -10496,6 +10500,38 @@ class LocalDB {
     if (pl.name.toLowerCase() === r.owner.toLowerCase()) return { ok: false, error: 'owner' };
     r.ops = (r.ops || []).filter((n) => n !== pl.name); if (op) r.ops.push(pl.name);
     this.save(d); return this.info(room, r);
+  }
+  // Geräte-Sperren (lokal: alle Tabs desselben Browsers teilen sich Gerät und Sperrliste)
+  banRights(d, room, name) { const r = (d.rooms || {})[room]; if (!r) return { err: 'no_server' }; if (!((r.owner && r.owner.toLowerCase() === name.toLowerCase()) || name.toLowerCase() === 'anton')) return { err: 'not_allowed', r }; return { r }; }
+  async deviceJoin(room, name, token, device, fp) {
+    const d = this.load(), q = this.banRights(d, room, name); if (q.err === 'no_server') return { ok: false, error: 'no_server' };
+    d.bans = d.bans || {}; d.devs = d.devs || {}; const bans = d.bans[room] = d.bans[room] || [], devs = d.devs[room] = d.devs[room] || [], nl = name.toLowerCase();
+    if (!q.err) { /* Besitzer/Admin nie gesperrt */ } else {
+      const b = bans.find((x) => x.device === device || (x.fp && fp && x.fp === fp) || x.name_lower === nl);
+      if (b) { if (b.device !== device && !bans.some((x) => x.device === device)) bans.push({ device, fp, names: [name], reason: b.reason, by: b.by, at: Date.now() }); bans.filter((x) => x.device === device).forEach((x) => { if (!x.names.includes(name)) x.names.push(name); }); this.save(d); return { ok: true, banned: true, msg: b.reason || 'Du wurdest von diesem Server gebannt.' }; }
+    }
+    if (!devs.some((x) => x.name_lower === nl && x.device === device)) devs.push({ name_lower: nl, name, device, fp }); this.save(d); return { ok: true, banned: false };
+  }
+  async roomBan(room, name, token, target, reason) {
+    const d = this.load(), q = this.banRights(d, room, name); if (q.err) return { ok: false, error: q.err };
+    const pl = (d.players || {})[target.toLowerCase()]; if (!pl) return { ok: false, error: 'no_player' };
+    if ((q.r.owner || '').toLowerCase() === pl.name.toLowerCase() || pl.name.toLowerCase() === 'anton') return { ok: false, error: 'protected' };
+    d.bans = d.bans || {}; d.devs = d.devs || {}; const bans = d.bans[room] = d.bans[room] || [], devs = d.devs[room] || [], tl = pl.name.toLowerCase(); let n = 0; const names = new Set([pl.name]);
+    for (const x of devs.filter((y) => y.name_lower === tl)) {
+      devs.filter((y) => y.device === x.device).forEach((y) => names.add(y.name));
+      if (!bans.some((b) => b.device === x.device)) { bans.push({ device: x.device, fp: x.fp, names: [...new Set(devs.filter((y) => y.device === x.device).map((y) => y.name))], reason: reason || '', by: name, at: Date.now() }); n++; }
+    }
+    if (!bans.some((b) => b.name_lower === tl)) bans.push({ name_lower: tl, names: [pl.name], reason: reason || '', by: name, at: Date.now() });
+    this.save(d); return { ok: true, name: pl.name, devices: n, names: [...names] };
+  }
+  async roomUnban(room, name, token, target) {
+    const d = this.load(), q = this.banRights(d, room, name); if (q.err) return { ok: false, error: q.err };
+    const bans = (d.bans || {})[room] || [], tl = target.toLowerCase(), keep = bans.filter((b) => !(b.name_lower === tl || (b.names || []).some((x) => x.toLowerCase() === tl)));
+    if (keep.length === bans.length) return { ok: false, error: 'not_banned' }; d.bans[room] = keep; this.save(d); return { ok: true, removed: bans.length - keep.length };
+  }
+  async roomBanlist(room, name) {
+    const d = this.load(), q = this.banRights(d, room, name); if (q.err) return { ok: false, error: q.err };
+    return { ok: true, bans: ((d.bans || {})[room] || []).map((b) => ({ names: b.names, reason: b.reason, by: b.by, at: new Date(b.at || 0).toISOString(), device: !!b.device })) };
   }
   async deleteRoom(room, name) {
     const d = this.load(), r = (d.rooms || {})[room]; if (!r) return { ok: false, error: 'no_server' };
@@ -11383,6 +11419,62 @@ cmd(['kick'], {
     mpSend('kick', { to: t.name, why: a.slice(1).join(' ').slice(0, 80) }); chatOk(t.name + ' wurde rausgeworfen.');
   },
 });
+const banAllowed = () => mp.on && (isOwnerName(mp.name) || isAdminName(mp.name));
+const BAN_ERR = { no_player: 'Diesen Spieler gibt es nicht.', protected: 'Besitzer und Admin kann man nicht sperren.', not_allowed: 'Nur der Server-Besitzer und der Admin dürfen sperren.', not_banned: 'Dieser Spieler ist nicht gesperrt.', no_server: 'Diesen Server gibt es nicht mehr.' };
+function banTarget(raw) {
+  const q = String(raw || '').trim(); if (!/^[A-Za-z0-9_]{3,16}$/.test(q)) fail('Spielername: 3–16 Zeichen (Buchstaben, Ziffern, _).');
+  const rp = [...mp.players.values()].find((p) => p.name.toLowerCase() === q.toLowerCase()) || (() => { const m = [...mp.players.values()].filter((p) => p.name.toLowerCase().startsWith(q.toLowerCase())); return m.length === 1 ? m[0] : null; })();
+  return rp ? rp.name : q;
+}
+cmd(['ban', 'sperren'], {
+  desc: 'Sperrt einen Spieler auf DIESEM Server für sein GERÄT, bis /unban (nur Besitzer und Admin)', mpOnly: true, needs: 1, args: [T.player(), T.text('grund', true)],
+  run(a) {
+    if (!banAllowed()) fail('/ban dürfen nur der Server-Besitzer und der Admin (im Admin-Modus).');
+    const name = banTarget(a[0]), why = a.slice(1).join(' ').slice(0, 80);
+    if (name.toLowerCase() === mp.name.toLowerCase()) fail('Du kannst dich nicht selbst sperren.');
+    if (isOwnerName(name) || name === ADMIN_NAME) fail('Besitzer und Admin kann man nicht sperren.');
+    (async () => {
+      try {
+        const r = await mp.db.roomBan(mp.room, mp.name, mp.token, name, why);
+        if (!r || !r.ok) return chatErr(BAN_ERR[r && r.error] || 'Sperren fehlgeschlagen.');
+        for (const n of (r.names && r.names.length ? r.names : [r.name])) if (!isOwnerName(n) && n !== ADMIN_NAME) mpSend('ban', { to: n, why });
+        const alt = (r.names || []).filter((n) => n.toLowerCase() !== r.name.toLowerCase());
+        chatOk(r.name + ' ist gesperrt (' + (r.devices || 0) + ' neues Gerät' + ((r.devices || 0) === 1 ? '' : 'e') + (alt.length ? '; gleiches Gerät: ' + alt.join(', ') : '') + '). Aufheben mit /unban ' + r.name + '.');
+        mpSend('chat', { n: '*', t: '🚫 ' + r.name + ' wurde von ' + mp.name + ' vom Server gesperrt.' });
+        if (!(r.devices > 0)) chatSys('Hinweis: von diesem Spieler ist noch kein Gerät bekannt (er war noch nie mit dieser Version hier) – gesperrt ist vorerst nur das Konto.');
+      } catch (e) { chatErr(/could not find the function|PGRST202|schema cache/i.test(e.message) ? 'Die Datenbank kennt /ban noch nicht – supabase/dev_console_part9.sql im SQL-Editor ausführen.' : 'Fehler: ' + e.message); }
+    })();
+  },
+});
+cmd(['unban', 'entsperren'], {
+  desc: 'Hebt die Sperre eines Spielers (und seines Geräts) auf diesem Server auf', mpOnly: true, needs: 1, args: [T.text('spieler')],
+  run(a) {
+    if (!banAllowed()) fail('/unban dürfen nur der Server-Besitzer und der Admin (im Admin-Modus).');
+    const q = String(a[0] || '').trim(); if (!/^[A-Za-z0-9_]{3,16}$/.test(q)) fail('Spielername: 3–16 Zeichen.');
+    (async () => {
+      try {
+        const r = await mp.db.roomUnban(mp.room, mp.name, mp.token, q);
+        if (!r || !r.ok) return chatErr(BAN_ERR[r && r.error] || 'Entsperren fehlgeschlagen.');
+        chatOk(q + ' ist wieder entsperrt (' + r.removed + ' Eintrag' + (r.removed === 1 ? '' : 'e') + ' entfernt, gilt auch für das Gerät).');
+      } catch (e) { chatErr('Fehler: ' + e.message); }
+    })();
+  },
+});
+cmd(['banlist', 'sperrliste'], {
+  desc: 'Zeigt die Sperrliste dieses Servers (Besitzer/Admin)', mpOnly: true,
+  run() {
+    if (!banAllowed()) fail('/banlist dürfen nur der Server-Besitzer und der Admin.');
+    (async () => {
+      try {
+        const r = await mp.db.roomBanlist(mp.room, mp.name, mp.token);
+        if (!r || !r.ok) return chatErr(BAN_ERR[r && r.error] || 'Abfrage fehlgeschlagen.');
+        if (!r.bans.length) return chatAdd(null, '🚫 Sperrliste: leer.', 'sys');
+        chatAdd(null, '🚫 Sperrliste (' + r.bans.length + '):', 'sys');
+        for (const b of r.bans) chatAdd(null, '  • ' + (b.names || []).join(', ') + (b.device ? ' (Gerät)' : ' (Konto)') + (b.reason ? ' – ' + b.reason : '') + (b.by ? ' [von ' + b.by + ']' : ''), 'sys');
+      } catch (e) { chatErr('Fehler: ' + e.message); }
+    })();
+  },
+});
 function runRemoteCommand(name, args, by) {                 // Ein OP hat einen Befehl bei mir ausgelöst (Absender wurde vorher geprüft)
   const c = CMDS[name]; if (!c || !c.remote) return;
   remoteExec = true;
@@ -11417,6 +11509,9 @@ let banCheckAt = 0;
 function mpCheckBan() {                                                  // Speichern wurde abgelehnt: ist das Konto gesperrt?
   if (!mp.on || !mp.db || performance.now() - banCheckAt < 20000) return; banCheckAt = performance.now();
   mp.db.accountStatus(mp.name, mp.token).then((r) => { if (r && r.banned) bannedFromServer(r.msg); }).catch(() => {});
+}
+function bannedFromRoom(why) {
+  mpLeave().then(() => { mp.on = false; setState('mpmenu'); mpSetStatus('🚫 Du wurdest von diesem Server gebannt' + (why ? ': ' + why : '') + '.', true); });
 }
 function kickedFromServer(why) {
   mpLeave().then(() => { mp.on = false; setState('mpmenu'); mpSetStatus('Du wurdest vom Server geworfen' + (why ? ': ' + why : '') + '.', true); });
@@ -12605,6 +12700,11 @@ const mpHandlers = {
         break;
       }
       case 'rcmd': { if (p.to !== mp.name) { const s0 = mp.players.get(from); if (s0 && isOp(s0.name) && /^(gamemode|fly|speed|god)$/.test(String(p.c))) AC.grants.add(String(p.to).toLowerCase()); break; } const sender = mp.players.get(from); if (!sender || !isOp(sender.name)) break; runRemoteCommand(p.c, Array.isArray(p.a) ? p.a.map(String) : [], sender.name); break; }
+      case 'ban': {                                                  // Besitzer/Admin hat gesperrt: Betroffener verlässt den Server, alle anderen ignorieren ihn
+        const sender = mp.players.get(from); if (!sender || !(isOwnerName(sender.name) || isAdminName(sender.name))) break;
+        if (String(p.to || '').toLowerCase() === mp.name.toLowerCase()) { if (!isOwnerName(mp.name) && !mp.admin) bannedFromRoom(p.why); break; }
+        if (!isOwnerName(p.to) && String(p.to) !== ADMIN_NAME) AC.peers.set(String(p.to || '').toLowerCase(), 'gebannt'); break;
+      }
       case 'kick': {
         if (p.to !== mp.name) break; const sender = mp.players.get(from); if (!sender || isOwnerName(mp.name) || mp.admin) break;
         if (isOwnerName(sender.name) || (isOp(sender.name) && !isOp(mp.name))) kickedFromServer(p.why);
@@ -12768,6 +12868,13 @@ async function mpJoin(cfg) {
     if (info && info.error === 'banned') throw new Error('🚫 Dein Konto ist gesperrt: ' + (info.msg || ''));
     if (!info || !info.ok) throw new Error('Diesen Server gibt es nicht. Prüfe den Namen oder erstelle einen neuen Server.');
   }
+  try {                                                                       // Geräte-Sperre dieses Servers prüfen (und Gerät dem Konto zuordnen)
+    const dv = await deviceInfo(), dj = await mp.db.deviceJoin(cfg.room, cfg.name, cfg.token, dv.id, dv.fp);
+    if (dj && dj.banned) throw new Error('🚫 Du wurdest von diesem Server gebannt: ' + (dj.msg || ''));
+  } catch (e) {
+    if (/^🚫/.test(String(e.message))) throw e;
+    if (!/could not find the function|PGRST202|schema cache|does not exist/i.test(String(e.message))) throw new Error('Sperrliste konnte nicht geprüft werden – bitte nochmal versuchen (' + String(e.message).slice(0, 80) + ')');
+  }
   mp.freeze = null; mp.sleepCount = 0; mp.admin = false; mp.owner = info.owner || null; mp.ops = new Set((info.ops || []).map((n) => n.toLowerCase()));
   mp.roomInfo = info; mp.skew = info.now_ms - Date.now(); mp.epoch = info.epoch_ms;
   const [edits, conts] = await Promise.all([mp.db.getEdits(cfg.room), mp.db.getContainers(cfg.room)]);
@@ -12891,6 +12998,41 @@ const MP_KEY = 'voxelcraft_mp', TOKEN_KEY = 'voxelcraft_token';
 const mpCfg = { name: '', backend: 'online', room: '', seed: '', mode: 'survival', skinKind: 'preset', skinName: 'steve', skinData: '', slim: false, create: false, pub: true };
 try { Object.assign(mpCfg, JSON.parse(localStorage.getItem(MP_KEY) || '{}')); } catch (e) { /* egal */ }
 mpCfg.create = false;                                      // immer im Beitreten-Modus starten
+// ----- Geräte-Kennung (für Server-Sperren pro Gerät): zufällige Kennung (localStorage + Cookie + IndexedDB) und Browser-Fingerabdruck -----
+const DEV_KEY = 'voxelcraft_device';
+let devCache = null;
+async function deviceInfo() {
+  if (devCache) return devCache;
+  const ok = (v) => typeof v === 'string' && /^[0-9a-f]{32}$/.test(v);
+  const rd = { ls: null, ck: null, db: null };
+  try { rd.ls = localStorage.getItem(DEV_KEY); } catch (e) { /* egal */ }
+  try { const m = document.cookie.match(/(?:^|; )vcdev=([0-9a-f]{32})/); rd.ck = m ? m[1] : null; } catch (e) { /* egal */ }
+  const idb = () => new Promise((res) => {
+    try {
+      const rq = indexedDB.open('vc_dev', 1); rq.onupgradeneeded = () => rq.result.createObjectStore('k');
+      rq.onerror = () => res(null); rq.onsuccess = () => res(rq.result);
+    } catch (e) { res(null); }
+  });
+  const db = await idb();
+  if (db) { try { rd.db = await new Promise((res) => { const q = db.transaction('k').objectStore('k').get('id'); q.onsuccess = () => res(q.result); q.onerror = () => res(null); }); } catch (e) { /* egal */ } }
+  let id = [rd.ls, rd.ck, rd.db].find(ok);
+  if (!id) id = Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, '0')).join('');
+  try { localStorage.setItem(DEV_KEY, id); } catch (e) { /* egal */ }
+  try { document.cookie = 'vcdev=' + id + '; max-age=315360000; path=/; SameSite=Lax'; } catch (e) { /* egal */ }
+  if (db) { try { db.transaction('k', 'readwrite').objectStore('k').put(id, 'id'); } catch (e) { /* egal */ } }
+  // Fingerabdruck (grob: Browser + Bildschirm + Grafikkarte + Zeitzone); gleiche Geräte gleichen Typs können zusammenfallen
+  const parts = [];
+  try {
+    parts.push(navigator.userAgent, (navigator.languages || []).join(','), navigator.platform, navigator.hardwareConcurrency, navigator.deviceMemory, navigator.maxTouchPoints,
+      screen.width + 'x' + screen.height + 'x' + screen.colorDepth, window.devicePixelRatio, Intl.DateTimeFormat().resolvedOptions().timeZone);
+    const cv = document.createElement('canvas'), gl = cv.getContext('webgl'); if (gl) { const x = gl.getExtension('WEBGL_debug_renderer_info'); parts.push(x ? gl.getParameter(x.UNMASKED_VENDOR_WEBGL) + '|' + gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.VERSION)); }
+    const c2 = document.createElement('canvas'); c2.width = 120; c2.height = 24; const g = c2.getContext('2d'); g.textBaseline = 'top'; g.font = '14px Arial'; g.fillStyle = '#f60'; g.fillRect(2, 2, 40, 14); g.fillStyle = '#069'; g.fillText('VoxelCraft ⛏ 123', 4, 4); parts.push(c2.toDataURL().slice(-64));
+  } catch (e) { /* egal */ }
+  let fp = null; const raw = parts.join('||');
+  try { const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw)); fp = Array.from(new Uint8Array(h), (b) => b.toString(16).padStart(2, '0')).join('').slice(0, 40); }
+  catch (e) { let h1 = 2166136261; for (let i = 0; i < raw.length; i++) { h1 ^= raw.charCodeAt(i); h1 = Math.imul(h1, 16777619); } fp = ('f' + (h1 >>> 0).toString(16)).padEnd(16, '0'); }
+  return (devCache = { id, fp });
+}
 function mpToken() {
   let t = ''; try { t = localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { /* egal */ }
   if (t.length < 16) { t = Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, '0')).join(''); try { localStorage.setItem(TOKEN_KEY, t); } catch (e) { /* egal */ } }

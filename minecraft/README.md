@@ -132,6 +132,7 @@ Andere wählen „Server beitreten“ und klicken ihn in der Liste an oder tippe
 
 * Nur **OPs** dürfen Cheat- und Teleport-Befehle (`/gamemode`, `/give`, `/time`, `/weather`, `/tp`, `/fill` …) – normale Spieler nur Chat, `/msg`, `/roll`, `/pos` usw.
 * Der Besitzer ernennt mit **`/op Name`** Operatoren und entfernt sie mit **`/deop Name`**. Der Besitzer ist immer OP und **kann nicht deoppt oder rausgeworfen werden**. `/ops` zeigt die Liste, 👑 = Besitzer, ⭐ = OP (Tab-Liste).
+* **Sperren (nur Server-Besitzer und Admin):** `/ban <name> [grund]` sperrt einen Spieler für sein **Gerät** auf diesem Server (auch mit anderem Konto), bis `/unban <name>`; `/banlist` zeigt die Liste. Dafür einmalig `supabase/dev_console_part9.sql` ausführen.
 * OPs können Befehle bei anderen ausführen: `/gamemode creative @Name`, `/give diamond 5 @Name`, `/heal @Name` … und mit `/kick Name [Grund]` Spieler rauswerfen (Operatoren nur der Besitzer).
 
 ## Mehrspieler (Supabase)
