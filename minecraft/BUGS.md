@@ -332,3 +332,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * 🤖 **Bot-Modus (intern): Wegfindung deutlich robuster.** Findet `goto`/`follow`/`mine`/`place` zu Fuß keinen Weg, baut der Bot jetzt wie ein Spieler selbst: **Brücken** über Lücken (vorschleichen und den Block an die Kante setzen), **Säulen** (hochspringen + Block unter sich) und als letzte Stufe **Graben** durch natürliches Gelände. Gebaut wird mit billigem Material aus dem Inventar (Erde, Bruchstein, Stein …, im Kreativmodus Erde); Blöcke aus Spielerbauten werden nie abgebaut. Der Agent muss das nicht mehr selbst herausfinden.
 * 🤖 **Festhängen:** Wer sich 2 s lang kaum bewegt (auch Hin-und-Her an einem Block), bekommt stufenweise Abhilfe: neu planen, die Problemzelle sperren, nächste Stufe (Brücke/Graben), seitlich ausweichen + springen; nach 6 Versuchen eine klare Meldung („steckt fest bei (x,y,z) vor …“) statt endlosem Pendeln.
 * Neue Optionen: `BOT.goto(x,y,z,{build:false})` (nur gehen), `{dig:false}` (bauen, aber nicht graben). `follow` bleibt beim reinen Gehen.
+
+## 2026-10-14.49
+
+* 🤖 Bot-Modus: Beim automatischen Graben werden keine Zellen mehr gewählt, über denen Sand oder Kies liegt (sie würden nachrutschen und den Bot begraben – das hatte den Agenten in die Backrooms fallen lassen).

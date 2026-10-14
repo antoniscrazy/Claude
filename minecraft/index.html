@@ -2052,7 +2052,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-14.48';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-10-14.49';            // Spielversion (nur Anzeige)
 // Verdeckter Bot-Modus (nur per URL ?bot=1, nirgends in der Oberfläche erwähnt): läuft ohne Darstellung mit festem 20-Ticks-Takt, Steuerung über window.BOT (siehe Abschnitt BOT)
 const botChat = [];
 const BOTMODE = /[?&]bot=1(?:&|#|$)/.test(location.search);
@@ -15289,6 +15289,7 @@ const BOT = (() => {
     const b = world.getBlock(x, y, z); if (b <= 0 || LQ[b]) return Infinity;
     const Bk = BLOCKS[b]; if (!Bk || Bk.hard === Infinity || b === ID.bedrock || /^loot_|^spawner_|chest|barrel|furnace|crafting_table|^bed_|portal/.test(IDKEY[b] || '')) return Infinity;
     if (playerBuilt(x, y, z)) return Infinity;                      // fremde Bauten bleiben tabu
+    { const up = world.getBlock(x, y + 1, z); if (up > 0 && BLOCKS[up].falling) return Infinity; }          // Sand/Kies darüber würde nachrutschen und den Bot begraben (löst sogar die Backrooms aus)
     return 2 + (Bk.hard || 0.3) * 3;
   };
   const botCostSafe = (x, y, z) => (navBad.has(keyOf(x, y, z)) ? Infinity : botCost(x, y, z));
