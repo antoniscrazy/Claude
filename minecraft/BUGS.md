@@ -308,3 +308,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * 🤖 **Bot-Modus (intern):** Auto-Respawn mit Pause der Aufgabe, Selbstverteidigung/Rückzug, Auto-Essen, Schutz fremder Bauten, Bauplaner (`shape/needs/build/pillar/cleanup`), Skin-Wechsel, Screenshot-Werkzeug (rendert nur auf Anfrage), Aufgabenlisten mit Wiederholung nach dem Tod, weitere Werkzeuge (`gather, jump, sneak, emote, ride, items …`). Siehe `tools/BOT_API.md`. Außerdem: Platzieren prüft jetzt exakt die Sichtlinie der späteren Aktion und steht nicht im Zielfeld.
 * Behoben nebenbei: Spieler wechselt den Skin → alle anderen laden ihn sofort neu (Ereignis `skin`).
 
+## 2026-10-14.45
+
+* 🤖 **Bot-Modus (intern), Verbesserungen aus dem Praxiseinsatz:** Bauplaner mit Wiederholungsdurchgängen und Säulen-Standorten (ein Haus mit 74 Blöcken wird jetzt komplett gebaut), Kreativ-Vorrat, Füllmodi `shell/hollow/ring/walls`, bessere Item-Suche (`items`, `blocks`, neue Namen für Treppen/Betten/Quarz), Formen `door/bed/statue`, Screenshot von außen auf ein Ziel, Netz-Status und `syncWait`, `waitChat`, `players`, automatisches Fliegen beim Teleportieren in die Luft. Siehe `tools/BOT_API.md`.
+

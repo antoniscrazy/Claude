@@ -53,3 +53,16 @@ Siehe Kommentar „ANTI-CHEAT“ in `index.html`: Selbstkontrolle (Flug/Tempo/Go
 * **Weitere Werkzeuge:** `gather(was, n)` (n Blöcke einer Sorte), `items(suche)`, `jump`, `sneak`, `emote`, `ride`/`dismount`, `skin(name | {data, slim})` / `skins()` (Skin wechseln, andere laden ihn neu), **`screenshot({w,h,radius,yaw,pitch,look})`** → JPEG-Data-URL aus der Sicht des Spielers (rendert nur auf Anfrage; sonst weiter ohne Darstellung).
 * Für den Agent-Player gibt es `play/bshot.sh [w] [h] [yaw] [pitch]` → speichert das Bild als Datei (Pfad in der Antwort, mit dem Bild-Lesen ansehen).
 
+## Ergänzungen (2026-10-14.45, Wünsche des Agents)
+
+* **`BOT.build`:** bis zu 3 Durchgänge (`retries`), Fehlschläge werden erneut versucht, sobald Nachbarn stehen (`maxFail` 400 statt 40). Unerreichbare Zellen werden von einer Säule neben dem Ziel aus gesetzt (Standort-Suche rund um das Ziel, Säule wieder abgebaut). Frei schwebende Zellen ohne angrenzenden Block meldet er klar („nichts zum Anklicken“).
+* **Kreativ:** `BOT.creative(item, n)` holt Items aus dem Kreativ-Vorrat; `place`/`build`/`pillar` tun das im Kreativmodus selbst. `admin.give` meldet „Inventar voll“ bzw. wie viele nicht mehr passten.
+* **Füllmodi** für `afill`/`fill`/`shape('box')`: `mode: 'solid' | 'shell' | 'hollow' | 'ring' | 'walls'` – `hollow` = Außenhaut, bei **einer** Ebene nur der Rand; `ring`/`walls` = nur Rand in x/z in jeder Ebene (Wände ohne Boden/Dach). Über `BOT.call` dürfen `mode`, `hollow`, `partial` … direkt neben den Parametern stehen (werden zu `opts`).
+* **Suche:** `BOT.items('wolle rot')` findet über Schlüssel und deutschen Namen (alle Wörter), ohne interne Varianten; `BOT.blocks(filter)` nur Blöcke. Neue Namen: `oak_stairs` (= Variante unten), `red_bed`, `quartz_block`, `cobblestone` …
+* **Formen:** `door`, `bed` (zweiteilig, `facing`), `statue` (blockige Spielerfigur wie Steve, `s` = Vergrößerung, `colors`, `facing`).
+* **Screenshot von außen:** `screenshot({target:{x,y,z}, dist, angle, height})` rückt die Kamera schräg neben/über das Ziel (lädt die Chunks dort).
+* **Netz:** `BOT.net()` / `state().net` (wartende Blockänderungen, Datenbank-Warteschlange), `BOT.syncWait(sek)` wartet, bis alles gesendet ist.
+* **Chat/Spieler:** `BOT.waitChat(sek, {from, since})` wartet auf die nächste Nachricht eines anderen Spielers; `BOT.players()` listet alle Spieler des Servers.
+* **`admin.tp`** schaltet bei Zielen in der Luft automatisch Fliegen an (`fly:false` verhindert es).
+* Hinweis: `BOT.call(...)` liefert ein Promise – mit `.then(r => JSON.stringify(r))` oder `await` auswerten.
+

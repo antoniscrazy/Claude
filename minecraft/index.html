@@ -2047,7 +2047,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-14.44';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-10-14.45';            // Spielversion (nur Anzeige)
 // Verdeckter Bot-Modus (nur per URL ?bot=1, nirgends in der Oberfläche erwähnt): läuft ohne Darstellung mit festem 20-Ticks-Takt, Steuerung über window.BOT (siehe Abschnitt BOT)
 const botChat = [];
 const BOTMODE = /[?&]bot=1(?:&|#|$)/.test(location.search);
@@ -15071,17 +15071,28 @@ const BOT = (() => {
     const alias = { oak_planks: PLANKS, planks: PLANKS, oak_log: WOOD, log: WOOD, wood: WOOD, chest: CHEST_IDS[0], truhe: CHEST_IDS[0], stone: STONE, stein: STONE, cobblestone: ID.cobble, bruchstein: ID.cobble, stone_brick: ID.stone_bricks, stone_bricks: ID.stone_bricks, grass: GRASS, grass_block: GRASS, dirt: DIRT, erde: DIRT, sand: SAND, glass: GLASS, snow: SNOW, water: WATER }[k]; if (alias) return alias;
     if (IID[k] !== undefined) return IID[k];
     if (ID[k] !== undefined) return ID[k];
+    if (ID[k + '_b0'] !== undefined) return ID[k + '_b0'];                    // Treppen: oak_stairs → untere Variante
+    { const m = k.match(/^(.+)_bed$/); if (m) for (let i = 1; i < BLOCKS.length; i++) { const bd = BLOCKS[i] && BLOCKS[i].bed; if (bd && bd.color === m[1] && !bd.head) return i; } }      // red_bed, white_bed …
+    { const al = { quartz_block: 'quartz', chiseled_quartz_block: 'chiseled_quartz', smooth_quartz: 'quartz', glass_pane: 'glass_pane', oak_log: 'oak_log' }[k]; if (al && ID[al] !== undefined) return ID[al]; }
     for (let i = 1; i < BLOCKS.length; i++) if (BLOCKS[i] && norm(BLOCKS[i].name || '') === k) return i;
     for (const i in ITEMS) if (norm(ITEMS[i].name || '') === k) return +i;
     return 0;
   }
-  B.items = (q) => {                                                  // Items/Blöcke nach Namen suchen (Schlüssel oder deutscher Name)
-    const k = norm(q || ''), out = [];
-    for (const key of Object.keys(ID)) if (key.includes(k) || norm(nameOf(ID[key])).includes(k)) out.push({ key, id: ID[key], name: nameOf(ID[key]) });
-    for (const key of Object.keys(IID)) if (key.includes(k) || norm(nameOf(IID[key])).includes(k)) out.push({ key, id: IID[key], name: nameOf(IID[key]) });
-    return out.slice(0, 40);
+  const VARIANT = /_(b|t)[0-3]$|_(b|t)[0-3][01]$|_foot_|_head_|^bed_/;      // interne Varianten (Treppenrichtungen, Türhälften, Bettteile …) nicht auflisten
+  B.items = (q, kind) => {                                            // Items/Blöcke nach Namen suchen (englischer Schlüssel oder deutscher Name); mehrere Wörter = alle müssen vorkommen
+    const toks = norm(q || '').split('_').filter(Boolean), out = [];
+    const add = (key, id, kd) => { if (VARIANT.test(key)) return; const nm = nameOf(id), hay = key + ' ' + norm(nm); if (toks.every((t) => hay.includes(t))) { let rank = key === toks.join('_') ? 0 : key.startsWith(toks[0] || '') ? 1 : 2; out.push({ key, id, name: nm, kind: kd, rank }); } };
+    if (kind !== 'item') for (const key of Object.keys(ID)) add(key, ID[key], 'block');
+    if (kind !== 'block') for (const key of Object.keys(IID)) add(key, IID[key], 'item');
+    out.sort((x, y) => x.rank - y.rank || x.key.length - y.key.length);
+    return out.slice(0, 60).map(({ rank, ...r }) => r);
   };
+  B.blocks = (filter) => B.items(filter, 'block');
   const nameOf = (id) => { try { return itemName(id); } catch (e) { return String(id); } };
+  const creativeGive = (id, n) => {                                   // Kreativmodus: beliebiges Item aus dem Kreativ-Vorrat nehmen (wie das Kreativ-Inventar eines Spielers)
+    if (mode !== 'creative' || !validId(id)) return false; const left = addItem(id, n || maxStack(id)); refreshHotbar(); return left < (n || maxStack(id));
+  };
+  B.creative = (what, n) => { const id = itemId(what); if (!id) return { ok: false, reason: 'unbekanntes Item: ' + what }; if (mode !== 'creative') return { ok: false, reason: 'nur im Kreativmodus (sonst Items sammeln/herstellen)' }; return creativeGive(id, n | 0 || undefined) ? { ok: true, item: nameOf(id), have: countOf(id) } : { ok: false, reason: 'Inventar voll' }; };
   const countOf = (id) => inv.reduce((n, s) => n + (s && s.id === id ? s.count : 0), 0);
 
   // ---------- Inventar ----------
@@ -15268,12 +15279,12 @@ const BOT = (() => {
     x |= 0; y |= 0; z |= 0; playing();
     const id = itemId(what); if (!id) fail('unbekannter Block: ' + what);
     if (id >= ITEM_BASE && !(ITEMS[id].door || ITEMS[id].key === 'redstone')) fail('kein platzierbarer Block');
-    if (!isCreative() && !countOf(id)) fail('nicht im Inventar: ' + nameOf(id));
+    if (!countOf(id)) { if (!creativeGive(id)) fail('nicht im Inventar: ' + nameOf(id)); }
     if (world.dim === 2) fail('in den Backrooms nicht platzierbar');
     if (y >= world.buildLimit()) fail('Bauhöhe erreicht');
     const cur = world.getBlock(x, y, z); if (cur < 0) fail('Chunk nicht geladen');
     if (cur !== AIR && !BLOCKS[cur].liquid && !BLOCKS[cur].plant) fail('Platz belegt');
-    if (!isCreative() || countOf(id)) holdItem(id); else fail('nicht in der Schnellleiste (Kreativ: erst Item beschaffen)');
+    if (!holdItem(id)) fail('Item nicht in der Hand zu halten');
     for (let a = 0; a < 3; a++) {                                       // heranlaufen, zur Ruhe kommen, erneut prüfen (Schwung kann in das Zielfeld tragen)
       await reachBlock(g, x, y, z, (e) => findAimPlace(x, y, z, e), true, o && o.walk, o && facingOf(o.facing));
       await stand(g); if (!overlapsCell(x, y, z) && findAimPlace(x, y, z)) break;
@@ -15471,7 +15482,7 @@ const BOT = (() => {
   B.state = () => ({
     pos: { x: rnd1(P.p.x), y: rnd1(P.p.y), z: rnd1(P.p.z) }, yaw: rnd1(P.yaw), pitch: rnd1(P.pitch), health: P.health, hunger: P.hunger, xp: P.xpL,
     onGround: P.onGround, sleeping: !!P.sleeping, dim: world ? world.dim : -1, mode, day: env.dayF, state, tick: botTicks, tps: Math.round(botTps * 10) / 10,
-    held: inv[P.sel] ? nameOf(inv[P.sel].id) : null, deaths: B.deaths, defending: botDef.active, config: { ...botCfg }, online: !!mp.on, room: mp.on ? mp.room : null, name: mp.on ? mp.name : null,
+    held: inv[P.sel] ? nameOf(inv[P.sel].id) : null, deaths: B.deaths, defending: botDef.active, net: netInfo(), config: { ...botCfg }, online: !!mp.on, room: mp.on ? mp.room : null, name: mp.on ? mp.name : null,
   });
   B.nearby = (type, radius) => {
     radius = radius || 16; const px = P.p.x, py = P.p.y, pz = P.p.z, out = [];
@@ -15598,7 +15609,7 @@ const BOT = (() => {
     o = o || {}; playing(); const id = itemId(what); if (!id) fail('unbekannter Block');
     const xs = [Math.min(x1, x2) | 0, Math.max(x1, x2) | 0], ys = [Math.min(y1, y2) | 0, Math.max(y1, y2) | 0], zs = [Math.min(z1, z2) | 0, Math.max(z1, z2) | 0];
     const cells = []; for (let y = ys[0]; y <= ys[1]; y++) for (let x = xs[0]; x <= xs[1]; x++) for (let z = zs[0]; z <= zs[1]; z++) {
-      if (o.hollow && x > xs[0] && x < xs[1] && y > ys[0] && y < ys[1] && z > zs[0] && z < zs[1]) continue; cells.push([x, y, z]);
+      if (boxSkip(o, x, y, z, xs, ys, zs)) continue; cells.push([x, y, z]);
     }
     if (cells.length > 600) fail('zu groß (max. 600 Blöcke, hier ' + cells.length + ')');
     let ok = 0, skipped = 0, failed = 0, last = '';
@@ -15617,13 +15628,16 @@ const BOT = (() => {
     if (!world) return { ok: false, reason: 'keine Welt geladen' };
     try { const r = fn(...a); return r === undefined ? { ok: true } : r; } catch (e) { return { ok: false, reason: String((e && e.message) || e) }; }
   };
-  admin.tp = adm((x, y, z) => {
-    if (typeof x === 'object' && x) ({ x, y, z } = posOf(x));
+  admin.tp = adm((x, y, z, fly) => {                                      // fly: true/false erzwingen, sonst automatisch an, wenn das Ziel in der Luft liegt
+    if (typeof x === 'object' && x) { fly = y; ({ x, y, z } = posOf(x)); }
     if (y === null || y === undefined) { world.ensureChunk(Math.floor(x) >> 4, Math.floor(z) >> 4); y = colTopY(x, z) + 1; }
     for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) world.ensureChunk((Math.floor(x) >> 4) + dx, (Math.floor(z) >> 4) + dz);
-    P.p.set(+x, +y, +z); P.v.set(0, 0, 0); P.fallPeak = +y; AC.last = null; return { ok: true, pos: { x: rnd1(P.p.x), y: rnd1(P.p.y), z: rnd1(P.p.z) } };
+    P.p.set(+x, +y, +z); P.v.set(0, 0, 0); P.fallPeak = +y; AC.last = null;
+    let air = true; for (let d = 1; d <= 4; d++) { const bb = world.getBlock(Math.floor(P.p.x), Math.ceil(P.p.y) - d, Math.floor(P.p.z)); if (bb > 0 && (BLOCKS[bb].solid || BLOCKS[bb].liquid)) { air = false; break; } }
+    let flying = P.flying; if (fly === true || (fly === undefined && air && !isSpectator())) { P.canFly = true; P.flying = true; acSync(); updateTouchUI(); flying = true; } else if (fly === false) { P.flying = false; flying = false; }
+    return { ok: true, pos: { x: rnd1(P.p.x), y: rnd1(P.p.y), z: rnd1(P.p.z) }, flying, airborne: air };
   });
-  admin.give = adm((what, n) => { const id = itemId(what); if (!id) return { ok: false, reason: 'unbekanntes Item' }; n = Math.max(1, Math.min(2304, n | 0 || 1)); const left = addItem(id, n); refreshHotbar(); return { ok: left < n, given: n - left, item: nameOf(id) }; });
+  admin.give = adm((what, n) => { const id = itemId(what); if (!id) return { ok: false, reason: 'unbekanntes Item' }; n = Math.max(1, Math.min(2304, n | 0 || 1)); const left = addItem(id, n); refreshHotbar(); return left >= n ? { ok: false, reason: 'Inventar voll', item: nameOf(id) } : { ok: true, given: n - left, left, item: nameOf(id), note: left ? 'Inventar voll – ' + left + ' passen nicht mehr hinein' : undefined }; });
   admin.clear = adm(() => { for (let i = 0; i < 36; i++) inv[i] = null; refreshHotbar(); });
   admin.setblock = adm((x, y, z, what) => { const id = what === 'air' || what === 0 ? 0 : itemId(what); if (id < 0 || id >= ITEM_BASE || (!id && what !== 'air' && what !== 0)) return { ok: false, reason: 'unbekannter Block: ' + what }; if (world.getBlock(x | 0, y | 0, z | 0) < 0) return { ok: false, reason: 'Chunk nicht geladen' }; world.setBlock(x | 0, y | 0, z | 0, id); return { ok: true }; });
   admin.fill = adm((x1, y1, z1, x2, y2, z2, what, o) => {
@@ -15631,7 +15645,7 @@ const BOT = (() => {
     const xs = [Math.min(x1, x2) | 0, Math.max(x1, x2) | 0], ys = [Math.min(y1, y2) | 0, Math.max(y1, y2) | 0], zs = [Math.min(z1, z2) | 0, Math.max(z1, z2) | 0];
     const n = (xs[1] - xs[0] + 1) * (ys[1] - ys[0] + 1) * (zs[1] - zs[0] + 1); if (n > 20000) return { ok: false, reason: 'zu groß (max. 20000 Blöcke)' };
     let c = 0; for (let y = Math.max(1, ys[0]); y <= ys[1]; y++) for (let x = xs[0]; x <= xs[1]; x++) for (let z = zs[0]; z <= zs[1]; z++) {
-      if (o && o.hollow && x > xs[0] && x < xs[1] && y > ys[0] && y < ys[1] && z > zs[0] && z < zs[1]) continue;
+      if (boxSkip(o, x, y, z, xs, ys, zs)) continue;
       if (world.getBlock(x, y, z) >= 0) { world.setBlock(x, y, z, id); c++; }
     }
     return { ok: true, blocks: c };
@@ -15658,18 +15672,20 @@ const BOT = (() => {
   const TOOLS = [
     ['goto', 'Zu einer Position laufen (Weg wird gesucht). y darf null sein = Bodenhöhe.', ['x', 'y', 'z'], false],
     ['build', 'Bauplan ausführen: Liste von Zellen {x,y,z,id,facing?}, sortiert Ebene für Ebene, baut bei Bedarf Gerüst (pillar) und räumt es auf.', ['cells', 'opts'], false],
-    ['shape', 'Zellenliste für eine Form erzeugen: floor, box, walls, line, pyramid, circle, cylinder, gable_roof, house (opts: x,y,z,w,d,h,item,hollow,wall,floor,roof,glass,stairs).', ['kind', 'opts'], false],
+    ['shape', 'Zellenliste für eine Form erzeugen: floor, box, walls, line, pyramid, circle, cylinder, gable_roof, house, door, bed, statue (opts: x,y,z,w,d,h,item,mode: solid|shell|hollow|ring|walls, wall,floor,roof,glass,stairs, facing, s, colors).', ['kind', 'opts'], false],
     ['needs', 'Materialbedarf einer Zellenliste gegen das Inventar prüfen.', ['cells'], false],
     ['pillar', 'Hochbauen: n Blöcke nach oben (springen + Block unter sich setzen).', ['height', 'item'], false],
     ['cleanup', 'Gerüstblöcke von oben nach unten wieder abbauen.', [], false],
     ['gather', 'n Blöcke einer Sorte (z. B. "logs", "stone", "iron_ore") abbauen und einsammeln – nur natürliches Gelände.', ['what', 'n', 'opts'], false],
     ['run', 'Aufgabenliste [{tool,args},…] ausführen; pausiert beim Tod bis zum Respawn und wiederholt den Schritt.', ['steps', 'opts'], false],
-    ['sign', 'Schild beschriften: x,y,z, lines (Liste mit bis zu 4 Zeilen).', ['x', 'y', 'z', 'lines'], false], ['jump', 'n-mal springen.', ['n'], false], ['sneak', 'Schleichen an/aus.', ['on'], false], ['emote', 'Emote abspielen (Zahl).', ['id'], false],
+    ['sign', 'Schild beschriften: x,y,z, lines (Liste mit bis zu 4 Zeilen).', ['x', 'y', 'z', 'lines'], false], ['creative', 'Kreativmodus: Item aus dem Kreativ-Vorrat ins Inventar (place/build holen es automatisch).', ['item', 'n'], false], ['players', 'Alle Spieler des Servers mit Position (auch weit entfernte).', [], false],
+    ['waitChat', 'Auf die nächste Chatnachricht eines anderen Spielers warten (Sekunden).', ['sec', 'opts'], false], ['syncWait', 'Warten, bis alle Blockänderungen gesendet sind.', ['sec'], false], ['net', 'Sende-Warteschlangen (pendingBlocks, dbQueue …).', [], false],
+    ['jump', 'n-mal springen.', ['n'], false], ['sneak', 'Schleichen an/aus.', ['on'], false], ['emote', 'Emote abspielen (Zahl).', ['id'], false],
     ['ride', 'Auf ein Tier steigen (Pferd, Schwein …).', ['target'], false], ['dismount', 'Absteigen.', [], false],
     ['skins', 'Verfügbare Skin-Vorlagen anzeigen.', [], false], ['skin', 'Skin wechseln: Vorlagenname oder {data: PNG-Data-URL, slim}.', ['spec'], false],
     ['screenshot', 'Bild der Spielwelt aus Spielersicht (JPEG als Data-URL; opts: w,h,radius,look,yaw,pitch).', ['opts'], false],
     ['config', 'Selbstschutz einstellen: autoRespawn, autoDefend, autoEat, flee, defendRange.', ['opts'], false],
-    ['items', 'Items/Blöcke nach Namen suchen (englischer Schlüssel oder deutscher Name).', ['query'], false],
+    ['items', 'Items/Blöcke nach Namen suchen (englischer Schlüssel oder deutscher Name; mehrere Wörter).', ['query', 'kind'], false], ['blocks', 'Nur Blöcke suchen (zum Bauen).', ['filter'], false],
     ['isPlayerBuilt', 'Ist der Block von einem Spieler gesetzt (geschützt)?', ['x', 'y', 'z'], false],
     ['follow', 'Einem Spieler folgen.', ['name', 'opts'], false],
     ['collect', 'Herumliegende Gegenstände einsammeln.', ['radius'], false],
@@ -15699,7 +15715,7 @@ const BOT = (() => {
     ['respawn', 'Nach dem Tod wiederbeleben.', [], false],
     ['cancel', 'Laufende Aktion abbrechen.', [], false],
     ['wait', 'Sekunden warten.', ['sec'], false],
-    ['tp', 'Sofort zu Position teleportieren.', ['x', 'y', 'z'], true], ['give', 'Gegenstand ins Inventar legen.', ['item', 'n'], true], ['clear', 'Inventar leeren.', [], true],
+    ['tp', 'Sofort zu Position teleportieren (schaltet bei Zielen in der Luft automatisch Fliegen an; fly:false verhindert das).', ['x', 'y', 'z', 'fly'], true], ['give', 'Gegenstand ins Inventar legen.', ['item', 'n'], true], ['clear', 'Inventar leeren.', [], true],
     ['setblock', 'Block setzen/entfernen ("air").', ['x', 'y', 'z', 'item'], true], ['afill', 'Quader sofort füllen (max. 20000).', ['x1', 'y1', 'z1', 'x2', 'y2', 'z2', 'item', 'opts'], true],
     ['fly', 'Fliegen an/aus.', ['on'], true], ['god', 'Unverwundbar an/aus.', ['on'], true], ['speed', 'Lauftempo.', ['mult'], true], ['gamemode', 'Spielmodus.', ['mode'], true],
     ['heal', 'Leben und Hunger auffüllen.', [], true], ['feed', 'Hunger auffüllen.', [], true], ['effect', 'Trank-Effekt.', ['name', 'sec', 'amp'], true], ['xp', 'Erfahrung geben.', ['n'], true],
@@ -15710,7 +15726,11 @@ const BOT = (() => {
   B.call = async (name, args) => {
     const t = TOOLS.find((q) => q[0] === name); if (!t) return { ok: false, reason: 'unbekanntes Werkzeug: ' + name };
     if (t[3] && !acTrusted()) return { ok: false, reason: 'nicht erlaubt (nur das KI-Konto im Bot-Modus)' };
-    const a = Array.isArray(args) ? args : t[2].map((k) => (args || {})[k]);
+    let a = Array.isArray(args) ? args : t[2].map((k) => (args || {})[k]);
+    if (!Array.isArray(args) && args && typeof args === 'object' && t[2].includes('opts') && args.opts === undefined) {      // unbekannte Schlüssel (mode, hollow, partial …) gelten als opts
+      const extra = {}; let any = false; for (const k of Object.keys(args)) if (!t[2].includes(k)) { extra[k] = args[k]; any = true; }
+      if (any) a[t[2].indexOf('opts')] = extra;
+    }
     const fn = t[3] ? (name === 'afill' ? admin.fill : admin[name]) : B[name];
     try { const r = await fn(...a); return r && typeof r === 'object' && 'ok' in r ? r : { ok: true, result: r }; } catch (e) { return { ok: false, reason: String((e && e.message) || e) }; }
   };
@@ -15787,6 +15807,7 @@ const BOT = (() => {
   const facingOf = (f) => (f === undefined || f === null ? undefined : typeof f === 'number' ? f & 3 : FACING[String(f).toLowerCase()]);
   const scaffold = [];                                                  // Hilfsblöcke fürs Hochbauen (werden mit BOT.cleanup() wieder entfernt)
   async function pillarUp(g, targetY, id) {                             // wie ein Spieler: springen und den Block unter sich setzen
+    if (!countOf(id)) creativeGive(id);
     if (!holdItem(id)) fail('Gerüstmaterial fehlt');
     for (let k = 0; k < 40 && P.p.y < targetY - 0.2; k++) {
       playing(); const fx = Math.floor(P.p.x), fz = Math.floor(P.p.z), y0 = Math.floor(P.p.y);
@@ -15813,12 +15834,21 @@ const BOT = (() => {
     return { ok: true, removed: n };
   });
 
+  // Füllmodus für Quader: solid (alles) | shell (nur die Außenhaut, 6 Flächen) | hollow (wie shell, bei einer einzigen Ebene nur der Rand) | ring/walls (nur Rand in x/z in jeder Ebene = Wände ohne Boden/Dach)
+  const boxSkip = (o, x, y, z, xs, ys, zs) => {
+    let m = (o && o.mode) || (o && o.hollow ? 'hollow' : 'solid'); if (m === 'hollow' && ys[0] === ys[1]) m = 'ring';
+    const inX = x > xs[0] && x < xs[1], inY = y > ys[0] && y < ys[1], inZ = z > zs[0] && z < zs[1];
+    if (m === 'hollow' || m === 'shell') return inX && inY && inZ;
+    if (m === 'ring' || m === 'walls') return inX && inZ;
+    return false;
+  };
+  B._boxSkip = boxSkip;
   // Formen: liefern Zellenlisten [{x,y,z,id,facing?}]
   const cell = (x, y, z, id, facing) => ({ x: x | 0, y: y | 0, z: z | 0, id, facing });
   B.shape = (kind, o) => {
     o = o || {}; const out = [], X = o.x | 0, Y = o.y | 0, Z = o.z | 0, W = Math.max(1, o.w | 0 || 5), D = Math.max(1, o.d | 0 || 5), H = Math.max(1, o.h | 0 || 3), id = o.item || o.id || 'cobblestone';
     if (kind === 'floor') { for (let x = 0; x < W; x++) for (let z = 0; z < D; z++) out.push(cell(X + x, Y, Z + z, id)); }
-    else if (kind === 'box') { for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) for (let z = 0; z < D; z++) { if (o.hollow !== false && x > 0 && x < W - 1 && z > 0 && z < D - 1 && y > 0 && y < H - 1) continue; out.push(cell(X + x, Y + y, Z + z, id)); } }
+    else if (kind === 'box') { const mo = { mode: o.mode || (o.hollow === false ? 'solid' : 'shell') }, xs = [0, W - 1], ys = [0, H - 1], zs = [0, D - 1]; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) for (let z = 0; z < D; z++) { if (boxSkip(mo, x, y, z, xs, ys, zs)) continue; out.push(cell(X + x, Y + y, Z + z, id)); } }
     else if (kind === 'walls') { for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) for (let z = 0; z < D; z++) if (x === 0 || x === W - 1 || z === 0 || z === D - 1) out.push(cell(X + x, Y + y, Z + z, id)); }
     else if (kind === 'line') { const n = Math.max(W, D, H); const dx = o.dx | 0 || (W > 1 ? 1 : 0), dz = o.dz | 0 || 0, dy = o.dy | 0 || 0; for (let i = 0; i < n; i++) out.push(cell(X + dx * i, Y + dy * i, Z + dz * i, id)); }
     else if (kind === 'pyramid') { for (let l = 0; l < Math.ceil(Math.min(W, D) / 2); l++) for (let x = l; x < W - l; x++) for (let z = l; z < D - l; z++) { if (o.hollow !== false && x > l && x < W - l - 1 && z > l && z < D - l - 1) continue; out.push(cell(X + x, Y + l, Z + z, id)); } }
@@ -15840,17 +15870,57 @@ const BOT = (() => {
         if (doorway) continue; out.push(cell(X + x, Y + y, Z + z, win ? (o.glass || 'glass') : wall));
       }
       for (let x = -1; x <= W; x++) for (let z = -1; z <= D; z++) out.push(cell(X + x, Y + H + 1, Z + z, roof));
-    } else return { ok: false, reason: 'Formen: floor, box, walls, line, pyramid, circle, cylinder, gable_roof, house' };
+    }
+    else if (kind === 'door') { out.push(cell(X, Y, Z, o.item || 'oak_door', o.facing)); }
+    else if (kind === 'bed') { out.push(cell(X, Y, Z, o.item || 'red_bed', o.facing)); }                                  // zweiteilig: das Spiel setzt den Kopf in Blickrichtung dazu (Zelle dahinter muss frei sein)
+    else if (kind === 'statue') {                                       // blockige Spielerfigur (wie Steve), 2 Pixel = 1 Block; o.s = Vergrößerung; Vorderseite nach Süden (+z), o.facing dreht
+      const C = Object.assign({ skin: 'orange_terracotta', hair: 'brown_terracotta', shirt: 'cyan_wool', pants: 'blue_wool', shoes: 'gray_wool', eye: 'white_wool', pupil: 'blue_wool', mouth: 'brown_terracotta' }, o.colors || {});
+      const S = Math.max(1, Math.min(4, o.s | 0 || 1)), vox = [];
+      const box = (x0, x1, y0, y1, z0, z1, id) => { for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) for (let z = z0; z <= z1; z++) vox.push([x, y, z, id]); };
+      box(2, 3, 0, 0, 1, 2, C.shoes); box(4, 5, 0, 0, 1, 2, C.shoes); box(2, 3, 1, 5, 1, 2, C.pants); box(4, 5, 1, 5, 1, 2, C.pants);          // Beine
+      box(2, 5, 6, 11, 1, 2, C.shirt); box(0, 1, 9, 11, 1, 2, C.shirt); box(6, 7, 9, 11, 1, 2, C.shirt); box(0, 1, 6, 8, 1, 2, C.skin); box(6, 7, 6, 8, 1, 2, C.skin);   // Körper und Arme
+      box(2, 5, 12, 15, 0, 3, C.skin); box(2, 5, 15, 15, 0, 3, C.hair); box(2, 5, 14, 14, 0, 0, C.hair); box(2, 2, 12, 14, 0, 3, C.hair); box(5, 5, 12, 14, 0, 3, C.hair); box(2, 5, 12, 14, 0, 0, C.hair);    // Kopf mit Haaren hinten/seitlich
+      box(3, 4, 12, 14, 3, 3, C.skin); box(3, 4, 14, 14, 3, 3, C.hair);                                                                                    // Gesicht vorn
+      box(3, 3, 13, 13, 3, 3, C.eye); box(4, 4, 13, 13, 3, 3, C.pupil); box(3, 4, 12, 12, 3, 3, C.mouth);                                                    // Augen, Mund (vereinfacht)
+      const f = facingOf(o.facing); const rot = (x, z) => (f === 2 || f === undefined ? [x, z] : f === 0 ? [7 - x, 3 - z] : f === 1 ? [3 - z, x] : [z, 7 - x]);
+      const seen = new Map(); for (const [vx, vy, vz, id] of vox) { const [rx, rz] = rot(vx, vz); seen.set(rx + ',' + vy + ',' + rz, id); }
+      for (const [k, id] of seen) { const [rx, vy, rz] = k.split(',').map(Number); for (let a = 0; a < S; a++) for (let b = 0; b < S; b++) for (let c = 0; c < S; c++) out.push(cell(X + rx * S + a, Y + vy * S + b, Z + rz * S + c, id)); }
+    }
+    else return { ok: false, reason: 'Formen: floor, box, walls, line, pyramid, circle, cylinder, gable_roof, house, door, bed, statue' };
     return out;
   };
   const needsOf = (cells) => { const need = {}; for (const c of cells) { const id = itemId(c.id); if (id) need[id] = (need[id] || 0) + 1; } return need; };
   B.needs = (cells) => { if (!Array.isArray(cells)) return { ok: false, reason: 'Zellenliste erwartet' }; const need = needsOf(cells), out = {}; for (const id in need) out[nameOf(+id)] = { need: need[id], have: countOf(+id), missing: Math.max(0, need[id] - countOf(+id)) }; return { ok: true, items: out }; };
+  async function towerAt(g, c, bufferId) {                              // auf einer Säule neben dem Ziel hochbauen, damit auch frei schwebende Zellen erreichbar sind
+    const ring = []; for (let dx = -3; dx <= 3; dx++) for (let dz = -3; dz <= 3; dz++) { const d = Math.max(Math.abs(dx), Math.abs(dz)); if (d >= 2 && d <= 3) ring.push([c.x + dx, c.z + dz]); }
+    ring.sort((p, q) => Math.hypot(p[0] + 0.5 - P.p.x, p[1] + 0.5 - P.p.z) - Math.hypot(q[0] + 0.5 - P.p.x, q[1] + 0.5 - P.p.z));
+    for (const [cx, cz] of ring.slice(0, 10)) {
+      let gy = Math.min(Math.floor(c.y), CH - 3); while (gy > 1 && !(aiFloor(world.getBlock(cx, gy - 1, cz)) && aiPass(world.getBlock(cx, gy, cz)) && aiPass(world.getBlock(cx, gy + 1, cz)))) gy--;
+      if (gy <= 1 || c.y - gy > 40) continue;
+      try { await moveTo(g, () => ({ x: cx + 0.5, y: gy, z: cz + 0.5 }), { range: 0.4, dy: 1.5, timeout: 25, maxN: 6000 }); } catch (e) { if (e instanceof Cancel || (e instanceof Fail && /^tot/.test(e.message))) throw e; B._towerErr = 'Säule: ' + e.message; continue; }
+      try { await pillarUp(g, c.y - 1, bufferId); return true; } catch (e) { if (e instanceof Cancel || (e instanceof Fail && /^tot/.test(e.message))) throw e; B._towerErr = 'Säule: ' + e.message; }
+    }
+    return false;
+  }
+  async function placeCell(g, c, bufferId) {                            // '' = gesetzt, sonst Fehlertext
+    let err = '';
+    try { await doPlace(g, c.x, c.y, c.z, c.id, { walk: true, facing: c.facing }); return ''; }
+    catch (e) { if (e instanceof Cancel || (e instanceof Fail && /^tot/.test(e.message))) throw e; err = e.message; }
+    if (!PLACE_DIRS.some(([dx, dy, dz]) => { const nb = world.getBlock(c.x + dx, c.y + dy, c.z + dz); return nb > 0 && !BLOCKS[nb].liquid && !BLOCKS[nb].plant; })) return 'schwebende Zelle ohne Nachbarblock (nichts zum Anklicken) – erst einen angrenzenden Block bauen oder BOT.admin.setblock nutzen';
+    if (!bufferId || !/erreichbar|kein Weg|Fläche|Reichweite|Zeitüberschreitung|steckt/.test(err)) return err;
+    try {
+      B._towerErr = ''; if (!(await towerAt(g, c, bufferId))) return err + (B._towerErr ? ' | ' + B._towerErr : '');
+      try { await doPlace(g, c.x, c.y, c.z, c.id, { walk: false, facing: c.facing }); err = ''; }
+      catch (e2) { if (e2 instanceof Cancel || (e2 instanceof Fail && /^tot/.test(e2.message))) throw e2; try { await doPlace(g, c.x, c.y, c.z, c.id, { walk: true, facing: c.facing }); err = ''; } catch (e3) { if (e3 instanceof Cancel || (e3 instanceof Fail && /^tot/.test(e3.message))) throw e3; err = e3.message; } }
+    } finally { try { await B.cleanupInner(g); } catch (e4) { if (e4 instanceof Cancel) throw e4; } }
+    return err;
+  }
   B.build = act(async (g, cells, o) => {                                // Planer: sortiert Ebene für Ebene, kürzeste Wege, baut bei Bedarf Gerüst
     o = o || {}; playing(); if (!Array.isArray(cells) || !cells.length) fail('Zellenliste erwartet (siehe BOT.shape)');
     if (cells.length > (o.max || 1500)) fail('zu groß (max. ' + (o.max || 1500) + ' Blöcke)');
     const todo = cells.map((c) => ({ x: c.x | 0, y: c.y | 0, z: c.z | 0, id: itemId(c.id), facing: facingOf(c.facing), raw: c.id })).filter((c) => c.id);
     if (todo.length !== cells.length) fail('unbekannter Block in der Liste');
-    const need = needsOf(cells); const miss = []; if (!isCreative()) for (const id in need) if (countOf(+id) < need[id]) miss.push(nameOf(+id) + ' (' + (need[id] - countOf(+id)) + ' fehlen)');
+    const need = needsOf(cells); const miss = []; if (mode !== 'creative') for (const id in need) if (countOf(+id) < need[id]) miss.push(nameOf(+id) + ' (' + (need[id] - countOf(+id)) + ' fehlen)');
     if (miss.length && !o.partial) fail('Material fehlt: ' + miss.join(', '));
     const bufferId = o.scaffold === false ? 0 : itemId(o.scaffoldItem || 'dirt');
     // Reihenfolge: nach Höhe, innerhalb einer Ebene Nachbar nach Nachbar (kürzeste Wege)
@@ -15860,24 +15930,26 @@ const BOT = (() => {
       const layer = todo.slice(i, j); while (layer.length) { let bi = 0, bd = Infinity; for (let k = 0; k < layer.length; k++) { const d = Math.abs(layer[k].x - cur.x) + Math.abs(layer[k].z - cur.z); if (d < bd) { bd = d; bi = k; } } cur = layer.splice(bi, 1)[0]; ordered.push(cur); }
       i = j;
     }
-    let placed = 0, skipped = 0; const failed = [];
-    for (const c of ordered) {
-      playing(); const now = world.getBlock(c.x, c.y, c.z);
-      if (now === c.id) { skipped++; continue; }
-      if (now < 0) { failed.push([c.x, c.y, c.z, 'Chunk nicht geladen']); continue; }
-      if (now !== AIR && !BLOCKS[now].liquid && !BLOCKS[now].plant) { if (o.replace && !playerBuilt(c.x, c.y, c.z)) { try { await doMine(g, c.x, c.y, c.z, {}); } catch (e) { if (e instanceof Cancel) throw e; failed.push([c.x, c.y, c.z, e.message]); continue; } } else { failed.push([c.x, c.y, c.z, 'Platz belegt']); continue; } }
-      if (!isCreative() && !countOf(c.id)) { failed.push([c.x, c.y, c.z, 'Material aufgebraucht']); if (!o.partial) break; continue; }
-      let ok = false, err = '';
-      for (let attempt = 0; attempt < 3 && !ok; attempt++) {
-        try { await doPlace(g, c.x, c.y, c.z, c.id, { walk: true, facing: c.facing }); ok = true; }
-        catch (e) {
-          if (e instanceof Cancel || (e instanceof Fail && /^tot/.test(e.message))) throw e;
-          err = e.message;
-          if (bufferId && attempt === 0 && /nicht erreichbar|kein Weg|Fläche|außer Reichweite/.test(err) && c.y > P.p.y + 1.5) { try { await pillarUp(g, c.y - 0.5, bufferId); } catch (e2) { if (e2 instanceof Cancel) throw e2; err = e2.message; } }
+    let placed = 0, skipped = 0, failed = [], pending = ordered;
+    const passes = 1 + (o.retries === undefined ? 2 : Math.max(0, o.retries | 0)), maxFail = o.maxFail || 400;
+    for (let pass = 0; pass < passes && pending.length; pass++) {
+      const next = [], before = placed;
+      for (const c of pending) {
+        playing(); const now = world.getBlock(c.x, c.y, c.z);
+        if (now === c.id) { skipped++; continue; }
+        if (now < 0) { next.push([c, 'Chunk nicht geladen']); continue; }
+        if (now !== AIR && !BLOCKS[now].liquid && !BLOCKS[now].plant) {
+          if (o.replace && !playerBuilt(c.x, c.y, c.z)) { try { await doMine(g, c.x, c.y, c.z, {}); } catch (e) { if (e instanceof Cancel) throw e; next.push([c, e.message]); continue; } }
+          else { next.push([c, 'Platz belegt']); continue; }
         }
+        if (!countOf(c.id) && !creativeGive(c.id)) { next.push([c, 'Material aufgebraucht']); if (!o.partial) break; continue; }
+        const err = await placeCell(g, c, bufferId);
+        if (err) next.push([c, err]); else placed++;
+        if (next.length > maxFail) break;
       }
-      if (ok) placed++; else failed.push([c.x, c.y, c.z, err]);
-      if (failed.length > 40) break;
+      failed = next.map(([c, e]) => [c.x, c.y, c.z, e]);
+      pending = next.filter(([c, e]) => !/Material|belegt/.test(e)).map(([c]) => c);
+      if (placed === before) break;                                     // kein Fortschritt: weitere Durchgänge bringen nichts
     }
     if (o.cleanup !== false && scaffold.length) { try { await B.cleanupInner(g); } catch (e) { if (e instanceof Cancel) throw e; } }
     return { ok: placed > 0 || (skipped > 0 && !failed.length), placed, skipped, failed: failed.slice(0, 15), failedCount: failed.length, scaffoldLeft: scaffold.length };
@@ -15954,7 +16026,13 @@ const BOT = (() => {
     try {
       if (!world) return { ok: false, reason: 'keine Welt geladen' };
       const w = clamp(o.w | 0 || 640, 160, 1280), h = clamp(o.h | 0 || 360, 90, 720), R = clamp(o.radius | 0 || 5, 2, 8);
-      const oy = P.yaw, op = P.pitch;
+      const oy = P.yaw, op = P.pitch, oldP = [P.p.x, P.p.y, P.p.z];
+      if (o.target) {                                                    // Außenansicht auf ein Ziel: Kamera schräg über/neben dem Ziel (Spielerposition wird nur für das Bild verschoben)
+        const t = posOf(o.target), dist = clamp(+o.dist || 14, 4, 60), ang = (o.angle === undefined ? 35 : +o.angle) * Math.PI / 180, hh = o.height !== undefined ? +o.height : dist * 0.45;
+        const cam = { x: t.x + Math.sin(ang) * dist, y: t.y + hh, z: t.z + Math.cos(ang) * dist }, ccx = Math.floor(cam.x) >> 4, ccz = Math.floor(cam.z) >> 4;
+        for (let dz = -R - 1; dz <= R + 1; dz++) for (let dx = -R - 1; dx <= R + 1; dx++) world.ensureChunk(ccx + dx, ccz + dz);
+        P.p.set(cam.x, cam.y - EYE, cam.z); setAim(t.x - cam.x, t.y - cam.y, t.z - cam.z);
+      }
       if (o.look) { const e = eyePos(), p = posOf(o.look); setAim(p.x - e.x, p.y - e.y, p.z - e.z); } if (typeof o.yaw === 'number') P.yaw = o.yaw; if (typeof o.pitch === 'number') P.pitch = o.pitch;
       botRender = true; botShotNoSim = true;
       try {
@@ -15964,7 +16042,7 @@ const BOT = (() => {
         frame(last); frameDt = BOT_DT;
         frameDt = BOT_DT; const url = canvas.toDataURL('image/jpeg', clamp(+o.quality || 0.85, 0.3, 0.95));
         return { ok: true, dataUrl: url, w, h, chunks: built, pos: B.state().pos, yaw: rnd1(P.yaw), pitch: rnd1(P.pitch) };
-      } finally { botRender = false; botShotNoSim = false; P.yaw = oy; P.pitch = op; }
+      } finally { botRender = false; botShotNoSim = false; P.yaw = oy; P.pitch = op; P.p.set(oldP[0], oldP[1], oldP[2]); }
     } catch (e) { return { ok: false, reason: String((e && e.message) || e) }; }
   };
 
@@ -15977,6 +16055,24 @@ const BOT = (() => {
       if (aim) out.push([sx, sy, sz]);
     }
     return out;
+  };
+  // ---------- Netzwerk-Status, Chat warten, Spielerliste ----------
+  const netInfo = () => ({ online: !!mp.on, offline: !!mp.offline, pendingBlocks: mp.on ? mp.pending.length : 0, dbQueue: mp.on ? mp.dbQueue.length : 0, outQueue: mp.on && mp.out ? mp.out.length : 0, channelOk: mp.on && mp.net && mp.net.healthy ? !!mp.net.healthy() : null });
+  B.net = () => netInfo();
+  B.syncWait = async (sec) => {                                         // wartet, bis alle Blockänderungen an die anderen Spieler/die Datenbank gesendet sind (große Füllungen brauchen Minuten)
+    const end = botTicks + Math.ceil((sec || 60) / BOT_DT);
+    while (botTicks < end) { const n = netInfo(); if (!n.online || (n.pendingBlocks === 0 && n.dbQueue === 0)) return { ok: true, net: n }; await new Promise((r) => botWaiters.push(r)); }
+    return { ok: false, reason: 'noch nicht alles gesendet', net: netInfo() };
+  };
+  B.players = () => [...mp.players.values()].map((p) => { const q = p.target || p.p; return { name: p.name, online: true, visible: !!p.have, dim: p.dim || 0, x: rnd1(q.x), y: rnd1(q.y), z: rnd1(q.z), op: isOp(p.name), admin: !!p.admin }; });
+  B.waitChat = async (sec, o) => {                                      // wartet auf die nächste Chatnachricht eines anderen Spielers (o.from: nur von diesem; o.since: ab Index)
+    o = o || {}; const since = o.since !== undefined ? o.since | 0 : botChat.length, end = botTicks + Math.ceil((sec || 30) / BOT_DT);
+    while (botTicks < end) {
+      const lines = botChat.slice(since).filter((l) => !l.sys && l.name && l.name !== (mp.on ? mp.name : '') && (!o.from || l.name === o.from));
+      if (lines.length) return { ok: true, lines, next: botChat.length, players: B.players().map((p) => p.name) };
+      await new Promise((r) => botWaiters.push(r));
+    }
+    return { ok: false, reason: 'keine neue Nachricht', next: botChat.length, players: B.players().map((p) => p.name) };
   };
   B.ticks = () => botTicks;
   B.help = () => 'BOT.tools() listet alle Werkzeuge, BOT.call(name, {args}) führt sie aus; BOT.admin.* nur für das KI-Konto.';
