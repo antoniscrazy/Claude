@@ -167,6 +167,8 @@ input[type=text]:focus,select:focus{border-color:#8fd06a}
 #armor{min-height:18px;margin-bottom:2px}
 .grid9 .slot:hover{background:rgba(140,150,200,.55)}
 .tabs{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}
+.search{width:100%;box-sizing:border-box;font:inherit;font-size:14px;color:#fff;background:#2b2b2e;border:2px solid #000;padding:6px 9px;margin:6px 0 2px;outline:none}
+.search:focus{border-color:#4c9a34}
 .tab{font:inherit;font-size:13px;color:#fff;background:#4a4a4e;border:2px solid #000;padding:4px 9px;cursor:pointer}
 .tab.sel{background:#4c9a34}
 #invPalette{max-height:min(34vh,260px);overflow-y:auto;touch-action:pan-y}
@@ -606,6 +608,7 @@ body.touch .ew-bar .ew-close{display:block}
     <div id="chestWrap" class="hidden"><div class="invlabel" id="chestTitle">Truhe</div><div id="chestGrid" class="grid9"></div></div>
     <div id="invPaletteWrap" class="hidden">
       <div class="invlabel">Alle Blöcke – klicken, um den gewählten Hotbar-Slot zu belegen</div>
+      <input id="palSearch" class="search" type="search" placeholder="🔍 Suchen (z. B. tür, kupfer, laterne) …" autocomplete="off" spellcheck="false">
       <div id="invTabs" class="tabs"></div>
       <div id="invPalette" class="grid9"></div>
     </div>
@@ -622,6 +625,7 @@ body.touch .ew-bar .ew-close{display:block}
    <div id="craftWrap" class="hidden">
     <h2>Handwerk</h2>
     <div id="craftInfo" class="invlabel"></div>
+    <input id="craftSearch" class="search" type="search" placeholder="🔍 Rezept suchen (Ergebnis oder Zutat) …" autocomplete="off" spellcheck="false">
     <div id="craftTabs" class="tabs"></div>
     <div id="craftList"></div>
    </div>
@@ -1486,6 +1490,7 @@ item('reaper_scythe', 'Sense des Sensenmanns', 'gen_reaper_scythe', { stack: 1, 
 item('writable_book', 'Buch und Feder', 'gen_book_quill', { stack: 1, bookKind: 'w' });
 item('written_book', 'Signiertes Buch', 'gen_book_written', { stack: 1, bookKind: 's' });
 PALETTE.items = PALETTE.items.filter((i) => i !== IID.almond_water && i !== IID.written_book);
+for (const k in IID) if (/_door$/.test(k)) PALETTE.bau.push(IID[k]);                       // Türen auch im Tab „Bauteile“ (nicht nur tief in der Item-Liste)
 // ---------- Abbau: passendes Werkzeug und benötigte Stufe (0 Hand, 1 Holz, 2 Stein, 3 Eisen, 4 Diamant) ----------
 const setMine = (id, tool, need) => { BLOCKS[id].tool = tool; BLOCKS[id].need = need; };
 [GRASS, DIRT, SAND, SNOW].forEach((id) => setMine(id, 'shovel', 0));
@@ -2047,7 +2052,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-14.45';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-10-14.46';            // Spielversion (nur Anzeige)
 // Verdeckter Bot-Modus (nur per URL ?bot=1, nirgends in der Oberfläche erwähnt): läuft ohne Darstellung mit festem 20-Ticks-Takt, Steuerung über window.BOT (siehe Abschnitt BOT)
 const botChat = [];
 const BOTMODE = /[?&]bot=1(?:&|#|$)/.test(location.search);
@@ -4808,6 +4813,8 @@ function lootBase(id) {
     case ID.gravel: out.push(r() < 0.15 ? [I.flint, 1] : [ID.gravel, 1]); break;
     case ID.tnt: out.push([ID.tnt, 1]); break;
     case ID.short_grass: case ID.fern: if (r() < 0.12) out.push([I.wheat_seeds, 1]); break;
+    case ID.dead_bush: { const n = between(0, 2); if (n) out.push([I.stick, n]); break; }
+    case ID.cobweb: out.push([I.string, 1]); break;
     default:
       if (B.crop) {                                                              // Ernte
         const k = B.crop.key, m = B.crop.mature;
@@ -6703,11 +6710,12 @@ function oreXp(id) {
   const r = ORE_XP_MAP.get(id); return r ? r[0] + ((Math.random() * (r[1] - r[0] + 1)) | 0) : 0;
 }
 const IDKEY = {}; for (const k in ID) IDKEY[ID[k]] = k;
-const silkable = (id) => id === GRASS || id === STONE || id === LEAVES || id === GLASS || /(_ore|^ore)$|^glass|^ice$|^packed_ice|leaves|^bookshelf$|^clay$|^snow_block|^mycelium|^podzol|^glowstone$|^sea_lantern|^netherrack$|^stone_bricks/.test(IDKEY[id] || '');
+const silkable = (id) => id === GRASS || id === STONE || id === LEAVES || id === GLASS || /(_ore|^ore)$|^glass|^ice$|^packed_ice|leaves|^bookshelf$|^clay$|^snow_block|^mycelium|^podzol|^glowstone$|^sea_lantern|^netherrack$|^stone_bricks|^deepslate$/.test(IDKEY[id] || '');
 let FORTUNE_ITEMS = null;
 function lootFor(id, held) {                                                    // mit Behutsamkeit / Glück
   const sk = hasEnch(held, 'silk_touch'), fo = hasEnch(held, 'fortune');
   if (sk && silkable(id)) return [[id === GRASS ? GRASS : id, 1]];
+  if (held && held.id >= ITEM_BASE && ITEMS[held.id].shears && (id === ID.short_grass || id === ID.fern || id === ID.dead_bush || id === ID.cobweb || (LEAFSET.has(id) && id !== GRASS))) return [[id, 1]];   // Schere: Gras, Farn, Busch, Spinnennetz und Laub bleiben ganz
   const out = lootBase(id);
   if (fo) {
     if (!FORTUNE_ITEMS) FORTUNE_ITEMS = new Set(['coal', 'diamond', 'emerald', 'lapis', 'redstone', 'quartz', 'raw_iron', 'raw_gold', 'raw_copper', 'glowstone_dust', 'gold_nugget'].map((k) => IID[k]));
@@ -6909,7 +6917,7 @@ function updateClouds(dt) {
 const inv = new Array(36).fill(null);   // 0–8 Hotbar, 9–35 Rucksack. Stapel: { id, count, dur? }
 let cursorItem = null;
 let hudStatsDirty = true;
-let palTab = 'natur', craftCat = 'Holz';
+let palTab = 'natur', craftCat = 'Holz', palQ = '', craftQ = '';
 P.fuel = 0;                              // Brennstoff-Vorrat für den Ofen (in Schmelzvorgängen)
 
 // Fügt Items hinzu; gibt die Anzahl zurück, die nicht mehr in den Rucksack passte
@@ -7119,6 +7127,14 @@ rc('Bauen', 'nether_wart_block', 1, [['netherrack', 4], ['dye_red', 1]]); rc('Ba
 rc('Bauen', 'pale_moss', 1, [['moss_block', 1], ['dye_white', 1]]);
 rc('Bauen', 'ochre_froglight', 1, [['glowstone', 1], ['dye_yellow', 1]]); rc('Bauen', 'verdant_froglight', 1, [['glowstone', 1], ['dye_green', 1]]); rc('Bauen', 'pearlescent_froglight', 1, [['glowstone', 1], ['dye_pink', 1]]);
 rc('Bauen', 'end_portal_frame_0', 1, [['end_stone_bricks', 4], ['ender_eye', 1]], 'table');
+// --- Lücken geschlossen: alles, was es nur im Kreativmenü oder gar nicht gab, aber im Überleben herstellbar sein soll ---
+rc('Bauteile', 'copper_door', 3, [['copper_ingot', 6]], 'table'); rc('Bauteile', 'copper_trapdoor', 2, [['copper_ingot', 4]], 'table');
+rc('Stein', 'bricks', 1, [['terracotta', 4]]);
+rc('Stein', 'polished_deepslate', 4, [['cobbled_deepslate', 4]]); rc('Stein', 'deepslate_bricks', 4, [['polished_deepslate', 4]]); rc('Stein', 'deepslate_tiles', 4, [['deepslate_bricks', 4]]);
+rc('Stein', 'andesite', 2, [['diorite', 1], ['cobble', 1]]); rc('Stein', 'diorite', 2, [['cobble', 2], ['quartz', 2]]); rc('Stein', 'granite', 1, [['diorite', 1], ['quartz', 1]]);
+rc('Stein', 'dripstone_block', 1, [['pointed_dripstone_up', 4]]); rc('Stein', 'amethyst_block', 1, [['small_amethyst_bud', 4]]);
+rc('Bauen', 'bone_block', 1, [['bone_meal', 9]]); rc('Bauen', 'bone_meal', 9, [['bone_block', 1]]);
+rc('Bauen', 'sea_lantern', 1, [['prismarine_plain', 4], ['glowstone_dust', 5]], 'table');
 const CRAFT_CATS = ['Holz', 'Werkzeug', 'Rüstung', 'Bauen', 'Fahrzeuge', 'Stein', 'Farben', 'Redstone', 'Bauteile', 'Stufen', 'Nahrung', 'Tränke', 'Ofen'];
 
 const countItem = (spec) => inv.reduce((n, s) => n + (s && matchIng(spec, s.id) ? s.count : 0), 0);
@@ -7268,6 +7284,17 @@ function invClick(i, right) {
 function paletteClick(id) {
   inv[P.sel] = newStack(id, maxStack(id) > 1 ? 64 : 1); renderInventory(); refreshHotbar();
 }
+const keyOfId = (id) => (id >= ITEM_BASE ? ITEMS[id].key : IDKEY[id]) || '';
+const searchHit = (id, nq, lq) => { const nm = norm(itemName(id)); return nm.includes(nq) || keyOfId(id).includes(lq); };
+function paletteSearch(q) {                                                    // alle Tabs durchsuchen (ohne Doppelte)
+  const nq = norm(q), lq = q.toLowerCase().replace(/\s+/g, '_'), seen = new Set(), out = [];
+  for (const t in PALETTE) for (const id of PALETTE[t]) if (!seen.has(id) && searchHit(id, nq, lq)) { seen.add(id); out.push(id); }
+  return out.sort((a, b) => (norm(itemName(a)).startsWith(nq) ? 0 : 1) - (norm(itemName(b)).startsWith(nq) ? 0 : 1));
+}
+function recipeSearch(q) {                                                     // Ergebnis oder Zutat enthält den Suchbegriff
+  const nq = norm(q), lq = q.toLowerCase().replace(/\s+/g, '_');
+  return RECIPES.filter((r) => searchHit(r.out, nq, lq) || r.ins.some(([sp]) => typeof sp === 'string' ? norm(TAG_NAME[sp] || sp).includes(nq) : searchHit(sp, nq, lq)));
+}
 function renderCraft() {
   const wrap = $('craftWrap'), cr = isCreative();
   wrap.classList.toggle('hidden', cr);
@@ -7275,12 +7302,14 @@ function renderCraft() {
   const st = stations();
   $('craftInfo').textContent = 'Werkbank ' + (st.table ? '✔' : '✘') + '   Ofen ' + (st.furnace ? '✔' : '✘') + '   Brennstoff: ' + P.fuel.toFixed(1);
   const tabs = $('craftTabs'); tabs.innerHTML = '';
+  const searching = craftQ.trim().length > 0;
   CRAFT_CATS.forEach((k) => {
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'tab' + (k === craftCat ? ' sel' : ''); b.textContent = k;
-    b.onclick = () => { craftCat = k; renderCraft(); }; tabs.appendChild(b);
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'tab' + (!searching && k === craftCat ? ' sel' : ''); b.textContent = k;
+    b.onclick = () => { craftCat = k; craftQ = ''; $('craftSearch').value = ''; renderCraft(); }; tabs.appendChild(b);
   });
   const list = $('craftList'), keep = list.scrollTop; list.innerHTML = '';
-  const rows = RECIPES.filter((r) => r.cat === craftCat).map((r) => ({ r, why: craftBlock(r, st) }));
+  const rows = (searching ? recipeSearch(craftQ.trim()) : RECIPES.filter((r) => r.cat === craftCat)).map((r) => ({ r, why: craftBlock(r, st) }));
+  if (searching && !rows.length) list.innerHTML = '<div class="invlabel">Kein Rezept gefunden.</div>';
   rows.sort((a, b) => (a.why ? 1 : 0) - (b.why ? 1 : 0));
   rows.forEach(({ r, why }) => {
     const row = document.createElement('div'); row.className = 'rec ' + (why ? 'no' : 'can');
@@ -7292,6 +7321,9 @@ function renderCraft() {
   });
   list.scrollTop = keep;
 }
+$('palSearch').addEventListener('input', (e) => { palQ = e.target.value; renderInventory(); });
+$('craftSearch').addEventListener('input', (e) => { craftQ = e.target.value; renderCraft(); });
+['palSearch', 'craftSearch'].forEach((id) => $(id).addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); if (e.target.value) { e.target.value = ''; e.target.dispatchEvent(new Event('input')); } else e.target.blur(); } }));
 function renderInventory() {
   const cr = isCreative();
   $('invPaletteWrap').classList.toggle('hidden', !cr);
@@ -7300,10 +7332,12 @@ function renderInventory() {
   const tabs = $('invTabs'); tabs.innerHTML = '';
   if (cr) {
     Object.keys(PALETTE).forEach((k) => {
-      const b = document.createElement('button'); b.type = 'button'; b.className = 'tab' + (k === palTab ? ' sel' : ''); b.textContent = TAB_NAMES[k];
-      b.onclick = () => { palTab = k; renderInventory(); }; tabs.appendChild(b);
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'tab' + (k === palTab && !palQ.trim() ? ' sel' : ''); b.textContent = TAB_NAMES[k];
+      b.onclick = () => { palTab = k; palQ = ''; $('palSearch').value = ''; renderInventory(); }; tabs.appendChild(b);
     });
-    PALETTE[palTab].forEach((id) => {
+    const q = palQ.trim(), ids = q ? paletteSearch(q) : PALETTE[palTab];
+    if (q && !ids.length) pal.innerHTML = '<div class="invlabel" style="grid-column:1/-1">Nichts gefunden.</div>';
+    ids.forEach((id) => {
       const d = slotEl(pal, id, () => paletteClick(id)); d.title = itemName(id); paintSlot(d, { id, count: 1 }, false);
     });
   }
@@ -7890,10 +7924,11 @@ class Mob {
       if (sp.mode === 'creative' || sp.mode === 'spectator') continue;
       const d = (sp.x - this.p.x) ** 2 + (sp.z - this.p.z) ** 2; if (d < bd) { bd = d; tgt = sp; }
     }
-    if (!tgt) tgt = { name: null, x: P.p.x, y: P.p.y, z: P.p.z };
+    const none = !tgt;                                      // niemand im Überleben/Abenteuer da (alle Creative/Spectator) → kein Ziel, Mobs greifen nicht an
+    if (none) tgt = { name: null, x: P.p.x, y: P.p.y, z: P.p.z };
     this.tgt = tgt;
     const dx = tgt.x - this.p.x, dz = tgt.z - this.p.z;
-    return { dx, dz, dist: Math.hypot(dx, dz), dy: tgt.y - this.p.y };
+    return { dx, dz, dist: none ? 1e6 : Math.hypot(dx, dz), dy: tgt.y - this.p.y, none };
   }
   strike(dmg, pl) {                                         // Nahkampfangriff auf das aktuelle Ziel
     dmg = Math.max(1, Math.round(dmg * (DIFF_MUL[rules.difficulty] || 1)));
@@ -8035,7 +8070,7 @@ class Mob {
       const dx = tx - this.p.x, dz = tz - this.p.z, want = Math.atan2(dx, dz), dy = Math.atan2(Math.sin(want - this.yaw), Math.cos(want - this.yaw));
       this.yaw += Math.sign(dy) * Math.min(Math.abs(dy), rate * dt); this.flyTy = clamp((ty - this.p.y) * 1.3, -9, 9); this.moving = true; return this.speed * spdMul;
     };
-    const near = pl.dist < 6 && Math.abs(pl.dy) < 5 && state === 'play' && !isCreative();
+    const near = pl.dist < 6 && Math.abs(pl.dy) < 5 && state === 'play' && !pl.none;
     if (near && D.hit <= 0) { D.hit = 1.6; this.strike(this.T.dmg, { dx: pl.dx, dz: pl.dz, dist: pl.dist }); P.v.y = Math.max(P.v.y, 6); }
     switch (D.ph) {
       case 'circle': {
@@ -8094,7 +8129,7 @@ class Mob {
     }
     if (this.angry > 0) {                                                          // verärgert: greift den nächsten Spieler an
       this.angry -= dt; if (this.angry <= 0) this.syncEx();
-      if (pl.dist < 25 && !isCreative()) {
+      if (pl.dist < 25 && !pl.none) {
         this.yaw = Math.atan2(pl.dx, pl.dz); this.goal = this.tgt; this.moving = pl.dist > 1.1;
         if (pl.dist < 1.4 && Math.abs(pl.dy) < 1.6 && this.cd <= 0) { this.cd = 1; this.strike(4, pl); }
         return this.moving ? this.speed * 1.5 : 0;
@@ -8318,8 +8353,8 @@ class Mob {
     if (!w.getChunk(cx, cz)) return;
     let spd = 0;
     this.moveYaw = null; this.goal = null;
-    const hunting = this.kind === 'hostile' && (mp.on || (!isCreative() && state === 'play'));      // Mehrspieler: ob jemand im Überleben ist, prüft toPlayer() je Spieler
     const pl = this.toPlayer();
+    const hunting = this.kind === 'hostile' && !pl.none && (mp.on || (!isCreative() && state === 'play'));      // Mehrspieler: ob jemand im Überleben ist, prüft toPlayer() je Spieler
     if (this.T.ai) {
       spd = this[this.T.ai](dt, pl, hunting);
     } else if (this.kind === 'passive') {
@@ -16080,7 +16115,7 @@ const BOT = (() => {
 })();
 if (BOTMODE) window.BOT = BOT;
 
-if (AC_DEV) window.__vc = { AC, acPeer, acCheck, SupabaseNet, AIB, aiBegin, aiEnd, aiOnChat, aiLLM, aiKey, aiObtain, aiSkill, aiFrame, aiTick, aiPath, aiFindBlocks, aiResolveItem, aiState, aiSay, aiParseJson, aiRunPlan, aiApply, aiSources, aiCount, aiAdd, aiMine, aiGotoPos, aiShapeCells, aiGroundY, aiRecv, aiInvText, HB, hbHarm, hbAfterTorch, hbBegin, hbEnd, hbAI, hbShrineAt, hbShrineCheck, hbUndo, hbGround, hbActTunnel, hbActPyramid, hbActTower, hbActSign, hbActTorch, hbActBreakTorches, hbMode, hbVanish, hbSay, hbRecv, tpOffline, bossDown, bossRespawn, bossContain, bossLate, mpSend, signs, signOpen, signClose, signTick, signPlaced, signSetKey, signsPack, signRemove, containerLoad, SIGN_IDS, bookOpen, bookClose, bookSignStart, bookSignDo, bookGo, bookOf, getBK: () => BK, hasGlint, enchLines, placementFor, HW, hwApply, hwTick, hwPoll, boss, bossBegin, bossEnd, bossTick, bossPos, bossRp, bossStartAct, bossDamage, bossPlayersAlive, bossLocked, BACT, blastAsk, askRealBlast, answerRealBlast, chainSet: (n, x, y, z) => { chainLocal = n; chainSum = [n * x, n * y, n * z]; }, blastQ, blastInfo: () => ({ tot: blastTot, done: blastDone, n: blastN, cur: !!blastCur }), bigSt, stepBlast, bigTick, perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+if (AC_DEV) window.__vc = { PALETTE, AC, acPeer, acCheck, SupabaseNet, AIB, aiBegin, aiEnd, aiOnChat, aiLLM, aiKey, aiObtain, aiSkill, aiFrame, aiTick, aiPath, aiFindBlocks, aiResolveItem, aiState, aiSay, aiParseJson, aiRunPlan, aiApply, aiSources, aiCount, aiAdd, aiMine, aiGotoPos, aiShapeCells, aiGroundY, aiRecv, aiInvText, HB, hbHarm, hbAfterTorch, hbBegin, hbEnd, hbAI, hbShrineAt, hbShrineCheck, hbUndo, hbGround, hbActTunnel, hbActPyramid, hbActTower, hbActSign, hbActTorch, hbActBreakTorches, hbMode, hbVanish, hbSay, hbRecv, tpOffline, bossDown, bossRespawn, bossContain, bossLate, mpSend, signs, signOpen, signClose, signTick, signPlaced, signSetKey, signsPack, signRemove, containerLoad, SIGN_IDS, bookOpen, bookClose, bookSignStart, bookSignDo, bookGo, bookOf, getBK: () => BK, hasGlint, enchLines, placementFor, HW, hwApply, hwTick, hwPoll, boss, bossBegin, bossEnd, bossTick, bossPos, bossRp, bossStartAct, bossDamage, bossPlayersAlive, bossLocked, BACT, blastAsk, askRealBlast, answerRealBlast, chainSet: (n, x, y, z) => { chainLocal = n; chainSum = [n * x, n * y, n * z]; }, blastQ, blastInfo: () => ({ tot: blastTot, done: blastDone, n: blastN, cur: !!blastCur }), bigSt, stepBlast, bigTick, perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>

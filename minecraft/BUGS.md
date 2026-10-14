@@ -312,3 +312,12 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * 🤖 **Bot-Modus (intern), Verbesserungen aus dem Praxiseinsatz:** Bauplaner mit Wiederholungsdurchgängen und Säulen-Standorten (ein Haus mit 74 Blöcken wird jetzt komplett gebaut), Kreativ-Vorrat, Füllmodi `shell/hollow/ring/walls`, bessere Item-Suche (`items`, `blocks`, neue Namen für Treppen/Betten/Quarz), Formen `door/bed/statue`, Screenshot von außen auf ein Ziel, Netz-Status und `syncWait`, `waitChat`, `players`, automatisches Fliegen beim Teleportieren in die Luft. Siehe `tools/BOT_API.md`.
 
+## 2026-10-14.46
+
+* 🧟 **Mobs greifen Kreativ- und Zuschauer-Spieler nicht mehr an:** Wenn kein Spieler im Überleben in der Nähe war (alle Kreativ/Zuschauer), fiel die Mob-KI auf dich als Ziel zurück – sie liefen auf dich zu und „griffen“ ohne Schaden an. Jetzt gibt es dann gar kein Ziel (gilt auch für verärgerte Wölfe, Endermen, Drache u. a.; im Mehrspielermodus zählt der Modus jedes Spielers).
+* 🔎 **Suchleisten** im Kreativmenü (durchsucht alle Reiter nach Name oder interner Bezeichnung) und im Handwerksmenü (findet Rezepte nach Ergebnis **oder Zutat**, über alle Kategorien). Esc leert das Feld.
+* 🚪 **Türen im Kreativmenü** stehen jetzt auch im Reiter „Bauteile“ (vorher nur tief im Reiter „Items“).
+* 🛠 **Neue Rezepte** für Dinge, die es bisher nur im Kreativmenü gab: Kupfertür, Kupfer-Falltür, Ziegel (4 Terrakotta), polierter Tiefenschiefer → Tiefenschiefer-Ziegel → -Fliesen, Andesit/Diorit/Granit, Tropfsteinblock (4 Tropfsteinspitzen), Amethystblock (4 kleine Amethystknospen), Knochenblock ⇄ Knochenmehl (9), Seelaterne (4 Prismarin + 5 Glowstone-Staub).
+* ⛏ **Abbau:** Schere lässt Gras, Farn, toten Busch, Spinnennetz und Laub ganz fallen; toter Busch gibt Stöcke, Spinnennetz Faden; Tiefenschiefer lässt sich mit Behutsamkeit abbauen.
+* ✅ Prüfung aller ~2500 Block-IDs und 194 Items: alles Übrige ist Weltgenerierung/Mob-Beute/Handel/Angeln. Bewusst nur Kreativ bleiben Grundgestein, Spawner, Lava, Ackerland, Netherportal, Drachenei.
+
