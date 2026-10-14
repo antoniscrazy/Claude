@@ -2052,7 +2052,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-10-14.47';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-10-14.48';            // Spielversion (nur Anzeige)
 // Verdeckter Bot-Modus (nur per URL ?bot=1, nirgends in der Oberfläche erwähnt): läuft ohne Darstellung mit festem 20-Ticks-Takt, Steuerung über window.BOT (siehe Abschnitt BOT)
 const botChat = [];
 const BOTMODE = /[?&]bot=1(?:&|#|$)/.test(location.search);
@@ -14610,7 +14610,7 @@ function aiPath(goalFn, tx, ty, tz, maxN, radius, opt) {                 // opt 
   const sp = opt && opt.p || AIB.p, CC = opt && opt.cost || aiCellCost;
   const sx = Math.floor(sp.x), sy = Math.floor(sp.y + 0.02), sz = Math.floor(sp.z), R = radius || 50; maxN = maxN || 14000;
   const key = (x, y, z) => ((x + 32768) * 65536 + (z + 32768)) * 512 + y;
-  const hf = (x, y, z) => Math.abs(x - tx) + Math.abs(z - tz) + Math.abs(y - ty) * 1.2;
+  const hUp = opt && opt.bridge ? 4 : 1.2, hf = (x, y, z) => Math.abs(x - tx) + Math.abs(z - tz) + (ty > y ? (ty - y) * hUp : (y - ty) * 1.2);
   const open = [], g = new Map(), par = new Map(), closed = new Set();
   const push = (n) => { open.push(n); let i = open.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (open[p].f <= n.f) break; open[i] = open[p]; i = p; } open[i] = n; };
   const pop = () => { const top = open[0], last = open.pop(); if (open.length) { let i = 0; for (;;) { let c = i * 2 + 1; if (c >= open.length) break; if (c + 1 < open.length && open[c + 1].f < open[c].f) c++; if (open[c].f >= last.f) break; open[i] = open[c]; i = c; } open[i] = last; } return top; };
@@ -14620,16 +14620,18 @@ function aiPath(goalFn, tx, ty, tz, maxN, radius, opt) {                 // opt 
     if (Math.abs(nx - sx) > R || Math.abs(nz - sz) > R || Math.abs(ny - sy) > 60) return;
     if (aiLavaNear(nx, ny, nz)) return;
     const k = key(nx, ny, nz); if (closed.has(k)) return; const ng = g.get(c.k) + cost; if (g.has(k) && g.get(k) <= ng) return;
-    g.set(k, ng); par.set(k, { c, kind }); push({ x: nx, y: ny, z: nz, f: ng + hf(nx, ny, nz), k });
+    g.set(k, ng); par.set(k, { c, kind }); push({ x: nx, y: ny, z: nz, f: ng + hf(nx, ny, nz), k, vf: kind === 'bridge' || kind === 'pillar' });
   };
   while (open.length && n < maxN) {
     const c = pop(); if (closed.has(c.k)) continue; closed.add(c.k); n++;
     const h = hf(c.x, c.y, c.z); if (h < bh) { bh = h; best = c; }
     if (goalFn(c.x, c.y, c.z)) { goal = c; break; }
-    const { x, y, z } = c, hc = CC(x, y + 2, z);
+    const { x, y, z } = c, hc = CC(x, y + 2, z), standOn = !!(opt && opt.bridge) && (c.vf || aiFloor(aiBlk(x, y - 1, z)));        // Bot-Modus: Brücken (Block vor sich setzen) und Säulen (hochspringen + Block unter sich)
+    if (standOn && CC(x, y + 1, z) === 0 && hc === 0 && y + 2 < CH - 2) add(c, x, y + 1, z, 5, 'pillar');
     for (const [dx, dz] of AI_DIRS) {
       const nx = x + dx, nz = z + dz;
       const c1 = CC(nx, y, nz), c2 = CC(nx, y + 1, nz), fl = aiBlk(nx, y - 1, nz);
+      if (standOn && c1 === 0 && c2 === 0 && fl >= 0 && aiPass(fl) && !LQ[fl]) add(c, nx, y, nz, 4, 'bridge');
       if (c1 < Infinity && c2 < Infinity) {
         if (aiFloor(fl)) add(c, nx, y, nz, 1 + c1 + c2, 'walk');
         else if (aiPass(fl) && fl >= 0) {                                    // Abbruch: bis 3 Blöcke hinunterlaufen
@@ -15278,10 +15280,50 @@ const BOT = (() => {
     if (Bk && Bk.gate && !Bk.gate.open) return 2;
     return Infinity;
   };
-  const planPath = (goalFn, tx, ty, tz, maxN) => {
-    const dist = Math.hypot(tx - P.p.x, tz - P.p.z);
-    return aiPath(goalFn, tx, ty, tz, maxN || 9000, clamp(dist + 24, 40, 140), { p: P.p, cost: botCost, noDown: true });
+  // Zusatz für festgefahrene Wege: Stufe 0 = nur gehen/springen/fallen, 1 = + Brücken und Säulen (Block setzen), 2 = + Graben durch natürliches Gelände
+  const navBad = new Set();                                          // Zellen, an denen der Bot in dieser Bewegung hängen blieb
+  const botCostDig = (x, y, z) => {
+    if (navBad.has(keyOf(x, y, z))) return Infinity;
+    const c = botCost(x, y, z); if (c < Infinity) return c;
+    if (y < 2 || y >= CH - 3) return Infinity;
+    const b = world.getBlock(x, y, z); if (b <= 0 || LQ[b]) return Infinity;
+    const Bk = BLOCKS[b]; if (!Bk || Bk.hard === Infinity || b === ID.bedrock || /^loot_|^spawner_|chest|barrel|furnace|crafting_table|^bed_|portal/.test(IDKEY[b] || '')) return Infinity;
+    if (playerBuilt(x, y, z)) return Infinity;                      // fremde Bauten bleiben tabu
+    return 2 + (Bk.hard || 0.3) * 3;
   };
+  const botCostSafe = (x, y, z) => (navBad.has(keyOf(x, y, z)) ? Infinity : botCost(x, y, z));
+  const planPath = (goalFn, tx, ty, tz, maxN, mode) => {
+    const dist = Math.hypot(tx - P.p.x, tz - P.p.z); mode = mode | 0;
+    return aiPath(goalFn, tx, ty, tz, mode >= 1 ? Math.max(maxN || 0, 30000) : maxN || 9000, clamp(dist + 24, 40, 140), { p: P.p, cost: mode >= 2 ? botCostDig : botCostSafe, noDown: mode < 2, bridge: mode >= 1 && !!scaffoldId() });
+  };
+  function scaffoldId() {                                            // Baumaterial zum Brückenbauen: billige, feste Blöcke (nichts Wertvolles, nichts Fallendes)
+    const GOOD = ['dirt', 'cobble', 'stone', 'netherrack', 'andesite', 'diorite', 'granite', 'deepslate', 'cobbled_deepslate', 'oak_planks', 'spruce_planks', 'birch_planks'];
+    for (const k of GOOD) { const id = k === 'dirt' ? DIRT : k === 'stone' ? STONE : k === 'oak_planks' ? PLANKS : ID[k]; if (id !== undefined && countOf(id) > 0) return id; }
+    for (const sl of inv) if (sl && sl.id < ITEM_BASE) { const Bk = BLOCKS[sl.id]; if (Bk && Bk.solid && Bk.opaque !== false && !Bk.falling && !Bk.liquid && !Bk.plant && !Bk.emit && !/_ore$|diamond|emerald|gold|iron_block|netherite|chest|barrel|furnace|table|bed_|tnt|spawner|portal|lamp/.test(IDKEY[sl.id] || '') && (Bk.hard || 0) < 20) return sl.id; }
+    return isCreative() ? DIRT : 0;
+  }
+  async function prepNode(g, n) {                                    // Knoten vorbereiten: Säule bauen, Brücke legen, Hindernisse abbauen
+    n.prep = true; let did = false;
+    if (n.kind === 'pillar') { const id = scaffoldId(); if (!id) fail('kein Baumaterial zum Hochbauen'); await pillarUp(g, n.y, id); return true; }
+    const cx = Math.floor(P.p.x), cy = Math.floor(P.p.y + 0.02), cz = Math.floor(P.p.z);
+    const cells = [[n.x, n.y + 1, n.z], [n.x, n.y, n.z]]; if (n.kind === 'up') cells.unshift([cx, cy + 2, cz]);
+    for (const [x, y, z] of cells) {
+      const b = world.getBlock(x, y, z); if (b < 0) fail('Gelände nicht geladen');
+      if (b > 0 && !aiPass(b) && !(BLOCKS[b].door || BLOCKS[b].gate)) { await doMine(g, x, y, z, { collect: false }); did = true; }
+    }
+    if (n.kind === 'bridge' && !aiFloor(world.getBlock(n.x, n.y - 1, n.z))) {
+      const id = scaffoldId(); if (!id) fail('kein Baumaterial für die Brücke');
+      const ex = Math.floor(P.p.x), ez = Math.floor(P.p.z), sx = Math.sign(n.x - ex), sz = Math.sign(n.z - ez);       // wie beim Schleich-Bauen: bis zur Kante vorschleichen (Blickstrahl muss die Seitenfläche treffen)
+      BOTIN.sneak = true;
+      for (let i = 0; i < 70; i++) {
+        const over = sx ? (sx > 0 ? P.p.x - (ex + 1) : ex - P.p.x) : (sz > 0 ? P.p.z - (ez + 1) : ez - P.p.z); if (over >= 0.22) break;
+        P.yaw = Math.atan2(-sx, -sz); BOTIN.fwd = i < 55 ? 1 : 0; await tk(g);
+      }
+      BOTIN.fwd = 0; await stand(g);
+      await doPlace(g, n.x, n.y - 1, n.z, id, { walk: false }); scaffold.push([n.x, n.y - 1, n.z]); did = true;
+    }
+    return did;
+  }
   async function openDoorsAt(g, x, y, z) {                           // Türen/Tore auf dem Weg öffnen
     for (let dy = 0; dy < 2; dy++) {
       const b = world.getBlock(x, y + dy, z), Bk = b > 0 ? BLOCKS[b] : null;
@@ -15294,7 +15336,8 @@ const BOT = (() => {
   async function moveTo(g, getTarget, o) {
     o = o || {};
     const range = o.range === undefined ? 0.9 : o.range, maxT = Math.ceil((o.timeout || 90) / BOT_DT);
-    let nodes = null, ni = 0, planAt = -1e9, stuckAt = botTicks, stuckX = P.p.x, stuckZ = P.p.z, stuckN = 0;
+    let nodes = null, ni = 0, planAt = -1e9, stuckAt = botTicks, stuckX = P.p.x, stuckZ = P.p.z, stuckN = 0, stuckNi = -1, minMode = 0, prepFail = 0;
+    const maxMode = o.dynamic || o.build === false ? 0 : o.dig === false ? 1 : 2; navBad.clear();
     const closeEnough = (tg) => Math.hypot(tg.x - P.p.x, tg.z - P.p.z) <= range && Math.abs(tg.y - P.p.y) <= (o.dy === undefined ? 2 : o.dy);
     for (let t = 0; t < maxT; t++) {
       playing();
@@ -15303,8 +15346,14 @@ const BOT = (() => {
       const dynamic = !!o.dynamic;
       if (!nodes || ni >= nodes.length || (dynamic && botTicks - planAt >= 20)) {
         const goalFn = o.goal ? o.goal(tg) : (x, y, z) => Math.hypot(x + 0.5 - tg.x, z + 0.5 - tg.z) <= Math.max(range, 0.9) && Math.abs(y - tg.y) <= (o.dy === undefined ? 2 : o.dy);
-        const path = planPath(goalFn, tg.x, tg.y, tg.z, o.maxN);
-        planAt = botTicks;
+        let path = null, first;
+        for (let m = Math.min(minMode, maxMode); m <= maxMode; m++) {                      // erst gehen; nur wenn es so kein Weg gibt: bauen, dann graben
+          if (m === 1 && !scaffoldId()) continue;
+          const pm = planPath(goalFn, tg.x, tg.y, tg.z, o.maxN, m); if (m === Math.min(minMode, maxMode)) first = pm;
+          if (pm && !pm.partial) { path = pm; path.mode = m; break; }
+        }
+        if (!path) path = first;
+        planAt = botTicks; stuckNi = -1;
         if (path && !path.nodes.length && !path.partial && o.goal && o.until) {                     // Ziel-Zelle ist die aktuelle: zur Zellenmitte gehen (die Bedingung gilt für die Mitte, nicht für die jetzige Stelle)
           const cx0 = Math.floor(P.p.x) + 0.5, cz0 = Math.floor(P.p.z) + 0.5;
           if (Math.hypot(cx0 - P.p.x, cz0 - P.p.z) < 0.1) fail('Position nicht erreichbar');
@@ -15315,16 +15364,24 @@ const BOT = (() => {
         }
         if (!path || !path.nodes.length) { if (path && !path.partial) { release(); return true; } fail('kein Weg zum Ziel'); }
         if (path.partial && path.nodes.length < 2) fail('Ziel nicht erreichbar');
-        nodes = path.nodes; ni = 0; nodes.partial = path.partial;
+        nodes = path.nodes; ni = 0; nodes.partial = path.partial; nodes.mode = path.mode | 0;
       }
       // steuern
       while (ni < nodes.length) {
         const n = nodes[ni], dx = n.x + 0.5 - P.p.x, dz = n.z + 0.5 - P.p.z, nx = nodes[ni + 1], pv = nodes[ni - 1] || { x: Math.floor(P.p.x), z: Math.floor(P.p.z) };
         const turn = nx && ((nx.x - n.x) !== (n.x - pv.x) || (nx.z - n.z) !== (n.z - pv.z));
-        if (Math.hypot(dx, dz) < (turn ? 0.22 : 0.45) && Math.abs(n.y - P.p.y) < 1.1) ni++; else break;
+        if (Math.hypot(dx, dz) < (turn ? 0.22 : 0.45) && Math.abs(n.y - P.p.y) < (n.kind === 'pillar' ? 0.3 : 1.1) && (n.kind !== 'bridge' || n.prep)) ni++; else break;
       }
       if (ni >= nodes.length) { if (nodes.partial) fail('Ziel nicht erreichbar'); nodes = null; BOTIN.fwd = 0; BOTIN.sprint = false; await tk(g); continue; }
       const n = nodes[ni], dx = n.x + 0.5 - P.p.x, dz = n.z + 0.5 - P.p.z, d = Math.hypot(dx, dz);
+      if (!n.prep && (n.kind === 'bridge' || n.kind === 'pillar' || (nodes.mode | 0) >= 2 || !aiPass(world.getBlock(n.x, n.y, n.z)) || !aiPass(world.getBlock(n.x, n.y + 1, n.z)))) {
+        const gate = (b) => b > 0 && (BLOCKS[b].door || BLOCKS[b].gate);
+        if (!(gate(world.getBlock(n.x, n.y, n.z)) || gate(world.getBlock(n.x, n.y + 1, n.z))) || n.kind === 'bridge' || n.kind === 'pillar') {
+          release(); await stand(g);
+          try { if (await prepNode(g, n)) { stuckAt = botTicks; stuckX = P.p.x; stuckZ = P.p.z; continue; } }
+          catch (e) { if (e instanceof Cancel || (e instanceof Fail && /^tot/.test(e.message))) throw e; navBad.add(keyOf(n.x, n.y, n.z)); minMode = Math.min(maxMode, Math.max(minMode, (nodes.mode | 0) + 1)); nodes = null; if (++prepFail > 4) fail('Weg nicht machbar: ' + e.message); continue; }
+        }
+      }
       if (d > 0.05) P.yaw = Math.atan2(-dx, -dz);
       BOTIN.fwd = 1;
       BOTIN.sprint = !isCreative() && P.hunger > 6 && nodes.length - ni > 6 && !P.inWater;
@@ -15333,8 +15390,16 @@ const BOT = (() => {
         if (d < 2.2 && await openDoorsAt(g, n.x, n.y, n.z)) continue;
       }
       // Festhängen
-      if (botTicks - stuckAt >= 30) {
-        if (Math.hypot(P.p.x - stuckX, P.p.z - stuckZ) < 0.25) { stuckN++; nodes = null; if (stuckN >= 4) fail('steckt fest'); } else stuckN = 0;
+      if (botTicks - stuckAt >= 40) {                                     // kommt der Bot nicht voran (auch Hin-und-Her an einer Stelle)? Stufenweise Abhilfe
+        const moved = Math.hypot(P.p.x - stuckX, P.p.z - stuckZ);
+        if (moved < 1.0) {
+          stuckN++;
+          if (stuckN >= 2) { navBad.add(keyOf(n.x, n.y, n.z)); navBad.add(keyOf(n.x, n.y + 1, n.z)); }
+          if (stuckN === 3 && minMode < maxMode) minMode++;
+          if (stuckN >= 4) { BOTIN.str = stuckN % 2 ? 1 : -1; BOTIN.jump = true; for (let i = 0; i < 6; i++) await tk(g); BOTIN.str = 0; }
+          if (stuckN >= 6) fail('steckt fest bei (' + Math.floor(P.p.x) + ',' + Math.floor(P.p.y) + ',' + Math.floor(P.p.z) + ') vor ' + (BLOCKS[world.getBlock(n.x, n.y, n.z)] || { name: '?' }).name);
+          nodes = null;
+        } else stuckN = 0;
         stuckAt = botTicks; stuckX = P.p.x; stuckZ = P.p.z;
       }
       await tk(g);

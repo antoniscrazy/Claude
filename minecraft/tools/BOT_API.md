@@ -72,3 +72,9 @@ Siehe Kommentar „ANTI-CHEAT“ in `index.html`: Selbstkontrolle (Flug/Tempo/Go
 * `BOT.checklist(to, title, items)` zeigt auf dem Bildschirm des Spielers `to` eine Checkliste (links oben). `items` = Liste von Texten oder `[Text, erledigt]` (max. 30 Punkte, 120 Zeichen).
 * `BOT.check(nummer | text, done=true)` hakt einen Punkt ab (Nummer ab 0), `BOT.checklistClear()` entfernt die Liste. Auch über `BOT.call('checklist' | 'check' | 'checklistClear', {...})`.
 * Nur das Konto `ClaudeAI` darf senden, angezeigt wird sie nur beim genannten Spieler (`/checkliste aus` blendet sie dort aus). Nicht ungefragt benutzen.
+
+## Automatisches Brücken/Hochbauen/Graben (v48)
+
+* `goto`/`mine`/`place`/`follow` versuchen zuerst den normalen Weg. Gibt es keinen, plant der Bot automatisch mit **Brücken** (Block vor sich setzen), **Säulen** (hochspringen + Block unter sich setzen) und zuletzt **Graben** durch natürliches Gelände. Material: billige Blöcke aus dem Inventar (Erde, Bruchstein, Stein …; Kreativ: Erde). Spielerbauten bleiben tabu.
+* Optionen für `goto`: `{build:false}` = nur gehen, `{dig:false}` = bauen aber nicht graben. Kommt der Bot nicht voran, gibt es stufenweise Abhilfe und am Ende die Meldung „steckt fest bei (x,y,z) vor …“.
+* Tipp: Wegen müssen nicht mehr von Hand gebaut werden – einfach `BOT.goto` mit Baumaterial im Inventar aufrufen.
