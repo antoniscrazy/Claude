@@ -450,7 +450,7 @@ body.inmenu #panorama{display:block}
 #mmMain,#mmSingle,#mmHelp{width:min(400px,92vw)}
 #mmMain .btn{margin:6px 0;height:40px}
 #mmMain .row{gap:8px}#mmMain .row .btn{margin:6px 0}
-#mmSingle.panel,#mmCreate.panel,#mmHelp.panel{width:min(560px,94vw);max-height:calc(100vh - 24px);overflow:auto;touch-action:pan-y}
+#mmSingle.panel,#mmCreate.panel,#mmEdit.panel,#mmDelete.panel,#mmHelp.panel{width:min(560px,94vw);max-height:calc(100vh - 24px);overflow:auto;touch-action:pan-y}
 #mmHelp .help{margin-top:0;border:0;padding:0;font-size:16px;line-height:1.35;color:#a0a0a0}
 .help b{color:#fff}
 #mmFootL,#mmFootR{position:absolute;bottom:6px;font-size:16px;color:#fff;text-shadow:2px 2px 0 #3f3f3f;pointer-events:none}
@@ -532,7 +532,7 @@ body.inmenu #panorama{display:block}
 #signPrev{font:16px/1.45 "MinecraftUI",monospace;color:#000}
 
 /* Weltauswahl / Welt erstellen / Serverliste im Java-Stil */
-.wlist{background:rgba(0,0,0,.5);border:2px solid #000;min-height:150px;padding:6px;margin:6px 0 12px;text-align:left}
+.wlist{background:rgba(0,0,0,.5);border:2px solid #000;min-height:150px;max-height:260px;overflow-y:auto;padding:6px;margin:6px 0 12px;text-align:left}
 .wrow,.srv{display:flex;align-items:center;gap:12px;min-height:80px;padding:6px;border:2px solid transparent;background:none;cursor:pointer;text-align:left;font-size:16px}
 .wrow:hover,.srv:hover{background:rgba(255,255,255,.1)}
 .wrow.sel,.srv.sel{border-color:#fff;background:rgba(255,255,255,.06)}
@@ -544,7 +544,8 @@ body.inmenu #panorama{display:block}
 #mpServerList{max-height:300px;background:rgba(0,0,0,.5);border:2px solid #000;padding:6px;margin-top:6px}
 #mpmenu .panel{width:min(1000px,96vw);max-width:none}
 .ctabs{justify-content:center;margin:-10px 0 16px}
-#mmSingle.panel,#mmCreate.panel,#mmHelp.panel,#mpmenu .panel{background-color:rgba(0,0,0,.62)}
+#mmSingle.panel,#mmCreate.panel,#mmEdit.panel,#mmDelete.panel,#mmHelp.panel,#mpmenu .panel{background-color:rgba(0,0,0,.62)}
+input[type=search],textarea,.wrow,.srv,.wlist{font-family:"MinecraftUI","Courier New",monospace;font-size:16px}
 </style>
 </head>
 <body class="inmenu">
@@ -656,13 +657,29 @@ body.inmenu #panorama{display:block}
     </div>
     <div id="mmSingle" class="panel hidden">
       <h2>Welt auswählen</h2>
-      <div class="wlist" id="worldList"><div class="hint" id="worldEmpty">Noch keine gespeicherte Welt – erstelle eine neue.</div><div class="wrow hidden" id="worldRow"><i></i><div><b>Gespeicherte Welt</b><small id="worldInfo"></small><small id="worldInfo2"></small></div></div></div>
+      <input id="worldSearch" type="search" placeholder="Welt suchen …" autocomplete="off">
+      <div class="wlist" id="worldList"></div>
       <div class="row"><button class="btn" id="btnLoad" type="button">Ausgewählte Welt spielen</button><button class="btn" id="btnCreateOpen" type="button">Neue Welt erstellen</button></div>
-      <button class="btn" id="btnSingleBack" type="button">Zurück</button>
+      <div class="row"><button class="btn" id="btnWorldEdit" type="button">Bearbeiten</button><button class="btn" id="btnWorldDel" type="button">Löschen</button><button class="btn" id="btnWorldRe" type="button">Neu erstellen</button><button class="btn" id="btnSingleBack" type="button">Zurück</button></div>
+    </div>
+    <div id="mmEdit" class="panel hidden">
+      <h2>Welt bearbeiten</h2>
+      <label for="editName">Weltname</label>
+      <input id="editName" type="text" maxlength="32" autocomplete="off">
+      <div class="hint" id="editInfo"></div>
+      <button class="btn" id="btnEditCopy" type="button" style="margin-top:12px">Welt kopieren (Backup)</button>
+      <div class="row"><button class="btn" id="btnEditSave" type="button">Speichern</button><button class="btn" id="btnEditBack" type="button">Abbrechen</button></div>
+    </div>
+    <div id="mmDelete" class="panel hidden">
+      <h2>Bist du sicher?</h2>
+      <p id="delText" style="margin:6px 0 16px;color:#e0e0e0"></p>
+      <div class="row"><button class="btn" id="btnDelYes" type="button">Löschen</button><button class="btn" id="btnDelNo" type="button">Abbrechen</button></div>
     </div>
     <div id="mmCreate" class="panel hidden">
       <div class="tabs ctabs"><button class="tab sel" id="ctabGame" type="button">Spiel</button><button class="tab" id="ctabWorld" type="button">Welt</button></div>
       <div id="cGame">
+        <label for="worldName">Weltname</label>
+        <input id="worldName" type="text" maxlength="32" autocomplete="off" placeholder="Neue Welt">
         <label>Spielmodus</label>
         <div class="row">
           <button class="btn sel" id="modeSurvival" type="button">Überleben</button>
@@ -915,7 +932,9 @@ const CHD = 64;            // Höhe von Nether, Backrooms und Ende
 const SEA = 22;            // Wasserlinie (höchster Wasserblock)
 const LAYER = CS * CS;     // Blöcke pro Höhenschicht
 const DAY_LEN = 600;       // Sekunden pro Tag
-const SAVE_KEY = 'voxelcraft_save_v2';
+const SAVE_KEY = 'voxelcraft_save_v2';                   // alt (eine Welt) – wird beim ersten Start in die Weltenliste übernommen
+const WKEY = 'voxelcraft_worlds', WPFX = 'voxelcraft_w_';
+let curWorldId = null, selWorldId = null;
 
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -2308,7 +2327,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-11-02.56';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-11-02.57';            // Spielversion (nur Anzeige)
 // Verdeckter Bot-Modus (nur per URL ?bot=1, nirgends in der Oberfläche erwähnt): läuft ohne Darstellung mit festem 20-Ticks-Takt, Steuerung über window.BOT (siehe Abschnitt BOT)
 const botChat = [];
 const BOTMODE = /[?&]bot=1(?:&|#|$)/.test(location.search);
@@ -9319,7 +9338,7 @@ let gameTime = 0, saveTimer = 0;
 const SCREENS = { snake: 'snake', dino: 'dino', menu: 'menu', mpmenu: 'mpmenu', loading: 'loading', pause: 'pause', inv: 'inventory', emotes: 'emotes', dead: 'death', chat: 'chatBar', settings: 'settings', trade: 'trade', sign: 'signEdit', book: 'book' };
 
 let mmView = 'Main';                                                  // Titelbildschirm: Main | Single | Help
-function mmShow(v) { mmView = v; for (const k of ['Main', 'Single', 'Create', 'Help']) $('mm' + k).classList.toggle('hidden', k !== v); if (v === 'Single') renderWorldRow(); const l = $('mmLogoWrap'); if (l) l.classList.toggle('hidden', v !== 'Main'); }
+function mmShow(v) { mmView = v; for (const k of ['Main', 'Single', 'Create', 'Edit', 'Delete', 'Help']) $('mm' + k).classList.toggle('hidden', k !== v); if (v === 'Single') renderWorldRow(); if (v === 'Create') { $('cGame').classList.remove('hidden'); $('cWorld').classList.add('hidden'); $('ctabGame').classList.add('sel'); $('ctabWorld').classList.remove('sel'); } const l = $('mmLogoWrap'); if (l) l.classList.toggle('hidden', v !== 'Main'); }
 const SPLASHES = ['Jetzt mit Kupfertüren!', 'Alles in einer Datei!', 'Zufällig generiert!', 'Auch im Browser!', 'Hundert Prozent Pixel!', 'Voxel-Power!', 'Aw man!', 'Kein Creeper im Menü!', 'Probier /spectate!', 'Gib dem Schaf Scheren!', 'Mit Wetter!', 'Sieben Tage pro Jahreszeit!', 'Der Wald ruft!', 'Grabe nie senkrecht nach unten!', 'Bett nicht vergessen!', 'Schon Diamanten gefunden?', 'Eine Spitzhacke ist ein Freund!', 'Halloween-Mobs gibt es nur nachts!', 'Mehrspieler-fähig!', 'Gelbe Schrift ist Pflicht!', 'Auch ohne Maus spielbar!', 'Danke fürs Spielen!', 'Es gibt Fackeln!', 'Bleib hydriert!', 'Redstone inklusive!'];
 function newSplash() {                                              // wie in Java: lange Sprüche werden kleiner
   const el = $('mmSplash'); if (!el) return; el.textContent = SPLASHES[(Math.random() * SPLASHES.length) | 0];
@@ -9469,11 +9488,26 @@ function saveGame() {
     edits: world.serializeEdits(0), edits1: world.serializeEdits(1), edits2: world.serializeEdits(2), edits3: world.serializeEdits(3), dim: world.dim, endDead: [...endDead],
     mobs: mobSnapshot(80, false),
   };
-  try { const txt = JSON.stringify(data); localStorage.setItem(SAVE_KEY, txt); if (txt.length > 4200000) toast('⚠ Spielstand ist sehr groß (' + (txt.length / 1e6).toFixed(1) + ' MB) – der Browser-Speicher ist bald voll'); return true; }
+  try { const txt = JSON.stringify(data); if (!curWorldId) curWorldId = worldCreate('Neue Welt', world.seedStr, mode); localStorage.setItem(WPFX + curWorldId, txt); worldTouch(curWorldId, { mode, seed: world.seedStr, time: gameTime, size: txt.length }); if (txt.length > 4200000) toast('⚠ Spielstand ist sehr groß (' + (txt.length / 1e6).toFixed(1) + ' MB) – der Browser-Speicher ist bald voll'); return true; }
   catch (e) { toast('Speichern fehlgeschlagen (Speicher voll?) – die alte Sicherung bleibt erhalten'); return false; }
 }
-function readSave() {
-  try { const s = localStorage.getItem(SAVE_KEY); return s ? JSON.parse(s) : null; } catch (e) { return null; }
+function worldIndex() { try { const a = JSON.parse(localStorage.getItem(WKEY) || 'null'); if (Array.isArray(a)) return a; } catch (e) { /* egal */ } return null; }
+function writeIndex(a) { try { localStorage.setItem(WKEY, JSON.stringify(a)); } catch (e) { /* voll */ } }
+function worldList() {
+  let a = worldIndex();
+  if (!a) {                                                                      // einmalige Übernahme des alten Einzel-Spielstands
+    a = [];
+    try { const old = localStorage.getItem(SAVE_KEY); if (old) { const o = JSON.parse(old), id = 'w' + Date.now().toString(36); localStorage.setItem(WPFX + id, old); a.push({ id, name: 'Meine Welt', created: Date.now(), played: Date.now(), mode: o.mode, seed: o.seed, time: o.time || 0, size: old.length }); localStorage.removeItem(SAVE_KEY); } } catch (e) { /* egal */ }
+    writeIndex(a);
+  }
+  return a;
+}
+function worldUniqueName(base) { const names = new Set(worldList().map((w) => w.name)); if (!names.has(base)) return base; for (let i = 2; ; i++) if (!names.has(base + ' (' + i + ')')) return base + ' (' + i + ')'; }
+function worldCreate(name, seed, md) { const a = worldList(), id = 'w' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36); a.push({ id, name: worldUniqueName((name || '').trim() || 'Neue Welt'), created: Date.now(), played: Date.now(), mode: md, seed, time: 0, size: 0 }); writeIndex(a); return id; }
+function worldTouch(id, patch) { const a = worldList(), w = a.find((x) => x.id === id); if (w) { Object.assign(w, patch, { played: Date.now() }); writeIndex(a); } }
+function worldDelete(id) { try { localStorage.removeItem(WPFX + id); } catch (e) { /* egal */ } writeIndex(worldList().filter((w) => w.id !== id)); if (curWorldId === id) curWorldId = null; }
+function readSave(id) {
+  try { const s = localStorage.getItem(WPFX + (id || selWorldId)); return s ? JSON.parse(s) : null; } catch (e) { return null; }
 }
 
 // ----- Menü-Bedienung -----
@@ -9489,19 +9523,20 @@ $('btnBackOut').addEventListener('click', (e) => { e.stopPropagation(); leaveBac
 $('btnBackPause').onclick = () => { setState('play'); lockPointer(); leaveBackrooms(); };
 $('btnNew').onclick = () => {
   const s = $('seed').value.trim() || String(Math.floor(Math.random() * 1e9));
+  curWorldId = worldCreate($('worldName').value, s, selMode); selWorldId = curWorldId;
   startGame({ seed: s, mode: selMode, dist: parseInt($('dist').value, 10) });
 };
 $('btnLoad').onclick = () => {
-  const s = readSave(); if (!s) return;
+  const s = readSave(); if (!s) return; curWorldId = selWorldId;
   startGame({ mode: s.mode, dist: parseInt($('dist').value, 10) || s.dist, save: s });
 };
 $('btnNew').disabled = true; $('btnLoad').disabled = true;
-ATLAS.onReady(() => { $('btnNew').disabled = false; $('btnLoad').disabled = !readSave(); });
+ATLAS.onReady(() => { $('btnNew').disabled = false; renderWorldList(); });
 $('btnResume').onclick = resume;
 $('btnSave').onclick = () => { if (saveGame()) toast(mp.on ? 'Spielstand in der Cloud gespeichert' : 'Welt gespeichert'); };
 $('btnQuit').onclick = async () => {
   if (mp.on) { $('btnQuit').disabled = true; await mpLeave(); $('btnQuit').disabled = false; setState('menu'); return; }
-  saveGame(); $('btnLoad').disabled = !readSave(); setState('menu');
+  saveGame(); renderWorldList(); setState('menu');
 };
 $('btnRespawn').onclick = respawn;
 
@@ -13953,15 +13988,37 @@ function menuSceneSync(s) {
 }
 window.addEventListener('resize', () => { if (MenuScene.raf) menuSceneSize(); });
 // Titelbildschirm im Java-Look: Hauptmenü → Einzelspieler / Steuerung; die Easter Eggs sind jetzt im Logo versteckt
-function renderWorldRow() {
-  const sv = readSave(), row = $('worldRow'); row.classList.toggle('hidden', !sv); $('worldEmpty').classList.toggle('hidden', !!sv); row.classList.add('sel');
-  if (sv) { const dayN = Math.floor((sv.time || 0) / (typeof DAY_LEN !== 'undefined' ? DAY_LEN : 1200)) + 1; $('worldInfo').textContent = (sv.mode === 'creative' ? 'Kreativmodus' : sv.mode === 'spectator' ? 'Zuschauermodus' : 'Überlebensmodus') + ', Tag ' + dayN; $('worldInfo2').textContent = 'Seed: ' + (sv.seed || '–'); }
-  $('btnLoad').disabled = !sv;
+const fmtDate = (t) => { const d = new Date(t || 0); return d.toLocaleDateString('de-DE') + ' ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); };
+function renderWorldList() {
+  const box = $('worldList'); if (!box) return; box.innerHTML = '';
+  const q = ($('worldSearch').value || '').toLowerCase(), all = worldList().slice().sort((a, b) => b.played - a.played), a = all.filter((w) => w.name.toLowerCase().includes(q));
+  if (selWorldId && !all.some((w) => w.id === selWorldId)) selWorldId = null;
+  if (!selWorldId && a.length) selWorldId = a[0].id;
+  if (!a.length) { const h = document.createElement('div'); h.className = 'hint'; h.textContent = all.length ? 'Keine passende Welt gefunden.' : 'Noch keine Welt – erstelle eine neue.'; box.appendChild(h); }
+  for (const w of a) {
+    const r = document.createElement('div'); r.className = 'wrow' + (w.id === selWorldId ? ' sel' : ''); r.innerHTML = '<i></i><div><b></b><small></small><small></small></div>';
+    r.querySelector('b').textContent = w.name; const sm = r.querySelectorAll('small');
+    sm[0].textContent = '(' + fmtDate(w.played) + ')'; sm[1].textContent = (w.mode === 'creative' ? 'Kreativmodus' : w.mode === 'spectator' ? 'Zuschauermodus' : 'Überlebensmodus') + ', Tag ' + (Math.floor((w.time || 0) / (typeof DAY_LEN !== 'undefined' ? DAY_LEN : 1200)) + 1) + ' · Seed: ' + (w.seed || '–');
+    r.onclick = () => { selWorldId = w.id; renderWorldList(); };
+    r.ondblclick = () => $('btnLoad').click();
+    box.appendChild(r);
+  }
+  const has = !!selWorldId; for (const id of ['btnLoad', 'btnWorldEdit', 'btnWorldDel', 'btnWorldRe']) $(id).disabled = !has;
 }
+$('worldSearch').addEventListener('input', renderWorldList);
+const selWorld = () => worldList().find((w) => w.id === selWorldId);
+$('btnWorldEdit').onclick = () => { const w = selWorld(); if (!w) return; $('editName').value = w.name; $('editInfo').textContent = 'Seed: ' + w.seed + ' · erstellt ' + fmtDate(w.created); mmShow('Edit'); };
+$('btnEditBack').onclick = () => mmShow('Single');
+$('btnEditSave').onclick = () => { const w = selWorld(), n = $('editName').value.trim(); if (w && n) { const a = worldList(), x = a.find((q) => q.id === w.id); x.name = n; writeIndex(a); } mmShow('Single'); };
+$('btnEditCopy').onclick = () => { const w = selWorld(), sv = readSave(); if (!w || !sv) return; const id = worldCreate(w.name + ' (Kopie)', w.seed, w.mode); try { localStorage.setItem(WPFX + id, JSON.stringify(sv)); worldTouch(id, { time: w.time, size: w.size }); selWorldId = id; toast('Kopie erstellt'); } catch (e) { worldDelete(id); toast('Kopieren fehlgeschlagen (Speicher voll?)'); } mmShow('Single'); };
+$('btnWorldDel').onclick = () => { const w = selWorld(); if (!w) return; $('delText').textContent = '„' + w.name + '“ wird für immer verloren sein! (Eine lange Zeit!)'; mmShow('Delete'); };
+$('btnDelNo').onclick = () => mmShow('Single');
+$('btnDelYes').onclick = () => { if (selWorldId) worldDelete(selWorldId); selWorldId = null; mmShow('Single'); };
+$('btnWorldRe').onclick = () => { const w = selWorld(); if (!w) return; setMenuMode(w.mode || 'survival'); $('seed').value = w.seed || ''; $('worldName').value = w.name; mmShow('Create'); };
+function renderWorldRow() { renderWorldList(); }
 $('btnSingle').onclick = () => mmShow('Single');
 $('btnCreateOpen').onclick = () => mmShow('Create');
 $('btnCreateBack').onclick = () => mmShow('Single');
-$('worldRow').onclick = () => { $('worldRow').classList.add('sel'); };
 const cTab = (w) => { $('cGame').classList.toggle('hidden', w); $('cWorld').classList.toggle('hidden', !w); $('ctabGame').classList.toggle('sel', !w); $('ctabWorld').classList.toggle('sel', w); };
 $('ctabGame').onclick = () => cTab(false); $('ctabWorld').onclick = () => cTab(true);
 const MODE_HINT = { modeSurvival: 'Sammle Rohstoffe, baue, überlebe die Nacht.', modeCreative: 'Unbegrenzte Ressourcen, freies Fliegen, kein Schaden.', modeSpectator: 'Fliege durch die Welt und sieh nur zu.' };

@@ -370,3 +370,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * 🎨 Startbildschirm näher an Java: Splash-Text und „Java Edition“-Schild wie im Original positioniert; **Weltauswahl** („Welt auswählen“ mit Eintrag der gespeicherten Welt, Knöpfe „Ausgewählte Welt spielen / Neue Welt erstellen / Zurück“) und **Welt erstellen** mit den Reitern „Spiel“ und „Welt“; Serverliste mit Java-Zeilen (Symbol, Name, Besitzer/Modus, Ping-Balken, Auswahlrahmen).
 * 🖼 Panorama deutlich schärfer: mit den Shadern in 1024 px gerendert (Schatten, Himmel, Kantenglättung) statt 720 px ohne.
+
+## 2026-11-02.57
+
+* 💾 **Mehrere Welten** wie in Java: Weltauswahl mit Liste (Name, Datum, Modus, Tag, Seed, Größe), Suche, Doppelklick = spielen; **Welt erstellen** mit Weltname; **Bearbeiten** (umbenennen, kopieren als Backup), **Löschen** mit Sicherheitsabfrage, **Neu erstellen** (gleicher Seed und Modus). Der alte Einzel-Spielstand wird beim ersten Start automatisch als „Meine Welt“ übernommen. Gespeichert wird im Browser (localStorage, ca. 5 MB gesamt – sehr große Welten füllen ihn schnell).
