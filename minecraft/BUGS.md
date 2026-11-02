@@ -365,3 +365,8 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 ## 2026-11-02.55
 
 * ☁ **Shader: realistischer Himmel** – Farbverlauf von Horizont zu Zenit, Sonnenscheibe mit Glanz, volumetrisch wirkende Wolken (mehrlagiges Rauschen, ziehen mit dem Wind, von der Sonne beleuchtet mit Schattenseite und hellem Rand, goldene Wolken bei Sonnenauf-/untergang, dunkel und dicht bei Regen) plus hohe Schleierwolken; Sterne und Mond bleiben nachts sichtbar.
+
+## 2026-11-02.56
+
+* 🎨 Startbildschirm näher an Java: Splash-Text und „Java Edition“-Schild wie im Original positioniert; **Weltauswahl** („Welt auswählen“ mit Eintrag der gespeicherten Welt, Knöpfe „Ausgewählte Welt spielen / Neue Welt erstellen / Zurück“) und **Welt erstellen** mit den Reitern „Spiel“ und „Welt“; Serverliste mit Java-Zeilen (Symbol, Name, Besitzer/Modus, Ping-Balken, Auswahlrahmen).
+* 🖼 Panorama deutlich schärfer: mit den Shadern in 1024 px gerendert (Schatten, Himmel, Kantenglättung) statt 720 px ohne.
