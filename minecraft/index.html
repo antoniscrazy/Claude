@@ -2545,7 +2545,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-11-02.66';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-11-02.67';            // Spielversion (nur Anzeige)
 // Verdeckter Bot-Modus (nur per URL ?bot=1, nirgends in der Oberfläche erwähnt): läuft ohne Darstellung mit festem 20-Ticks-Takt, Steuerung über window.BOT (siehe Abschnitt BOT)
 const botChat = [];
 const BOTMODE = /[?&]bot=1(?:&|#|$)/.test(location.search);
@@ -8088,12 +8088,12 @@ $('craftSearch').addEventListener('input', (e) => { craftQ = e.target.value; ren
 ['palSearch', 'craftSearch'].forEach((id) => $(id).addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); if (e.target.value) { e.target.value = ''; e.target.dispatchEvent(new Event('input')); } else e.target.blur(); } }));
 const TABNAME = Object.assign({}, TAB_NAMES, { search: 'Items suchen', inv: 'Inventar' });
 let svSkin = null, svSkinKey = '';
-async function drawSvPlayer() {
-  const cv = $('svPlayer'); if (!cv) return; const key = JSON.stringify(currentSkinSpec()) + mpCfg.slim;
+async function drawSvPlayer(target) {
+  const cv = target || $('svPlayer'); if (!cv) return; const key = JSON.stringify(currentSkinSpec()) + mpCfg.slim;
   try {
     if (!svSkin || svSkinKey !== key) { svSkin = await skinCanvas(currentSkinSpec(), mpCfg.slim); svSkinKey = key; }
-    const t = document.createElement('canvas'); t.width = 98; t.height = 128; drawSkinPreview(t, svSkin, mpCfg.slim, 4);
-    const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; c.clearRect(0, 0, 98, 140); c.drawImage(t, 0, 6);
+    const W = cv.width, H = cv.height, sc = Math.floor(Math.min(W / 16, (H - 12) / 32)), t = document.createElement('canvas'); t.width = 16 * sc; t.height = 32 * sc; drawSkinPreview(t, svSkin, mpCfg.slim, sc);
+    const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; c.clearRect(0, 0, W, H); c.drawImage(t, Math.round((W - t.width) / 2), Math.round((H - t.height) / 2));
   } catch (e) { /* kein Vorschaubild */ }
 }
 function vslot(host, i, x, y, onClick, cls) {                       // Slot auf Pixelposition (Minecraft-Pixel, linke obere Ecke des 16×16-Bereichs)
@@ -8125,6 +8125,7 @@ function renderCreative() {
   $('crPanel').classList.toggle('srch', srch); $('crPanel').classList.toggle('pinv', pinv); $('crTitle').textContent = pinv ? '' : (TABNAME[palTab] || '');
   const g = $('crGrid'), keep = g.scrollTop; g.innerHTML = ''; const fx = $('crFix'); fx.innerHTML = '';
   if (pinv) {
+    const pc = document.createElement('canvas'); pc.width = 128; pc.height = 176; pc.style.cssText = 'position:absolute;left:calc(73*var(--s));top:calc(6*var(--s));width:calc(32*var(--s));height:calc(44*var(--s));image-rendering:pixelated;pointer-events:none'; fx.appendChild(pc); drawSvPlayer(pc);
     armorSlots(fx, [[54, 6], [54, 33], [108, 6], [108, 33]]); emptySlot(fx, 35, 20, 'shield');
     for (let i = 9; i < 36; i++) { const r = Math.floor((i - 9) / 9), c = (i - 9) % 9; paintSlot(vslot(fx, i, 9 + c * 18, 54 + r * 18, invClick), inv[i], false); }
     const del = vslot(fx, 'del', 173, 112, () => { if (cursorItem) { cursorItem = null; renderInventory(); sfx('place'); } }); del.title = 'Gegenstand löschen';

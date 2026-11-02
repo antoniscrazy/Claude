@@ -423,3 +423,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 ## 2026-11-02.66
 
 * 🐞 Kreativ-Inventar-Reiter: Brustplatte/Stiefel-Symbole saßen zu hoch (untere Rüstungsfelder jetzt bei y=33, aus der Textur gemessen).
+
+## 2026-11-02.67
+
+* 🐞 Kreativ-Inventar-Reiter zeigt jetzt den Spieler-Skin in der Mitte.
