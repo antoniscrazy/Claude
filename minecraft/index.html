@@ -548,26 +548,26 @@ body.inmenu #panorama{display:block}
 input[type=search],textarea,.wrow,.srv,.wlist{font-family:"MinecraftUI","Courier New",monospace;font-size:16px}
 
 /* Java-Bildschirme: Erd-Hintergrund (Weltauswahl …), graues Spielmenü, Ladebild, Serverlisten-Fuß */
-#mmSingle.panel,#mmCreate.panel,#mmEdit.panel,#mmDelete.panel,#mmHelp.panel{position:fixed;inset:0;z-index:6;width:auto;max-width:none;max-height:none;margin:0;padding:12px 0 14px;overflow:auto;display:flex;flex-direction:column;align-items:center;background:var(--dirt) 0 0/64px 64px;image-rendering:pixelated;border-radius:0}
+#mmSingle.panel,#mmCreate.panel,#mmEdit.panel,#mmDelete.panel,#mmHelp.panel{position:fixed;inset:0;z-index:6;width:auto;max-width:none;max-height:none;margin:0;padding:12px 0 14px;overflow:auto;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,.32);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);border-radius:0}
 #mmSingle.hidden,#mmCreate.hidden,#mmEdit.hidden,#mmDelete.hidden,#mmHelp.hidden{display:none}
 #mmSingle>*,#mmCreate>*,#mmEdit>*,#mmDelete>*,#mmHelp>*{width:min(660px,94vw);flex:none}
 #mmSingle h2,#mmCreate h2,#mmEdit h2,#mmDelete h2,#mmHelp h2{font-size:16px;text-align:center;margin:2px 0 10px}
 #mmSingle #worldSearch{width:min(420px,94vw)}
 #mmSingle .wlist{flex:1 1 auto;min-height:120px;max-height:none;background:rgba(0,0,0,.35);border:0;border-top:2px solid #000;border-bottom:2px solid #000;margin:6px 0 10px;width:min(660px,100vw)}
 #mmSingle .row{margin:3px 0}
-#pause{background:var(--gray) 0 0/64px 64px;image-rendering:pixelated}
+#pause{background:rgba(0,0,0,.5)}
 .pausep.panel{background:none;box-shadow:none;padding:0;width:min(400px,94vw)}
 .pausep h2{font-size:16px;text-align:center;margin:0 0 56px}
 .pausep .btn{margin:4px 0}.pausep .row{gap:8px}.pausep .row .btn{margin:4px 0}
-#loading{background:var(--dirt) 0 0/64px 64px;image-rendering:pixelated;gap:14px}
+#loading{background:rgba(0,0,0,.35);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);gap:14px}
 #loadPct{color:#fff;font-size:16px;text-shadow:2px 2px 0 #3f3f3f}
 #loadBox{width:270px;height:270px;max-width:80vw;max-height:80vw;background:#000;display:flex;align-items:center;justify-content:center}
 #loadInner{width:134px;height:134px;background:#a0a0a0;display:flex;align-items:center;justify-content:center}
 #loadDot{width:26px;height:26px;background:#fff;border:4px solid #2a64c8;box-shadow:0 0 0 2px #2a8a2a;animation:loadPulse 1s steps(2) infinite}
 @keyframes loadPulse{50%{background:#c8e0ff}}
-#mpmenu{padding-bottom:150px;justify-content:flex-start}
+#mpmenu{padding:16px 0 150px;justify-content:flex-start}#mpmenu>h2{font-size:16px;margin:4px 0 6px}#mpList{width:min(760px,96vw);flex:1;display:flex;flex-direction:column}#mpScan{text-align:center;color:#fff;margin:14px 0 8px}#mpmenu #mpServerList{flex:1;max-height:none;min-height:200px}.mpfoot .row{width:min(760px,96vw)}#mpmenu .mpfoot .btn{margin:3px 0}
 #mpmenu::before{content:"";position:fixed;left:0;right:0;top:0;height:56px;background:linear-gradient(rgba(0,0,0,.7),rgba(0,0,0,0));pointer-events:none}
-.mpfoot{position:fixed;left:0;right:0;bottom:0;z-index:3;padding:12px 0 12px;display:flex;flex-direction:column;align-items:center;background:linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.45)),var(--dirt) 0 0/64px 64px;border-top:2px solid #000;image-rendering:pixelated}
+.mpfoot{position:fixed;left:0;right:0;bottom:0;z-index:3;padding:12px 0 12px;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,.55);border-top:2px solid #000;box-shadow:inset 0 2px 0 rgba(255,255,255,.12)}
 .mpfoot .row{width:min(640px,94vw);gap:8px}.mpfoot .btn{margin:3px 0}
 </style>
 </head>
@@ -745,8 +745,12 @@ input[type=search],textarea,.wrow,.srv,.wlist{font-family:"MinecraftUI","Courier
 
 <!-- Mehrspieler -->
 <div id="mpmenu" class="overlay hidden">
-  <h2>Mehrspieler</h2>
-  <div class="panel" style="max-width:820px">
+  <h2 id="mpTitle">Mehrspieler</h2>
+  <div id="mpList">
+    <div id="mpScan">Suche nach Servern …</div>
+    <div id="mpServerList" class="srvlist"></div>
+  </div>
+  <div class="panel hidden" id="mpForm" style="max-width:820px">
     <div class="mpgrid">
       <div class="mpcol">
         <label for="mpName">Spielername (3–16 Zeichen: A–Z, 0–9, _)</label>
@@ -754,10 +758,10 @@ input[type=search],textarea,.wrow,.srv,.wlist{font-family:"MinecraftUI","Courier
         <label for="mpBackend">Server</label>
         <select id="mpBackend"><option value="online">Online (Supabase)</option><option value="local">Lokal (mehrere Tabs)</option></select>
         <div id="mpBackendHint" class="hint"></div>
+        <div class="row" style="margin-top:10px"><button class="btn sel" id="mpTabJoin" type="button">Server beitreten</button><button class="btn" id="mpTabCreate" type="button">Server erstellen</button></div>
         <label for="mpRoom" id="mpRoomLbl">Servername</label>
         <input id="mpRoom" type="text" maxlength="24" list="mpRooms" autocomplete="off" placeholder="z. B. mein-server">
         <datalist id="mpRooms"></datalist>
-        <div id="mpServerList" class="srvlist"></div>
         <div id="mpCreateBox" class="hidden">
           <div class="hint">Du wirst Besitzer (Operator) des Servers. Mit <b>/op Name</b> machst du andere zu Operatoren.</div>
           <label for="mpSeed">Seed</label>
@@ -780,7 +784,8 @@ input[type=search],textarea,.wrow,.srv,.wlist{font-family:"MinecraftUI","Courier
     </div>
     <div id="mpStatus" class="mpstatus"></div>
   </div>
-  <div class="mpfoot"><div class="row"><button class="btn" id="mpTabJoin" type="button">Server beitreten</button><button class="btn" id="mpTabCreate" type="button">Server erstellen</button></div><div class="row"><button class="btn" id="mpJoinBtn" type="button">Verbinden</button><button class="btn" id="mpBack" type="button">Zurück</button></div></div>
+  <div class="mpfoot" id="mpFootList"><div class="row"><button class="btn" id="mpJoinSel" type="button">Server beitreten</button><button class="btn" id="mpDirect" type="button">Direktverbindung</button><button class="btn" id="mpAdd" type="button">Server hinzufügen</button></div><div class="row"><button class="btn" id="mpEdit" type="button" disabled>Bearbeiten</button><button class="btn" id="mpDel" type="button" disabled>Löschen</button><button class="btn" id="mpRefresh" type="button">Aktualisieren</button><button class="btn" id="mpBack" type="button">Zurück</button></div></div>
+  <div class="mpfoot hidden" id="mpFootForm"><div class="row"><button class="btn" id="mpJoinBtn" type="button">Verbinden</button><button class="btn" id="mpFormBack" type="button">Abbrechen</button></div></div>
 </div>
 
 <!-- Laden -->
@@ -2348,7 +2353,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-11-02.59';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-11-02.60';            // Spielversion (nur Anzeige)
 // Verdeckter Bot-Modus (nur per URL ?bot=1, nirgends in der Oberfläche erwähnt): läuft ohne Darstellung mit festem 20-Ticks-Takt, Steuerung über window.BOT (siehe Abschnitt BOT)
 const botChat = [];
 const BOTMODE = /[?&]bot=1(?:&|#|$)/.test(location.search);
@@ -9375,7 +9380,7 @@ function setState(s) {
   $('hud').classList.toggle('hidden', s === 'menu' || s === 'dino' || s === 'snake' || s === 'mpmenu' || s === 'loading' || (s === 'settings' && !world));
   document.body.classList.toggle('chatting', s === 'chat');
   { let fm = false; try { fm = s === 'settings' && settingsFrom === 'menu'; } catch (e) { /* noch nicht initialisiert */ }
-    document.body.classList.toggle('inmenu', s === 'menu' || s === 'mpmenu' || fm); $('settings').classList.toggle('fromMenu', fm);
+    document.body.classList.toggle('inmenu', s === 'menu' || s === 'mpmenu' || fm || (s === 'loading' && !world)); $('settings').classList.toggle('fromMenu', fm);
     if (s === 'menu' && mmView !== 'Main' && !fm) mmShow('Main'); }
   if (s !== 'inv') { $('cursorItem').classList.add('hidden'); $('invDrop').classList.add('hidden'); }
   if (s === 'inv') renderInventory();
@@ -13840,7 +13845,7 @@ function mpFillForm() {
   $('mpName').value = mpCfg.name; $('mpBackend').value = mpCfg.backend; $('mpRoom').value = mpCfg.room; $('mpSeed').value = mpCfg.seed;
   $('mpModeSurvival').classList.toggle('sel', mpCfg.mode === 'survival'); $('mpModeCreative').classList.toggle('sel', mpCfg.mode === 'creative');
   $('mpTabJoin').classList.toggle('sel', !mpCfg.create); $('mpTabCreate').classList.toggle('sel', !!mpCfg.create);
-  $('mpCreateBox').classList.toggle('hidden', !mpCfg.create); $('mpServerList').classList.toggle('hidden', !!mpCfg.create); $('mpPublic').checked = mpCfg.pub !== false;
+  $('mpCreateBox').classList.toggle('hidden', !mpCfg.create); $('mpPublic').checked = mpCfg.pub !== false;
   $('mpJoinBtn').textContent = mpCfg.create ? 'Server erstellen' : 'Beitreten';
   $('mpBackendHint').textContent = mpCfg.backend === 'online' ? 'Online: Spieler auf der ganzen Welt, Welt wird in der Cloud gespeichert.' : 'Lokal: nur Spieler in anderen Tabs dieses Browsers – zum Ausprobieren ohne Internet.';
   refreshSkinPreview();
@@ -13856,12 +13861,23 @@ async function mpLoadRoomList() {                          // Weltenliste (nur l
     if ($('mpBackend').value === 'local') db = new LocalDB();
     else db = new SupabaseDB(await sbClient(6000));
     const list = await db.listRooms(), sl = $('mpServerList'); sl.innerHTML = '';
-    if (!list.length) sl.innerHTML = '<div class="hint">Noch keine Server – erstelle den ersten!</div>';
-    list.forEach((r) => { const d = document.createElement('div'); d.className = 'srv'; d.innerHTML = '<b></b><small></small>'; d.firstChild.textContent = r.id; d.lastChild.textContent = (r.owner ? '👑 ' + r.owner + ' · ' : '') + (r.mode === 'creative' ? 'Kreativ' : 'Überleben'); d.onclick = () => { $('mpRoom').value = r.id; sl.querySelectorAll('.srv').forEach((x) => x.classList.remove('sel')); d.classList.add('sel'); }; sl.appendChild(d); });
+    $('mpScan').textContent = list.length ? list.length + ' Server gefunden' : 'Keine Server gefunden';
+    if (!list.length) sl.innerHTML = '<div class="hint">Noch keine Server – füge den ersten hinzu!</div>';
+    list.forEach((r) => { const d = document.createElement('div'); d.className = 'srv'; d.innerHTML = '<b></b><small></small>'; d.firstChild.textContent = r.id; d.lastChild.textContent = (r.owner ? '👑 ' + r.owner + ' · ' : '') + (r.mode === 'creative' ? 'Kreativ' : 'Überleben'); d.onclick = () => { $('mpRoom').value = r.id; mpSel = r.id; sl.querySelectorAll('.srv').forEach((x) => x.classList.remove('sel')); d.classList.add('sel'); }; d.ondblclick = () => $('mpJoinSel').click(); sl.appendChild(d); });
     list.forEach((r) => { const o = document.createElement('option'); o.value = r.id; o.label = r.id + ' (' + (r.mode === 'creative' ? 'Kreativ' : 'Überleben') + ')'; dl.appendChild(o); });
   } catch (e) { /* offline: egal */ }
 }
-function openMpMenu() { mpFillForm(); mpSetStatus(''); setState('mpmenu'); mpLoadRoomList(); }
+let mpSel = null;
+function mpView(v) {
+  $('mpList').classList.toggle('hidden', v !== 'list'); $('mpForm').classList.toggle('hidden', v !== 'form'); $('mpFootList').classList.toggle('hidden', v !== 'list'); $('mpFootForm').classList.toggle('hidden', v !== 'form');
+  $('mpTitle').textContent = v === 'list' ? 'Mehrspieler' : (mpCfg.create ? 'Server hinzufügen' : 'Direktverbindung');
+}
+function openMpMenu() { mpFillForm(); mpSetStatus(''); mpSel = null; mpView('list'); setState('mpmenu'); mpLoadRoomList(); }
+$('mpDirect').onclick = () => { mpReadForm(); mpCfg.create = false; mpFillForm(); mpView('form'); };
+$('mpAdd').onclick = () => { mpReadForm(); mpCfg.create = true; mpFillForm(); mpView('form'); };
+$('mpFormBack').onclick = () => { mpReadForm(); mpView('list'); };
+$('mpRefresh').onclick = () => { $('mpScan').textContent = 'Suche nach Servern …'; mpLoadRoomList(); };
+$('mpJoinSel').onclick = () => { mpReadForm(); if (!mpSel) { toast('Wähle zuerst einen Server aus der Liste'); return; } mpCfg.create = false; mpFillForm(); $('mpRoom').value = mpSel; if (/^[A-Za-z0-9_]{3,16}$/.test($('mpName').value.trim())) $('mpJoinBtn').click(); else { mpView('form'); mpSetStatus('Gib erst deinen Spielernamen ein'); } };
 $('btnMulti').onclick = openMpMenu;
 $('mpBack').onclick = () => setState('menu');
 $('mpBackend').onchange = () => { mpReadForm(); mpFillForm(); mpLoadRoomList(); };

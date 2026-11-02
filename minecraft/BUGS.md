@@ -382,3 +382,8 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 ## 2026-11-02.59
 
 * 🎨 Nach deinen Vorlagen: **Spielmenü** (grauer Hintergrund, „Zurück zum Spiel“, Zweierreihen, „Speichern und zum Titel“), **Ladebild** (Erd-Hintergrund, Prozentanzeige, schwarzer Kasten mit grauem Feld), **Weltauswahl / Welt erstellen / Bearbeiten / Löschen / Steuerung** als Vollbild mit Erd-Hintergrund (Titel, Suchfeld, Liste, Knöpfe unten), **Mehrspieler** mit abgedunkeltem Kopf und Erd-Fußleiste mit den Knöpfen (Server beitreten / Server erstellen / Verbinden / Zurück).
+
+## 2026-11-02.60
+
+* 🎨 Korrekturen: Statt brauner Flächen jetzt überall das (leicht unscharfe) Panorama (Weltauswahl, Welt erstellen/bearbeiten/löschen, Steuerung, Ladebild); das **Spielmenü** zeigt wieder die abgedunkelte Spielwelt dahinter.
+* 🌍 **Mehrspieler wie in Java:** Titel „Mehrspieler“, Statuszeile („Suche nach Servern …“ / „n Server gefunden“), große Serverliste (Auswahl, Doppelklick = beitreten) und unten zwei Knopfreihen: Server beitreten · Direktverbindung · Server hinzufügen / Bearbeiten · Löschen (noch ohne Funktion) · Aktualisieren · Zurück. Name, Skin und Servername stehen in den Unterbildschirmen „Direktverbindung“ bzw. „Server hinzufügen“.
