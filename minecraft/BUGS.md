@@ -460,3 +460,9 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * 🖼️ 4K-Panorama jetzt auch auf iPad/Handy (4096²; lädt es nicht, bleibt das 2048²-Bild).
 * 📋 Tabliste wie Java: schmale dunkle Leiste oben mittig, je Zeile Kopf, Name mit Rang davor ([Admin] / [Owner] / [OP]) und Ping-Symbol.
 * 🗑️ Welt-löschen-Dialog steht jetzt mittig auf dem Bildschirm.
+
+## 2026-11-02.74
+
+* 🌍 **Sprachen**: Optionen → „Sprache“ wechselt zwischen Deutsch, English und Français. Menüs, Inventare, HUD, Meldungen, Erfolge, Befehlshilfe, Abspann usw. werden zur Laufzeit übersetzt (Wörterbuch ~2000 Einträge je Sprache). Namen von Blöcken/Items/Mobs/Effekten stammen aus den offiziellen Minecraft-Sprachdateien (1.21.4) – für seltene Varianten (z. B. Stufen/Zäune einzelner Holzarten, Backrooms-Blöcke) wird der englische Name erzeugt.
+* Zu lange Übersetzungen verkleinern die Schrift im Knopf automatisch.
+* Nicht übersetzt: Entwickler-/Bot-Beschreibungen (BOT-API, KI-Werkzeuge), Texte auf Schildern/Büchern (Spielerinhalt), Chat-Befehle selbst.

@@ -1,0 +1,322 @@
+{
+ "Sprache: ": [
+  "Language: ",
+  "Langue : "
+ ],
+ "Sichtfeld: ": [
+  "Field of View: ",
+  "Champ de vision : "
+ ],
+ "Sichtweite: ": [
+  "Render Distance: ",
+  "Distance d'affichage : "
+ ],
+ "Empfindlichkeit: ": [
+  "Sensitivity: ",
+  "Sensibilité : "
+ ],
+ "Lautstärke: ": [
+  "Volume: ",
+  "Volume : "
+ ],
+ "Normal": [
+  "Normal",
+  "Normal"
+ ],
+ " Chunks": [
+  " chunks",
+  " chunks"
+ ],
+ "AN": [
+  "ON",
+  "OUI"
+ ],
+ "AUS": [
+  "OFF",
+  "NON"
+ ],
+ "Auto": [
+  "Auto",
+  "Auto"
+ ],
+ "An": [
+  "On",
+  "Activé"
+ ],
+ "Aus": [
+  "Off",
+  "Désactivé"
+ ],
+ "Maus & Tastatur": [
+  "Mouse & Keyboard",
+  "Souris et clavier"
+ ],
+ "Maus &amp; Tastatur": [
+  "Mouse & Keyboard",
+  "Souris et clavier"
+ ],
+ "Fertig": [
+  "Done",
+  "Terminé"
+ ],
+ "Skin-Anpassung …": [
+  "Skin Customization...",
+  "Personnalisation du skin..."
+ ],
+ "Musik & Geräusche …": [
+  "Music & Sounds...",
+  "Musique et sons..."
+ ],
+ "Musik &amp; Geräusche …": [
+  "Music & Sounds...",
+  "Musique et sons..."
+ ],
+ "Video-Einstellungen …": [
+  "Video Settings...",
+  "Paramètres vidéo..."
+ ],
+ "Steuerung …": [
+  "Controls...",
+  "Contrôles..."
+ ],
+ "Anzeige & Karte …": [
+  "Display & Map...",
+  "Affichage et carte..."
+ ],
+ "Anzeige &amp; Karte …": [
+  "Display & Map...",
+  "Affichage et carte..."
+ ],
+ "Optionen": [
+  "Options",
+  "Options"
+ ],
+ "Optionen …": [
+  "Options...",
+  "Options..."
+ ],
+ "Einzelspieler": [
+  "Singleplayer",
+  "Solo"
+ ],
+ "Mehrspieler": [
+  "Multiplayer",
+  "Multijoueur"
+ ],
+ "Wolken": [
+  "Clouds",
+  "Nuages"
+ ],
+ "Shader": [
+  "Shaders",
+  "Shaders"
+ ],
+ "Minikarte": [
+  "Minimap",
+  "Minicarte"
+ ],
+ "Große Minikarte": [
+  "Large Minimap",
+  "Grande minicarte"
+ ],
+ "Locator-Leiste": [
+  "Locator Bar",
+  "Barre de localisation"
+ ],
+ "Hintergrundmusik": [
+  "Background Music",
+  "Musique de fond"
+ ],
+ "Leistungsmodus": [
+  "Performance Mode",
+  "Mode performance"
+ ],
+ "Eingabe": [
+  "Input",
+  "Entrée"
+ ],
+ "Überleben": [
+  "Survival",
+  "Survie"
+ ],
+ "Kreativ": [
+  "Creative",
+  "Créatif"
+ ],
+ "Zuschauer": [
+  "Spectator",
+  "Spectateur"
+ ],
+ "Handwerk": [
+  "Crafting",
+  "Fabrication"
+ ],
+ "Inventar": [
+  "Inventory",
+  "Inventaire"
+ ],
+ "Ofen": [
+  "Furnace",
+  "Four"
+ ],
+ "Zweithand": [
+  "Off Hand",
+  "Main secondaire"
+ ],
+ "Wiederbeleben": [
+  "Respawn",
+  "Réapparaître"
+ ],
+ "Titelbildschirm": [
+  "Title Screen",
+  "Écran-titre"
+ ],
+ "Du bist gestorben!": [
+  "You Died!",
+  "Vous êtes mort !"
+ ],
+ "Punktzahl: ": [
+  "Score: ",
+  "Score : "
+ ],
+ "Spieler online": [
+  "Players online",
+  "Joueurs en ligne"
+ ],
+ "Server beitreten": [
+  "Join Server",
+  "Rejoindre le serveur"
+ ],
+ "Direktverbindung": [
+  "Direct Connection",
+  "Connexion directe"
+ ],
+ "Server hinzufügen": [
+  "Add Server",
+  "Ajouter un serveur"
+ ],
+ "Bearbeiten": [
+  "Edit",
+  "Modifier"
+ ],
+ "Löschen": [
+  "Delete",
+  "Supprimer"
+ ],
+ "Aktualisieren": [
+  "Refresh",
+  "Actualiser"
+ ],
+ "Zurück": [
+  "Back",
+  "Retour"
+ ],
+ "Abbrechen": [
+  "Cancel",
+  "Annuler"
+ ],
+ "Besitzer: ": [
+  "Owner: ",
+  "Propriétaire : "
+ ],
+ "Privater Server (gespeichert)": [
+  "Private server (saved)",
+  "Serveur privé (enregistré)"
+ ],
+ "Öffentlicher Server": [
+  "Public server",
+  "Serveur public"
+ ],
+ "Wie heißt du?": [
+  "What's your name?",
+  "Quel est votre nom ?"
+ ],
+ "Suche …": [
+  "Search...",
+  "Rechercher..."
+ ],
+ "Items suchen": [
+  "Search Items",
+  "Rechercher des objets"
+ ],
+ "Fan-Projekt – kein Mojang-Produkt": [
+  "Fan project – not a Mojang product",
+  "Projet de fans – pas un produit Mojang"
+ ],
+ "Zurück zum Spiel": [
+  "Back to Game",
+  "Retour au jeu"
+ ],
+ "Speichern": [
+  "Save",
+  "Sauvegarder"
+ ],
+ "Speichern und zum Titel": [
+  "Save and Quit to Title",
+  "Sauvegarder et quitter"
+ ],
+ "Spielmenü": [
+  "Game Menu",
+  "Menu du jeu"
+ ],
+ "Neue Welt": [
+  "New World",
+  "Nouveau monde"
+ ],
+ "Neue Welt erstellen": [
+  "Create New World",
+  "Créer un nouveau monde"
+ ],
+ "Welt auswählen": [
+  "Select World",
+  "Sélectionner un monde"
+ ],
+ "Ausgewählte Welt spielen": [
+  "Play Selected World",
+  "Jouer au monde sélectionné"
+ ],
+ "Welt bearbeiten": [
+  "Edit World",
+  "Modifier le monde"
+ ],
+ "Schließen": [
+  "Close",
+  "Fermer"
+ ],
+ "Item fallen lassen": [
+  "Drop Item",
+  "Jeter l'objet"
+ ],
+ "Ein Minecraft-ähnliches Spiel im Browser": [
+  "A Minecraft-like game in the browser",
+  "Un jeu de type Minecraft dans le navigateur"
+ ],
+ "Ja – echte Explosionskraft": [
+  "Yes – real explosion power",
+  "Oui – vraie puissance d'explosion"
+ ],
+ "Erfolg freigeschaltet": [
+  "Achievement unlocked",
+  "Succès débloqué"
+ ],
+ "Erfolg freigeschaltet!": [
+  "Achievement unlocked!",
+  "Succès débloqué !"
+ ],
+ "🏆 Erfolg freigeschaltet:": [
+  "🏆 Achievement unlocked:",
+  "🏆 Succès débloqué :"
+ ],
+ "Schläfst du gut, ": [
+  "Sleeping well, ",
+  "Tu dors bien, "
+ ],
+ "Ich kenne deinen Namen, ": [
+  "I know your name, ",
+  "Je connais ton nom, "
+ ],
+ "Du wirst es bereuen, ": [
+  "You will regret it, ",
+  "Tu le regretteras, "
+ ]
+}
