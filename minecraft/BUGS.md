@@ -374,3 +374,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 ## 2026-11-02.57
 
 * 💾 **Mehrere Welten** wie in Java: Weltauswahl mit Liste (Name, Datum, Modus, Tag, Seed, Größe), Suche, Doppelklick = spielen; **Welt erstellen** mit Weltname; **Bearbeiten** (umbenennen, kopieren als Backup), **Löschen** mit Sicherheitsabfrage, **Neu erstellen** (gleicher Seed und Modus). Der alte Einzel-Spielstand wird beim ersten Start automatisch als „Meine Welt“ übernommen. Gespeichert wird im Browser (localStorage, ca. 5 MB gesamt – sehr große Welten füllen ihn schnell).
+
+## 2026-11-02.58
+
+* 🖼 **Welt-Symbole:** In der Weltauswahl zeigt jede Welt ein Bild des zuletzt gesehenen Spielbildes (alle 12 s und beim Pausieren aufgenommen, beim Speichern abgelegt, auch bei Kopien). Mit Shader-Modus sieht das Symbol entsprechend aus.

@@ -934,7 +934,7 @@ const LAYER = CS * CS;     // Blöcke pro Höhenschicht
 const DAY_LEN = 600;       // Sekunden pro Tag
 const SAVE_KEY = 'voxelcraft_save_v2';                   // alt (eine Welt) – wird beim ersten Start in die Weltenliste übernommen
 const WKEY = 'voxelcraft_worlds', WPFX = 'voxelcraft_w_';
-let curWorldId = null, selWorldId = null;
+let curWorldId = null, selWorldId = null, lastThumb = null, thumbT = 0, thumbCv = null;
 
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -2327,7 +2327,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-11-02.57';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-11-02.58';            // Spielversion (nur Anzeige)
 // Verdeckter Bot-Modus (nur per URL ?bot=1, nirgends in der Oberfläche erwähnt): läuft ohne Darstellung mit festem 20-Ticks-Takt, Steuerung über window.BOT (siehe Abschnitt BOT)
 const botChat = [];
 const BOTMODE = /[?&]bot=1(?:&|#|$)/.test(location.search);
@@ -9488,7 +9488,7 @@ function saveGame() {
     edits: world.serializeEdits(0), edits1: world.serializeEdits(1), edits2: world.serializeEdits(2), edits3: world.serializeEdits(3), dim: world.dim, endDead: [...endDead],
     mobs: mobSnapshot(80, false),
   };
-  try { const txt = JSON.stringify(data); if (!curWorldId) curWorldId = worldCreate('Neue Welt', world.seedStr, mode); localStorage.setItem(WPFX + curWorldId, txt); worldTouch(curWorldId, { mode, seed: world.seedStr, time: gameTime, size: txt.length }); if (txt.length > 4200000) toast('⚠ Spielstand ist sehr groß (' + (txt.length / 1e6).toFixed(1) + ' MB) – der Browser-Speicher ist bald voll'); return true; }
+  try { const txt = JSON.stringify(data); if (!curWorldId) curWorldId = worldCreate('Neue Welt', world.seedStr, mode); localStorage.setItem(WPFX + curWorldId, txt); worldTouch(curWorldId, Object.assign({ mode, seed: world.seedStr, time: gameTime, size: txt.length }, lastThumb ? { icon: lastThumb } : {})); if (txt.length > 4200000) toast('⚠ Spielstand ist sehr groß (' + (txt.length / 1e6).toFixed(1) + ' MB) – der Browser-Speicher ist bald voll'); return true; }
   catch (e) { toast('Speichern fehlgeschlagen (Speicher voll?) – die alte Sicherung bleibt erhalten'); return false; }
 }
 function worldIndex() { try { const a = JSON.parse(localStorage.getItem(WKEY) || 'null'); if (Array.isArray(a)) return a; } catch (e) { /* egal */ } return null; }
@@ -9523,11 +9523,11 @@ $('btnBackOut').addEventListener('click', (e) => { e.stopPropagation(); leaveBac
 $('btnBackPause').onclick = () => { setState('play'); lockPointer(); leaveBackrooms(); };
 $('btnNew').onclick = () => {
   const s = $('seed').value.trim() || String(Math.floor(Math.random() * 1e9));
-  curWorldId = worldCreate($('worldName').value, s, selMode); selWorldId = curWorldId;
+  curWorldId = worldCreate($('worldName').value, s, selMode); selWorldId = curWorldId; lastThumb = null; thumbT = performance.now() - 10500;
   startGame({ seed: s, mode: selMode, dist: parseInt($('dist').value, 10) });
 };
 $('btnLoad').onclick = () => {
-  const s = readSave(); if (!s) return; curWorldId = selWorldId;
+  const s = readSave(); if (!s) return; curWorldId = selWorldId; lastThumb = null; thumbT = performance.now() - 10500;
   startGame({ mode: s.mode, dist: parseInt($('dist').value, 10) || s.dist, save: s });
 };
 $('btnNew').disabled = true; $('btnLoad').disabled = true;
@@ -10016,6 +10016,10 @@ function frame(now) {
 
   renderScene();
   updateHand(dt); renderHand(); updateLocator();
+  if (performance.now() - thumbT > 12000 && (state === 'play' || state === 'pause') && world && !mp.on) {                  // Welt-Symbol für die Weltauswahl (quadratischer Ausschnitt des letzten Bildes)
+    thumbT = performance.now();
+    try { const c = thumbCv || (thumbCv = document.createElement('canvas')); c.width = c.height = 128; const x = c.getContext('2d'), cw = canvas.width, ch = canvas.height, q = Math.min(cw, ch); x.drawImage(canvas, (cw - q) / 2, (ch - q) / 2, q, q, 0, 0, 128, 128); lastThumb = c.toDataURL('image/jpeg', 0.72); } catch (e) { /* egal */ }
+  }
   if (shotReq) doScreenshot();
 }
 if (!BOTMODE) requestAnimationFrame(frame);
@@ -13997,7 +14001,7 @@ function renderWorldList() {
   if (!a.length) { const h = document.createElement('div'); h.className = 'hint'; h.textContent = all.length ? 'Keine passende Welt gefunden.' : 'Noch keine Welt – erstelle eine neue.'; box.appendChild(h); }
   for (const w of a) {
     const r = document.createElement('div'); r.className = 'wrow' + (w.id === selWorldId ? ' sel' : ''); r.innerHTML = '<i></i><div><b></b><small></small><small></small></div>';
-    r.querySelector('b').textContent = w.name; const sm = r.querySelectorAll('small');
+    r.querySelector('b').textContent = w.name; if (w.icon) { const ic = r.querySelector('i'); ic.style.background = 'url(' + w.icon + ') center/cover'; } const sm = r.querySelectorAll('small');
     sm[0].textContent = '(' + fmtDate(w.played) + ')'; sm[1].textContent = (w.mode === 'creative' ? 'Kreativmodus' : w.mode === 'spectator' ? 'Zuschauermodus' : 'Überlebensmodus') + ', Tag ' + (Math.floor((w.time || 0) / (typeof DAY_LEN !== 'undefined' ? DAY_LEN : 1200)) + 1) + ' · Seed: ' + (w.seed || '–');
     r.onclick = () => { selWorldId = w.id; renderWorldList(); };
     r.ondblclick = () => $('btnLoad').click();
@@ -14010,7 +14014,7 @@ const selWorld = () => worldList().find((w) => w.id === selWorldId);
 $('btnWorldEdit').onclick = () => { const w = selWorld(); if (!w) return; $('editName').value = w.name; $('editInfo').textContent = 'Seed: ' + w.seed + ' · erstellt ' + fmtDate(w.created); mmShow('Edit'); };
 $('btnEditBack').onclick = () => mmShow('Single');
 $('btnEditSave').onclick = () => { const w = selWorld(), n = $('editName').value.trim(); if (w && n) { const a = worldList(), x = a.find((q) => q.id === w.id); x.name = n; writeIndex(a); } mmShow('Single'); };
-$('btnEditCopy').onclick = () => { const w = selWorld(), sv = readSave(); if (!w || !sv) return; const id = worldCreate(w.name + ' (Kopie)', w.seed, w.mode); try { localStorage.setItem(WPFX + id, JSON.stringify(sv)); worldTouch(id, { time: w.time, size: w.size }); selWorldId = id; toast('Kopie erstellt'); } catch (e) { worldDelete(id); toast('Kopieren fehlgeschlagen (Speicher voll?)'); } mmShow('Single'); };
+$('btnEditCopy').onclick = () => { const w = selWorld(), sv = readSave(); if (!w || !sv) return; const id = worldCreate(w.name + ' (Kopie)', w.seed, w.mode); try { localStorage.setItem(WPFX + id, JSON.stringify(sv)); worldTouch(id, { time: w.time, size: w.size, icon: w.icon }); selWorldId = id; toast('Kopie erstellt'); } catch (e) { worldDelete(id); toast('Kopieren fehlgeschlagen (Speicher voll?)'); } mmShow('Single'); };
 $('btnWorldDel').onclick = () => { const w = selWorld(); if (!w) return; $('delText').textContent = '„' + w.name + '“ wird für immer verloren sein! (Eine lange Zeit!)'; mmShow('Delete'); };
 $('btnDelNo').onclick = () => mmShow('Single');
 $('btnDelYes').onclick = () => { if (selWorldId) worldDelete(selWorldId); selWorldId = null; mmShow('Single'); };
