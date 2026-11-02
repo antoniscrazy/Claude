@@ -155,7 +155,7 @@ schmale Arme werden erkannt), Weltnamen eingeben und beitreten. Wer denselben We
 * Leitern lassen sich überall herstellen (7 Stöcke, keine Werkbank nötig).
 * **Zwei Supabase-Projekte (optional):** In `index.html` ganz oben im Netzwerk-Teil `SUPABASE2_URL`/`SUPABASE2_KEY` setzen (URL + öffentlicher anon-Key eines zweiten Projekts, keine Tabellen nötig). Dann läuft Spielerbewegung/Schläge + Datenbank über Projekt 1 und Blöcke, Mobs, Chat und Aktionen über Projekt 2 (jeweils ca. 70 Nachrichten/s Budget statt 40). Ist das zweite Projekt nicht erreichbar, läuft automatisch alles über Projekt 1. **Alle Spieler müssen dieselbe Datei mit denselben Einstellungen nutzen.**
 * **Ping:** Die Tab-Liste zeigt hinter jedem Spieler den Ping (reist in den Positions-Paketen mit); allein auf dem Server wird die Zeit eines Datenbankaufrufs angezeigt.
-* Modus „Lokal“ braucht kein Internet: Spieler in anderen Tabs desselben Browsers sehen sich (BroadcastChannel) – gut zum Ausprobieren.
+* Der frühere Modus „Lokal“ wurde aus der Oberfläche entfernt (Mehrspieler läuft immer online).
 
 ### Eigenes Supabase-Projekt einrichten
 

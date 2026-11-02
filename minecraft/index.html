@@ -578,6 +578,28 @@ input[type=search],textarea,.wrow,.srv,.wlist{font-family:"MinecraftUI","Courier
 .btngrid .span2{grid-column:span 2}
 .mpfoot .btngrid{margin:0 auto}
 .pausep.panel{width:auto}
+/* ===== v63: Java-Optionen, Server hinzufügen, Server-Icon ===== */
+#mpForm.panel{width:min(560px,94vw);max-width:none;margin:10px auto;padding:14px 18px;text-align:left}
+#mpmenu .mpfootform{position:static;background:none;border:0;box-shadow:none;padding:0;margin-top:6px}
+#mpmenu:has(#mpForm:not(.hidden)){padding-bottom:24px;justify-content:center}
+.srv::before{background:var(--srv-icon,linear-gradient(#78b6ff 0 30%,#5d9b3a 30% 42%,#8b5a2b 42% 100%)) center/100% 100% no-repeat !important}
+.optpanel.panel{width:min(660px,96vw);max-width:none;background:none;padding:10px 0;text-align:center}
+.optpanel h3{font-size:16px;font-weight:normal;color:#fff;margin:0 0 10px}
+.optgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}
+.optgrid .btn{height:40px;min-height:40px;margin:0;padding:0 4px 2px;white-space:nowrap;line-height:1}
+.optgrid .span2{grid-column:span 2}
+.optsl{position:relative;height:40px}
+.optsl input[type=range]{position:absolute;inset:0;margin:0;width:100%;height:40px}
+.optsl span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;text-shadow:2px 2px 0 #3f3f3f;pointer-events:none;font-size:16px}
+.optdone{width:min(404px,94%);margin:18px auto 0}.optdone .btn{width:100%;height:40px;margin:0}
+.optview.hidden{display:none}
+.skinwrap{display:flex;gap:20px;justify-content:center;align-items:flex-start;flex-wrap:wrap;text-align:left}
+.skinwrap canvas{background:rgba(255,255,255,.08);border:2px solid #000;image-rendering:pixelated;width:170px;height:270px}
+.skinctl{flex:1 1 260px;max-width:340px}
+.skinctl .btn{width:100%}.skinctl .skinrow .btn{width:52px}
+#settings{overflow:auto}
+#nameDlg{background:rgba(0,0,0,.72)}#nameDlg .panel{background:rgba(20,20,20,.95);border:2px solid #000;box-shadow:inset 0 0 0 2px #555}
+
 #loadBox{width:210px;height:210px;max-width:70vw;max-height:70vw;background:#000;display:flex;align-items:center;justify-content:center}
 #loadGrid{display:grid;grid-template-columns:repeat(9,1fr);gap:0;width:117px;height:117px}
 #loadGrid i{background:#545454;display:block;transition:background .2s}
@@ -765,42 +787,36 @@ input[type=search],textarea,.wrow,.srv,.wlist{font-family:"MinecraftUI","Courier
     <div id="mpScan">Suche nach Servern …</div>
     <div id="mpServerList" class="srvlist"></div>
   </div>
-  <div class="panel hidden" id="mpForm" style="max-width:820px">
-    <div class="mpgrid">
-      <div class="mpcol">
-        <label for="mpName">Spielername (3–16 Zeichen: A–Z, 0–9, _)</label>
-        <input id="mpName" type="text" maxlength="16" autocomplete="off" placeholder="z. B. Steve_123">
-        <label for="mpBackend">Server</label>
-        <select id="mpBackend"><option value="online">Online (Supabase)</option><option value="local">Lokal (mehrere Tabs)</option></select>
-        <div id="mpBackendHint" class="hint"></div>
-        <div class="row" style="margin-top:10px"><button class="btn sel" id="mpTabJoin" type="button">Server beitreten</button><button class="btn" id="mpTabCreate" type="button">Server erstellen</button></div>
-        <label for="mpRoom" id="mpRoomLbl">Servername</label>
-        <input id="mpRoom" type="text" maxlength="24" list="mpRooms" autocomplete="off" placeholder="z. B. mein-server">
-        <datalist id="mpRooms"></datalist>
-        <div id="mpCreateBox" class="hidden">
-          <div class="hint">Du wirst Besitzer (Operator) des Servers. Mit <b>/op Name</b> machst du andere zu Operatoren.</div>
-          <label for="mpSeed">Seed</label>
-          <input id="mpSeed" type="text" maxlength="40" autocomplete="off" placeholder="leer = zufällig">
-          <label>Modus</label>
-          <div class="row"><button class="btn sel" id="mpModeSurvival" type="button">Überleben</button><button class="btn" id="mpModeCreative" type="button">Kreativ</button></div>
-          <label class="chk" style="justify-content:flex-start"><input type="checkbox" id="mpPublic" checked> In der Serverliste anzeigen</label>
-        </div>
-        <label for="mpDist">Sichtweite</label>
-        <select id="mpDist"><option value="4">Nah (4 Chunks)</option><option value="6" selected>Normal (6 Chunks)</option><option value="8">Weit (8 Chunks)</option></select>
-      </div>
-      <div class="mpcol skincol">
-        <label>Dein Skin</label>
-        <canvas id="skinCanvas" width="170" height="270"></canvas>
-        <div class="row skinrow"><button class="btn" id="skinPrevBtn" type="button">◀</button><span id="skinName">Steve</span><button class="btn" id="skinNextBtn" type="button">▶</button></div>
-        <label class="chk"><input type="checkbox" id="skinSlim"> Schmale Arme (Alex-Modell)</label>
-        <button class="btn" id="skinUploadBtn" type="button">Eigenen Skin hochladen (PNG)</button>
-        <input type="file" id="skinFile" accept="image/png" hidden>
+  <div class="panel hidden" id="mpForm">
+    <div class="mpcol">
+      <label for="mpRoom" id="mpRoomLbl">Servername</label>
+      <input id="mpRoom" type="text" maxlength="24" list="mpRooms" autocomplete="off" placeholder="z. B. mein-server">
+      <datalist id="mpRooms"></datalist>
+      <label class="chk" id="mpSaveLbl" style="justify-content:flex-start"><input type="checkbox" id="mpSave"> In meiner Serverliste anzeigen (auch wenn der Server privat ist)</label>
+      <div id="mpCreateBox" class="hidden">
+        <div class="hint">Du wirst Besitzer (Operator) des Servers. Mit <b>/op Name</b> machst du andere zu Operatoren.</div>
+        <label for="mpSeed">Seed</label>
+        <input id="mpSeed" type="text" maxlength="40" autocomplete="off" placeholder="leer = zufällig">
+        <label>Spielmodus</label>
+        <div class="row"><button class="btn sel" id="mpModeSurvival" type="button">Überleben</button><button class="btn" id="mpModeCreative" type="button">Kreativ</button></div>
+        <label class="chk" style="justify-content:flex-start"><input type="checkbox" id="mpPublic" checked> Öffentlich in der Serverliste anzeigen</label>
       </div>
     </div>
     <div id="mpStatus" class="mpstatus"></div>
   </div>
   <div class="mpfoot" id="mpFootList"><div class="btngrid g12"><button class="btn s4" id="mpJoinSel" type="button">Server beitreten</button><button class="btn s4" id="mpDirect" type="button">Direktverbindung</button><button class="btn s4" id="mpAdd" type="button">Server hinzufügen</button><button class="btn s3" id="mpEdit" type="button" disabled>Bearbeiten</button><button class="btn s3" id="mpDel" type="button" disabled>Löschen</button><button class="btn s3" id="mpRefresh" type="button">Aktualisieren</button><button class="btn s3" id="mpBack" type="button">Zurück</button></div></div>
-  <div class="mpfoot hidden" id="mpFootForm"><div class="btngrid"><button class="btn" id="mpJoinBtn" type="button">Verbinden</button><button class="btn" id="mpFormBack" type="button">Abbrechen</button></div></div>
+  <div class="mpfoot mpfootform hidden" id="mpFootForm"><div class="btngrid"><button class="btn" id="mpJoinBtn" type="button">Verbinden</button><button class="btn" id="mpFormBack" type="button">Abbrechen</button></div></div>
+</div>
+
+<!-- Spielername (erst beim ersten Beitritt) -->
+<div id="nameDlg" class="overlay hidden" style="z-index:30">
+  <div class="panel" style="width:min(420px,94vw)">
+    <h2>Wie heißt du?</h2>
+    <div class="hint" style="margin-bottom:8px">Dein Spielername (3–16 Zeichen: A–Z, 0–9, _) – andere Spieler sehen ihn über deinem Kopf.</div>
+    <input id="ndName" type="text" maxlength="16" autocomplete="off" placeholder="z. B. Steve_123">
+    <div id="ndErr" class="mpstatus err"></div>
+    <div class="btngrid"><button class="btn" id="ndOk" type="button">Fertig</button><button class="btn" id="ndCancel" type="button">Abbrechen</button></div>
+  </div>
 </div>
 
 <!-- Laden -->
@@ -888,25 +904,81 @@ input[type=search],textarea,.wrow,.srv,.wlist{font-family:"MinecraftUI","Courier
 
 <!-- Einstellungen -->
 <div id="settings" class="overlay hidden">
-  <div class="panel" style="max-width:420px">
-    <h2>Einstellungen</h2>
-    <label>Sichtfeld <span id="vFov"></span></label><input id="sFov" type="range" min="55" max="110" step="1">
-    <label>Empfindlichkeit <span id="vSens"></span></label><input id="sSens" type="range" min="30" max="300" step="5">
-    <label>Lautstärke <span id="vVol"></span></label><input id="sVol" type="range" min="0" max="100" step="5">
-    <label>Sichtweite <span id="vDist"></span></label><input id="sDist" type="range" min="3" max="12" step="1">
-    <label>Leistungsmodus <select id="sPerf"><option value="auto">Automatisch (bei riesigen Bauten / viel TNT)</option><option value="on">Immer an</option><option value="off">Aus</option></select></label>
-    <label class="chk"><input type="checkbox" id="sShader"> Shader (Schatten, Bloom, Lichtstrahlen, Wasser – braucht eine starke Grafikkarte)</label>
-    <label class="chk"><input type="checkbox" id="sClouds"> Wolken anzeigen</label>
-    <label class="chk"><input type="checkbox" id="sMap"> Minikarte (N)</label>
-    <label class="chk"><input type="checkbox" id="sMapBig"> Große Minikarte</label>
-    <label>Steuerung <select id="sTouch"><option value="auto">Automatisch (Maus / Touch)</option><option value="off">Maus &amp; Tastatur</option><option value="on">Touch</option></select></label>
-    <label class="chk"><input type="checkbox" id="sMusic"> Hintergrundmusik</label>
-    <label class="chk"><input type="checkbox" id="sLoc"> Locator-Leiste (Mitspieler, Bett, Homes)</label>
-    <button class="btn" id="btnSettingsBack" type="button" style="margin-top:14px">Fertig</button>
+  <div class="panel optpanel">
+    <h2>Optionen</h2>
+    <div class="optview" id="optMain">
+      <div class="optgrid">
+        <div class="optsl"><input id="sFov" type="range" min="55" max="110" step="1"><span id="vFov"></span></div>
+        <div class="optsl"><input id="sDist" type="range" min="3" max="12" step="1"><span id="vDist"></span></div>
+        <button class="btn" type="button" data-view="optSkin">Skin-Anpassung …</button>
+        <button class="btn" type="button" data-view="optSound">Musik &amp; Geräusche …</button>
+        <button class="btn" type="button" data-view="optVideo">Video-Einstellungen …</button>
+        <button class="btn" type="button" data-view="optCtrl">Steuerung …</button>
+        <button class="btn" type="button" data-view="optHud">Anzeige &amp; Karte …</button>
+        <button class="btn" type="button" data-tg="sShader" data-lbl="Shader"></button>
+      </div>
+      <div class="optdone"><button class="btn" id="btnSettingsBack" type="button">Fertig</button></div>
+    </div>
+    <div class="optview hidden" id="optVideo">
+      <h3>Video-Einstellungen</h3>
+      <div class="optgrid">
+        <div class="optsl"><input id="sDist2" type="range" min="3" max="12" step="1"><span id="vDist2"></span></div>
+        <button class="btn" type="button" data-tg="sShader" data-lbl="Shader"></button>
+        <button class="btn" type="button" data-tg="sClouds" data-lbl="Wolken"></button>
+        <button class="btn" type="button" data-sel="sPerf" data-lbl="Leistungsmodus" data-map="auto:Auto,on:An,off:Aus"></button>
+      </div>
+      <div class="optdone"><button class="btn" type="button" data-view="optMain">Fertig</button></div>
+    </div>
+    <div class="optview hidden" id="optSound">
+      <h3>Musik &amp; Geräusche</h3>
+      <div class="optgrid">
+        <div class="optsl"><input id="sVol" type="range" min="0" max="100" step="5"><span id="vVol"></span></div>
+        <button class="btn" type="button" data-tg="sMusic" data-lbl="Hintergrundmusik"></button>
+      </div>
+      <div class="optdone"><button class="btn" type="button" data-view="optMain">Fertig</button></div>
+    </div>
+    <div class="optview hidden" id="optCtrl">
+      <h3>Steuerung</h3>
+      <div class="optgrid">
+        <div class="optsl"><input id="sSens" type="range" min="30" max="300" step="5"><span id="vSens"></span></div>
+        <button class="btn" type="button" data-sel="sTouch" data-lbl="Eingabe" data-map="auto:Auto,off:Maus &amp; Tastatur,on:Touch"></button>
+      </div>
+      <div class="optdone"><button class="btn" type="button" data-view="optMain">Fertig</button></div>
+    </div>
+    <div class="optview hidden" id="optHud">
+      <h3>Anzeige &amp; Karte</h3>
+      <div class="optgrid">
+        <button class="btn" type="button" data-tg="sMap" data-lbl="Minikarte"></button>
+        <button class="btn" type="button" data-tg="sMapBig" data-lbl="Große Minikarte"></button>
+        <button class="btn span2" type="button" data-tg="sLoc" data-lbl="Locator-Leiste"></button>
+      </div>
+      <div class="optdone"><button class="btn" type="button" data-view="optMain">Fertig</button></div>
+    </div>
+    <div class="optview hidden" id="optSkin">
+      <h3>Skin-Anpassung</h3>
+      <div class="skinwrap">
+        <canvas id="skinCanvas" width="170" height="270"></canvas>
+        <div class="skinctl">
+          <label for="mpName" class="hint">Spielername (3–16 Zeichen: A–Z, 0–9, _)</label>
+          <input id="mpName" type="text" maxlength="16" autocomplete="off" placeholder="z. B. Steve_123">
+          <div class="row skinrow"><button class="btn" id="skinPrevBtn" type="button">◀</button><span id="skinName">Steve</span><button class="btn" id="skinNextBtn" type="button">▶</button></div>
+          <label class="chk"><input type="checkbox" id="skinSlim"> Schmale Arme (Alex-Modell)</label>
+          <button class="btn" id="skinUploadBtn" type="button">Eigenen Skin hochladen (PNG)</button>
+          <input type="file" id="skinFile" accept="image/png" hidden>
+          <div id="skinStatus" class="mpstatus"></div>
+        </div>
+      </div>
+      <div class="optdone"><button class="btn" type="button" data-view="optMain">Fertig</button></div>
+    </div>
+    <div class="optview hidden" style="display:none">
+      <input type="checkbox" id="sShader"><input type="checkbox" id="sClouds"><input type="checkbox" id="sMap"><input type="checkbox" id="sMapBig"><input type="checkbox" id="sMusic"><input type="checkbox" id="sLoc">
+      <select id="sPerf"><option value="auto">auto</option><option value="on">on</option><option value="off">off</option></select>
+      <select id="sTouch"><option value="auto">auto</option><option value="off">off</option><option value="on">on</option></select>
+    </div>
   </div>
 </div>
 
-<!-- Tod -->
+
 <div id="death" class="overlay hidden">
   <div class="panel" style="max-width:380px">
     <h2>Du bist gestorben!</h2>
@@ -2370,7 +2442,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-11-02.62';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-11-02.63';            // Spielversion (nur Anzeige)
 // Verdeckter Bot-Modus (nur per URL ?bot=1, nirgends in der Oberfläche erwähnt): läuft ohne Darstellung mit festem 20-Ticks-Takt, Steuerung über window.BOT (siehe Abschnitt BOT)
 const botChat = [];
 const BOTMODE = /[?&]bot=1(?:&|#|$)/.test(location.search);
@@ -12618,20 +12690,32 @@ function applySettings() {
   const size = settings.minimap ? (settings.mapBig ? 176 : 128) : 0;
   $('minimap').style.display = size ? 'block' : 'none'; $('minimap').style.width = $('minimap').style.height = size + 'px';
   document.documentElement.style.setProperty('--mm', size + 'px');
-  $('sFov').value = settings.fov; $('vFov').textContent = settings.fov + '°';
-  $('sSens').value = Math.round(settings.sens * 100); $('vSens').textContent = Math.round(settings.sens * 100) + ' %';
-  $('sVol').value = Math.round(settings.volume * 100); $('vVol').textContent = Math.round(settings.volume * 100) + ' %';
-  $('sDist').value = userDist(); $('vDist').textContent = userDist() + ' Chunks'; $('sPerf').value = ['auto', 'on', 'off'].includes(settings.perf) ? settings.perf : 'auto';
+  $('sFov').value = settings.fov; $('vFov').textContent = 'Sichtfeld: ' + (settings.fov === 70 ? 'Normal' : settings.fov + '°');
+  $('sSens').value = Math.round(settings.sens * 100); $('vSens').textContent = 'Empfindlichkeit: ' + Math.round(settings.sens * 100) + ' %';
+  $('sVol').value = Math.round(settings.volume * 100); $('vVol').textContent = 'Lautstärke: ' + Math.round(settings.volume * 100) + ' %';
+  $('sDist').value = userDist(); $('vDist').textContent = 'Sichtweite: ' + userDist() + ' Chunks'; $('sPerf').value = ['auto', 'on', 'off'].includes(settings.perf) ? settings.perf : 'auto';
+  $('sDist2').value = userDist(); $('vDist2').textContent = 'Sichtweite: ' + userDist() + ' Chunks';
   $('sTouch').value = settings.touch || 'auto'; $('sMusic').checked = settings.music; $('sLoc').checked = settings.locator; $('sShader').checked = !!settings.shaders; $('sClouds').checked = settings.clouds; $('sMap').checked = settings.minimap; $('sMapBig').checked = settings.mapBig;
+  refreshOptBtns();
 }
 let settingsFrom = 'pause';
-function openSettings() { settingsFrom = state === 'menu' ? 'menu' : 'pause'; applySettings(); setState('settings'); }
+function optView(id) { document.querySelectorAll('#settings .optview').forEach((v) => v.classList.toggle('hidden', v.id !== id)); if (id === 'optSkin') { $('mpName').value = mpCfg.name; refreshSkinPreview(); skSet(''); } }
+function refreshOptBtns() {
+  document.querySelectorAll('#settings [data-tg]').forEach((b) => { b.textContent = b.dataset.lbl + ': ' + ($(b.dataset.tg).checked ? 'AN' : 'AUS'); });
+  document.querySelectorAll('#settings [data-sel]').forEach((b) => { const m = {}; b.dataset.map.split(',').forEach((kv) => { const [k, v] = kv.split(':'); m[k] = v; }); b.textContent = b.dataset.lbl + ': ' + (m[$(b.dataset.sel).value] || ''); });
+}
+document.querySelectorAll('#settings [data-view]').forEach((b) => { b.onclick = () => optView(b.dataset.view); });
+document.querySelectorAll('#settings [data-tg]').forEach((b) => { b.onclick = () => { const c = $(b.dataset.tg); c.checked = !c.checked; c.onchange(); }; });
+document.querySelectorAll('#settings [data-sel]').forEach((b) => { b.onclick = () => { const e = $(b.dataset.sel); e.selectedIndex = (e.selectedIndex + 1) % e.options.length; e.onchange(); }; });
+$('sDist2').oninput = () => { $('sDist').value = $('sDist2').value; $('sDist').oninput(); };
+function openSettings() { settingsFrom = state === 'menu' ? 'menu' : 'pause'; applySettings(); optView('optMain'); setState('settings'); }
 $('btnSettings').onclick = openSettings;
 $('btnSettingsBack').onclick = () => { saveSettings(); setState(settingsFrom === 'menu' ? 'menu' : 'pause'); };
 $('sFov').oninput = () => { settings.fov = +$('sFov').value; applySettings(); };
 $('sSens').oninput = () => { settings.sens = +$('sSens').value / 100; applySettings(); };
 $('sVol').oninput = () => { settings.volume = +$('sVol').value / 100; applySettings(); sfx('place'); };
 $('sDist').oninput = () => {
+  $('sDist2').value = $('sDist').value;
   if (perf.on) perf.userDist = +$('sDist').value; renderDist = perf.on ? Math.min(perf.userDist, PERF_DIST) : +$('sDist').value; applySettings();
   if (world) { world.setRenderDistance(renderDist); uni.fogNear.value = renderDist * CS * 0.55; uni.fogFar.value = renderDist * CS - 6; }
 };
@@ -13807,7 +13891,8 @@ function mpTick(dt) {
 const MP_KEY = 'voxelcraft_mp', TOKEN_KEY = 'voxelcraft_token';
 const mpCfg = { name: '', backend: 'online', room: '', seed: '', mode: 'survival', skinKind: 'preset', skinName: 'steve', skinData: '', slim: false, create: false, pub: true };
 try { Object.assign(mpCfg, JSON.parse(localStorage.getItem(MP_KEY) || '{}')); } catch (e) { /* egal */ }
-mpCfg.create = false;                                      // immer im Beitreten-Modus starten
+mpCfg.create = false; mpCfg.backend = 'online';             // immer im Beitreten-Modus starten; „Lokal“ gibt es in der Oberfläche nicht mehr
+if (!Array.isArray(mpCfg.saved)) mpCfg.saved = [];
 // ----- Geräte-Kennung (für Server-Sperren pro Gerät): zufällige Kennung (localStorage + Cookie + IndexedDB) und Browser-Fingerabdruck -----
 const DEV_KEY = 'voxelcraft_device';
 let devCache = null;
@@ -13861,49 +13946,80 @@ async function refreshSkinPreview() {
   $('skinSlim').checked = !!mpCfg.slim;
 }
 function mpFillForm() {
-  $('mpName').value = mpCfg.name; $('mpBackend').value = mpCfg.backend; $('mpRoom').value = mpCfg.room; $('mpSeed').value = mpCfg.seed;
+  $('mpName').value = mpCfg.name; $('mpRoom').value = mpCfg.room; $('mpSeed').value = mpCfg.seed;
   $('mpModeSurvival').classList.toggle('sel', mpCfg.mode === 'survival'); $('mpModeCreative').classList.toggle('sel', mpCfg.mode === 'creative');
-  $('mpTabJoin').classList.toggle('sel', !mpCfg.create); $('mpTabCreate').classList.toggle('sel', !!mpCfg.create);
-  $('mpCreateBox').classList.toggle('hidden', !mpCfg.create); $('mpPublic').checked = mpCfg.pub !== false;
+  $('mpCreateBox').classList.toggle('hidden', !mpCfg.create); $('mpSaveLbl').classList.toggle('hidden', !!mpCfg.create); $('mpPublic').checked = mpCfg.pub !== false;
   $('mpJoinBtn').textContent = mpCfg.create ? 'Server erstellen' : 'Beitreten';
-  $('mpBackendHint').textContent = mpCfg.backend === 'online' ? 'Online: Spieler auf der ganzen Welt, Welt wird in der Cloud gespeichert.' : 'Lokal: nur Spieler in anderen Tabs dieses Browsers – zum Ausprobieren ohne Internet.';
   refreshSkinPreview();
 }
 function mpReadForm() {
-  mpCfg.name = $('mpName').value.trim(); mpCfg.backend = $('mpBackend').value;
+  mpCfg.name = $('mpName').value.trim(); mpCfg.backend = 'online';
   mpCfg.room = $('mpRoom').value.trim().toLowerCase().replace(/\s+/g, '-'); mpCfg.seed = $('mpSeed').value.trim(); mpCfg.pub = $('mpPublic').checked;
 }
-async function mpLoadRoomList() {                          // Weltenliste (nur lokal sofort, online im Hintergrund)
-  const dl = $('mpRooms'); dl.innerHTML = '';
-  try {
-    let db;
-    if ($('mpBackend').value === 'local') db = new LocalDB();
-    else db = new SupabaseDB(await sbClient(6000));
-    const list = await db.listRooms(), sl = $('mpServerList'); sl.innerHTML = '';
-    $('mpScan').textContent = list.length ? list.length + ' Server gefunden' : 'Keine Server gefunden';
-    if (!list.length) sl.innerHTML = '<div class="hint">Noch keine Server – füge den ersten hinzu!</div>';
-    list.forEach((r) => { const d = document.createElement('div'); d.className = 'srv'; d.innerHTML = '<b></b><small></small>'; d.firstChild.textContent = r.id; d.lastChild.textContent = (r.owner ? '👑 ' + r.owner + ' · ' : '') + (r.mode === 'creative' ? 'Kreativ' : 'Überleben'); d.onclick = () => { $('mpRoom').value = r.id; mpSel = r.id; sl.querySelectorAll('.srv').forEach((x) => x.classList.remove('sel')); d.classList.add('sel'); }; d.ondblclick = () => $('mpJoinSel').click(); sl.appendChild(d); });
-    list.forEach((r) => { const o = document.createElement('option'); o.value = r.id; o.label = r.id + ' (' + (r.mode === 'creative' ? 'Kreativ' : 'Überleben') + ')'; dl.appendChild(o); });
-  } catch (e) { /* offline: egal */ }
+// Standard-Symbol für Server: kleines VOXELCRAFT-Logo (Pixel-Landschaft + Schriftzug)
+function makeServerIcon() {
+  const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
+  const g = x.createLinearGradient(0, 0, 0, 64); g.addColorStop(0, '#5aa0ff'); g.addColorStop(1, '#bfe0ff'); x.fillStyle = g; x.fillRect(0, 0, 64, 64);
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 6; i++) { x.fillStyle = 'rgba(255,255,255,.85)'; const cx = 4 + rnd() * 48, cy = 6 + rnd() * 14; x.fillRect(cx, cy, 10 + rnd() * 6, 3); x.fillRect(cx + 3, cy - 2, 6, 2); }
+  for (let py = 44; py < 64; py++) for (let px = 0; px < 64; px += 4) {                 // Gras (oben) + Erde (unten) in 4×4-Blöcken
+    const gr = py < 50; const n = rnd() * 22 | 0;
+    x.fillStyle = gr ? 'rgb(' + (92 + n) + ',' + (158 + n) + ',' + (58 + n) + ')' : 'rgb(' + (126 + n) + ',' + (88 + n) + ',' + (52 + n) + ')'; x.fillRect(px, py, 4, 1);
+  }
+  x.fillStyle = 'rgba(0,0,0,.25)'; x.fillRect(0, 50, 64, 1);
+  x.font = 'bold 15px MinecraftUI, "Courier New", monospace'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  [['VOXEL', 22], ['CRAFT', 38]].forEach(([t, y]) => { x.fillStyle = '#2a2a2a'; x.fillText(t, 34, y + 2); x.fillText(t, 33, y + 2); x.fillStyle = '#fff'; x.fillText(t, 32, y); });
+  x.strokeStyle = 'rgba(0,0,0,.6)'; x.lineWidth = 2; x.strokeRect(1, 1, 62, 62);
+  document.documentElement.style.setProperty('--srv-icon', 'url(' + c.toDataURL('image/png') + ')');
 }
+makeServerIcon(); try { document.fonts.ready.then(makeServerIcon); } catch (e) { /* egal */ }
+async function mpLoadRoomList() {                          // Serverliste (öffentliche Server + vom Spieler gespeicherte private)
+  const dl = $('mpRooms'); dl.innerHTML = '';
+  let list = [];
+  try { list = await new SupabaseDB(await sbClient(6000)).listRooms(); } catch (e) { $('mpScan').textContent = 'Keine Verbindung zum Server'; }
+  const sl = $('mpServerList'); sl.innerHTML = '';
+  const have = new Set(list.map((r) => r.id));
+  const rows = list.map((r) => ({ id: r.id, owner: r.owner, mode: r.mode, n: r.players, priv: false }));
+  (mpCfg.saved || []).forEach((id) => { if (!have.has(id)) rows.push({ id, priv: true }); });
+  if (list.length || rows.length) $('mpScan').textContent = rows.length + ' Server';
+  if (!rows.length) sl.innerHTML = '<div class="hint">Noch keine Server – füge den ersten hinzu!</div>';
+  rows.forEach((r) => {
+    const d = document.createElement('div'); d.className = 'srv'; d.innerHTML = '<b></b><small></small>'; d.firstChild.textContent = r.id;
+    d.lastChild.textContent = r.priv ? '🔒 Privater Server (gespeichert)' : ((r.owner ? '👑 ' + r.owner + ' · ' : '') + (r.mode === 'creative' ? 'Kreativ' : 'Überleben') + '');
+    d.onclick = () => { mpSel = r.id; $('mpRoom').value = r.id; [...sl.children].forEach((e) => e.classList.toggle('sel', e === d)); $('mpDel').disabled = !r.priv; };
+    d.ondblclick = () => $('mpJoinSel').click();
+    sl.appendChild(d);
+    const o = document.createElement('option'); o.value = r.id; dl.appendChild(o);
+  });
+}
+
 let mpSel = null;
 function mpView(v) {
   $('mpList').classList.toggle('hidden', v !== 'list'); $('mpForm').classList.toggle('hidden', v !== 'form'); $('mpFootList').classList.toggle('hidden', v !== 'list'); $('mpFootForm').classList.toggle('hidden', v !== 'form');
   $('mpTitle').textContent = v === 'list' ? 'Mehrspieler' : (mpCfg.create ? 'Server hinzufügen' : 'Direktverbindung');
+  $('mpRoomLbl').textContent = mpCfg.create ? 'Name des neuen Servers' : 'Servername';
 }
-function openMpMenu() { mpFillForm(); mpSetStatus(''); mpSel = null; mpView('list'); setState('mpmenu'); mpLoadRoomList(); }
+let mpCanCreate = true;                                            // false = Servererstellung gesperrt → nur „Server beitreten“
+async function mpProbeCreate() {
+  mpCanCreate = true;
+  try {
+    if (/^[A-Za-z0-9_]{3,16}$/.test(mpCfg.name)) { const r = await new SupabaseDB(await sbClient(6000)).rpc('vc_create_policy', { p_name: mpCfg.name, p_token: mpToken() }); if (r && r.ok && r.allowed === false) mpCanCreate = false; }
+  } catch (e) { /* unbekannt = erlaubt */ }
+  $('mpAdd').classList.toggle('hidden', !mpCanCreate);
+}
+function openMpMenu() { mpFillForm(); mpSetStatus(''); mpSel = null; $('mpDel').disabled = true; mpView('list'); setState('mpmenu'); mpLoadRoomList(); mpProbeCreate(); }
 $('mpDirect').onclick = () => { mpReadForm(); mpCfg.create = false; mpFillForm(); mpView('form'); };
 $('mpAdd').onclick = () => { mpReadForm(); mpCfg.create = true; mpFillForm(); mpView('form'); };
 $('mpFormBack').onclick = () => { mpReadForm(); mpView('list'); };
-$('mpRefresh').onclick = () => { $('mpScan').textContent = 'Suche nach Servern …'; mpLoadRoomList(); };
-$('mpJoinSel').onclick = () => { mpReadForm(); if (!mpSel) { toast('Wähle zuerst einen Server aus der Liste'); return; } mpCfg.create = false; mpFillForm(); $('mpRoom').value = mpSel; if (/^[A-Za-z0-9_]{3,16}$/.test($('mpName').value.trim())) $('mpJoinBtn').click(); else { mpView('form'); mpSetStatus('Gib erst deinen Spielernamen ein'); } };
+$('mpRefresh').onclick = () => { $('mpScan').textContent = 'Suche nach Servern …'; mpLoadRoomList(); mpProbeCreate(); };
+$('mpJoinSel').onclick = () => { mpReadForm(); if (!mpSel) { toast('Wähle zuerst einen Server aus der Liste'); return; } mpCfg.create = false; mpCfg.room = mpSel; $('mpRoom').value = mpSel; mpJoinNow(); };
+$('mpDel').onclick = () => { if (!mpSel) return; mpCfg.saved = (mpCfg.saved || []).filter((x) => x !== mpSel); mpSaveCfg(); mpSel = null; $('mpDel').disabled = true; mpLoadRoomList(); };
 $('btnMulti').onclick = openMpMenu;
 $('mpBack').onclick = () => setState('menu');
-$('mpBackend').onchange = () => { mpReadForm(); mpFillForm(); mpLoadRoomList(); };
-$('mpTabJoin').onclick = () => { mpReadForm(); mpCfg.create = false; mpFillForm(); };
-$('mpTabCreate').onclick = () => { mpReadForm(); mpCfg.create = true; mpFillForm(); };
 $('mpModeSurvival').onclick = () => { mpCfg.mode = 'survival'; mpFillForm(); };
 $('mpModeCreative').onclick = () => { mpCfg.mode = 'creative'; mpFillForm(); };
+const skSet = (t, err) => { const el = $('skinStatus'); el.textContent = t || ''; el.className = 'mpstatus' + (err ? ' err' : ''); };
+$('mpName').oninput = () => { mpCfg.name = $('mpName').value.trim(); mpSaveCfg(); };
 $('skinPrevBtn').onclick = () => { const i = SKIN_NAMES.indexOf(mpCfg.skinName); mpCfg.skinKind = 'preset'; mpCfg.skinName = SKIN_NAMES[(i + SKIN_NAMES.length - 1) % SKIN_NAMES.length]; refreshSkinPreview(); };
 $('skinNextBtn').onclick = () => { const i = SKIN_NAMES.indexOf(mpCfg.skinName); mpCfg.skinKind = 'preset'; mpCfg.skinName = SKIN_NAMES[(i + 1) % SKIN_NAMES.length]; refreshSkinPreview(); };
 $('skinSlim').onchange = () => { mpCfg.slim = $('skinSlim').checked; refreshSkinPreview(); };
@@ -13918,27 +14034,39 @@ $('skinFile').onchange = async () => {
     const cv = normalizeSkin(img), data = cv.toDataURL('image/png');
     if (data.length > 39000) throw new Error('Skin-Datei zu groß');
     const px = cv.getContext('2d').getImageData(55, 20, 1, 12).data; let slim = true; for (let i = 3; i < px.length; i += 4) if (px[i] !== 0) slim = false;   // Spalte 55 leer = schmale Arme
-    mpCfg.skinKind = 'data'; mpCfg.skinData = data; mpCfg.slim = slim; mpSetStatus('Skin geladen' + (slim ? ' (schmale Arme erkannt)' : ''));
+    mpCfg.skinKind = 'data'; mpCfg.skinData = data; mpCfg.slim = slim; skSet('Skin geladen' + (slim ? ' (schmale Arme erkannt)' : ''));
     refreshSkinPreview();
-  } catch (e) { mpSetStatus(e.message, true); }
+  } catch (e) { skSet(e.message, true); }
 };
-$('mpJoinBtn').onclick = async () => {
+// Spielername wird erst beim ersten Beitritt abgefragt
+function askName() {
+  return new Promise((res) => {
+    const d = $('nameDlg'), inp = $('ndName'); inp.value = mpCfg.name || ''; $('ndErr').textContent = ''; d.classList.remove('hidden'); setTimeout(() => inp.focus(), 30);
+    const done = (v) => { d.classList.add('hidden'); $('ndOk').onclick = $('ndCancel').onclick = inp.onkeydown = null; res(v); };
+    $('ndOk').onclick = () => { const v = inp.value.trim(); if (!/^[A-Za-z0-9_]{3,16}$/.test(v)) { $('ndErr').textContent = 'Name: 3–16 Zeichen (Buchstaben, Ziffern, _)'; return; } mpCfg.name = v; $('mpName').value = v; mpSaveCfg(); done(true); };
+    $('ndCancel').onclick = () => done(false);
+    inp.onkeydown = (e) => { e.stopPropagation(); if (e.key === 'Enter') $('ndOk').click(); else if (e.key === 'Escape') done(false); };
+  });
+}
+async function mpJoinNow() {
   mpReadForm();
-  if (!/^[A-Za-z0-9_]{3,16}$/.test(mpCfg.name)) return mpSetStatus('Name: 3–16 Zeichen (Buchstaben, Ziffern, _)', true);
   if (!/^[a-z0-9_-]{2,24}$/.test(mpCfg.room)) return mpSetStatus('Servername: 2–24 Zeichen (a–z, 0–9, - _)', true);
+  if (!/^[A-Za-z0-9_]{3,16}$/.test(mpCfg.name)) { if (!(await askName())) return; }
+  if (!mpCfg.create && !$('mpForm').classList.contains('hidden') && $('mpSave').checked && !mpCfg.saved.includes(mpCfg.room)) mpCfg.saved.push(mpCfg.room);
   mpSaveCfg();
   $('mpJoinBtn').disabled = true; $('mpBack').disabled = true; mpSetStatus('Verbinde …');
   const seed = mpCfg.seed || String(Math.floor(Math.random() * 1e9));
   try {
-    await mpJoin({ name: mpCfg.name, token: mpToken(), backend: mpCfg.backend, room: mpCfg.room, seed, mode: mpCfg.mode, create: mpCfg.create, pub: mpCfg.pub, dist: parseInt($('mpDist').value, 10) || 6,
+    await mpJoin({ name: mpCfg.name, token: mpToken(), backend: 'online', room: mpCfg.room, seed, mode: mpCfg.mode, create: mpCfg.create, pub: mpCfg.pub, dist: userDist(),
       skin: currentSkinSpec(), slim: mpCfg.slim });
   } catch (e) {
     await mpLeave().catch(() => {}); mp.on = false;
-    setState('mpmenu'); mpSetStatus((e && e.message) || 'Verbindung fehlgeschlagen', true);
-    if (mpCfg.backend === 'online') mpSetStatus(((e && e.message) || 'Verbindung fehlgeschlagen') + ' – Tipp: Modus „Lokal“ funktioniert ohne Internet.', true);
+    setState('mpmenu'); mpView(mpCfg.create ? 'form' : 'list'); mpSetStatus((e && e.message) || 'Verbindung fehlgeschlagen', true);
+    if (/gesperrt/.test((e && e.message) || '') && /Erstellen/.test(e.message)) mpProbeCreate();
   }
   $('mpJoinBtn').disabled = false; $('mpBack').disabled = false;
-};
+}
+$('mpJoinBtn').onclick = mpJoinNow;
 ATLAS.onReady(() => { $('btnMulti').disabled = false; refreshSkinPreview(); });
 $('btnMulti').disabled = true;
 

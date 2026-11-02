@@ -397,3 +397,13 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * 🔲 Knöpfe wie in Java in **zwei Reihen nebeneinander**: Einzelspieler (2 breite + 4 gleich große), Mehrspieler (3 + 4); Pause unverändert.
 * 🟩 Ladebild: quadratische Chunk-Karte im schwarzen Rahmen (grau → grün → weiß, blauer Rahmen = dein Chunk), die von der Mitte aus wächst.
+
+## 2026-11-02.63
+
+* 🐞 „Server hinzufügen“: Formular überlappte mit den festen Knöpfen unten → Formular ist jetzt kompakt, Knöpfe stehen darunter im Fluss.
+* 🔲 Modus „Lokal“, Sichtweite-Feld, Name und Skin aus dem Server-Formular entfernt.
+* 👤 Spielername wird erst beim ersten Beitritt in einem Dialog abgefragt; Skin + Name liegen unter Optionen → „Skin-Anpassung“.
+* 🔒 Ist das Erstellen gesperrt (`vc_create_policy`), verschwindet „Server hinzufügen“ – nur „Server beitreten“/„Direktverbindung“.
+* ✅ Direktverbindung: Häkchen „In meiner Serverliste anzeigen“ (private Server werden lokal gespeichert, „Löschen“ entfernt sie wieder).
+* 🖼️ Server haben ein eigenes VOXELCRAFT-Standardsymbol (Canvas-generiert).
+* ⚙️ Optionen wie in Java: zwei Spalten (Sichtfeld | Sichtweite, Skin | Ton, Video | Steuerung, Anzeige | Shader) mit Unterseiten; gleiche Seite im Startmenü und im Pausenmenü.
