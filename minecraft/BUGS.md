@@ -336,3 +336,10 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 ## 2026-10-14.49
 
 * 🤖 Bot-Modus: Beim automatischen Graben werden keine Zellen mehr gewählt, über denen Sand oder Kies liegt (sie würden nachrutschen und den Bot begraben – das hatte den Agenten in die Backrooms fallen lassen).
+
+## 2026-11-02.50
+
+* 🎨 **Menüs im Java-Edition-Look (Ressourcenpaket 1.21.11):** Titelbildschirm mit dem Minecraft-Logo, „Java Edition“-Schild, gelbem Splash-Text, drehendem Panorama aus der Spielwelt und den Hauptknöpfen „Einzelspieler / Mehrspieler / Optionen … / Steuerung …“. Die frühere Weltauswahl (Seed, Spielmodus, Sichtweite, Neue/Gespeicherte Welt) liegt jetzt auf dem Unterbildschirm „Einzelspieler“, die Tastenbelegung auf „Steuerung“.
+* 🔤 **Minecraft-Schrift** (aus den Bitmap-Schriften des Pakets als TTF gebaut, 1 MC-Pixel = 2 Bildschirmpixel) in allen Menüs, im Chat und im HUD; Knöpfe, Textfelder, Auswahllisten, Regler, Häkchen und Reiter nutzen die echten Paket-Texturen (9-Slice), Listenbereiche haben die Trennlinien von Java. Inventar und Handwerk im grauen Container-Look. Klickton bei Knöpfen, Mehrspieler-/Einstellungs-/Pause-/Tod-Bildschirme angepasst.
+* 🥚 Die Easter Eggs sind jetzt im Logo versteckt: Klick aufs Logo (Creeper-Gesicht im „A“) = Creeper-Snake, Klick auf „Java Edition“ = Steves Dino-Lauf. Der Leerlauf-Modus (Steve spielt 2D-Minecraft) läuft weiter.
+* Werkzeuge: `tools/mcui/` (`build_font.py`, `embed_mcui.py`, Panorama-Bilder, Schrift) – das Template-ZIP selbst liegt nicht im Repository; `python3 tools/mcui/embed_mcui.py <assets/minecraft>` bettet die Texturen neu ein.

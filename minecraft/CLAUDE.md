@@ -4,3 +4,4 @@
 - **Bei jedem Update dem Nutzer die Version MIT eingebautem Groq-Schlüssel schicken** (für den KI-Spieler `/ai`), zusätzlich zur normalen `index.html`:
   `GROQ_KEY=gsk_… python3 tools/inject_groq_key.py <ausgabe>/index.html` und diese Datei per SendUserFile schicken (als `index.html`, mit Hinweis „enthält deinen Schlüssel – nicht öffentlich teilen“).
 - Der Schlüssel selbst steht **nie** im Repository (weder in Code, Doku noch Commit). Er wird nicht gespeichert: Wenn er in einer neuen Sitzung fehlt, den Nutzer danach fragen. `index.keyed.html` ist in `.gitignore`.
+- Menü-Look (Java-Edition): CSS-Variablen `--mc-…` und die Schrift stehen im `<style id="mcui-data">` zwischen `/*MCUI_BEGIN*/` und `/*MCUI_END*/` und werden mit `tools/mcui/embed_mcui.py` erzeugt – nicht von Hand ändern. Das Panorama kommt aus `tools/mcui/panorama_0..5.jpg`.

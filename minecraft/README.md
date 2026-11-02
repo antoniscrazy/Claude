@@ -204,3 +204,5 @@ einzelne Inventar-Einträge löschen, eine Welt zurücksetzen, Besitzer/OPs/Modu
 
 Schutz: Die Funktionen prüfen den PIN serverseitig; nach 5 falschen Eingaben ist die Konsole 15 Minuten gesperrt. Ein 4-stelliger PIN ist trotzdem schwach –
 die Seite deshalb nicht öffentlich ins Netz stellen.
+
+* **Look:** Alle Menüs sind im Stil der Minecraft Java Edition gehalten (Ressourcenpaket 1.21.11: Logo, Knöpfe, Schrift, drehendes Panorama). Hauptmenü: Einzelspieler · Mehrspieler · Optionen · Steuerung; die Easter Eggs stecken im Logo. Technik siehe `tools/mcui/`.
