@@ -1979,5 +1979,7 @@
 "Du wurdest von diesem Server gebannt: ": "You are banned from this server: ",
 "Dein Konto wurde gesperrt: ": "Your account has been banned: ",
 "Dein Konto ist gesperrt: ": "Your account is banned: ",
-"Anti-Cheat: wiederholte Manipulation": "Anti-cheat: repeated tampering"
+"Anti-Cheat: wiederholte Manipulation": "Anti-cheat: repeated tampering",
+"Du wurdest vom Server geworfen.": "You were kicked from the server.",
+"Du wurdest von diesem Server gebannt!": "You are banned from this server!"
 }

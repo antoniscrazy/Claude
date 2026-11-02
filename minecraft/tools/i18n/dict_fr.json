@@ -1998,5 +1998,7 @@
 "Du wurdest von diesem Server gebannt: ": "Vous êtes banni de ce serveur : ",
 "Dein Konto wurde gesperrt: ": "Votre compte a été banni : ",
 "Dein Konto ist gesperrt: ": "Votre compte est banni : ",
-"Anti-Cheat: wiederholte Manipulation": "Anti-triche : manipulations répétées"
+"Anti-Cheat: wiederholte Manipulation": "Anti-triche : manipulations répétées",
+"Du wurdest vom Server geworfen.": "Vous avez été expulsé du serveur.",
+"Du wurdest von diesem Server gebannt!": "Vous êtes banni de ce serveur !"
 }

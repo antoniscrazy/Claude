@@ -470,3 +470,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 ## 2026-11-02.75
 
 * 🚫 „Vom Server getrennt“-Bildschirm wie in Java (Panorama dahinter, Titel, Meldung, Knopf „Zurück zum Titelbildschirm“): erscheint beim Beitritt zu einem Server, auf dem man gebannt ist, bei gesperrtem Konto, beim Bann/Rauswurf während des Spielens und beim Anti-Cheat-Rauswurf (auch auf Englisch/Französisch).
+
+## 2026-11-02.76
+
+* Rauswurf (Kick) zeigt denselben „Vom Server getrennt“-Bildschirm wie der Bann: erste Zeile „Du wurdest vom Server geworfen.“, darunter der Grund (beim Bann entsprechend „…gebannt!“).

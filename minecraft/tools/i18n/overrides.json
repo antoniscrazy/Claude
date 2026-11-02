@@ -354,5 +354,13 @@
  "Anti-Cheat: wiederholte Manipulation": [
   "Anti-cheat: repeated tampering",
   "Anti-triche : manipulations répétées"
+ ],
+ "Du wurdest vom Server geworfen.": [
+  "You were kicked from the server.",
+  "Vous avez été expulsé du serveur."
+ ],
+ "Du wurdest von diesem Server gebannt!": [
+  "You are banned from this server!",
+  "Vous êtes banni de ce serveur !"
  ]
 }
