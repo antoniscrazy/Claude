@@ -565,25 +565,26 @@ input[type=search],textarea,.wrow,.srv,.wlist{font-family:"MinecraftUI","Courier
 #loadInner{width:134px;height:134px;background:#a0a0a0;display:flex;align-items:center;justify-content:center}
 #loadDot{width:26px;height:26px;background:#fff;border:4px solid #2a64c8;box-shadow:0 0 0 2px #2a8a2a;animation:loadPulse 1s steps(2) infinite}
 @keyframes loadPulse{50%{background:#c8e0ff}}
-#mpmenu{padding:16px 0 236px;justify-content:flex-start}#mpmenu>h2{font-size:16px;margin:4px 0 6px}#mpList{width:min(760px,96vw);flex:1;display:flex;flex-direction:column}#mpScan{text-align:center;color:#fff;margin:14px 0 8px}#mpmenu #mpServerList{flex:1;max-height:none;min-height:200px}.mpfoot .row{width:min(760px,96vw)}#mpmenu .mpfoot .btn{margin:3px 0}
+#mpmenu{padding:16px 0 150px;justify-content:flex-start}#mpmenu>h2{font-size:16px;margin:4px 0 6px}#mpList{width:min(760px,96vw);flex:1;display:flex;flex-direction:column}#mpScan{text-align:center;color:#fff;margin:14px 0 8px}#mpmenu #mpServerList{flex:1;max-height:none;min-height:200px}.mpfoot .row{width:min(760px,96vw)}#mpmenu .mpfoot .btn{margin:3px 0}
 #mpmenu::before{content:"";position:fixed;left:0;right:0;top:0;height:56px;background:linear-gradient(rgba(0,0,0,.7),rgba(0,0,0,0));pointer-events:none}
 .mpfoot{position:fixed;left:0;right:0;bottom:0;z-index:3;padding:12px 0 12px;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,.55);border-top:2px solid #000;box-shadow:inset 0 2px 0 rgba(255,255,255,.12)}
 .mpfoot .row{width:min(640px,94vw);gap:8px}.mpfoot .btn{margin:3px 0}
 
-/* einheitliche Knopfraster: überall gleich groß */
+/* Knopfraster: zwei Reihen nebeneinander wie in Java */
+.btngrid.g4{grid-template-columns:repeat(4,1fr);width:min(660px,96vw)}.btngrid.g12{grid-template-columns:repeat(12,1fr);width:min(760px,96vw)}
+.btngrid .s2{grid-column:span 2}.btngrid .s3{grid-column:span 3}.btngrid .s4{grid-column:span 4}
 .btngrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:min(404px,94vw);margin:6px auto}
 .btngrid .btn{height:40px;min-height:40px;margin:0;padding:0 4px 2px;white-space:nowrap;line-height:1}
 .btngrid .span2{grid-column:span 2}
 .mpfoot .btngrid{margin:0 auto}
 .pausep.panel{width:auto}
-#loadBox{width:270px;height:270px;max-width:80vw;max-height:80vw;background:#000;display:flex;align-items:center;justify-content:center}
-#loadGrid{display:grid;grid-template-columns:repeat(9,1fr);gap:3px;width:216px;height:216px;max-width:64vw;max-height:64vw}
-#loadGrid i{background:#707070;display:block;border-radius:0;transition:background .15s}
-#loadGrid i.off{visibility:hidden}
-#loadGrid i.gen{background:#d8c020}
-#loadGrid i.ok{background:#20c040}
-#loadGrid i.me{box-shadow:0 0 0 3px #3a70e0;visibility:visible;background:#fff}
-#loadGrid i.me.ok{background:#20c040}
+#loadBox{width:210px;height:210px;max-width:70vw;max-height:70vw;background:#000;display:flex;align-items:center;justify-content:center}
+#loadGrid{display:grid;grid-template-columns:repeat(9,1fr);gap:0;width:117px;height:117px}
+#loadGrid i{background:#545454;display:block;transition:background .2s}
+#loadGrid i.off{background:#545454}
+#loadGrid i.gen{background:#80b24d}
+#loadGrid i.ok{background:#fff}
+#loadGrid i.me{box-shadow:inset 0 0 0 2px #3a70e0}
 </style>
 </head>
 <body class="inmenu">
@@ -697,7 +698,7 @@ input[type=search],textarea,.wrow,.srv,.wlist{font-family:"MinecraftUI","Courier
       <h2>Welt auswählen</h2>
       <input id="worldSearch" type="search" placeholder="Welt suchen …" autocomplete="off">
       <div class="wlist" id="worldList"></div>
-      <div class="btngrid"><button class="btn" id="btnLoad" type="button">Welt spielen</button><button class="btn" id="btnCreateOpen" type="button">Welt erstellen</button><button class="btn" id="btnWorldEdit" type="button">Bearbeiten</button><button class="btn" id="btnWorldDel" type="button">Löschen</button><button class="btn" id="btnWorldRe" type="button">Neu aufsetzen</button><button class="btn" id="btnSingleBack" type="button">Zurück</button></div>
+      <div class="btngrid g4"><button class="btn s2" id="btnLoad" type="button">Ausgewählte Welt spielen</button><button class="btn s2" id="btnCreateOpen" type="button">Neue Welt erstellen</button><button class="btn" id="btnWorldEdit" type="button">Bearbeiten</button><button class="btn" id="btnWorldDel" type="button">Löschen</button><button class="btn" id="btnWorldRe" type="button">Neu aufsetzen</button><button class="btn" id="btnSingleBack" type="button">Zurück</button></div>
     </div>
     <div id="mmEdit" class="panel hidden">
       <h2>Welt bearbeiten</h2>
@@ -798,7 +799,7 @@ input[type=search],textarea,.wrow,.srv,.wlist{font-family:"MinecraftUI","Courier
     </div>
     <div id="mpStatus" class="mpstatus"></div>
   </div>
-  <div class="mpfoot" id="mpFootList"><div class="btngrid"><button class="btn" id="mpJoinSel" type="button">Server beitreten</button><button class="btn" id="mpDirect" type="button">Direktverbindung</button><button class="btn" id="mpAdd" type="button">Server hinzufügen</button><button class="btn" id="mpRefresh" type="button">Aktualisieren</button><button class="btn" id="mpEdit" type="button" disabled>Bearbeiten</button><button class="btn" id="mpDel" type="button" disabled>Löschen</button><button class="btn span2" id="mpBack" type="button">Zurück</button></div></div>
+  <div class="mpfoot" id="mpFootList"><div class="btngrid g12"><button class="btn s4" id="mpJoinSel" type="button">Server beitreten</button><button class="btn s4" id="mpDirect" type="button">Direktverbindung</button><button class="btn s4" id="mpAdd" type="button">Server hinzufügen</button><button class="btn s3" id="mpEdit" type="button" disabled>Bearbeiten</button><button class="btn s3" id="mpDel" type="button" disabled>Löschen</button><button class="btn s3" id="mpRefresh" type="button">Aktualisieren</button><button class="btn s3" id="mpBack" type="button">Zurück</button></div></div>
   <div class="mpfoot hidden" id="mpFootForm"><div class="btngrid"><button class="btn" id="mpJoinBtn" type="button">Verbinden</button><button class="btn" id="mpFormBack" type="button">Abbrechen</button></div></div>
 </div>
 
@@ -2369,7 +2370,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-11-02.61';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-11-02.62';            // Spielversion (nur Anzeige)
 // Verdeckter Bot-Modus (nur per URL ?bot=1, nirgends in der Oberfläche erwähnt): läuft ohne Darstellung mit festem 20-Ticks-Takt, Steuerung über window.BOT (siehe Abschnitt BOT)
 const botChat = [];
 const BOTMODE = /[?&]bot=1(?:&|#|$)/.test(location.search);

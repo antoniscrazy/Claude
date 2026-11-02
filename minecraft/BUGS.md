@@ -392,3 +392,8 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * 🔲 Einzelspieler, Mehrspieler und Spielmenü haben jetzt ein einheitliches Knopfraster (zwei Spalten, alle gleich groß, 40 px hoch, kurze Beschriftungen).
 * 🟩 **Ladebild wie in Java:** Chunk-Raster im schwarzen Kasten, das beim Generieren wächst – grau = wartet, gelb = erzeugt, grün = fertig, blauer Rahmen = dein Chunk; darüber die Prozentanzeige.
+
+## 2026-11-02.62
+
+* 🔲 Knöpfe wie in Java in **zwei Reihen nebeneinander**: Einzelspieler (2 breite + 4 gleich große), Mehrspieler (3 + 4); Pause unverändert.
+* 🟩 Ladebild: quadratische Chunk-Karte im schwarzen Rahmen (grau → grün → weiß, blauer Rahmen = dein Chunk), die von der Mitte aus wächst.
