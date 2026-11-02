@@ -445,3 +445,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * 🛡️ Rüstung wird in der Spielervorschau (Survival + Kreativ-Reiter) mit den echten Rüstungstexturen mitgezeichnet.
 * ✋ Zweithand: Slot im Inventar, Anzeige links neben der Hotbar, Taste V tauscht mit der Hand (F bleibt Fliegen); wird gespeichert.
 * 🔥 Ofen mit Original-GUI: Eingabe oben, Brennstoff unten, Ergebnis rechts, Flamme + Pfeil; schmilzt wirklich (10 s pro Item, Brennzeit nach Brennstoff), Inhalt wird wie eine Truhe gespeichert/synchronisiert. Ofenrezepte im Buch sind nur Hinweis.
+
+## 2026-11-02.71
+
+* 📶 Serverliste wie Java: rechts oben „x/20“ + echtes Ping-Symbol aus dem Pack (1–5 Balken nach Antwortzeit), darunter der Spielmodus; links Name und Besitzer. Spielerzahl wird per Realtime-Anwesenheit gelesen (nur lesend, ca. 4 s), Ping = Antwortzeit der Serverliste.
