@@ -378,3 +378,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 ## 2026-11-02.58
 
 * 🖼 **Welt-Symbole:** In der Weltauswahl zeigt jede Welt ein Bild des zuletzt gesehenen Spielbildes (alle 12 s und beim Pausieren aufgenommen, beim Speichern abgelegt, auch bei Kopien). Mit Shader-Modus sieht das Symbol entsprechend aus.
+
+## 2026-11-02.59
+
+* 🎨 Nach deinen Vorlagen: **Spielmenü** (grauer Hintergrund, „Zurück zum Spiel“, Zweierreihen, „Speichern und zum Titel“), **Ladebild** (Erd-Hintergrund, Prozentanzeige, schwarzer Kasten mit grauem Feld), **Weltauswahl / Welt erstellen / Bearbeiten / Löschen / Steuerung** als Vollbild mit Erd-Hintergrund (Titel, Suchfeld, Liste, Knöpfe unten), **Mehrspieler** mit abgedunkeltem Kopf und Erd-Fußleiste mit den Knöpfen (Server beitreten / Server erstellen / Verbinden / Zurück).

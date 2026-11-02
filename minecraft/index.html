@@ -546,6 +546,29 @@ body.inmenu #panorama{display:block}
 .ctabs{justify-content:center;margin:-10px 0 16px}
 #mmSingle.panel,#mmCreate.panel,#mmEdit.panel,#mmDelete.panel,#mmHelp.panel,#mpmenu .panel{background-color:rgba(0,0,0,.62)}
 input[type=search],textarea,.wrow,.srv,.wlist{font-family:"MinecraftUI","Courier New",monospace;font-size:16px}
+
+/* Java-Bildschirme: Erd-Hintergrund (Weltauswahl …), graues Spielmenü, Ladebild, Serverlisten-Fuß */
+#mmSingle.panel,#mmCreate.panel,#mmEdit.panel,#mmDelete.panel,#mmHelp.panel{position:fixed;inset:0;z-index:6;width:auto;max-width:none;max-height:none;margin:0;padding:12px 0 14px;overflow:auto;display:flex;flex-direction:column;align-items:center;background:var(--dirt) 0 0/64px 64px;image-rendering:pixelated;border-radius:0}
+#mmSingle.hidden,#mmCreate.hidden,#mmEdit.hidden,#mmDelete.hidden,#mmHelp.hidden{display:none}
+#mmSingle>*,#mmCreate>*,#mmEdit>*,#mmDelete>*,#mmHelp>*{width:min(660px,94vw);flex:none}
+#mmSingle h2,#mmCreate h2,#mmEdit h2,#mmDelete h2,#mmHelp h2{font-size:16px;text-align:center;margin:2px 0 10px}
+#mmSingle #worldSearch{width:min(420px,94vw)}
+#mmSingle .wlist{flex:1 1 auto;min-height:120px;max-height:none;background:rgba(0,0,0,.35);border:0;border-top:2px solid #000;border-bottom:2px solid #000;margin:6px 0 10px;width:min(660px,100vw)}
+#mmSingle .row{margin:3px 0}
+#pause{background:var(--gray) 0 0/64px 64px;image-rendering:pixelated}
+.pausep.panel{background:none;box-shadow:none;padding:0;width:min(400px,94vw)}
+.pausep h2{font-size:16px;text-align:center;margin:0 0 56px}
+.pausep .btn{margin:4px 0}.pausep .row{gap:8px}.pausep .row .btn{margin:4px 0}
+#loading{background:var(--dirt) 0 0/64px 64px;image-rendering:pixelated;gap:14px}
+#loadPct{color:#fff;font-size:16px;text-shadow:2px 2px 0 #3f3f3f}
+#loadBox{width:270px;height:270px;max-width:80vw;max-height:80vw;background:#000;display:flex;align-items:center;justify-content:center}
+#loadInner{width:134px;height:134px;background:#a0a0a0;display:flex;align-items:center;justify-content:center}
+#loadDot{width:26px;height:26px;background:#fff;border:4px solid #2a64c8;box-shadow:0 0 0 2px #2a8a2a;animation:loadPulse 1s steps(2) infinite}
+@keyframes loadPulse{50%{background:#c8e0ff}}
+#mpmenu{padding-bottom:150px;justify-content:flex-start}
+#mpmenu::before{content:"";position:fixed;left:0;right:0;top:0;height:56px;background:linear-gradient(rgba(0,0,0,.7),rgba(0,0,0,0));pointer-events:none}
+.mpfoot{position:fixed;left:0;right:0;bottom:0;z-index:3;padding:12px 0 12px;display:flex;flex-direction:column;align-items:center;background:linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.45)),var(--dirt) 0 0/64px 64px;border-top:2px solid #000;image-rendering:pixelated}
+.mpfoot .row{width:min(640px,94vw);gap:8px}.mpfoot .btn{margin:3px 0}
 </style>
 </head>
 <body class="inmenu">
@@ -731,7 +754,6 @@ input[type=search],textarea,.wrow,.srv,.wlist{font-family:"MinecraftUI","Courier
         <label for="mpBackend">Server</label>
         <select id="mpBackend"><option value="online">Online (Supabase)</option><option value="local">Lokal (mehrere Tabs)</option></select>
         <div id="mpBackendHint" class="hint"></div>
-        <div class="row" style="margin-top:14px"><button class="btn sel" id="mpTabJoin" type="button">Server beitreten</button><button class="btn" id="mpTabCreate" type="button">Server erstellen</button></div>
         <label for="mpRoom" id="mpRoomLbl">Servername</label>
         <input id="mpRoom" type="text" maxlength="24" list="mpRooms" autocomplete="off" placeholder="z. B. mein-server">
         <datalist id="mpRooms"></datalist>
@@ -757,30 +779,29 @@ input[type=search],textarea,.wrow,.srv,.wlist{font-family:"MinecraftUI","Courier
       </div>
     </div>
     <div id="mpStatus" class="mpstatus"></div>
-    <div class="row"><button class="btn" id="mpBack" type="button">Zurück</button><button class="btn sel" id="mpJoinBtn" type="button">Beitreten</button></div>
   </div>
+  <div class="mpfoot"><div class="row"><button class="btn" id="mpTabJoin" type="button">Server beitreten</button><button class="btn" id="mpTabCreate" type="button">Server erstellen</button></div><div class="row"><button class="btn" id="mpJoinBtn" type="button">Verbinden</button><button class="btn" id="mpBack" type="button">Zurück</button></div></div>
 </div>
 
 <!-- Laden -->
-<div id="loading" class="overlay hidden" style="background:#1b1410">
-  <h2>Welt wird generiert …</h2>
-  <div class="bar"><i id="loadBar"></i></div>
+<div id="loading" class="overlay hidden">
+  <div id="loadPct">0%</div>
+  <div id="loadBox"><div id="loadInner"><i id="loadDot"></i></div></div>
+  <div class="bar hidden"><i id="loadBar"></i></div>
 </div>
 
 <div id="chatBar" class="hidden"><div id="chatSug" class="hidden"></div><input id="chatInput" type="text" maxlength="200" autocomplete="off" placeholder="Nachricht oder /Befehl … (Tab = vervollständigen, Enter = senden, Esc = abbrechen)"></div>
 
 <!-- Pause -->
 <div id="pause" class="overlay hidden">
-  <div class="panel" style="max-width:380px">
-    <h2>Pause</h2>
-    <button class="btn" id="btnResume" type="button">Weiter</button>
-    <button class="btn hidden" id="btnBackPause" type="button">Zurück zur Oberwelt</button>
-    <button class="btn" id="btnSave" type="button">Speichern</button>
+  <div class="panel pausep">
+    <h2>Spielmenü</h2>
+    <button class="btn" id="btnResume" type="button">Zurück zum Spiel</button>
+    <div class="row"><button class="btn" id="btnSave" type="button">Speichern</button><button class="btn" id="btnShot" type="button">Screenshot (F2)</button></div>
+    <div class="row"><button class="btn" id="btnMute" type="button">Ton an/aus (M)</button><button class="btn" id="btnFull" type="button">Vollbild an/aus</button></div>
     <button class="btn" id="btnSettings" type="button">Optionen …</button>
-    <button class="btn" id="btnShot" type="button">Screenshot (F2)</button>
-    <button class="btn" id="btnMute" type="button">Ton an/aus (M)</button>
-    <button class="btn" id="btnFull" type="button">Vollbild an/aus</button>
-    <button class="btn" id="btnQuit" type="button">Speichern &amp; Beenden</button>
+    <button class="btn hidden" id="btnBackPause" type="button">Zurück zur Oberwelt</button>
+    <button class="btn" id="btnQuit" type="button">Speichern und zum Titel</button>
   </div>
 </div>
 
@@ -2327,7 +2348,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-11-02.58';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-11-02.59';            // Spielversion (nur Anzeige)
 // Verdeckter Bot-Modus (nur per URL ?bot=1, nirgends in der Oberfläche erwähnt): läuft ohne Darstellung mit festem 20-Ticks-Takt, Steuerung über window.BOT (siehe Abschnitt BOT)
 const botChat = [];
 const BOTMODE = /[?&]bot=1(?:&|#|$)/.test(location.search);
@@ -9337,6 +9358,10 @@ if (touchMode) document.body.classList.add('touch');
 let gameTime = 0, saveTimer = 0;
 const SCREENS = { snake: 'snake', dino: 'dino', menu: 'menu', mpmenu: 'mpmenu', loading: 'loading', pause: 'pause', inv: 'inventory', emotes: 'emotes', dead: 'death', chat: 'chatBar', settings: 'settings', trade: 'trade', sign: 'signEdit', book: 'book' };
 
+(function mcTextures() {                                                         // Erd- und Graustruktur für Menühintergründe (wie in Java: dunkle Kacheln)
+  const mk = (r, g, b, v) => { const c = document.createElement('canvas'); c.width = c.height = 16; const x = c.getContext('2d'); let h = 7; for (let i = 0; i < 256; i++) { h = (h * 1103515245 + 12345) & 0x7fffffff; const n = ((h >> 8) % (v * 2 + 1)) - v; x.fillStyle = `rgb(${r + n},${g + n * 0.8 | 0},${b + n * 0.6 | 0})`; x.fillRect(i % 16, i >> 4, 1, 1); } return 'url(' + c.toDataURL() + ')'; };
+  const st = document.documentElement.style; st.setProperty('--dirt', mk(50, 38, 26, 14)); st.setProperty('--gray', mk(74, 74, 74, 7));
+})();
 let mmView = 'Main';                                                  // Titelbildschirm: Main | Single | Help
 function mmShow(v) { mmView = v; for (const k of ['Main', 'Single', 'Create', 'Edit', 'Delete', 'Help']) $('mm' + k).classList.toggle('hidden', k !== v); if (v === 'Single') renderWorldRow(); if (v === 'Create') { $('cGame').classList.remove('hidden'); $('cWorld').classList.add('hidden'); $('ctabGame').classList.add('sel'); $('ctabWorld').classList.remove('sel'); } const l = $('mmLogoWrap'); if (l) l.classList.toggle('hidden', v !== 'Main'); }
 const SPLASHES = ['Jetzt mit Kupfertüren!', 'Alles in einer Datei!', 'Zufällig generiert!', 'Auch im Browser!', 'Hundert Prozent Pixel!', 'Voxel-Power!', 'Aw man!', 'Kein Creeper im Menü!', 'Probier /spectate!', 'Gib dem Schaf Scheren!', 'Mit Wetter!', 'Sieben Tage pro Jahreszeit!', 'Der Wald ruft!', 'Grabe nie senkrecht nach unten!', 'Bett nicht vergessen!', 'Schon Diamanten gefunden?', 'Eine Spitzhacke ist ein Freund!', 'Halloween-Mobs gibt es nur nachts!', 'Mehrspieler-fähig!', 'Gelbe Schrift ist Pflicht!', 'Auch ohne Maus spielbar!', 'Danke fürs Spielen!', 'Es gibt Fackeln!', 'Bleib hydriert!', 'Redstone inklusive!'];
@@ -9433,7 +9458,7 @@ function startGame(opts) {
   endDead.clear(); vehStash = null; P.creditsSeen = false; rsQ.clear(); rsTimers.length = 0; rsPrev.clear(); rsHop.clear(); rsBtn.clear(); rsPl.clear(); endT = 0;
   mode = opts.mode; renderDist = opts.dist; buildJob = null; blastAbort(); bigSt.active = false; perfReset(); bossReset(); hbReset(); aiReset(); acReset();
   const save = opts.save; pendingMobs = save && Array.isArray(save.mobs) ? save.mobs : [];
-  if (!opts.mp) { mp.on = false; $('btnQuit').textContent = 'Speichern & Beenden'; spLoadPolicy(); }
+  if (!opts.mp) { mp.on = false; $('btnQuit').textContent = 'Speichern und zum Titel'; spLoadPolicy(); }
   world = new World(save ? save.seed : opts.seed, scene, save ? (save.gv || 1) : opts.gv || 4);          // Welten ohne gv-Eintrag = alte Biome
   setWorldKeys(world.gv);
   world.setRenderDistance(renderDist);
@@ -9952,7 +9977,7 @@ function frame(now) {
       if (o[2] > 4) break; need++;
       const c = world.getChunk(world.lcx + o[0], world.lcz + o[1]); if (c && c.meshed) have++;
     }
-    $('loadBar').style.width = Math.round(have / need * 100) + '%';
+    $('loadBar').style.width = Math.round(have / need * 100) + '%'; $('loadPct').textContent = Math.round(have / need * 100) + '%';
     if (have >= need) { P.v.set(0, 0, 0); finishArrival(); spawnPendingMobs(); resume(); }
   } else {
     if (!botShotNoSim) simTick(dt);
