@@ -419,3 +419,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * Survival: Rüstung, Spielervorschau, 2×2-Handwerksfeld (nur Optik), grünes Rezeptbuch öffnet die Rezeptliste.
 * Kreativ: Reiter oben/unten, Such-Reiter mit Suchfeld im Texturfeld, Inventar-Reiter (Truhen-Symbol) mit Rüstung, Rucksack und Löschfeld.
 * `tools/mcui/embed_mcui.py` braucht jetzt Pillow (`python3.13`) und bettet die neuen Texturen ein.
+
+## 2026-11-02.66
+
+* 🐞 Kreativ-Inventar-Reiter: Brustplatte/Stiefel-Symbole saßen zu hoch (untere Rüstungsfelder jetzt bei y=33, aus der Textur gemessen).

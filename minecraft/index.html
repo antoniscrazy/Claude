@@ -2545,7 +2545,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-11-02.65';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-11-02.66';            // Spielversion (nur Anzeige)
 // Verdeckter Bot-Modus (nur per URL ?bot=1, nirgends in der Oberfläche erwähnt): läuft ohne Darstellung mit festem 20-Ticks-Takt, Steuerung über window.BOT (siehe Abschnitt BOT)
 const botChat = [];
 const BOTMODE = /[?&]bot=1(?:&|#|$)/.test(location.search);
@@ -8125,7 +8125,7 @@ function renderCreative() {
   $('crPanel').classList.toggle('srch', srch); $('crPanel').classList.toggle('pinv', pinv); $('crTitle').textContent = pinv ? '' : (TABNAME[palTab] || '');
   const g = $('crGrid'), keep = g.scrollTop; g.innerHTML = ''; const fx = $('crFix'); fx.innerHTML = '';
   if (pinv) {
-    armorSlots(fx, [[54, 6], [54, 27], [108, 6], [108, 27]]); emptySlot(fx, 35, 20, 'shield');
+    armorSlots(fx, [[54, 6], [54, 33], [108, 6], [108, 33]]); emptySlot(fx, 35, 20, 'shield');
     for (let i = 9; i < 36; i++) { const r = Math.floor((i - 9) / 9), c = (i - 9) % 9; paintSlot(vslot(fx, i, 9 + c * 18, 54 + r * 18, invClick), inv[i], false); }
     const del = vslot(fx, 'del', 173, 112, () => { if (cursorItem) { cursorItem = null; renderInventory(); sfx('place'); } }); del.title = 'Gegenstand löschen';
   } else {
