@@ -480,7 +480,10 @@ input[type=checkbox]:checked:hover{background-image:var(--mc-checkbox-selected-h
 .overlay{background:rgba(0,0,0,.5);justify-content:safe center}
 #pause,#settings,#death,#inventory,#trade,#signEdit,#book,#emotes{background:rgba(0,0,0,.55)}
 #settings.fromMenu,#mpmenu{background:rgba(0,0,0,.25);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
-#death{background:rgba(80,0,0,.6)}
+#death{background:radial-gradient(ellipse at 50% 45%,rgba(120,10,10,.55),rgba(50,0,0,.8))}
+#deathTitle{font-size:32px;font-weight:normal;color:#fff;text-shadow:4px 4px 0 #3f3f3f;margin:0 0 34px}
+#deathScore{font-size:16px;color:#fff;text-shadow:2px 2px 0 #3f3f3f;margin-bottom:44px}#deathScore b{color:#ff5;font-weight:normal}
+.dthbtns{grid-template-columns:1fr !important;width:min(404px,94vw) !important}.dthbtns .span2{grid-column:auto}
 #loading{background:var(--mc-menu-background),#1b1410;background-size:32px 32px,auto;image-rendering:pixelated}
 #loading h2{color:#fff}
 #loading .bar{border:2px solid #000;background:#222;height:20px}#loading .bar i{background:#80ff20}
@@ -1105,10 +1108,9 @@ input[type=search],textarea,.wrow,.srv,.wlist{font-family:"MinecraftUI","Courier
 
 
 <div id="death" class="overlay hidden">
-  <div class="panel" style="max-width:380px">
-    <h2>Du bist gestorben!</h2>
-    <button class="btn" id="btnRespawn" type="button">Wiederbeleben</button>
-  </div>
+  <h1 id="deathTitle">Du bist gestorben!</h1>
+  <div id="deathScore">Punktzahl: <b id="deathPts">0</b></div>
+  <div class="btngrid dthbtns"><button class="btn span2" id="btnRespawn" type="button">Wiederbeleben</button><button class="btn span2" id="btnDeathTitle" type="button">Titelbildschirm</button></div>
 </div>
 
 <!-- Inventar -->
@@ -2594,7 +2596,7 @@ const safeBlock = (id) => (id > 0 && !BLOCKS[id]) ? ID.magenta_wool : id;
 const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME_BIRCH = 4, BIOME_DARK = 5, BIOME_JUNGLE = 6, BIOME_SAVANNA = 7,
   BIOME_TAIGA = 8, BIOME_MESA = 9, BIOME_SWAMP = 10, BIOME_CHERRY = 11, BIOME_MEADOW = 12, BIOME_NETHER = 13, BIOME_BACKROOMS = 14, BIOME_END = 15;
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
-const GAME_VER = '2026-11-02.68';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-11-02.69';            // Spielversion (nur Anzeige)
 // Verdeckter Bot-Modus (nur per URL ?bot=1, nirgends in der Oberfläche erwähnt): läuft ohne Darstellung mit festem 20-Ticks-Takt, Steuerung über window.BOT (siehe Abschnitt BOT)
 const botChat = [];
 const BOTMODE = /[?&]bot=1(?:&|#|$)/.test(location.search);
@@ -8069,11 +8071,11 @@ function slotEl(container, i, onClick) {
   d.addEventListener('contextmenu', (e) => e.preventDefault());
   return d;
 }
-const slotGet = (i) => i < 100 ? inv[i] : i < 200 ? (openChest ? containers.get(openChest.key)[i - 100] : null) : i >= 300 ? enchSlots[i - 300] : armor[i - 200];
+const slotGet = (i) => i >= 400 ? cg[i - 400] : i < 100 ? inv[i] : i < 200 ? (openChest ? containers.get(openChest.key)[i - 100] : null) : i >= 300 ? enchSlots[i - 300] : armor[i - 200];
 function slotSet(i, v) {
-  if (i < 100) inv[i] = v; else if (i < 200) containers.get(openChest.key)[i - 100] = v; else if (i >= 300) { enchSlots[i - 300] = v; enchSeed = (Math.random() * 1e9) | 0; } else { armor[i - 200] = v; hudStatsDirty = true; }
+  if (i >= 400) cg[i - 400] = v; else if (i < 100) inv[i] = v; else if (i < 200) containers.get(openChest.key)[i - 100] = v; else if (i >= 300) { enchSlots[i - 300] = v; enchSeed = (Math.random() * 1e9) | 0; } else { armor[i - 200] = v; hudStatsDirty = true; }
 }
-const armorOk = (it, i) => i < 200 || !it || (i >= 300 ? (i === 300 ? enchantable(it) : it.id === IID.lapis) : (it.id >= ITEM_BASE && ITEMS[it.id].armor && ITEMS[it.id].armor.slot === i - 200));
+const armorOk = (it, i) => i < 200 || i >= 400 || !it || (i >= 300 ? (i === 300 ? enchantable(it) : it.id === IID.lapis) : (it.id >= ITEM_BASE && ITEMS[it.id].armor && ITEMS[it.id].armor.slot === i - 200));
 function invClick(i, right) {
   if (isCreative() && !openChest && i < 9) { P.sel = i < 9 ? i : P.sel; renderInventory(); refreshHotbar(); return; }
   const s = slotGet(i), c = cursorItem;
@@ -8194,13 +8196,12 @@ function ITEM_ICON_CHEST() { return ICON_CACHE.c || (ICON_CACHE.c = getIcon(CHES
 function renderSurvival() {
   const host = $('svSlots'); host.innerHTML = ''; $('svScreen').classList.toggle('tbl', tableUI);
   $('svTitle').textContent = 'Handwerk';
-  if (tableUI) {
-    for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) emptySlot(host, 30 + c * 18, 17 + r * 18); emptySlot(host, 124, 35);
-  } else {
-    armorSlots(host, [[8, 8], [8, 26], [8, 44], [8, 62]]); emptySlot(host, 77, 62);
-    [[98, 18], [116, 18], [98, 36], [116, 36]].forEach(([x, y]) => emptySlot(host, x, y)); emptySlot(host, 154, 28); drawSvPlayer();
-  }
-  const o = tableUI ? 0 : 0;
+  const resPos = tableUI ? [124, 35] : [154, 28];
+  const cellPos = tableUI ? [0, 1, 2, 3, 4, 5, 6, 7, 8].map((k) => [30 + (k % 3) * 18, 17 + Math.floor(k / 3) * 18]) : [[98, 18], [116, 18], [98, 36], [116, 36]];
+  if (!tableUI) { armorSlots(host, [[8, 8], [8, 26], [8, 44], [8, 62]]); emptySlot(host, 77, 62); drawSvPlayer(); }
+  cellPos.forEach(([x, y], k) => paintSlot(vslot(host, 400 + k, x, y, invClick), cg[k], false));
+  const gm = gridMatch(), rs = vslot(host, 450, resPos[0], resPos[1], gridTake);
+  if (gm) { paintSlot(rs, { id: gm.out, count: gm.n }, false); rs.title = itemName(gm.out) + (gm.n > 1 ? ' ×' + gm.n : ''); }
   for (let i = 9; i < 36; i++) { const r = Math.floor((i - 9) / 9), c = (i - 9) % 9; paintSlot(vslot(host, i, 8 + c * 18, 84 + r * 18, invClick), inv[i], false); }
   for (let i = 0; i < 9; i++) paintSlot(vslot(host, i, 8 + i * 18, 142, invClick), inv[i], false);
 }
@@ -8222,11 +8223,57 @@ $('crThumb').addEventListener('pointerdown', (e) => {
 $('crScroll').addEventListener('pointerdown', (e) => { if (e.target === $('crScroll')) { const g = $('crGrid'), r = $('crScroll').getBoundingClientRect(); g.scrollTop = (e.clientY - r.top) / r.height * (g.scrollHeight - g.clientHeight); } });
 $('btnCrClose').onclick = () => { if (state === 'inv') toggleInventory(); };
 $('svBook').onclick = () => { recipeBook = !recipeBook; renderInventory(); sfx('place'); };
+const cg = new Array(9).fill(null);                                 // Crafting-Raster (2×2 nutzt Feld 0–3, Werkbank 0–8)
+const gridSize = () => tableUI ? 9 : 4;
+function returnGrid() {
+  for (let i = 0; i < 9; i++) if (cg[i]) { const l = addItem(cg[i].id, cg[i].count, cg[i].dur, cg[i].ench); if (l > 0 && world) spawnDrop(cg[i].id, l, P.p.x, P.p.y + 1, P.p.z); cg[i] = null; }
+}
+function gridMatch() {                                              // passendes Rezept zum Rasterinhalt (jede belegte Zelle zählt 1×)
+  const items = []; for (let i = 0; i < gridSize(); i++) if (cg[i]) items.push(cg[i].id);
+  if (!items.length) return null;
+  for (const r of RECIPES) {
+    if (r.st === 'furnace' || (r.st === 'table' && !tableUI)) continue;
+    const slots = []; r.ins.forEach(([sp, n]) => { for (let k = 0; k < n; k++) slots.push(sp); });
+    if (slots.length !== items.length || (!tableUI && slots.length > 4)) continue;
+    const used = new Array(items.length).fill(false);
+    const dfs = (k) => { if (k === slots.length) return true; for (let j = 0; j < items.length; j++) if (!used[j] && matchIng(slots[k], items[j])) { used[j] = true; if (dfs(k + 1)) return true; used[j] = false; } return false; };
+    if (dfs(0)) return r;
+  }
+  return null;
+}
+function gridTake() {                                               // Ergebnisfeld angeklickt
+  const r = gridMatch(); if (!r) return;
+  if (cursorItem && !(cursorItem.id === r.out && cursorItem.count + r.n <= maxStack(r.out))) return;
+  for (let i = 0; i < 9; i++) if (cg[i] && --cg[i].count <= 0) cg[i] = null;
+  if (r.ret) r.ret.forEach(([id, n]) => { const l = addItem(id, n); if (l > 0) spawnDrop(id, l, P.p.x, P.p.y + 1, P.p.z); });
+  if (cursorItem) cursorItem.count += r.n; else cursorItem = newStack(r.out, r.n);
+  sfx('craft'); renderInventory(); refreshHotbar();
+}
+function rbBlock(r) {                                               // Grund, warum das Rezept im Buch grau ist ('' = geht)
+  if (r.st === 'furnace') return craftBlock(r, stations());
+  const need = r.ins.reduce((a, [, n]) => a + n, 0);
+  if (r.st === 'table' && !tableUI) return 'Werkbank nötig';
+  if (need > gridSize()) return 'Passt nicht ins Raster';
+  for (const [spec, n] of r.ins) if (countItem(spec) < n) return 'Zutaten fehlen';
+  return '';
+}
+function rbFill(r) {                                                // Rezept ins Raster legen (Zutaten wandern aus dem Rucksack)
+  if (r.st === 'furnace') { craft(r); return; }
+  const why = rbBlock(r); if (why) { toast(why); return; }
+  returnGrid(); let cell = 0;
+  r.ins.forEach(([spec, n]) => {
+    let pick = null; for (let i = 0; i < 36 && !pick; i++) if (inv[i] && matchIng(spec, inv[i].id)) pick = inv[i].id;
+    for (let k = 0; k < n; k++) {
+      for (let i = 0; i < 36; i++) if (inv[i] && inv[i].id === pick) { cg[cell++] = { id: pick, count: 1, dur: inv[i].dur }; if (--inv[i].count <= 0) inv[i] = null; break; }
+    }
+  });
+  sfx('place'); renderInventory(); refreshHotbar();
+}
 let recipeBook = false, tableUI = false, rbGroup = 0, rbQ = '', rbOnly = false, rbPageN = 0;
 const RB_GROUPS = [['Alle', null], ['Ausrüstung', ['Werkzeug', 'Rüstung']], ['Bauen', ['Holz', 'Bauen', 'Stein', 'Farben', 'Stufen', 'Bauteile']], ['Nahrung', ['Nahrung', 'Tränke']], ['Redstone', ['Redstone', 'Fahrzeuge']], ['Ofen', ['Ofen']]];
 const rbIcon = (i) => { try { return getIcon([IID.compass, IID.diamond_pickaxe, ID.crafting_table, IID.bread, IID.redstone, ID.furnace][i]); } catch (e) { return null; } };
 function renderBook() {
-  const st = stations(), rows = (rbQ.trim() ? recipeSearch(rbQ.trim()) : RECIPES.filter((r) => !RB_GROUPS[rbGroup][1] || RB_GROUPS[rbGroup][1].includes(r.cat))).map((r) => ({ r, why: craftBlock(r, st) }));
+  const rows = (rbQ.trim() ? recipeSearch(rbQ.trim()) : RECIPES.filter((r) => !RB_GROUPS[rbGroup][1] || RB_GROUPS[rbGroup][1].includes(r.cat))).map((r) => ({ r, why: rbBlock(r) }));
   const list = rows.filter((x) => !rbOnly || !x.why).sort((a, b) => (a.why ? 1 : 0) - (b.why ? 1 : 0));
   const pages = Math.max(1, Math.ceil(list.length / 20)); rbPageN = Math.min(rbPageN, pages - 1);
   const tabs = $('rbTabs'); tabs.innerHTML = '';
@@ -8240,7 +8287,7 @@ function renderBook() {
     const d = document.createElement('div'); d.className = 'rbslot' + (why ? ' no' : ''); d.style.left = 'calc(' + (25 * (k % 5)) + ' * var(--s))'; d.style.top = 'calc(' + (25 * Math.floor(k / 5)) + ' * var(--s))';
     d.title = itemName(r.out) + (r.n > 1 ? ' ×' + r.n : '') + '\n' + r.ins.map(([sp, n]) => n + '× ' + ingName(sp)).join(', ') + (why ? '\n' + why : '');
     const im = document.createElement('img'); im.src = getIcon(r.out); d.appendChild(im);
-    d.onpointerdown = (e) => { e.preventDefault(); craft(r); }; g.appendChild(d);
+    d.onpointerdown = (e) => { e.preventDefault(); rbFill(r); }; g.appendChild(d);
   });
   $('rbPage').textContent = pages > 1 ? (rbPageN + 1) + '/' + pages : ''; $('rbPrev').style.visibility = $('rbNext').style.visibility = pages > 1 ? 'visible' : 'hidden';
   $('rbFilter').classList.toggle('on', rbOnly);
@@ -9746,7 +9793,8 @@ function setState(s) {
   { let fm = false; try { fm = s === 'settings' && settingsFrom === 'menu'; } catch (e) { /* noch nicht initialisiert */ }
     document.body.classList.toggle('inmenu', s === 'menu' || s === 'mpmenu' || fm || (s === 'loading' && !world)); $('settings').classList.toggle('fromMenu', fm);
     if (s === 'menu' && mmView !== 'Main' && !fm) mmShow('Main'); }
-  if (s !== 'inv') { tableUI = false; $('cursorItem').classList.add('hidden'); $('invDrop').classList.add('hidden'); }
+  if (s === 'dead') $('deathPts').textContent = xpTotal();
+  if (s !== 'inv') { returnGrid(); tableUI = false; $('cursorItem').classList.add('hidden'); $('invDrop').classList.add('hidden'); }
   if (s === 'inv') renderInventory();
   if (s !== 'play') { try { closeWheel(false); } catch (e) { /* noch nicht initialisiert */ } }
   if (s !== 'play' && document.pointerLockElement) document.exitPointerLock();
@@ -9933,6 +9981,7 @@ $('btnQuit').onclick = async () => {
   saveGame(); renderWorldList(); setState('menu');
 };
 $('btnRespawn').onclick = respawn;
+$('btnDeathTitle').onclick = () => { respawn(); $('btnQuit').onclick(); };
 
 // ----- Touch-Steuerung (Pointer Events: Joystick, Umsehen, Buttons) -----
 function toggleFly() {
@@ -10106,7 +10155,7 @@ document.addEventListener('mousedown', (e) => {
 document.addEventListener('mouseup', (e) => { if (e.button === 0) mouse.left = false; if (e.button === 2) mouse.right = false; });
 document.addEventListener('contextmenu', (e) => e.preventDefault());
 document.addEventListener('wheel', (e) => { if (state === 'play' && !emote.wheel) selectSlot(P.sel + (e.deltaY > 0 ? 1 : -1)); }, { passive: true });
-window.addEventListener('beforeunload', () => { if (world && (state === 'play' || state === 'pause' || state === 'inv')) saveGame(); });
+window.addEventListener('beforeunload', () => { try { returnGrid(); } catch (e) { /* egal */ } if (world && (state === 'play' || state === 'pause' || state === 'inv')) saveGame(); });
 
 // ----- Hauptschleife -----
 let lightT = 0;
@@ -17374,7 +17423,7 @@ const BOT = (() => {
 })();
 if (BOTMODE) window.BOT = BOT;
 
-if (AC_DEV) window.__vc = { openTable() { tableUI = true; recipeBook = true; setState('inv'); }, uni, POST, PALETTE, SPEC, CKL, cklApply, AC, acPeer, acCheck, SupabaseNet, AIB, aiBegin, aiEnd, aiOnChat, aiLLM, aiKey, aiObtain, aiSkill, aiFrame, aiTick, aiPath, aiFindBlocks, aiResolveItem, aiState, aiSay, aiParseJson, aiRunPlan, aiApply, aiSources, aiCount, aiAdd, aiMine, aiGotoPos, aiShapeCells, aiGroundY, aiRecv, aiInvText, HB, hbHarm, hbAfterTorch, hbBegin, hbEnd, hbAI, hbShrineAt, hbShrineCheck, hbUndo, hbGround, hbActTunnel, hbActPyramid, hbActTower, hbActSign, hbActTorch, hbActBreakTorches, hbMode, hbVanish, hbSay, hbRecv, tpOffline, bossDown, bossRespawn, bossContain, bossLate, mpSend, signs, signOpen, signClose, signTick, signPlaced, signSetKey, signsPack, signRemove, containerLoad, SIGN_IDS, bookOpen, bookClose, bookSignStart, bookSignDo, bookGo, bookOf, getBK: () => BK, hasGlint, enchLines, placementFor, HW, hwApply, hwTick, hwPoll, boss, bossBegin, bossEnd, bossTick, bossPos, bossRp, bossStartAct, bossDamage, bossPlayersAlive, bossLocked, BACT, blastAsk, askRealBlast, answerRealBlast, chainSet: (n, x, y, z) => { chainLocal = n; chainSum = [n * x, n * y, n * z]; }, blastQ, blastInfo: () => ({ tot: blastTot, done: blastDone, n: blastN, cur: !!blastCur }), bigSt, stepBlast, bigTick, perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+if (AC_DEV) window.__vc = { inv, addItem, IID, ID, rbFill, RECIPES, gridMatch, openTable() { tableUI = true; recipeBook = true; setState('inv'); }, uni, POST, PALETTE, SPEC, CKL, cklApply, AC, acPeer, acCheck, SupabaseNet, AIB, aiBegin, aiEnd, aiOnChat, aiLLM, aiKey, aiObtain, aiSkill, aiFrame, aiTick, aiPath, aiFindBlocks, aiResolveItem, aiState, aiSay, aiParseJson, aiRunPlan, aiApply, aiSources, aiCount, aiAdd, aiMine, aiGotoPos, aiShapeCells, aiGroundY, aiRecv, aiInvText, HB, hbHarm, hbAfterTorch, hbBegin, hbEnd, hbAI, hbShrineAt, hbShrineCheck, hbUndo, hbGround, hbActTunnel, hbActPyramid, hbActTower, hbActSign, hbActTorch, hbActBreakTorches, hbMode, hbVanish, hbSay, hbRecv, tpOffline, bossDown, bossRespawn, bossContain, bossLate, mpSend, signs, signOpen, signClose, signTick, signPlaced, signSetKey, signsPack, signRemove, containerLoad, SIGN_IDS, bookOpen, bookClose, bookSignStart, bookSignDo, bookGo, bookOf, getBK: () => BK, hasGlint, enchLines, placementFor, HW, hwApply, hwTick, hwPoll, boss, bossBegin, bossEnd, bossTick, bossPos, bossRp, bossStartAct, bossDamage, bossPlayersAlive, bossLocked, BACT, blastAsk, askRealBlast, answerRealBlast, chainSet: (n, x, y, z) => { chainLocal = n; chainSum = [n * x, n * y, n * z]; }, blastQ, blastInfo: () => ({ tot: blastTot, done: blastDone, n: blastN, cur: !!blastCur }), bigSt, stepBlast, bigTick, perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>

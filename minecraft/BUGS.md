@@ -432,3 +432,8 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * 📖 Rezeptbuch wie in Java: Panel links (Textur `recipe_book.png`), Suchfeld, Filter „nur herstellbare“, 6 Reiter (Alle/Ausrüstung/Bauen/Nahrung/Redstone/Ofen), 5×4 Rezeptfelder (rot = fehlende Zutaten), Seitenblättern; Klick auf ein Rezept stellt es her.
 * 🛠️ Werkbank öffnet jetzt das echte Werkbank-Fenster (3×3-Feld, Buch offen). Das Gitter ist nur Optik.
+
+## 2026-11-02.69
+
+* 🧩 Echtes Crafting-Raster: Inventar 2×2, Werkbank 3×3. Rezept im Buch anklicken legt die Zutaten ins Raster, das Ergebnis erscheint im Endfeld und wird erst durch Klick darauf hergestellt (landet am Cursor). Zutaten kann man auch von Hand ins Raster legen (Rezepterkennung ohne feste Form). Beim Schließen wandert der Rasterinhalt zurück in den Rucksack.
+* 💀 Todesbildschirm wie Java: roter Schleier, große Überschrift, Punktzahl, Knöpfe „Wiederbeleben“ und „Titelbildschirm“.
