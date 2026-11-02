@@ -1972,5 +1972,12 @@
 "🏆 Erfolg freigeschaltet:": "🏆 Achievement unlocked:",
 "Schläfst du gut, ": "Sleeping well, ",
 "Ich kenne deinen Namen, ": "I know your name, ",
-"Du wirst es bereuen, ": "You will regret it, "
+"Du wirst es bereuen, ": "You will regret it, ",
+"Vom Server getrennt": "Disconnected by Server",
+"Zurück zum Titelbildschirm": "Back to title screen",
+"Du wurdest von diesem Server gebannt": "You are banned from this server",
+"Du wurdest von diesem Server gebannt: ": "You are banned from this server: ",
+"Dein Konto wurde gesperrt: ": "Your account has been banned: ",
+"Dein Konto ist gesperrt: ": "Your account is banned: ",
+"Anti-Cheat: wiederholte Manipulation": "Anti-cheat: repeated tampering"
 }

@@ -1991,5 +1991,12 @@
 "🏆 Erfolg freigeschaltet:": "🏆 Succès débloqué :",
 "Schläfst du gut, ": "Tu dors bien, ",
 "Ich kenne deinen Namen, ": "Je connais ton nom, ",
-"Du wirst es bereuen, ": "Tu le regretteras, "
+"Du wirst es bereuen, ": "Tu le regretteras, ",
+"Vom Server getrennt": "Déconnecté par le serveur",
+"Zurück zum Titelbildschirm": "Retour à l'écran-titre",
+"Du wurdest von diesem Server gebannt": "Vous êtes banni de ce serveur",
+"Du wurdest von diesem Server gebannt: ": "Vous êtes banni de ce serveur : ",
+"Dein Konto wurde gesperrt: ": "Votre compte a été banni : ",
+"Dein Konto ist gesperrt: ": "Votre compte est banni : ",
+"Anti-Cheat: wiederholte Manipulation": "Anti-triche : manipulations répétées"
 }

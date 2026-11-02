@@ -318,5 +318,41 @@
  "Du wirst es bereuen, ": [
   "You will regret it, ",
   "Tu le regretteras, "
+ ],
+ "Vom Server getrennt": [
+  "Disconnected by Server",
+  "Déconnecté par le serveur"
+ ],
+ "Zurück zum Titelbildschirm": [
+  "Back to title screen",
+  "Retour à l'écran-titre"
+ ],
+ "Du wurdest von diesem Server gebannt": [
+  "You are banned from this server",
+  "Vous êtes banni de ce serveur"
+ ],
+ "Du wurdest von diesem Server gebannt: ": [
+  "You are banned from this server: ",
+  "Vous êtes banni de ce serveur : "
+ ],
+ "Dein Konto wurde gesperrt: ": [
+  "Your account has been banned: ",
+  "Votre compte a été banni : "
+ ],
+ "Dein Konto wurde gesperrt.": [
+  "Your account has been banned.",
+  "Votre compte a été banni."
+ ],
+ "Dein Konto ist gesperrt: ": [
+  "Your account is banned: ",
+  "Votre compte est banni : "
+ ],
+ "Du wurdest vom Server geworfen": [
+  "You were kicked from the server",
+  "Vous avez été expulsé du serveur"
+ ],
+ "Anti-Cheat: wiederholte Manipulation": [
+  "Anti-cheat: repeated tampering",
+  "Anti-triche : manipulations répétées"
  ]
 }
