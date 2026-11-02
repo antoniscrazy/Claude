@@ -427,3 +427,8 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 ## 2026-11-02.67
 
 * 🐞 Kreativ-Inventar-Reiter zeigt jetzt den Spieler-Skin in der Mitte.
+
+## 2026-11-02.68
+
+* 📖 Rezeptbuch wie in Java: Panel links (Textur `recipe_book.png`), Suchfeld, Filter „nur herstellbare“, 6 Reiter (Alle/Ausrüstung/Bauen/Nahrung/Redstone/Ofen), 5×4 Rezeptfelder (rot = fehlende Zutaten), Seitenblättern; Klick auf ein Rezept stellt es her.
+* 🛠️ Werkbank öffnet jetzt das echte Werkbank-Fenster (3×3-Feld, Buch offen). Das Gitter ist nur Optik.

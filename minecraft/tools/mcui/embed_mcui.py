@@ -34,6 +34,10 @@ for pos in ('top', 'bottom'):
         for i in range(1, 8): v['mc-crtab-%s-%s-%d' % (pos, st[:3], i)] = png('sprites/container/creative_inventory/tab_%s_%s_%d.png' % (pos, st, i))
 v['mc-cr-scroll'] = png('sprites/container/creative_inventory/scroller.png'); v['mc-cr-scroll-off'] = png('sprites/container/creative_inventory/scroller_disabled.png')
 v['mc-rb-btn'] = png('sprites/recipe_book/button.png'); v['mc-rb-btn-hl'] = png('sprites/recipe_book/button_highlighted.png')
+v['mc-rb-bg'] = crop('recipe_book.png', (0, 0, 147, 166)); v['mc-table-bg'] = crop('container/crafting_table.png', (0, 0, 176, 166))
+for n, k in [('tab', 'tab'), ('tab_selected', 'tab-sel'), ('slot_craftable', 'slot-c'), ('slot_uncraftable', 'slot-u'), ('filter_enabled', 'fe'), ('filter_disabled', 'fd'), ('filter_enabled_highlighted', 'fe-hl'), ('filter_disabled_highlighted', 'fd-hl'),
+             ('page_forward', 'pf'), ('page_backward', 'pb'), ('page_forward_highlighted', 'pf-hl'), ('page_backward_highlighted', 'pb-hl')]:
+    v['mc-rb-' + k] = png('sprites/recipe_book/%s.png' % n)
 for n in ('helmet', 'chestplate', 'leggings', 'boots', 'shield'): v['mc-slot-' + n] = png('sprites/container/slot/%s.png' % n)
 for i in range(6): v['mc-pano-%d' % i] = b64(os.path.join(here, 'panorama_%d.jpg' % i), 'image/jpeg')
 css = ':root{\n' + ''.join('  --%s:%s;\n' % (k, val) for k, val in v.items()) + '}\n'
