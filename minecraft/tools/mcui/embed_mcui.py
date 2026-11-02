@@ -17,6 +17,8 @@ for n in ['button', 'button_highlighted', 'button_disabled', 'text_field', 'text
 for n in ['header_separator', 'footer_separator', 'inworld_header_separator', 'inworld_footer_separator', 'menu_background', 'menu_list_background', 'inworld_menu_background', 'inworld_menu_list_background']:
     v['mc-' + n.replace('_', '-')] = png('%s.png' % n)
 v['mc-logo'] = png('title/minecraft.png'); v['mc-edition'] = png('title/edition.png')
+for n, k in [('hud/hotbar', 'hotbar'), ('hud/hotbar_selection', 'hotbar-sel'), ('hud/experience_bar_background', 'xp-bg'), ('hud/experience_bar_progress', 'xp-prog'), ('toast/advancement', 'adv-toast')]:
+    v['mc-' + k] = png('sprites/%s.png' % n)
 v['mc-tooltip'] = png('sprites/tooltip/background.png'); v['mc-tooltip-frame'] = png('sprites/tooltip/frame.png'); v['mc-popup'] = png('sprites/popup/background.png')
 for i in range(6): v['mc-pano-%d' % i] = b64(os.path.join(here, 'panorama_%d.jpg' % i), 'image/jpeg')
 css = ':root{\n' + ''.join('  --%s:%s;\n' % (k, val) for k, val in v.items()) + '}\n'

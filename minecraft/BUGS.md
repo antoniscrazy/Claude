@@ -343,3 +343,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * 🔤 **Minecraft-Schrift** (aus den Bitmap-Schriften des Pakets als TTF gebaut, 1 MC-Pixel = 2 Bildschirmpixel) in allen Menüs, im Chat und im HUD; Knöpfe, Textfelder, Auswahllisten, Regler, Häkchen und Reiter nutzen die echten Paket-Texturen (9-Slice), Listenbereiche haben die Trennlinien von Java. Inventar und Handwerk im grauen Container-Look. Klickton bei Knöpfen, Mehrspieler-/Einstellungs-/Pause-/Tod-Bildschirme angepasst.
 * 🥚 Die Easter Eggs sind jetzt im Logo versteckt: Klick aufs Logo (Creeper-Gesicht im „A“) = Creeper-Snake, Klick auf „Java Edition“ = Steves Dino-Lauf. Der Leerlauf-Modus (Steve spielt 2D-Minecraft) läuft weiter.
 * Werkzeuge: `tools/mcui/` (`build_font.py`, `embed_mcui.py`, Panorama-Bilder, Schrift) – das Template-ZIP selbst liegt nicht im Repository; `python3 tools/mcui/embed_mcui.py <assets/minecraft>` bettet die Texturen neu ein.
+
+## 2026-11-02.51
+
+* 🎨 Java-Look vervollständigt: Hotbar und Auswahlrahmen mit den echten Paket-Sprites (364×44), XP-Leiste als Sprite, Erfolgs-Meldung im Advancement-Look, Aktionsleiste ohne Kasten, Chat-/Tab-Zeilen wie in Java; Unterrichts-Hinweis, Buch und Schild in der Minecraft-Schrift und im Menü-Stil.
