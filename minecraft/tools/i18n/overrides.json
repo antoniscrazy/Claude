@@ -362,5 +362,21 @@
  "Du wurdest von diesem Server gebannt!": [
   "You are banned from this server!",
   "Vous êtes banni de ce serveur !"
+ ],
+ "Verbindung verloren": [
+  "Connection lost",
+  "Connexion perdue"
+ ],
+ "Keine Verbindung zum Server.": [
+  "No connection to the server.",
+  "Pas de connexion au serveur."
+ ],
+ "Prüfe deine Internetverbindung.": [
+  "Check your internet connection.",
+  "Vérifiez votre connexion Internet."
+ ],
+ "Das Internet ist weg. Sobald die Verbindung wieder steht, geht es automatisch weiter – bis dahin ist das Spiel angehalten.": [
+  "The internet is gone. As soon as the connection is back, the game continues automatically – until then it is paused.",
+  "Internet est coupé. Dès que la connexion revient, le jeu reprend automatiquement – d'ici là, il est en pause."
  ]
 }

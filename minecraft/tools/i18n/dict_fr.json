@@ -1655,7 +1655,7 @@
 "Bis zu 4 Zeilen mit je 15 Zeichen": "Jusqu'à 4 lignes de 15 caractères",
 "Bist du sicher?": "Êtes-vous sûr ?",
 "Creeper-Snake": "Creeper Snake",
-"Das Internet ist weg. Sobald die Verbindung wieder steht, geht es automatisch weiter – bis dahin ist das Spiel angehalten.": "Internet est coupé. Dès que la connexion revient, cela reprend automatiquement – d'ici là, le jeu est en pause.",
+"Das Internet ist weg. Sobald die Verbindung wieder steht, geht es automatisch weiter – bis dahin ist das Spiel angehalten.": "Internet est coupé. Dès que la connexion revient, le jeu reprend automatiquement – d'ici là, il est en pause.",
 "Debug-Anzeige": "Affichage de débogage",
 "Dein Spielername (3–16 Zeichen: A–Z, 0–9, _) – andere Spieler sehen ihn über deinem Kopf.": "Votre nom de joueur (3–16 caractères : A–Z, 0–9, _) – les autres joueurs le voient au-dessus de votre tête.",
 "Du wirst Besitzer (Operator) des Servers. Mit": "Vous devenez le propriétaire (opérateur) du serveur. Avec",
@@ -2000,5 +2000,7 @@
 "Dein Konto ist gesperrt: ": "Votre compte est banni : ",
 "Anti-Cheat: wiederholte Manipulation": "Anti-triche : manipulations répétées",
 "Du wurdest vom Server geworfen.": "Vous avez été expulsé du serveur.",
-"Du wurdest von diesem Server gebannt!": "Vous êtes banni de ce serveur !"
+"Du wurdest von diesem Server gebannt!": "Vous êtes banni de ce serveur !",
+"Keine Verbindung zum Server.": "Pas de connexion au serveur.",
+"Prüfe deine Internetverbindung.": "Vérifiez votre connexion Internet."
 }

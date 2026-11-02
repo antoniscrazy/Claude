@@ -1644,7 +1644,7 @@
 "Bis zu 4 Zeilen mit je 15 Zeichen": "Up to 4 lines of 15 characters each",
 "Bist du sicher?": "Are you sure?",
 "Creeper-Snake": "Creeper Snake",
-"Das Internet ist weg. Sobald die Verbindung wieder steht, geht es automatisch weiter – bis dahin ist das Spiel angehalten.": "The internet is gone. As soon as the connection is back, it continues automatically – until then the game is paused.",
+"Das Internet ist weg. Sobald die Verbindung wieder steht, geht es automatisch weiter – bis dahin ist das Spiel angehalten.": "The internet is gone. As soon as the connection is back, the game continues automatically – until then it is paused.",
 "Debug-Anzeige": "Debug display",
 "Dein Spielername (3–16 Zeichen: A–Z, 0–9, _) – andere Spieler sehen ihn über deinem Kopf.": "Your player name (3–16 characters: A–Z, 0–9, _) – other players see it above your head.",
 "Du wirst Besitzer (Operator) des Servers. Mit": "You become the owner (operator) of the server. With",
@@ -1981,5 +1981,7 @@
 "Dein Konto ist gesperrt: ": "Your account is banned: ",
 "Anti-Cheat: wiederholte Manipulation": "Anti-cheat: repeated tampering",
 "Du wurdest vom Server geworfen.": "You were kicked from the server.",
-"Du wurdest von diesem Server gebannt!": "You are banned from this server!"
+"Du wurdest von diesem Server gebannt!": "You are banned from this server!",
+"Keine Verbindung zum Server.": "No connection to the server.",
+"Prüfe deine Internetverbindung.": "Check your internet connection."
 }
