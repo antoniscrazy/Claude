@@ -20,6 +20,21 @@ v['mc-logo'] = png('title/minecraft.png'); v['mc-edition'] = png('title/edition.
 for n, k in [('hud/hotbar', 'hotbar'), ('hud/hotbar_selection', 'hotbar-sel'), ('hud/experience_bar_background', 'xp-bg'), ('hud/experience_bar_progress', 'xp-prog'), ('toast/advancement', 'adv-toast')]:
     v['mc-' + k] = png('sprites/%s.png' % n)
 v['mc-tooltip'] = png('sprites/tooltip/background.png'); v['mc-tooltip-frame'] = png('sprites/tooltip/frame.png'); v['mc-popup'] = png('sprites/popup/background.png')
+# --- Inventare (Survival/Kreativ) + Reiter + Rezeptbuch-Knopf ---
+import io
+from PIL import Image
+def crop(rel, box):
+    im = Image.open(os.path.join(gui, rel)).convert('RGBA').crop(box); bio = io.BytesIO(); im.save(bio, 'PNG')
+    return 'url("data:image/png;base64,%s")' % base64.b64encode(bio.getvalue()).decode()
+v['mc-inv-bg'] = crop('container/inventory.png', (0, 0, 176, 166))
+for k, f in [('items', 'tab_items'), ('search', 'tab_item_search'), ('inv', 'tab_inventory')]:
+    v['mc-cr-' + k] = crop('container/creative_inventory/%s.png' % f, (0, 0, 195, 136))
+for pos in ('top', 'bottom'):
+    for st in ('selected', 'unselected'):
+        for i in range(1, 8): v['mc-crtab-%s-%s-%d' % (pos, st[:3], i)] = png('sprites/container/creative_inventory/tab_%s_%s_%d.png' % (pos, st, i))
+v['mc-cr-scroll'] = png('sprites/container/creative_inventory/scroller.png'); v['mc-cr-scroll-off'] = png('sprites/container/creative_inventory/scroller_disabled.png')
+v['mc-rb-btn'] = png('sprites/recipe_book/button.png'); v['mc-rb-btn-hl'] = png('sprites/recipe_book/button_highlighted.png')
+for n in ('helmet', 'chestplate', 'leggings', 'boots', 'shield'): v['mc-slot-' + n] = png('sprites/container/slot/%s.png' % n)
 for i in range(6): v['mc-pano-%d' % i] = b64(os.path.join(here, 'panorama_%d.jpg' % i), 'image/jpeg')
 css = ':root{\n' + ''.join('  --%s:%s;\n' % (k, val) for k, val in v.items()) + '}\n'
 css += '@font-face{font-family:"MinecraftUI";src:%s format("truetype");font-display:block}\n' % b64(os.path.join(here, 'minecraftui.ttf'), 'font/ttf')

@@ -412,3 +412,10 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * 🎨 Kreativ-Inventar wie in Java: hellgraues Fenster, Reiter oben (7 + Suche) und unten (Rest + Inventar/Rüstung), 9×5 Raster mit eigener Bildlaufleiste, Hotbar unten im Fenster, Suchfeld nur im Such-Reiter (Tippen wechselt automatisch dorthin).
 * 🐞 Skin-Anpassung: Abstände/Schrift nicht mehr gequetscht; Namensdialog mit dunklem Hintergrund.
+
+## 2026-11-02.65
+
+* 🎨 Kreativ- und Survival-Inventar jetzt mit den **echten Texturen** des Packs (`container/inventory.png`, `creative_inventory/tab_*.png`, Reiter-Sprites, Scroller, Rezeptbuch-Knopf, leere Rüstungs-/Schild-Symbole), pixelgenau nach Java-Koordinaten positioniert; keine Emojis mehr.
+* Survival: Rüstung, Spielervorschau, 2×2-Handwerksfeld (nur Optik), grünes Rezeptbuch öffnet die Rezeptliste.
+* Kreativ: Reiter oben/unten, Such-Reiter mit Suchfeld im Texturfeld, Inventar-Reiter (Truhen-Symbol) mit Rüstung, Rucksack und Löschfeld.
+* `tools/mcui/embed_mcui.py` braucht jetzt Pillow (`python3.13`) und bettet die neuen Texturen ein.
