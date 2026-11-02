@@ -361,3 +361,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 ## 2026-11-02.54
 
 * ✨ Shader: Wolken nicht mehr überstrahlt (kein Bloom auf Wolken, gedämpft), Himmel/Strahlen/Bloom insgesamt weicher, Laub und Gras heller, Umgebungslicht und Belichtung angepasst; getestet bei Mittag, Morgen/Abend und Nacht.
+
+## 2026-11-02.55
+
+* ☁ **Shader: realistischer Himmel** – Farbverlauf von Horizont zu Zenit, Sonnenscheibe mit Glanz, volumetrisch wirkende Wolken (mehrlagiges Rauschen, ziehen mit dem Wind, von der Sonne beleuchtet mit Schattenseite und hellem Rand, goldene Wolken bei Sonnenauf-/untergang, dunkel und dicht bei Regen) plus hohe Schleierwolken; Sterne und Mond bleiben nachts sichtbar.
