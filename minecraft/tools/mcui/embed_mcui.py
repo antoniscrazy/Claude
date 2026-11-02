@@ -38,6 +38,8 @@ v['mc-rb-bg'] = crop('recipe_book.png', (0, 0, 147, 166)); v['mc-table-bg'] = cr
 for n, k in [('tab', 'tab'), ('tab_selected', 'tab-sel'), ('slot_craftable', 'slot-c'), ('slot_uncraftable', 'slot-u'), ('filter_enabled', 'fe'), ('filter_disabled', 'fd'), ('filter_enabled_highlighted', 'fe-hl'), ('filter_disabled_highlighted', 'fd-hl'),
              ('page_forward', 'pf'), ('page_backward', 'pb'), ('page_forward_highlighted', 'pf-hl'), ('page_backward_highlighted', 'pb-hl')]:
     v['mc-rb-' + k] = png('sprites/recipe_book/%s.png' % n)
+v['mc-furnace-bg'] = crop('container/furnace.png', (0, 0, 176, 166)); v['mc-furn-lit'] = png('sprites/container/furnace/lit_progress.png'); v['mc-furn-arrow'] = png('sprites/container/furnace/burn_progress.png')
+v['mc-hotbar-off-l'] = png('sprites/hud/hotbar_offhand_left.png')
 for n in ('helmet', 'chestplate', 'leggings', 'boots', 'shield'): v['mc-slot-' + n] = png('sprites/container/slot/%s.png' % n)
 for i in range(6): v['mc-pano-%d' % i] = b64(os.path.join(here, 'panorama_%d.jpg' % i), 'image/jpeg')
 css = ':root{\n' + ''.join('  --%s:%s;\n' % (k, val) for k, val in v.items()) + '}\n'

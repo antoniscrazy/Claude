@@ -437,3 +437,11 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * 🧩 Echtes Crafting-Raster: Inventar 2×2, Werkbank 3×3. Rezept im Buch anklicken legt die Zutaten ins Raster, das Ergebnis erscheint im Endfeld und wird erst durch Klick darauf hergestellt (landet am Cursor). Zutaten kann man auch von Hand ins Raster legen (Rezepterkennung ohne feste Form). Beim Schließen wandert der Rasterinhalt zurück in den Rucksack.
 * 💀 Todesbildschirm wie Java: roter Schleier, große Überschrift, Punktzahl, Knöpfe „Wiederbeleben“ und „Titelbildschirm“.
+
+## 2026-11-02.70
+
+* 🖱️ Kreativ-Inventar: Mausrad scrollt zeilenweise die Items (rasten in die Rahmen), die Seite scrollt nicht mehr mit; Scroller rastet ebenfalls ein.
+* 🎒 Kreativ wie Java: Klick auf ein Item legt den Stapel an den Cursor (Rechtsklick 1 Stück, Umschalt = direkt in den Rucksack), dann in beliebigen Slot (ganzes Inventar, Hotbar) legen; Klick mit Item am Cursor löscht es.
+* 🛡️ Rüstung wird in der Spielervorschau (Survival + Kreativ-Reiter) mit den echten Rüstungstexturen mitgezeichnet.
+* ✋ Zweithand: Slot im Inventar, Anzeige links neben der Hotbar, Taste V tauscht mit der Hand (F bleibt Fliegen); wird gespeichert.
+* 🔥 Ofen mit Original-GUI: Eingabe oben, Brennstoff unten, Ergebnis rechts, Flamme + Pfeil; schmilzt wirklich (10 s pro Item, Brennzeit nach Brennstoff), Inhalt wird wie eine Truhe gespeichert/synchronisiert. Ofenrezepte im Buch sind nur Hinweis.
