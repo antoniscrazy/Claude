@@ -357,3 +357,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 ## 2026-11-02.53
 
 * ✨ **Shader komplett neu (BSL-Stil):** echte **Sonnen- und Mondschatten** (Schattenkarte 2048², weiche Kanten, folgt dir), **HDR-Beleuchtung** mit Himmelslicht, warmem Sonnenuntergangs-Licht und orangem Fackellicht, **Bloom** (Sonne, Fackeln, Wasserglitzern), **Lichtstrahlen** zur Sonne, **Umgebungsverdeckung (SSAO)**, Filmton (ACES) mit Farbkorrektur und Vignette, Kantenglättung, **Wind** (Gras, Blumen und Laub wehen) und **Wasser** mit Wellen, Fresnel-Spiegelung von Himmel und Sonne und Tiefenfarbe. Nether/Ende/Backrooms behalten ihr Licht, bekommen aber Bloom und Filmton. Einstellungen → „Shader“ (aus = wie vorher, keine Mehrkosten).
+
+## 2026-11-02.54
+
+* ✨ Shader: Wolken nicht mehr überstrahlt (kein Bloom auf Wolken, gedämpft), Himmel/Strahlen/Bloom insgesamt weicher, Laub und Gras heller, Umgebungslicht und Belichtung angepasst; getestet bei Mittag, Morgen/Abend und Nacht.
