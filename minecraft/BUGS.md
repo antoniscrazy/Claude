@@ -407,3 +407,8 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 * ✅ Direktverbindung: Häkchen „In meiner Serverliste anzeigen“ (private Server werden lokal gespeichert, „Löschen“ entfernt sie wieder).
 * 🖼️ Server haben ein eigenes VOXELCRAFT-Standardsymbol (Canvas-generiert).
 * ⚙️ Optionen wie in Java: zwei Spalten (Sichtfeld | Sichtweite, Skin | Ton, Video | Steuerung, Anzeige | Shader) mit Unterseiten; gleiche Seite im Startmenü und im Pausenmenü.
+
+## 2026-11-02.64
+
+* 🎨 Kreativ-Inventar wie in Java: hellgraues Fenster, Reiter oben (7 + Suche) und unten (Rest + Inventar/Rüstung), 9×5 Raster mit eigener Bildlaufleiste, Hotbar unten im Fenster, Suchfeld nur im Such-Reiter (Tippen wechselt automatisch dorthin).
+* 🐞 Skin-Anpassung: Abstände/Schrift nicht mehr gequetscht; Namensdialog mit dunklem Hintergrund.
