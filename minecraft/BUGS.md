@@ -387,3 +387,8 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * 🎨 Korrekturen: Statt brauner Flächen jetzt überall das (leicht unscharfe) Panorama (Weltauswahl, Welt erstellen/bearbeiten/löschen, Steuerung, Ladebild); das **Spielmenü** zeigt wieder die abgedunkelte Spielwelt dahinter.
 * 🌍 **Mehrspieler wie in Java:** Titel „Mehrspieler“, Statuszeile („Suche nach Servern …“ / „n Server gefunden“), große Serverliste (Auswahl, Doppelklick = beitreten) und unten zwei Knopfreihen: Server beitreten · Direktverbindung · Server hinzufügen / Bearbeiten · Löschen (noch ohne Funktion) · Aktualisieren · Zurück. Name, Skin und Servername stehen in den Unterbildschirmen „Direktverbindung“ bzw. „Server hinzufügen“.
+
+## 2026-11-02.61
+
+* 🔲 Einzelspieler, Mehrspieler und Spielmenü haben jetzt ein einheitliches Knopfraster (zwei Spalten, alle gleich groß, 40 px hoch, kurze Beschriftungen).
+* 🟩 **Ladebild wie in Java:** Chunk-Raster im schwarzen Kasten, das beim Generieren wächst – grau = wartet, gelb = erzeugt, grün = fertig, blauer Rahmen = dein Chunk; darüber die Prozentanzeige.
