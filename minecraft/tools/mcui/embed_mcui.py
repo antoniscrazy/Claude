@@ -46,5 +46,12 @@ for i in range(6): v['mc-pano-%d' % i] = b64(os.path.join(here, 'panorama_%d.jpg
 css = ':root{\n' + ''.join('  --%s:%s;\n' % (k, val) for k, val in v.items()) + '}\n'
 css += '@font-face{font-family:"MinecraftUI";src:%s format("truetype");font-display:block}\n' % b64(os.path.join(here, 'minecraftui.ttf'), 'font/ttf')
 s = open(html, encoding='utf-8').read()
+# 4K-Panorama (4096²) als Base64-Text in einem inaktiven Script-Block (zu groß für CSS-Variablen); das Spiel baut daraus auf Desktop-Bildschirmen Blob-URLs
+hi = [os.path.join(here, 'panorama_hi_%d.jpg' % i) for i in range(6)]
+if all(os.path.exists(f) for f in hi):
+    blob = ';'.join(base64.b64encode(open(f, 'rb').read()).decode() for f in hi)
+    a1, b1 = s.index('<!--PANOHI_BEGIN-->') + len('<!--PANOHI_BEGIN-->'), s.index('<!--PANOHI_END-->')
+    s = s[:a1] + '<script type="text/plain" id="panoHi">' + blob + '</script>' + s[b1:]
+
 a, b = s.index('/*MCUI_BEGIN*/') + len('/*MCUI_BEGIN*/'), s.index('/*MCUI_END*/')
 open(html, 'w', encoding='utf-8').write(s[:a] + '\n' + css + s[b:]); print('MCUI eingebettet:', len(css) // 1024, 'KB,', len(v), 'Variablen')

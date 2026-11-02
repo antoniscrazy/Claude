@@ -449,3 +449,8 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 ## 2026-11-02.71
 
 * 📶 Serverliste wie Java: rechts oben „x/20“ + echtes Ping-Symbol aus dem Pack (1–5 Balken nach Antwortzeit), darunter der Spielmodus; links Name und Besitzer. Spielerzahl wird per Realtime-Anwesenheit gelesen (nur lesend, ca. 4 s), Ping = Antwortzeit der Serverliste.
+
+## 2026-11-02.72
+
+* 🖼️ Titel-Panorama in 4K: Würfelflächen mit 4096×4096 (Desktop). Touch-Geräte (iPad/Handy) nutzen 2048×2048, weil Safari 4096² nicht sicher dekodiert. Die 4K-Bilder liegen als Base64 in einem inaktiven Script-Block (`#panoHi`), weil CSS-Variablen über ~2 MB nicht funktionieren; `index.html` ist dadurch ~21 MB groß.
+* `BOT.screenshot({big:2})` rendert bis 4096 px (für `pano2.js`).
