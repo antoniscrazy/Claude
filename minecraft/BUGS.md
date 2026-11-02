@@ -347,3 +347,9 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 ## 2026-11-02.51
 
 * 🎨 Java-Look vervollständigt: Hotbar und Auswahlrahmen mit den echten Paket-Sprites (364×44), XP-Leiste als Sprite, Erfolgs-Meldung im Advancement-Look, Aktionsleiste ohne Kasten, Chat-/Tab-Zeilen wie in Java; Unterrichts-Hinweis, Buch und Schild in der Minecraft-Schrift und im Menü-Stil.
+
+## 2026-11-02.52
+
+* ✨ **Shader** (Einstellungen → „Shader“): Wasser mit Wellen, Himmels- und Sonnenspiegelung, Glitzern und Tiefenfarbe; Sonnenlicht je Fläche, warmer Sonnendunst im Nebel, Filmton und kräftigere Farben, schärfere Darstellung (höhere Auflösung).
+* Hotbar, XP-Leiste und Herzen größer (GUI-Maßstab 3 auf großen, 2 auf kleinen Bildschirmen).
+* Panorama im Startmenü in 720-px-Qualität; „Java Edition“-Schild mittig; die Easter Eggs im Startmenü (Logo-Klick, Leerlauf-Steve) sind entfernt.
