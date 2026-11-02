@@ -577,7 +577,11 @@ body.inmenu #panorama{display:block}
 #achToast{background:var(--mc-adv-toast) 0 0/100% 100% no-repeat;border:0;image-rendering:pixelated;width:320px;height:64px;padding:8px 12px 8px 14px;box-shadow:none}
 #achToast img{width:32px;height:32px}
 #achToast small{color:#ffff00;font-size:16px;text-shadow:2px 2px 0 #3f3f00}#achToast b{font-size:16px;color:#fff}#achToast span{display:none}
-#tablist{background:rgba(0,0,0,.5);border:0;box-shadow:none}
+#tablist{background:rgba(0,0,0,.5);border:0;box-shadow:none;padding:2px;min-width:0;width:max-content;max-width:94vw;top:8px}
+#tablist .trow{background:rgba(255,255,255,.13);margin:1px;padding:1px 4px 1px 2px;gap:6px;height:18px;font-size:16px;color:#fff;line-height:1}
+#tablist .trow img{width:16px;height:16px;border:0}#tablist .tn{flex:1;white-space:nowrap;min-width:150px;font-weight:normal}#tablist .tn b{font-weight:normal}
+.sping{width:20px;height:16px;flex:none;background:var(--mc-ping-unknown) 0 0/100% 100% no-repeat;image-rendering:pixelated}
+.sping.p1{background-image:var(--mc-ping-1)}.sping.p2{background-image:var(--mc-ping-2)}.sping.p3{background-image:var(--mc-ping-3)}.sping.p4{background-image:var(--mc-ping-4)}.sping.p5{background-image:var(--mc-ping-5)}
 #chat .cl{background:rgba(0,0,0,.5);padding:0 4px;margin-top:0;text-shadow:2px 2px 0 #3f3f3f}
 #fxbar div{border-right:0;background:rgba(0,0,0,.4)}
 
@@ -622,6 +626,7 @@ input[type=search],textarea,.wrow,.srv,.wlist{font-family:"MinecraftUI","Courier
 
 /* Java-Bildschirme: Erd-Hintergrund (Weltauswahl …), graues Spielmenü, Ladebild, Serverlisten-Fuß */
 #mmSingle.panel,#mmCreate.panel,#mmEdit.panel,#mmDelete.panel,#mmHelp.panel{position:fixed;inset:0;z-index:6;width:auto;max-width:none;max-height:none;margin:0;padding:12px 0 14px;overflow:auto;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,.32);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);border-radius:0}
+#mmDelete.panel{justify-content:center}
 #mmSingle.hidden,#mmCreate.hidden,#mmEdit.hidden,#mmDelete.hidden,#mmHelp.hidden{display:none}
 #mmSingle>*,#mmCreate>*,#mmEdit>*,#mmDelete>*,#mmHelp>*{width:min(660px,94vw);flex:none}
 #mmSingle h2,#mmCreate h2,#mmEdit h2,#mmDelete h2,#mmHelp h2{font-size:16px;text-align:center;margin:2px 0 10px}
@@ -2625,7 +2630,7 @@ const BIOME_GRASS = 0, BIOME_DESERT = 1, BIOME_SNOW = 2, BIOME_FOREST = 3, BIOME
 const BIOME_NAMES = ['Wiese', 'Wüste', 'Schneelandschaft', 'Wald', 'Birkenwald', 'Dunkler Wald', 'Dschungel', 'Savanne', 'Taiga', 'Mesa', 'Sumpf', 'Kirschhain', 'Blumenwiese', 'Nether', 'Backrooms', 'Das Ende'];
 try {                                                                  // Titel-Panorama: 4K-Flächen (4096²) auf Desktop-Bildschirmen, 2048² auf Touch-Geräten (Speicherlimit von Safari/iPad)
   const hiEl = document.getElementById('panoHi');
-  if (hiEl && !(navigator.maxTouchPoints > 0) && !/Android|iPhone|iPad/.test(navigator.userAgent)) setTimeout(() => {
+  if (hiEl) setTimeout(() => {
     try {
       const faces = document.querySelectorAll('#panorama .face'), parts = hiEl.textContent.split(';');
       parts.forEach((b64, i) => { const bin = atob(b64), u = new Uint8Array(bin.length); for (let k = 0; k < bin.length; k++) u[k] = bin.charCodeAt(k); const url = URL.createObjectURL(new Blob([u], { type: 'image/jpeg' })), im = new Image();
@@ -2633,7 +2638,7 @@ try {                                                                  // Titel-
     } catch (e) { /* bleibt bei 2048² */ }
   }, 800);
 } catch (e) { /* egal */ }
-const GAME_VER = '2026-11-02.72';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-11-02.73';            // Spielversion (nur Anzeige)
 // Verdeckter Bot-Modus (nur per URL ?bot=1, nirgends in der Oberfläche erwähnt): läuft ohne Darstellung mit festem 20-Ticks-Takt, Steuerung über window.BOT (siehe Abschnitt BOT)
 const botChat = [];
 const BOTMODE = /[?&]bot=1(?:&|#|$)/.test(location.search);
@@ -13909,18 +13914,20 @@ function updateStructs(dt) {
 }
 
 // --- Spielerliste (Tab) ---
+const tabRank = (n) => isAdminName(n) ? ['[Admin] ', '#ff5555'] : isOwnerName(n) ? ['[Owner] ', '#ffaa00'] : isOp(n) ? ['[OP] ', '#ffff55'] : null;
 function renderTabList() {
   const box = $('tablist'); if (!mp.on) { box.classList.add('hidden'); return; }
-  box.innerHTML = '<h2>Spieler online</h2>';
-  const mk = (n) => rankMark(n) + n;
-  const rows = [{ name: mk(mp.name) + ' (du)', face: mp.myFace, mode, ping: pingMs() }, ...[...mp.players.values()].map((p) => ({ name: mk(p.name), face: p.faceURL, mode: p.mode, ping: p.rtt === undefined ? null : Math.round(p.rtt) }))];
-  if (AIB.on) rows.push({ name: AIB.name, face: AIB.rp && AIB.rp.faceURL, mode: 'survival', ping: 18 });
-  if (HB.on) rows.push({ name: 'Herobrine', face: HB.rp && HB.rp.faceURL, mode: 'survival', ping: 0 });
+  box.innerHTML = '';
+  const rows = [{ name: mp.name, face: mp.myFace, ping: pingMs() }, ...[...mp.players.values()].map((p) => ({ name: p.name, face: p.faceURL, ping: p.rtt === undefined ? null : Math.round(p.rtt) }))];
+  if (AIB.on) rows.push({ name: AIB.name, face: AIB.rp && AIB.rp.faceURL, ping: 18 });
+  if (HB.on) rows.push({ name: 'Herobrine', face: HB.rp && HB.rp.faceURL, ping: 0 });
   rows.forEach((r) => {
     const d = document.createElement('div'); d.className = 'trow';
     const img = document.createElement('img'); if (r.face) img.src = r.face; d.appendChild(img);
-    const s = document.createElement('span'); s.textContent = r.name; s.style.flex = '1'; d.appendChild(s);
-    const pg = pingText(r.ping), q = document.createElement('span'); q.textContent = '● ' + pg.t; q.style.color = pg.c; q.style.fontSize = '13px'; q.style.marginLeft = '14px'; d.appendChild(q);
+    const s = document.createElement('span'); s.className = 'tn'; const rk = tabRank(r.name);
+    if (rk) { const b = document.createElement('b'); b.textContent = rk[0]; b.style.color = rk[1]; s.appendChild(b); }
+    s.appendChild(document.createTextNode(r.name)); d.appendChild(s);
+    const pg = document.createElement('i'); pg.className = 'sping' + (r.ping == null ? '' : ' p' + pingBars(r.ping)); d.appendChild(pg);
     box.appendChild(d);
   });
   box.classList.toggle('hidden', !mp.tab);

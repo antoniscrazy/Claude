@@ -454,3 +454,9 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * 🖼️ Titel-Panorama in 4K: Würfelflächen mit 4096×4096 (Desktop). Touch-Geräte (iPad/Handy) nutzen 2048×2048, weil Safari 4096² nicht sicher dekodiert. Die 4K-Bilder liegen als Base64 in einem inaktiven Script-Block (`#panoHi`), weil CSS-Variablen über ~2 MB nicht funktionieren; `index.html` ist dadurch ~21 MB groß.
 * `BOT.screenshot({big:2})` rendert bis 4096 px (für `pano2.js`).
+
+## 2026-11-02.73
+
+* 🖼️ 4K-Panorama jetzt auch auf iPad/Handy (4096²; lädt es nicht, bleibt das 2048²-Bild).
+* 📋 Tabliste wie Java: schmale dunkle Leiste oben mittig, je Zeile Kopf, Name mit Rang davor ([Admin] / [Owner] / [OP]) und Ping-Symbol.
+* 🗑️ Welt-löschen-Dialog steht jetzt mittig auf dem Bildschirm.
