@@ -508,3 +508,8 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 ## 2026-11-03.84
 
 * Steuerungs-Erklärung (Startmenü → Steuerung) steht jetzt mittig auf dem Bildschirm (bei kleinen Bildschirmen weiter scrollbar).
+
+## 2026-11-03.85
+
+* 👁️ **Nachtsicht** wirkte gar nicht (der Effekt wurde gespeichert, aber nie an die Grafik weitergegeben). Jetzt volle Helligkeit auch nachts und in Höhlen (normal und mit Shadern); in den letzten 10 s blendet sie aus.
+* 🌵 **Kaktus**: Textur-Ränder waren durchsichtig und ließen Lücken (zwischen gestapelten Blöcken und an den Kanten). Jetzt wie in Java: undurchsichtiger Kern (14/16 breit) plus äußere Stachel-Ebene.
