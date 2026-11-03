@@ -482,3 +482,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 ## 2026-11-03.78
 
 * 🐞 Kupfergitter: war ein „undurchsichtiger“ Block mit Löchern und verdeckte dadurch die Flächen dahinter (Röntgenblick). Jetzt wie Laub/Glas als Ausschnitt-Block: Blöcke dahinter werden durch die Löcher normal gezeichnet.
+
+## 2026-11-03.79
+
+* 📱 iPad/Touch: Die Server-Anzeige („Name · x Spieler“) lag unter den Knöpfen „Fallen“/„Pause“ → sitzt jetzt oben mittig.
