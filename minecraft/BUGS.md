@@ -509,6 +509,13 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * Steuerungs-Erklärung (Startmenü → Steuerung) steht jetzt mittig auf dem Bildschirm (bei kleinen Bildschirmen weiter scrollbar).
 
+## 2026-11-03.87
+
+* 🌊 **Ozeane** (neue Welten ab dieser Version, alte bleiben unverändert): großräumige Meeresbecken mit Schelf, Hang und Tiefsee; Meeresboden aus Sand/Kies/Ton je nach Tiefe und Klima. **Korallenriffe nur in warmen Meeren** (in Flecken, mit Meeresgurken und Seegras), **Tangwälder** in gemäßigten Meeren, in Flüssen/Seen höchstens etwas Seegras. Meeresgewächse zählen als Wasser (keine Luftblasen/Scheiben mehr).
+* ✨ **Zaubertisch** im Original-Layout (`enchanting_table.png`, Original-Zauber-Felder und Stufen-Symbole) statt des alten Inventars.
+* 🪧 **Schild bearbeiten** wie in Java: Original-Schildbrett mit direkt editierbaren Zeilen, Pfosten, nur „Fertig“.
+* 🔧 Hebel-Icon größer, Druckplatte/Knopf-Icons vergrößert.
+
 ## 2026-11-03.86
 
 * 📦 **Truhe, Fass, Trichter**: Original-GUIs (`generic_54`, `hopper.png`) statt des alten Inventars; Truhe als echtes 14/16-Modell mit sauberen Kacheln; Trichter mit Boden und Wänden (nicht mehr durchsichtig).
