@@ -378,5 +378,469 @@
  "Das Internet ist weg. Sobald die Verbindung wieder steht, geht es automatisch weiter – bis dahin ist das Spiel angehalten.": [
   "The internet is gone. As soon as the connection is back, the game continues automatically – until then it is paused.",
   "Internet est coupé. Dès que la connexion revient, le jeu reprend automatiquement – d'ici là, il est en pause."
+ ],
+ "Creeper? Aw man!": [
+  "Creeper? Aw man!",
+  "Creeper ? Aw man !"
+ ],
+ "Pass auf deinen Kopf!": [
+  "Watch your head!",
+  "Attention à ta tête !"
+ ],
+ "Eine Tür ist keine Wand!": [
+  "A door is not a wall!",
+  "Une porte n'est pas un mur !"
+ ],
+ "Nie ohne Fackeln!": [
+  "Never without torches!",
+  "Jamais sans torches !"
+ ],
+ "Schlaf ist für die Schwachen!": [
+  "Sleep is for the weak!",
+  "Dormir, c'est pour les faibles !"
+ ],
+ "Würfel überall!": [
+  "Cubes everywhere!",
+  "Des cubes partout !"
+ ],
+ "Fast wie das Original!": [
+  "Almost like the original!",
+  "Presque comme l'original !"
+ ],
+ "Hier gibt's Kuhmilch!": [
+  "Fresh cow milk here!",
+  "Du lait de vache frais ici !"
+ ],
+ "Mehr Pixel, mehr Spaß!": [
+  "More pixels, more fun!",
+  "Plus de pixels, plus de plaisir !"
+ ],
+ "Baue dein Traumhaus!": [
+  "Build your dream house!",
+  "Construis la maison de tes rêves !"
+ ],
+ "Vorsicht, Lava!": [
+  "Careful, lava!",
+  "Attention, de la lave !"
+ ],
+ "Wasser marsch!": [
+  "Water on!",
+  "Eau en marche !"
+ ],
+ "Ein Block pro Tag!": [
+  "One block a day!",
+  "Un bloc par jour !"
+ ],
+ "Das Schwein schaut zu.": [
+  "The pig is watching.",
+  "Le cochon regarde."
+ ],
+ "Mach Platz für Redstone!": [
+  "Make room for redstone!",
+  "Fais de la place pour la redstone !"
+ ],
+ "Sammle sie alle!": [
+  "Collect them all!",
+  "Attrape-les tous !"
+ ],
+ "Gras ist auch ein Block!": [
+  "Grass is a block too!",
+  "L'herbe est aussi un bloc !"
+ ],
+ "Unendlich viele Blöcke!": [
+  "Endless blocks!",
+  "Des blocs à l'infini !"
+ ],
+ "Spiel mit Freunden!": [
+  "Play with friends!",
+  "Joue avec tes amis !"
+ ],
+ "Erst Holz, dann Eisen!": [
+  "First wood, then iron!",
+  "D'abord du bois, puis du fer !"
+ ],
+ "Zombies mögen keine Sonne!": [
+  "Zombies hate sunlight!",
+  "Les zombies détestent le soleil !"
+ ],
+ "Skelette zielen gut!": [
+  "Skeletons aim well!",
+  "Les squelettes visent bien !"
+ ],
+ "Spinnen klettern überall!": [
+  "Spiders climb everywhere!",
+  "Les araignées grimpent partout !"
+ ],
+ "Endermen nie anschauen!": [
+  "Never look at Endermen!",
+  "Ne regarde jamais un Enderman !"
+ ],
+ "Ein Eimer Wasser rettet alles!": [
+  "A bucket of water saves everything!",
+  "Un seau d'eau sauve tout !"
+ ],
+ "Dein Haus ist deine Burg!": [
+  "Your house is your castle!",
+  "Ta maison est ton château !"
+ ],
+ "Heute schon gebaut?": [
+  "Built something today?",
+  "Déjà construit aujourd'hui ?"
+ ],
+ "Noch ein Level!": [
+  "Just one more level!",
+  "Encore un niveau !"
+ ],
+ "Nur noch fünf Minuten!": [
+  "Just five more minutes!",
+  "Encore cinq minutes !"
+ ],
+ "Hast du den Ofen an?": [
+  "Did you leave the furnace on?",
+  "As-tu laissé le four allumé ?"
+ ],
+ "Schmelze alles!": [
+  "Smelt everything!",
+  "Fais tout fondre !"
+ ],
+ "Kohle ist Gold wert!": [
+  "Coal is worth gold!",
+  "Le charbon vaut de l'or !"
+ ],
+ "Diamanten funkeln!": [
+  "Diamonds sparkle!",
+  "Les diamants brillent !"
+ ],
+ "Tiefer! Noch tiefer!": [
+  "Deeper! Even deeper!",
+  "Plus profond ! Encore plus profond !"
+ ],
+ "Der Nether wartet.": [
+  "The Nether awaits.",
+  "Le Nether t'attend."
+ ],
+ "Das Ende ist nah.": [
+  "The End is near.",
+  "La Fin est proche."
+ ],
+ "Besiege den Drachen!": [
+  "Defeat the dragon!",
+  "Vaincs le dragon !"
+ ],
+ "Ghasts weinen leise.": [
+  "Ghasts cry softly.",
+  "Les ghasts pleurent doucement."
+ ],
+ "Piglins lieben Gold!": [
+  "Piglins love gold!",
+  "Les piglins adorent l'or !"
+ ],
+ "Wolf sucht Knochen!": [
+  "Wolf seeks bone!",
+  "Le loup cherche un os !"
+ ],
+ "Zähme ein Pferd!": [
+  "Tame a horse!",
+  "Apprivoise un cheval !"
+ ],
+ "Die Kuh sagt Muh!": [
+  "The cow says moo!",
+  "La vache fait meuh !"
+ ],
+ "Das Huhn legt Eier.": [
+  "The chicken lays eggs.",
+  "La poule pond des œufs."
+ ],
+ "Schafe sind flauschig!": [
+  "Sheep are fluffy!",
+  "Les moutons sont moelleux !"
+ ],
+ "Fische beißen heute gut!": [
+  "The fish are biting today!",
+  "Les poissons mordent bien aujourd'hui !"
+ ],
+ "Angeln entspannt.": [
+  "Fishing is relaxing.",
+  "La pêche, ça détend."
+ ],
+ "Kochen mit Kürbis!": [
+  "Cooking with pumpkin!",
+  "Cuisiner avec de la citrouille !"
+ ],
+ "Äpfel machen satt.": [
+  "Apples fill you up.",
+  "Les pommes rassasient."
+ ],
+ "Brot ist gesund!": [
+  "Bread is healthy!",
+  "Le pain, c'est sain !"
+ ],
+ "Iss dein Gemüse!": [
+  "Eat your veggies!",
+  "Mange tes légumes !"
+ ],
+ "Wasser ist nass.": [
+  "Water is wet.",
+  "L'eau, c'est mouillé."
+ ],
+ "Obsidian ist hart!": [
+  "Obsidian is tough!",
+  "L'obsidienne est dure !"
+ ],
+ "Baue ein Portal!": [
+  "Build a portal!",
+  "Construis un portail !"
+ ],
+ "Nachts wird's gruselig!": [
+  "Nights get spooky!",
+  "Les nuits sont effrayantes !"
+ ],
+ "Tagsüber ist alles gut.": [
+  "By day, all is well.",
+  "De jour, tout va bien."
+ ],
+ "Regen macht Pflanzen groß!": [
+  "Rain makes plants grow!",
+  "La pluie fait pousser les plantes !"
+ ],
+ "Im Winter schneit's!": [
+  "It snows in winter!",
+  "Il neige en hiver !"
+ ],
+ "Im Herbst fallen Blätter!": [
+  "Leaves fall in autumn!",
+  "Les feuilles tombent en automne !"
+ ],
+ "Der Sommer ist heiß!": [
+  "Summer is hot!",
+  "L'été est chaud !"
+ ],
+ "Frühling, endlich!": [
+  "Spring, finally!",
+  "Le printemps, enfin !"
+ ],
+ "Pixel sind auch Kunst!": [
+  "Pixels are art too!",
+  "Les pixels, c'est aussi de l'art !"
+ ],
+ "Bauen, bauen, bauen!": [
+  "Build, build, build!",
+  "Construire, construire, construire !"
+ ],
+ "Du schaffst das!": [
+  "You can do it!",
+  "Tu peux le faire !"
+ ],
+ "Kein Lag, nur Spaß!": [
+  "No lag, just fun!",
+  "Pas de lag, que du plaisir !"
+ ],
+ "Läuft auf dem iPad!": [
+  "Runs on the iPad!",
+  "Fonctionne sur iPad !"
+ ],
+ "Läuft sogar auf dem Handy!": [
+  "Even runs on your phone!",
+  "Fonctionne même sur téléphone !"
+ ],
+ "Ohne Installation!": [
+  "No installation needed!",
+  "Sans installation !"
+ ],
+ "Eine einzige Datei!": [
+  "One single file!",
+  "Un seul fichier !"
+ ],
+ "Mit Shadern noch schöner!": [
+  "Even prettier with shaders!",
+  "Encore plus beau avec les shaders !"
+ ],
+ "Probier die Shader aus!": [
+  "Try the shaders!",
+  "Essaie les shaders !"
+ ],
+ "Wolken sehen gut aus!": [
+  "Clouds look great!",
+  "Les nuages sont superbes !"
+ ],
+ "Der Mond ist aus Käse.": [
+  "The moon is made of cheese.",
+  "La lune est en fromage."
+ ],
+ "Sterne leuchten nachts.": [
+  "Stars shine at night.",
+  "Les étoiles brillent la nuit."
+ ],
+ "Hör auf die Musik!": [
+  "Listen to the music!",
+  "Écoute la musique !"
+ ],
+ "Taste B bringt dich zurück!": [
+  "Press B to go back!",
+  "Appuie sur B pour revenir !"
+ ],
+ "Mit /help geht's los!": [
+  "Start with /help!",
+  "Commence avec /help !"
+ ],
+ "Tipp: /sethome!": [
+  "Tip: /sethome!",
+  "Astuce : /sethome !"
+ ],
+ "Tipp: Taste V tauscht Hände!": [
+  "Tip: V swaps hands!",
+  "Astuce : V échange les mains !"
+ ],
+ "Tipp: F zum Fliegen!": [
+  "Tip: F to fly!",
+  "Astuce : F pour voler !"
+ ],
+ "Tipp: Tab zeigt Spieler!": [
+  "Tip: Tab shows players!",
+  "Astuce : Tab affiche les joueurs !"
+ ],
+ "Tipp: R für Emotes!": [
+  "Tip: R for emotes!",
+  "Astuce : R pour les emotes !"
+ ],
+ "Tipp: N öffnet die Karte!": [
+  "Tip: N opens the map!",
+  "Astuce : N ouvre la carte !"
+ ],
+ "Tipp: Schleichen rettet Leben!": [
+  "Tip: sneaking saves lives!",
+  "Astuce : se faufiler sauve des vies !"
+ ],
+ "Tipp: Betten setzen den Spawn!": [
+  "Tip: beds set your spawn!",
+  "Astuce : les lits définissent le point d'apparition !"
+ ],
+ "Tipp: Wasser stoppt den Fall!": [
+  "Tip: water stops a fall!",
+  "Astuce : l'eau amortit une chute !"
+ ],
+ "Tipp: Sprung auf Leitern!": [
+  "Tip: ladders are climbable!",
+  "Astuce : les échelles se grimpent !"
+ ],
+ "Tipp: Truhen sortieren!": [
+  "Tip: sort your chests!",
+  "Astuce : range tes coffres !"
+ ],
+ "Tipp: Schilder beschriften!": [
+  "Tip: write on signs!",
+  "Astuce : écris sur les panneaux !"
+ ],
+ "Sag Hallo im Chat!": [
+  "Say hi in chat!",
+  "Dis bonjour dans le chat !"
+ ],
+ "Sei nett zu Mitspielern!": [
+  "Be nice to other players!",
+  "Sois gentil avec les autres joueurs !"
+ ],
+ "Teilen macht Freude!": [
+  "Sharing is caring!",
+  "Partager fait plaisir !"
+ ],
+ "Gemeinsam bauen!": [
+  "Build together!",
+  "Construire ensemble !"
+ ],
+ "Klein anfangen, groß bauen!": [
+  "Start small, build big!",
+  "Commence petit, construis grand !"
+ ],
+ "Rom wurde auch nicht an einem Tag gebaut!": [
+  "Rome wasn't built in a day either!",
+  "Rome ne s'est pas faite en un jour !"
+ ],
+ "Respawn ist kostenlos!": [
+  "Respawning is free!",
+  "Réapparaître est gratuit !"
+ ],
+ "Auch Helden fallen mal.": [
+  "Even heroes fall sometimes.",
+  "Même les héros tombent parfois."
+ ],
+ "Das war nur ein Kratzer!": [
+  "Just a scratch!",
+  "Juste une égratignure !"
+ ],
+ "Autsch!": [
+  "Ouch!",
+  "Aïe !"
+ ],
+ "Bumm!": [
+  "Boom!",
+  "Boum !"
+ ],
+ "Zisch!": [
+  "Hiss!",
+  "Tsss !"
+ ],
+ "Hmm, Kuchen!": [
+  "Mmm, cake!",
+  "Hmm, du gâteau !"
+ ],
+ "Der Kuchen ist keine Lüge!": [
+  "The cake is not a lie!",
+  "Le gâteau n'est pas un mensonge !"
+ ],
+ "42!": [
+  "42!",
+  "42 !"
+ ],
+ "Hallo Welt!": [
+  "Hello World!",
+  "Bonjour le monde !"
+ ],
+ "Willkommen zurück!": [
+  "Welcome back!",
+  "Bon retour !"
+ ],
+ "Schön, dass du da bist!": [
+  "Nice to see you!",
+  "Content de te voir !"
+ ],
+ "Heute ist ein guter Tag!": [
+  "Today is a good day!",
+  "Aujourd'hui est un bon jour !"
+ ],
+ "Alles ist erlaubt (fast)!": [
+  "Anything goes (almost)!",
+  "Tout est permis (presque) !"
+ ],
+ "Mehr Sprüche als Blöcke!": [
+  "More splashes than blocks!",
+  "Plus de phrases que de blocs !"
+ ],
+ "Du liest gerade einen Spruch.": [
+  "You are reading a splash.",
+  "Tu lis une phrase en ce moment."
+ ],
+ "Klick mich nicht!": [
+  "Don't click me!",
+  "Ne me clique pas !"
+ ],
+ "Schon wieder ein Spruch!": [
+  "Another splash!",
+  "Encore une phrase !"
+ ],
+ "Mit Liebe gebaut!": [
+  "Built with love!",
+  "Construit avec amour !"
+ ],
+ "Voxel für alle!": [
+  "Voxels for everyone!",
+  "Des voxels pour tous !"
+ ],
+ "Hergestellt aus Würfeln!": [
+  "Made of cubes!",
+  "Fabriqué avec des cubes !"
+ ],
+ "Block für Block!": [
+  "Block by block!",
+  "Bloc après bloc !"
  ]
 }

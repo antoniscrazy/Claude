@@ -486,3 +486,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 ## 2026-11-03.79
 
 * 📱 iPad/Touch: Die Server-Anzeige („Name · x Spieler“) lag unter den Knöpfen „Fallen“/„Pause“ → sitzt jetzt oben mittig.
+
+## 2026-11-03.80
+
+* 💬 Titelbildschirm: 116 neue Sprüche (jetzt 141), alle auch auf Englisch und Französisch (Tipps zu Tasten, Witze, Wetter, Mobs …).
