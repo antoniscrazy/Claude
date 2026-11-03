@@ -39,6 +39,10 @@ for n, k in [('tab', 'tab'), ('tab_selected', 'tab-sel'), ('slot_craftable', 'sl
              ('page_forward', 'pf'), ('page_backward', 'pb'), ('page_forward_highlighted', 'pf-hl'), ('page_backward_highlighted', 'pb-hl')]:
     v['mc-rb-' + k] = png('sprites/recipe_book/%s.png' % n)
 v['mc-furnace-bg'] = crop('container/furnace.png', (0, 0, 176, 166)); v['mc-furn-lit'] = png('sprites/container/furnace/lit_progress.png'); v['mc-furn-arrow'] = png('sprites/container/furnace/burn_progress.png')
+g54 = Image.open(os.path.join(gui, 'container/generic_54.png')).convert('RGBA'); cb = Image.new('RGBA', (176, 167)); cb.paste(g54.crop((0, 0, 176, 71)), (0, 0)); cb.paste(g54.crop((0, 126, 176, 222)), (0, 71)); bio = io.BytesIO(); cb.save(bio, 'PNG')
+v['mc-chest-bg'] = 'url("data:image/png;base64,%s")' % base64.b64encode(bio.getvalue()).decode(); v['mc-hopper-bg'] = crop('container/hopper.png', (0, 0, 176, 133))
+v['mc-book-bg'] = crop('book.png', (0, 0, 192, 192))
+for n, k in [('page_forward', 'pgf'), ('page_forward_highlighted', 'pgf-hl'), ('page_backward', 'pgb'), ('page_backward_highlighted', 'pgb-hl')]: v['mc-' + k] = png('sprites/widget/%s.png' % n)
 v['mc-hotbar-off-l'] = png('sprites/hud/hotbar_offhand_left.png')
 for n in ('1', '2', '3', '4', '5', 'unknown'): v['mc-ping-' + n] = png('sprites/icon/ping_%s.png' % n)
 for n in ('helmet', 'chestplate', 'leggings', 'boots', 'shield'): v['mc-slot-' + n] = png('sprites/container/slot/%s.png' % n)

@@ -938,5 +938,145 @@
  "Beitritt fehlgeschlagen": [
   "Failed to join",
   "Échec de la connexion au serveur"
+ ],
+ "Röhrenkorallenblock": [
+  "Tube Coral Block",
+  "Bloc de corail tube"
+ ],
+ "Toter Röhrenkorallenblock": [
+  "Dead Tube Coral Block",
+  "Bloc de corail tube mort"
+ ],
+ "Röhrenkoralle": [
+  "Tube Coral",
+  "Corail tube"
+ ],
+ "Tote Röhrenkoralle": [
+  "Dead Tube Coral",
+  "Corail tube mort"
+ ],
+ "Röhrenkorallenfächer": [
+  "Tube Coral Fan",
+  "Gorgone tube"
+ ],
+ "Toter Röhrenkorallenfächer": [
+  "Dead Tube Coral Fan",
+  "Gorgone tube morte"
+ ],
+ "Hirnkorallenblock": [
+  "Brain Coral Block",
+  "Bloc de corail cérébral"
+ ],
+ "Toter Hirnkorallenblock": [
+  "Dead Brain Coral Block",
+  "Bloc de corail cérébrale mort"
+ ],
+ "Hirnkoralle": [
+  "Brain Coral",
+  "Corail cérébrale"
+ ],
+ "Tote Hirnkoralle": [
+  "Dead Brain Coral",
+  "Corail cérébrale mort"
+ ],
+ "Hirnkorallenfächer": [
+  "Brain Coral Fan",
+  "Gorgone cérébrale"
+ ],
+ "Toter Hirnkorallenfächer": [
+  "Dead Brain Coral Fan",
+  "Gorgone cérébrale morte"
+ ],
+ "Blasenkorallenblock": [
+  "Bubble Coral Block",
+  "Bloc de corail bulle"
+ ],
+ "Toter Blasenkorallenblock": [
+  "Dead Bubble Coral Block",
+  "Bloc de corail bulle mort"
+ ],
+ "Blasenkoralle": [
+  "Bubble Coral",
+  "Corail bulle"
+ ],
+ "Tote Blasenkoralle": [
+  "Dead Bubble Coral",
+  "Corail bulle mort"
+ ],
+ "Blasenkorallenfächer": [
+  "Bubble Coral Fan",
+  "Gorgone bulle"
+ ],
+ "Toter Blasenkorallenfächer": [
+  "Dead Bubble Coral Fan",
+  "Gorgone bulle morte"
+ ],
+ "Feuerkorallenblock": [
+  "Fire Coral Block",
+  "Bloc de corail feu"
+ ],
+ "Toter Feuerkorallenblock": [
+  "Dead Fire Coral Block",
+  "Bloc de corail feu mort"
+ ],
+ "Feuerkoralle": [
+  "Fire Coral",
+  "Corail feu"
+ ],
+ "Tote Feuerkoralle": [
+  "Dead Fire Coral",
+  "Corail feu mort"
+ ],
+ "Feuerkorallenfächer": [
+  "Fire Coral Fan",
+  "Gorgone feu"
+ ],
+ "Toter Feuerkorallenfächer": [
+  "Dead Fire Coral Fan",
+  "Gorgone feu morte"
+ ],
+ "Hornkorallenblock": [
+  "Horn Coral Block",
+  "Bloc de corail corne"
+ ],
+ "Toter Hornkorallenblock": [
+  "Dead Horn Coral Block",
+  "Bloc de corail corne mort"
+ ],
+ "Hornkoralle": [
+  "Horn Coral",
+  "Corail corne"
+ ],
+ "Tote Hornkoralle": [
+  "Dead Horn Coral",
+  "Corail corne mort"
+ ],
+ "Hornkorallenfächer": [
+  "Horn Coral Fan",
+  "Gorgone corne"
+ ],
+ "Toter Hornkorallenfächer": [
+  "Dead Horn Coral Fan",
+  "Gorgone corne morte"
+ ],
+ "Seegras": [
+  "Seagrass",
+  "Herbe marine"
+ ],
+ "Seetang": [
+  "Kelp",
+  "Algue"
+ ],
+ "Seetang (Stängel)": [
+  "Kelp Plant",
+  "Tige d'algue"
+ ],
+ "Meeresgurke": [
+  "Sea Pickle",
+  "Cornichon de mer"
+ ],
+ "Schildkrötenei": [
+  "Turtle Egg",
+  "Œuf de tortue"
  ]
 }

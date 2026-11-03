@@ -168,8 +168,15 @@ async function syncChannels() {
   }
   for (const [id, e] of channels) if (!ids.has(id)) { try { c.removeChannel(e.ch); } catch (x) { /* egal */ } channels.delete(id); }
 }
+let spPlayers = new Map();                                    // Einzelspieler (privater Welt), Kanal 'vcsp'
+async function syncSp() {
+  if (syncSp.ch) return; const c = await client(); const ch = c.channel('vcsp', { config: { broadcast: { self: false }, presence: { key: 'dev-' + Math.random().toString(36).slice(2) } } });
+  const upd = () => { spPlayers = new Map(); const st = ch.presenceState(); for (const k in st) { const q = st[k][0]; if (q && q.name) spPlayers.set(k, q); } render(true); };
+  ch.on('presence', { event: 'sync' }, upd).on('presence', { event: 'join' }, upd).on('presence', { event: 'leave' }, upd); ch.subscribe(); syncSp.ch = ch;
+}
+const spNames = () => new Set([...spPlayers.values()].map((q) => q.name));
 const onlineIn = (room) => (channels.get(room) ? [...channels.get(room).players.keys()] : []);
-const onlineNames = () => { const s = new Set(); for (const [, e] of channels) for (const n of e.players.keys()) s.add(n); return s; };
+const onlineNames = () => { const s = spNames(); for (const [, e] of channels) for (const n of e.players.keys()) s.add(n); return s; };
 
 // ---------- Daten ----------
 async function refresh(manual) {
@@ -177,7 +184,7 @@ async function refresh(manual) {
     ov = await rpc('vc_dev_overview', {});
     const c = await client(); const { data } = await c.from('vc_players').select('name,skin,slim');
     (data || []).forEach((p) => faces.set(p.name.toLowerCase(), p));
-    await syncChannels();
+    await syncChannels(); syncSp().catch(() => {});
     if (curRoom) await loadRoom(curRoom, true);
     render();
     if (manual) toast('Aktualisiert');
@@ -224,9 +231,10 @@ function renderOver() {
   const on = onlineNames(), el = $('tab-over');
   const active = ov.rooms.filter((r) => onlineIn(r.id).length).sort((a, b) => onlineIn(b.id).length - onlineIn(a.id).length);
   el.innerHTML = '<div class="stats">' +
-    '<div class="stat"><b>' + on.size + '</b>Spieler online</div><div class="stat"><b>' + ov.rooms.length + '</b>Server</div><div class="stat"><b>' + active.length + '</b>Server belebt</div>' +
+    '<div class="stat"><b>' + (on.size + Math.max(0, [...spPlayers.values()].filter((q) => q.name === 'Gast').length - 1)) + '</b>Spieler online</div><div class="stat"><b>' + ov.rooms.length + '</b>Server</div><div class="stat"><b>' + active.length + '</b>Server belebt</div>' +
     '<div class="stat"><b>' + ov.players.length + '</b>Konten</div><div class="stat"><b>' + ov.rooms.reduce((a, r) => a + r.edits, 0) + '</b>geänderte Blöcke</div></div>' +
     '<h2>Gerade online</h2><div class="panel">' + (on.size ? [...on].map((n) => '<div>' + faceHtml(n) + '<span class="dot on"></span>' + esc(n) + ' <span class="dim">auf ' + ov.rooms.filter((r) => onlineIn(r.id).includes(n)).map((r) => esc(r.id)).join(', ') + '</span></div>').join('') : '<span class="dim">Niemand.</span>') + '</div>' +
+    '<h2>Einzelspieler (private Welt)</h2><div class="panel">' + (spPlayers.size ? [...spPlayers.values()].map((q) => '<div>' + faceHtml(q.name) + '<span class="dot on"></span>' + esc(q.name) + (q.name === 'Gast' ? ' <span class="tag">ohne Namen</span>' : '') + ' <span class="dim">spielt eine private Welt · ' + (q.mode === 'creative' ? 'Kreativ' : 'Überleben') + (q.v ? ' · ' + esc(q.v) : '') + '</span></div>').join('') : '<span class="dim">Niemand.</span>') + '</div>' +
     '<h2>Aktive Server</h2><div class="grid">' + (active.map(roomCard).join('') || '<span class="dim">Keine aktiven Server.</span>') + '</div>';
   bindCards(el);
 }
