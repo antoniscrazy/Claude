@@ -509,9 +509,15 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * Steuerungs-Erklärung (Startmenü → Steuerung) steht jetzt mittig auf dem Bildschirm (bei kleinen Bildschirmen weiter scrollbar).
 
+## 2026-11-03.86
+
+* 📦 **Truhe, Fass, Trichter**: Original-GUIs (`generic_54`, `hopper.png`) statt des alten Inventars; Truhe als echtes 14/16-Modell mit sauberen Kacheln; Trichter mit Boden und Wänden (nicht mehr durchsichtig).
+* 🖼️ **Icons** von Truhe/Druckplatte/Knopf/Hebel aus den echten Kacheln (isometrisch), Trichter/Glasscheibe/Eisengitter als Original-Sprite (nichts mehr selbstgemalt); Hebel mit Original-Griff; Fackeln an Wänden näher am Block.
+* 📖 **Bücher/Schilder**: Originaltexturen; Buch-GUI mit `book.png` und Seiten-Pfeilen.
+* 🐠 **Meeresleben**: 5 Korallenarten (lebendig/tot) als Block, Pflanze und Fächer, Seegras, Seetang, Meeresgurke, Schildkrötenei; Meeresboden mit Seegras/Seetang/Korallenriffen.
+* 🛠️ **Dev-Konsole**: zeigt auch Spieler in privaten Welten (Kanal `vcsp`); ohne gesetzten Namen steht „Gast“.
+
 ## 2026-11-03.85
 
 * 👁️ **Nachtsicht** wirkte gar nicht (der Effekt wurde gespeichert, aber nie an die Grafik weitergegeben). Jetzt volle Helligkeit auch nachts und in Höhlen (normal und mit Shadern); in den letzten 10 s blendet sie aus.
 * 🌵 **Kaktus**: Textur-Ränder waren durchsichtig und ließen Lücken (zwischen gestapelten Blöcken und an den Kanten). Jetzt wie in Java: undurchsichtiger Kern (14/16 breit) plus äußere Stachel-Ebene.
-| v86 | Originale Blöcke/GUIs: Truhe (14/16-Modell, saubere Kacheln) + Fass + Trichter nutzen die Original-GUIs (`generic_54`, `hopper.png`) statt des alten Inventars; Trichter-Modell mit Boden/Wänden (nicht mehr durchsichtig); Icons von Truhe/Druckplatte/Knopf/Hebel aus echten Kacheln (iso), Trichter/Glasscheibe/Eisengitter als Sprite statt selbstgemalt; Fackeln an Wänden näher am Block; Bücher/Schilder mit Originaltexturen, Buch-GUI mit `book.png`; Meeresleben (5 Korallen lebend/tot, Blöcke, Fächer, Seegras, Seetang, Meeresgurke, Schildkrötenei) + Meeresboden-Generierung; Dev-Konsole zeigt Einzelspieler (Kanal `vcsp`, ohne Namen „Gast“) | ✅ getestet (Screenshots) |
-
