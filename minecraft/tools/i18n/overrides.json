@@ -930,5 +930,13 @@
  "Lohe-Käfig": [
   "Blaze Spawner",
   "Générateur de blazes"
+ ],
+ "Verbindung wackelt – neuer Versuch …": [
+  "Connection unstable – trying again...",
+  "Connexion instable – nouvel essai..."
+ ],
+ "Beitritt fehlgeschlagen": [
+  "Failed to join",
+  "Échec de la connexion au serveur"
  ]
 }

@@ -499,3 +499,8 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * 🔥 **Nether ausgebaut**: Karmesinwald (Karmesin-Myzel, Riesenpilze mit Warzenblock-Kappe, Pilzlicht, Trauerranken, Wurzeln) und Wirrwald (blaue Riesenpilze, Wirr-Wurzeln, Sprossen) mit eigener Nebelfarbe; Netherwarze auf Seelensand. **Netherfestung**: Gänge mit Fenstern und Leuchtstein, Halle mit Beutetruhen, Warzenraum, Lohen-Raum mit **Lohen-Käfig**, Wither-Skelette, Stützpfeiler. **Bastionsruine**: Schwarzstein-Mauerring mit Toren, Bergfried mit Gold, Ecktürme, Beutetruhen (Piglins/Hoglin). Neue Blöcke: Karmesin-/Wirr-Myzel, rote/rissige/gemeißelte Netherziegel, Netherwarze, Wurzeln, Pilze, Sprossen, Trauer-/Würgeranken. `/locate netherfestung|bastion|karmesinwald|wirrwald|netherwueste` funktioniert im Nether.
 * 🔒 Server erstellen gesperrt: „Server hinzufügen“ ist jetzt **ausgegraut** (nicht mehr unsichtbar) und lässt sich nicht anklicken.
+
+## 2026-11-03.83
+
+* 📋 Tabliste wird nicht mehr vom Server-Schild („Name · x Spieler“) verdeckt (Tabliste liegt davor, das Schild blendet sich solange aus).
+* 🔌 Server-Beitritt: kurze Aussetzer (Anmeldung, Sperrlistenprüfung, Realtime) werden bis zu 2× automatisch wiederholt („Verbindung wackelt – neuer Versuch …“), statt nach ~5 s still zur Serverliste zurückzuspringen. Schlägt der Beitritt endgültig fehl, erscheint jetzt immer ein sichtbarer Bildschirm mit Grund (vorher stand die Meldung im verborgenen Formular).
