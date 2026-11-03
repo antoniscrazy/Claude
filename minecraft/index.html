@@ -1549,7 +1549,7 @@ add('bamboo_mosaic', 'Bambusmosaik', allSides('bamboo_mosaic'), merge(AXE, { har
   ['exposed_cut_copper', 'Angelaufener geschnittener Kupfer', ['exposed_cut_copper'], { need: 2 }],
   ['weathered_cut_copper', 'Verwitterter geschnittener Kupfer', ['weathered_cut_copper'], { need: 2 }],
   ['oxidized_cut_copper', 'Oxidierter geschnittener Kupfer', ['oxidized_cut_copper'], { need: 2 }],
-  ['chiseled_copper', 'Gemeißelter Kupferblock', ['chiseled_copper'], { need: 2 }], ['copper_grate', 'Kupfergitter', ['copper_grate'], { need: 2 }],
+  ['chiseled_copper', 'Gemeißelter Kupferblock', ['chiseled_copper'], { need: 2 }], ['copper_grate', 'Kupfergitter', ['copper_grate'], { need: 2, opaque: false, samecull: true }],
   ['lodestone', 'Leitstein', ['lodestone_side', 'lodestone_top'], { hard: 4 }], ['sculk', 'Sculk', ['sculk'], { tool: 'hoe', need: 0, hard: 0.6 }],
   ['resin_bricks', 'Harzziegel', ['resin_bricks']], ['resin_block', 'Harzblock', ['resin_block']],
   ['pearlescent_froglight', 'Perlmuttfroschlicht', ['pearlescent_froglight_side', 'pearlescent_froglight_top'], { emit: true, light: 15 }],
@@ -2739,7 +2739,7 @@ try {                                                                  // Titel-
     } catch (e) { /* bleibt bei 2048² */ }
   }, 800);
 } catch (e) { /* egal */ }
-const GAME_VER = '2026-11-02.77';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-11-03.78';            // Spielversion (nur Anzeige)
 // Verdeckter Bot-Modus (nur per URL ?bot=1, nirgends in der Oberfläche erwähnt): läuft ohne Darstellung mit festem 20-Ticks-Takt, Steuerung über window.BOT (siehe Abschnitt BOT)
 const botChat = [];
 const BOTMODE = /[?&]bot=1(?:&|#|$)/.test(location.search);

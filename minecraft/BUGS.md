@@ -478,3 +478,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 ## 2026-11-02.77
 
 * 📡 Keine Internetverbindung: Verbindungsabbruch im Mehrspielermodus zeigt jetzt den „Verbindung verloren“-Bildschirm im Java-Stil (Panorama, Titel, Meldung, „Zurück zum Titelbildschirm“; das Spiel läuft von selbst weiter, sobald das Netz wieder da ist). Schlägt ein Beitritt wegen fehlender Verbindung fehl, erscheint derselbe Bildschirm („Keine Verbindung zum Server.“).
+
+## 2026-11-03.78
+
+* 🐞 Kupfergitter: war ein „undurchsichtiger“ Block mit Löchern und verdeckte dadurch die Flächen dahinter (Röntgenblick). Jetzt wie Laub/Glas als Ausschnitt-Block: Blöcke dahinter werden durch die Löcher normal gezeichnet.
