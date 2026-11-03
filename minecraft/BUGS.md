@@ -490,3 +490,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 ## 2026-11-03.80
 
 * 💬 Titelbildschirm: 116 neue Sprüche (jetzt 141), alle auch auf Englisch und Französisch (Tipps zu Tasten, Witze, Wetter, Mobs …).
+
+## 2026-11-03.81
+
+* 🔌 Server-Beitritt zeigt jetzt den „Verbinde mit dem Server …“-Bildschirm im Java-Stil (Panorama, Text, Knopf „Abbrechen“); der Text wechselt über „Melde an …“ und „Betrete den Server …“, danach übernimmt der Ladebildschirm. „Abbrechen“ bricht den Beitritt ab und geht zurück zur Serverliste.

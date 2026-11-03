@@ -842,5 +842,17 @@
  "Block für Block!": [
   "Block by block!",
   "Bloc après bloc !"
+ ],
+ "Verbinde mit dem Server …": [
+  "Connecting to the server...",
+  "Connexion au serveur..."
+ ],
+ "Melde an …": [
+  "Logging in...",
+  "Connexion en cours..."
+ ],
+ "Betrete den Server …": [
+  "Joining the server...",
+  "Entrée sur le serveur..."
  ]
 }
