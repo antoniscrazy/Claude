@@ -504,3 +504,7 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * 📋 Tabliste wird nicht mehr vom Server-Schild („Name · x Spieler“) verdeckt (Tabliste liegt davor, das Schild blendet sich solange aus).
 * 🔌 Server-Beitritt: kurze Aussetzer (Anmeldung, Sperrlistenprüfung, Realtime) werden bis zu 2× automatisch wiederholt („Verbindung wackelt – neuer Versuch …“), statt nach ~5 s still zur Serverliste zurückzuspringen. Schlägt der Beitritt endgültig fehl, erscheint jetzt immer ein sichtbarer Bildschirm mit Grund (vorher stand die Meldung im verborgenen Formular).
+
+## 2026-11-03.84
+
+* Steuerungs-Erklärung (Startmenü → Steuerung) steht jetzt mittig auf dem Bildschirm (bei kleinen Bildschirmen weiter scrollbar).

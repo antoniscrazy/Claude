@@ -637,7 +637,7 @@ input[type=search],textarea,.wrow,.srv,.wlist{font-family:"MinecraftUI","Courier
 
 /* Java-Bildschirme: Erd-Hintergrund (Weltauswahl …), graues Spielmenü, Ladebild, Serverlisten-Fuß */
 #mmSingle.panel,#mmCreate.panel,#mmEdit.panel,#mmDelete.panel,#mmHelp.panel{position:fixed;inset:0;z-index:6;width:auto;max-width:none;max-height:none;margin:0;padding:12px 0 14px;overflow:auto;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,.32);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);border-radius:0}
-#mmDelete.panel{justify-content:center}
+#mmDelete.panel,#mmHelp.panel{justify-content:safe center}
 #mmSingle.hidden,#mmCreate.hidden,#mmEdit.hidden,#mmDelete.hidden,#mmHelp.hidden{display:none}
 #mmSingle>*,#mmCreate>*,#mmEdit>*,#mmDelete>*,#mmHelp>*{width:min(660px,94vw);flex:none}
 #mmSingle h2,#mmCreate h2,#mmEdit h2,#mmDelete h2,#mmHelp h2{font-size:16px;text-align:center;margin:2px 0 10px}
@@ -2759,7 +2759,7 @@ try {                                                                  // Titel-
     } catch (e) { /* bleibt bei 2048² */ }
   }, 800);
 } catch (e) { /* egal */ }
-const GAME_VER = '2026-11-03.83';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-11-03.84';            // Spielversion (nur Anzeige)
 // Verdeckter Bot-Modus (nur per URL ?bot=1, nirgends in der Oberfläche erwähnt): läuft ohne Darstellung mit festem 20-Ticks-Takt, Steuerung über window.BOT (siehe Abschnitt BOT)
 const botChat = [];
 const BOTMODE = /[?&]bot=1(?:&|#|$)/.test(location.search);
