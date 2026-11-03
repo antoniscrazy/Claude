@@ -854,5 +854,81 @@
  "Betrete den Server …": [
   "Joining the server...",
   "Entrée sur le serveur..."
+ ],
+ "Karmesinwald": [
+  "Crimson Forest",
+  "Forêt carmin"
+ ],
+ "Wirrwald": [
+  "Warped Forest",
+  "Forêt biscornue"
+ ],
+ "Netherwüste": [
+  "Nether Wastes",
+  "Désert du Nether"
+ ],
+ "Netherfestung": [
+  "Nether Fortress",
+  "Forteresse du Nether"
+ ],
+ "Bastionsruine": [
+  "Bastion Remnant",
+  "Vestiges de bastion"
+ ],
+ "Karmesin-Myzel": [
+  "Crimson Nylium",
+  "Nylium carmin"
+ ],
+ "Wirr-Myzel": [
+  "Warped Nylium",
+  "Nylium biscornu"
+ ],
+ "Rote Netherziegel": [
+  "Red Nether Bricks",
+  "Briques du Nether rouges"
+ ],
+ "Rissige Netherziegel": [
+  "Cracked Nether Bricks",
+  "Briques du Nether fissurées"
+ ],
+ "Gemeißelte Netherziegel": [
+  "Chiseled Nether Bricks",
+  "Briques du Nether sculptées"
+ ],
+ "Netherwarze": [
+  "Nether Wart",
+  "Verrues du Nether"
+ ],
+ "Karmesin-Wurzeln": [
+  "Crimson Roots",
+  "Racines carmin"
+ ],
+ "Wirr-Wurzeln": [
+  "Warped Roots",
+  "Racines biscornues"
+ ],
+ "Karmesin-Pilz": [
+  "Crimson Fungus",
+  "Champignon carmin"
+ ],
+ "Wirr-Pilz": [
+  "Warped Fungus",
+  "Champignon biscornu"
+ ],
+ "Nethersprossen": [
+  "Nether Sprouts",
+  "Pousses du Nether"
+ ],
+ "Trauerranken": [
+  "Weeping Vines",
+  "Lianes pleureuses"
+ ],
+ "Würgeranken": [
+  "Twisting Vines",
+  "Lianes tortueuses"
+ ],
+ "Lohe-Käfig": [
+  "Blaze Spawner",
+  "Générateur de blazes"
  ]
 }

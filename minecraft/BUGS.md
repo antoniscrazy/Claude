@@ -494,3 +494,8 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 ## 2026-11-03.81
 
 * 🔌 Server-Beitritt zeigt jetzt den „Verbinde mit dem Server …“-Bildschirm im Java-Stil (Panorama, Text, Knopf „Abbrechen“); der Text wechselt über „Melde an …“ und „Betrete den Server …“, danach übernimmt der Ladebildschirm. „Abbrechen“ bricht den Beitritt ab und geht zurück zur Serverliste.
+
+## 2026-11-03.82
+
+* 🔥 **Nether ausgebaut**: Karmesinwald (Karmesin-Myzel, Riesenpilze mit Warzenblock-Kappe, Pilzlicht, Trauerranken, Wurzeln) und Wirrwald (blaue Riesenpilze, Wirr-Wurzeln, Sprossen) mit eigener Nebelfarbe; Netherwarze auf Seelensand. **Netherfestung**: Gänge mit Fenstern und Leuchtstein, Halle mit Beutetruhen, Warzenraum, Lohen-Raum mit **Lohen-Käfig**, Wither-Skelette, Stützpfeiler. **Bastionsruine**: Schwarzstein-Mauerring mit Toren, Bergfried mit Gold, Ecktürme, Beutetruhen (Piglins/Hoglin). Neue Blöcke: Karmesin-/Wirr-Myzel, rote/rissige/gemeißelte Netherziegel, Netherwarze, Wurzeln, Pilze, Sprossen, Trauer-/Würgeranken. `/locate netherfestung|bastion|karmesinwald|wirrwald|netherwueste` funktioniert im Nether.
+* 🔒 Server erstellen gesperrt: „Server hinzufügen“ ist jetzt **ausgegraut** (nicht mehr unsichtbar) und lässt sich nicht anklicken.
