@@ -509,6 +509,10 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * Steuerungs-Erklärung (Startmenü → Steuerung) steht jetzt mittig auf dem Bildschirm (bei kleinen Bildschirmen weiter scrollbar).
 
+## 2026-11-04.91
+
+* ⚙️ **Shader-Einstellungen**: Optionen → Video → „Shader …“ öffnet eine eigene Seite: Shader AN/AUS, Wolkenmenge, Wolkendicke, Wasserspiegelung, Wellenhöhe, Wassertiefe dunkel, Bloom, Lichtstrahlen, Helligkeit, Sonnenschatten, Umgebungsverdeckung, „Zurücksetzen“. Werte werden gespeichert; Standard-Wolken sind etwas dünner als in v90.
+
 ## 2026-11-04.90
 
 * 🔦 **Handlicht**: Fackel, Laterne, Leuchtstein usw. in Haupt- oder Zweithand leuchten die Umgebung an (warmes, leicht flackerndes Licht mit Reichweite wie die Lichtstärke; Shader und normaler Modus).

@@ -2156,5 +2156,18 @@
 "Seetang": "Kelp",
 "Seetang (Stängel)": "Kelp Plant",
 "Meeresgurke": "Sea Pickle",
-"Schildkrötenei": "Turtle Egg"
+"Schildkrötenei": "Turtle Egg",
+"Shader-Einstellungen": "Shader Settings",
+"Wolkenmenge: ": "Cloud Amount: ",
+"Wolkendicke: ": "Cloud Thickness: ",
+"Wasserspiegelung: ": "Water Reflection: ",
+"Wellenhöhe: ": "Wave Height: ",
+"Wassertiefe dunkel: ": "Deep Water Darkness: ",
+"Bloom (Glühen): ": "Bloom: ",
+"Lichtstrahlen: ": "Light Rays: ",
+"Helligkeit: ": "Brightness: ",
+"Sonnenschatten: ": "Sun Shadows: ",
+"Umgebungsverdeckung: ": "Ambient Occlusion: ",
+"Shader: ": "Shaders: ",
+"Zurücksetzen": "Reset"
 }

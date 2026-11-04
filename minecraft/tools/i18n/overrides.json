@@ -1078,5 +1078,57 @@
  "Schildkrötenei": [
   "Turtle Egg",
   "Œuf de tortue"
+ ],
+ "Shader-Einstellungen": [
+  "Shader Settings",
+  "Paramètres des shaders"
+ ],
+ "Wolkenmenge: ": [
+  "Cloud Amount: ",
+  "Quantité de nuages : "
+ ],
+ "Wolkendicke: ": [
+  "Cloud Thickness: ",
+  "Épaisseur des nuages : "
+ ],
+ "Wasserspiegelung: ": [
+  "Water Reflection: ",
+  "Reflet de l'eau : "
+ ],
+ "Wellenhöhe: ": [
+  "Wave Height: ",
+  "Hauteur des vagues : "
+ ],
+ "Wassertiefe dunkel: ": [
+  "Deep Water Darkness: ",
+  "Obscurité des eaux profondes : "
+ ],
+ "Bloom (Glühen): ": [
+  "Bloom: ",
+  "Éclat : "
+ ],
+ "Lichtstrahlen: ": [
+  "Light Rays: ",
+  "Rayons lumineux : "
+ ],
+ "Helligkeit: ": [
+  "Brightness: ",
+  "Luminosité : "
+ ],
+ "Sonnenschatten: ": [
+  "Sun Shadows: ",
+  "Ombres du soleil : "
+ ],
+ "Umgebungsverdeckung: ": [
+  "Ambient Occlusion: ",
+  "Occlusion ambiante : "
+ ],
+ "Shader: ": [
+  "Shaders: ",
+  "Shaders : "
+ ],
+ "Zurücksetzen": [
+  "Reset",
+  "Réinitialiser"
  ]
 }

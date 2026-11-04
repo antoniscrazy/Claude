@@ -2176,5 +2176,18 @@
 "Seetang": "Algue",
 "Seetang (Stängel)": "Tige d'algue",
 "Meeresgurke": "Cornichon de mer",
-"Schildkrötenei": "Œuf de tortue"
+"Schildkrötenei": "Œuf de tortue",
+"Shader-Einstellungen": "Paramètres des shaders",
+"Wolkenmenge: ": "Quantité de nuages : ",
+"Wolkendicke: ": "Épaisseur des nuages : ",
+"Wasserspiegelung: ": "Reflet de l'eau : ",
+"Wellenhöhe: ": "Hauteur des vagues : ",
+"Wassertiefe dunkel: ": "Obscurité des eaux profondes : ",
+"Bloom (Glühen): ": "Éclat : ",
+"Lichtstrahlen: ": "Rayons lumineux : ",
+"Helligkeit: ": "Luminosité : ",
+"Sonnenschatten: ": "Ombres du soleil : ",
+"Umgebungsverdeckung: ": "Occlusion ambiante : ",
+"Shader: ": "Shaders : ",
+"Zurücksetzen": "Réinitialiser"
 }
