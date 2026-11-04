@@ -2189,5 +2189,10 @@
 "Sonnenschatten: ": "Ombres du soleil : ",
 "Umgebungsverdeckung: ": "Occlusion ambiante : ",
 "Shader: ": "Shaders : ",
-"Zurücksetzen": "Réinitialiser"
+"Zurücksetzen": "Réinitialiser",
+"Leistung: ": "Performance : ",
+"Auto-Auflösung: ": "Résolution auto : ",
+"Niedrig": "Basse",
+"Mittel": "Moyenne",
+"Hoch": "Élevée"
 }

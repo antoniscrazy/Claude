@@ -1130,5 +1130,25 @@
  "Zurücksetzen": [
   "Reset",
   "Réinitialiser"
+ ],
+ "Leistung: ": [
+  "Performance: ",
+  "Performance : "
+ ],
+ "Auto-Auflösung: ": [
+  "Auto Resolution: ",
+  "Résolution auto : "
+ ],
+ "Niedrig": [
+  "Low",
+  "Basse"
+ ],
+ "Mittel": [
+  "Medium",
+  "Moyenne"
+ ],
+ "Hoch": [
+  "High",
+  "Élevée"
  ]
 }

@@ -509,6 +509,10 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * Steuerungs-Erklärung (Startmenü → Steuerung) steht jetzt mittig auf dem Bildschirm (bei kleinen Bildschirmen weiter scrollbar).
 
+## 2026-11-04.92
+
+* 🚀 **Shader-Leistung (iPad)**: Shader-Einstellungen → „Leistung: Niedrig/Mittel/Hoch“ (Touch-Geräte starten auf „Mittel“) schaltet gebündelt Renderauflösung (60/80/100 %), Wolken-Schritte (8/12/18, Niedrig ohne Selbstschatten), Umgebungsverdeckung (aus/4/8 Proben), Schattenkarte (1024/1024/2048, seltener aktualisiert), Schatten-Filter, Lichtstrahlen, Bloom-Durchläufe und den Wasser-Tiefenpass (Niedrig aus). Dazu **Auto-Auflösung** (Standard AN): sinkt die Bildrate unter ~38 FPS, wird die Auflösung stufenweise bis 50 % gesenkt und bei Reserve langsam wieder erhöht.
+
 ## 2026-11-04.91
 
 * ⚙️ **Shader-Einstellungen**: Optionen → Video → „Shader …“ öffnet eine eigene Seite: Shader AN/AUS, Wolkenmenge, Wolkendicke, Wasserspiegelung, Wellenhöhe, Wassertiefe dunkel, Bloom, Lichtstrahlen, Helligkeit, Sonnenschatten, Umgebungsverdeckung, „Zurücksetzen“. Werte werden gespeichert; Standard-Wolken sind etwas dünner als in v90.

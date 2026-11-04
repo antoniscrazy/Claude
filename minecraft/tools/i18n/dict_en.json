@@ -2169,5 +2169,10 @@
 "Sonnenschatten: ": "Sun Shadows: ",
 "Umgebungsverdeckung: ": "Ambient Occlusion: ",
 "Shader: ": "Shaders: ",
-"Zurücksetzen": "Reset"
+"Zurücksetzen": "Reset",
+"Leistung: ": "Performance: ",
+"Auto-Auflösung: ": "Auto Resolution: ",
+"Niedrig": "Low",
+"Mittel": "Medium",
+"Hoch": "High"
 }
