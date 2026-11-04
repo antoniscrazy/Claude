@@ -509,6 +509,11 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * Steuerungs-Erklärung (Startmenü → Steuerung) steht jetzt mittig auf dem Bildschirm (bei kleinen Bildschirmen weiter scrollbar).
 
+## 2026-11-04.89
+
+* 🌊 **Wassertiefe (Shader)**: eigener Wasser-Pass liefert Maske und Oberflächentiefe; je dicker die Wasserschicht über dem Grund, desto dunkler und grünblauer (Rot wird zuerst geschluckt), flaches Wasser bleibt klar.
+* ☁️ **3D-Wolken (Shader)**: Strahlmarsch durch eine 30 Blöcke dicke Wolkenschicht – flache Unterseite, quellende Oberseite, Selbstschatten, Silberrand gegen die Sonne; man kann hineinfliegen.
+
 ## 2026-11-04.88
 
 * 🌫️ **Shader-Modus – Wolken**: eigene Wolkenebene in fester Welthöhe – man fliegt darunter, hindurch und **darüber** (Wolkenmeer von oben, Oberseite sonnenbeschienen, weiche Ausblendung beim Durchfliegen).
