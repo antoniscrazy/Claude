@@ -509,6 +509,13 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * Steuerungs-Erklärung (Startmenü → Steuerung) steht jetzt mittig auf dem Bildschirm (bei kleinen Bildschirmen weiter scrollbar).
 
+## 2026-11-04.88
+
+* 🌫️ **Shader-Modus – Wolken**: eigene Wolkenebene in fester Welthöhe – man fliegt darunter, hindurch und **darüber** (Wolkenmeer von oben, Oberseite sonnenbeschienen, weiche Ausblendung beim Durchfliegen).
+* ⛈️ **Wetterwechsel weich**: Wolken ziehen schon ca. 45 s vor dem Regen zusammen, Himmel wird grau, nach dem Regen lösen sie sich langsam auf; Regen/Sandsturm/Nebel blenden über ~10 s ein und aus (auch beim Wechsel Wüste ↔ anderes Biom, kein Sprung mehr).
+* 🌊 **Nebel/Himmel blenden weich** bei Wasser-/Lava-Wechsel und Dimensionswechsel (Unterwasser-Blau blendet ein).
+* 💧 **Wasser-Shader**: dunkles Tiefenwasser, durchsichtig beim Hinabsehen, Spiegelung von Himmel und Wolken, feinere Wellen mit Entfernungsabschwächung.
+
 ## 2026-11-03.87
 
 * 🌊 **Ozeane** (neue Welten ab dieser Version, alte bleiben unverändert): großräumige Meeresbecken mit Schelf, Hang und Tiefsee; Meeresboden aus Sand/Kies/Ton je nach Tiefe und Klima. **Korallenriffe nur in warmen Meeren** (in Flecken, mit Meeresgurken und Seegras), **Tangwälder** in gemäßigten Meeren, in Flüssen/Seen höchstens etwas Seegras. Meeresgewächse zählen als Wasser (keine Luftblasen/Scheiben mehr).

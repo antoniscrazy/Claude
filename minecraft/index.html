@@ -2864,7 +2864,7 @@ try {                                                                  // Titel-
     } catch (e) { /* bleibt bei 2048² */ }
   }, 800);
 } catch (e) { /* egal */ }
-const GAME_VER = '2026-11-03.87';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-11-04.88';            // Spielversion (nur Anzeige)
 // Verdeckter Bot-Modus (nur per URL ?bot=1, nirgends in der Oberfläche erwähnt): läuft ohne Darstellung mit festem 20-Ticks-Takt, Steuerung über window.BOT (siehe Abschnitt BOT)
 const botChat = [];
 const BOTMODE = /[?&]bot=1(?:&|#|$)/.test(location.search);
@@ -5061,6 +5061,8 @@ const FRAG = `
 uniform sampler2D map; uniform float uDay; uniform float uNV; uniform float uNether; uniform float uBack; uniform float uFlick; uniform float uBackAmb; uniform vec3 uBackTint; uniform float uSnow; uniform vec3 fogColor; uniform float fogNear; uniform float fogFar;
 uniform vec4 uLights[8]; uniform float uShader; uniform float uTime; uniform vec3 uSunDir; uniform float uTiles; uniform float uOW; uniform sampler2D uFlags; uniform vec3 uLDir; uniform vec3 uLCol; uniform vec3 uAmbS; uniform vec3 uAmbG; uniform sampler2D uShadowMap; uniform mat4 uShadowMat; uniform float uShadowOn; uniform float uShadowSize;
 varying vec2 vUv; varying vec3 vLight; varying float vDepth; varying vec3 vWorld;
+float wH(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+float wN(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(wH(i), wH(i + vec2(1.0, 0.0)), f.x), mix(wH(i + vec2(0.0, 1.0)), wH(i + vec2(1.0, 1.0)), f.x), f.y); }
 void main(){
   vec4 t = texture2D(map, vUv);
   #ifdef CUTOUT
@@ -5132,23 +5134,33 @@ void main(){
     float sg = pow(max(dot(-V, uLDir), 0.0), 5.0) * 0.55 * uDay;
     fogL += uLCol * sg * 0.35;
     col = lit3;
-    if (isWater && abs(nrm.y) > 0.5) {
+    if (isWater && abs(nrm.y) > 0.5) {                                        // Wasser: Wellen, Spiegelung von Himmel/Wolken, dunkles Tiefenwasser, durchsichtig beim Hinabsehen
       vec2 p = vWorld.xz; float tm = uTime;
-      vec2 w = vec2(sin(p.x * 1.7 + tm * 1.3) + sin(p.y * 2.3 - tm * 1.1), sin(p.x * 2.9 - tm * 0.9) + sin(p.y * 1.3 + tm * 1.7)) * 0.045
-             + vec2(sin(p.x * 5.3 + p.y * 4.1 + tm * 2.2), sin(p.x * 4.7 - p.y * 5.9 - tm * 1.9)) * 0.03
-             + vec2(sin(p.x * 11.0 - tm * 3.1 + p.y * 3.0), sin(p.y * 12.0 + tm * 2.7 - p.x * 2.0)) * 0.012;
+      float lod = 1.0 / (1.0 + length(cameraPosition - vWorld) * 0.006);
+      vec2 w = vec2(sin(p.x * 0.31 + tm * 0.55) + sin(p.y * 0.41 - tm * 0.45), sin(p.x * 0.47 - tm * 0.4) + sin(p.y * 0.27 + tm * 0.6)) * 0.07
+             + vec2(sin(p.x * 1.7 + tm * 1.3) + sin(p.y * 2.3 - tm * 1.1), sin(p.x * 2.9 - tm * 0.9) + sin(p.y * 1.3 + tm * 1.7)) * 0.05 * (0.4 + 0.6 * lod)
+             + vec2(sin(p.x * 5.3 + p.y * 4.1 + tm * 2.2), sin(p.x * 4.7 - p.y * 5.9 - tm * 1.9)) * 0.035 * lod
+             + vec2(wN(p * 3.1 + tm * vec2(0.5, 0.3)) - 0.5, wN(p * 3.3 - tm * vec2(0.4, 0.6) + 9.0) - 0.5) * 0.16 * lod
+             + vec2(sin(p.x * 11.0 - tm * 3.1 + p.y * 3.0), sin(p.y * 12.0 + tm * 2.7 - p.x * 2.0)) * 0.012 * lod;
       vec3 n = normalize(vec3(-w.x, 1.0, -w.y));
-      vec3 R = reflect(-V, n);
-      float fres = 0.02 + 0.98 * pow(1.0 - clamp(dot(n, V), 0.0, 1.0), 5.0);
+      vec3 R = reflect(-V, n); R.y = abs(R.y);
+      float fres = 0.03 + 0.97 * pow(1.0 - clamp(dot(n, V), 0.0, 1.0), 4.0);
       vec3 horizon = fogL;
-      vec3 zenith = uAmbS * 1.1;
-      vec3 refl = mix(horizon, zenith, pow(clamp(R.y, 0.0, 1.0), 0.55));
+      vec3 zenith = uAmbS * 1.25 + vec3(0.03);
+      vec3 refl = mix(horizon * 0.72, zenith, pow(clamp(R.y, 0.0, 1.0), 0.4));
+      vec2 cp = (vWorld.xz + R.xz / max(R.y, 0.06) * 140.0) * 0.011 + tm * 0.008;
+      float cd = smoothstep(0.42, 0.82, wN(cp) * 0.58 + wN(cp * 2.3 + 4.0) * 0.30 + wN(cp * 5.1 + 9.0) * 0.12);
+      vec3 cloudC = mix(horizon, vec3(1.0, 0.98, 0.94) * (0.25 + 0.85 * uDay), 0.55) * (0.8 + 0.2 * uDay);
+      refl = mix(refl, cloudC, cd * smoothstep(0.02, 0.3, R.y) * 0.7);
+      refl = mix(refl, horizon * 0.8, smoothstep(0.22, 0.0, R.y) * 0.5);
       float sd = max(dot(R, uLDir), 0.0);
-      vec3 spec = uLCol * (pow(sd, 700.0) * 90.0 + pow(sd, 40.0) * 0.5) * sh * sky;
-      vec3 body = mix(vec3(0.02, 0.10, 0.17), vec3(0.04, 0.22, 0.30), 0.5) * (ambient * 1.6 + direct * 0.5 + 0.02);
-      body = mix(body, alb * (ambient + direct) * vec3(0.5, 0.8, 1.0), 0.35);
-      col = mix(body, refl, clamp(fres * 1.05 + 0.04, 0.0, 1.0)) + spec;
-      alpha = clamp(mix(0.72, 0.98, fres) + length(spec) * 0.2, 0.0, 1.0);
+      vec3 spec = uLCol * (pow(sd, 700.0) * 90.0 + pow(sd, 40.0) * 0.5) * sh * sky * (1.0 - cd * 0.6);
+      vec3 lightB = ambient * 1.6 + direct * 0.5 + 0.015;
+      vec3 deepC = vec3(0.010, 0.060, 0.070), shalC = vec3(0.035, 0.20, 0.17);
+      vec3 body = mix(deepC, shalC, 0.45 + 0.4 * wN(p * 0.18 + 3.0)) * lightB;
+      body = mix(body, alb * (ambient + direct) * vec3(0.4, 0.75, 0.6), 0.22);
+      col = mix(body, refl, clamp(fres * 1.05 + 0.03, 0.0, 1.0)) + spec;
+      alpha = clamp(mix(0.52, 0.97, fres) + length(spec) * 0.2, 0.0, 1.0);
     }
     col = mix(col, fogL, smoothstep(fogNear, fogFar, vDepth));
     gl_FragColor = vec4(col, alpha); return;
@@ -5263,16 +5275,37 @@ function postInit() {
         gl_FragColor = vec4(s, 1.0); }`, { tIn: { value: null }, uDir: { value: new THREE.Vector2() } });
     POST.mComp = postMat(`uniform sampler2D tScene; uniform sampler2D tDepth; uniform sampler2D tBloom; uniform vec2 uRes; uniform vec3 uSun; uniform vec3 uSunCol;
       uniform float uNear; uniform float uFar; uniform float uDay; uniform float uOW; uniform float uExp; uniform float uRays;
-      uniform mat4 uProjInv; uniform mat4 uCamWorld; uniform vec3 uCamPos; uniform vec3 uSunDir; uniform vec3 uClear; uniform float uTime; uniform float uCover; uniform float uWet;
+      uniform mat4 uProjInv; uniform mat4 uCamWorld; uniform vec3 uCamPos; uniform vec3 uSunDir; uniform vec3 uClear; uniform float uTime; uniform float uCover; uniform float uWet; uniform float uCloudY;
       varying vec2 vUv;
       float h21(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
       float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
       float fbm(vec2 p){ float a = 0.5, s = 0.0; for (int i = 0; i < 5; i++) { s += a * vn(p); p = p * 2.03 + vec2(17.1, 9.3); a *= 0.5; } return s; }
       float cloudD(vec2 p){ float base = fbm(p); float detail = fbm(p * 3.1 + 7.0); return smoothstep(1.0 - uCover, 1.0 - uCover + 0.28, base * 0.8 + detail * 0.28); }
+      vec4 cloudLayer(vec3 dir, float maxT, vec3 hor){                                       // Wolkenebene in fester Welthöhe: man kann darunter, darin und darüber fliegen
+        float h = uCloudY - uCamPos.y;
+        if (abs(dir.y) < 0.0015) return vec4(0.0);
+        float t = h / dir.y; if (t <= 0.0 || t > maxT) return vec4(0.0);
+        float above = h < 0.0 ? 1.0 : 0.0;
+        vec2 pp = (uCamPos.xz + dir.xz * t) * 0.0021 + vec2(uTime * 0.0035, uTime * 0.0012);
+        float d1 = cloudD(pp);
+        if (d1 < 0.004) return vec4(0.0);
+        vec3 warm = mix(vec3(1.0, 0.55, 0.28), vec3(1.0, 0.92, 0.75), smoothstep(0.0, 0.45, uSunDir.y));
+        float dl = cloudD(pp + uSunDir.xz * 0.09 / max(uSunDir.y, 0.25));
+        float shade = exp(-dl * 1.1);
+        vec3 lit = warm * mix(0.55, 1.22, uDay) * (1.0 - uWet * 0.5);
+        vec3 shadow = mix(vec3(0.07, 0.08, 0.13), vec3(0.74, 0.80, 0.90), uDay) * (1.0 - uWet * 0.4);
+        vec3 cc = mix(shadow, lit, shade * (0.25 + 0.75 * smoothstep(-0.1, 0.3, uSunDir.y)));
+        cc = mix(cc, mix(shadow, lit, 0.55 + 0.45 * shade), above);                       // von oben: sonnenbeschienene Oberseite
+        cc += lit * pow(max(1.0 - d1, 0.0), 6.0) * 0.35 * (1.0 - uWet) * smoothstep(0.0, 0.4, uSunDir.y);
+        float haze = 1.0 - exp(-t * mix(0.00035, 0.0011, above));
+        cc = mix(cc, hor, haze * 0.85);
+        float a = d1 * smoothstep(0.0, 14.0, abs(h)) * mix(smoothstep(0.015, 0.22, dir.y), 1.0, above);
+        return vec4(cc, a);
+      }
       vec3 skyColor(vec3 dir, vec3 c0){
         float up = max(dir.y, 0.0);
         vec3 hor = uClear * 1.04; vec3 zen = mix(vec3(0.015, 0.02, 0.07), hor * vec3(0.38, 0.58, 1.05) + vec3(0.0, 0.03, 0.08), uDay);
-        zen = mix(zen, vec3(dot(zen, vec3(0.33))) * 1.2, uWet * 0.6);
+        zen = mix(zen, vec3(dot(zen, vec3(0.33))) * 1.2, uWet * 0.85);
         vec3 sc = mix(hor, zen, pow(up, 0.45));
         float sd = max(dot(dir, uSunDir), 0.0);
         vec3 warm = mix(vec3(1.0, 0.55, 0.28), vec3(1.0, 0.92, 0.75), smoothstep(0.0, 0.45, uSunDir.y));
@@ -5280,21 +5313,12 @@ function postInit() {
         sc += warm * (pow(sd, 7.0) * 0.32 + pow(sd, 90.0) * 0.55) * vis;
         sc += warm * smoothstep(0.99935, 0.99975, sd) * 3.0 * vis;
         sc += max(c0 - uClear, 0.0) * (1.0 - uDay) * 1.4;                          // Sterne und Mond aus der Szene
-        // Wolken: Ebene in großer Höhe, Wind, Licht von der Sonne (zweiter Dichte-Test Richtung Sonne), Silberrand
-        if (dir.y > 0.0) {
+        { vec4 cl = cloudLayer(dir, 1.0e9, hor); sc = mix(sc, cl.rgb, cl.a * 0.96); }
+        if (dir.y > 0.0 && uCamPos.y < uCloudY) {                                         // hohe, dünne Schleierwolken (nur von unten)
           float t = 520.0 / max(dir.y, 0.03); vec2 pp = (uCamPos.xz + dir.xz * t) * 0.0021 + vec2(uTime * 0.0035, uTime * 0.0012);
-          float d1 = cloudD(pp);
-          float dl = cloudD(pp + uSunDir.xz * 0.09 / max(uSunDir.y, 0.25));
-          float shade = exp(-dl * 1.1);
-          vec3 lit = warm * mix(0.55, 1.22, uDay) * (1.0 - uWet * 0.5);
-          vec3 shadow = mix(vec3(0.07, 0.08, 0.13), vec3(0.74, 0.80, 0.90), uDay) * (1.0 - uWet * 0.4);
-          vec3 cc = mix(shadow, lit, shade * (0.25 + 0.75 * smoothstep(-0.1, 0.3, uSunDir.y)));
-          cc += lit * pow(max(1.0 - d1, 0.0), 6.0) * 0.35 * (1.0 - uWet) * smoothstep(0.0, 0.4, uSunDir.y);
-          float hi = vn(pp * 2.4 + 31.0) * vn(pp * 0.7 + 5.0);                              // hohe, dünne Schleierwolken
+          float hi = vn(pp * 2.4 + 31.0) * vn(pp * 0.7 + 5.0);
           float ci = smoothstep(0.38, 0.8, hi) * 0.28 * (1.0 - uCover * 0.6);
-          float a = d1 * smoothstep(0.015, 0.22, dir.y);
-          sc = mix(sc, cc, a * 0.96);
-          sc = mix(sc, lit * 0.95, ci * smoothstep(0.02, 0.25, dir.y) * (1.0 - a));
+          sc = mix(sc, warm * mix(0.55, 1.22, uDay) * 0.95, ci * smoothstep(0.02, 0.25, dir.y) * 1.0);
         }
         return sc;
       }
@@ -5346,9 +5370,16 @@ function postInit() {
           float l = luma(col); col = mix(vec3(l), col, 1.16);
           col = mix(col, col * col * (3.0 - 2.0 * col), 0.25);
         }
+        if (!sky && uOW > 0.5) {                                                           // Wolken vor weit entferntem Gelände (z. B. von oben gesehen)
+          float hh = uCloudY - uCamPos.y;
+          vec4 vd2 = uProjInv * vec4(vUv * 2.0 - 1.0, 1.0, 1.0); vec3 vdir = vd2.xyz / vd2.w;
+          vec3 wd = normalize((uCamWorld * vec4(vdir, 0.0)).xyz);
+          float dist = lin(d) * length(vdir) / max(abs(vdir.z), 0.0001);
+          if (hh * wd.y > 0.0 && hh / wd.y < dist) { vec4 cl = cloudLayer(wd, dist, uClear * 1.04); col = mix(col, cl.rgb, cl.a * 0.96); }
+        }
         vec2 vp = vUv - 0.5; float vg = 1.0 - dot(vp, vp) * 0.9; col *= mix(1.0, vg, 0.7);
         gl_FragColor = vec4(col, 1.0);
-      }`, { tScene: { value: null }, tDepth: { value: null }, tBloom: { value: null }, uRes: { value: new THREE.Vector2(1, 1) }, uSun: { value: new THREE.Vector3() }, uSunCol: { value: new THREE.Vector3(1, 0.85, 0.6) }, uNear: { value: 0.1 }, uFar: { value: 1000 }, uDay: { value: 1 }, uOW: { value: 1 }, uExp: { value: 0.82 }, uRays: { value: 1 }, uProjInv: { value: new THREE.Matrix4() }, uCamWorld: { value: new THREE.Matrix4() }, uCamPos: { value: new THREE.Vector3() }, uSunDir: { value: new THREE.Vector3(0, 1, 0) }, uClear: { value: new THREE.Vector3() }, uTime: { value: 0 }, uCover: { value: 0.5 }, uWet: { value: 0 } });
+      }`, { tScene: { value: null }, tDepth: { value: null }, tBloom: { value: null }, uRes: { value: new THREE.Vector2(1, 1) }, uSun: { value: new THREE.Vector3() }, uSunCol: { value: new THREE.Vector3(1, 0.85, 0.6) }, uNear: { value: 0.1 }, uFar: { value: 1000 }, uDay: { value: 1 }, uOW: { value: 1 }, uExp: { value: 0.82 }, uRays: { value: 1 }, uProjInv: { value: new THREE.Matrix4() }, uCamWorld: { value: new THREE.Matrix4() }, uCamPos: { value: new THREE.Vector3() }, uSunDir: { value: new THREE.Vector3(0, 1, 0) }, uClear: { value: new THREE.Vector3() }, uTime: { value: 0 }, uCover: { value: 0.5 }, uWet: { value: 0 }, uCloudY: { value: 100 } });
     // Schatten
     const R = 56; POST.shCam = new THREE.OrthographicCamera(-R, R, R, -R, 1, 600); POST.shCam.layers.set(1); POST.shR = R;
     POST.shMat = new THREE.ShaderMaterial({ uniforms: { map: { value: ATLAS.texture } }, vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }', fragmentShader: 'uniform sampler2D map; varying vec2 vUv; void main(){ if (texture2D(map, vUv).a < 0.5) discard; gl_FragColor = vec4(1.0); }', side: THREE.DoubleSide });
@@ -5422,7 +5453,7 @@ function renderScene() {                                                        
   u.uSun.value.set(sp.x * 0.5 + 0.5, sp.y * 0.5 + 0.5, sp.z < 1 && sunDir.y > -0.05 && uni.uOW.value > 0.5 ? 1 : 0); u.uRays.value = uni.uOW.value;
   u.uSunCol.value.set(1.0, 0.85 + 0.1 * smooth(0, 0.4, sunDir.y), 0.6 + 0.3 * smooth(0, 0.4, sunDir.y));
   camera.updateMatrixWorld(); u.uProjInv.value.copy(camera.projectionMatrixInverse); u.uCamWorld.value.copy(camera.matrixWorld); u.uCamPos.value.copy(camera.position); u.uSunDir.value.copy(sunDir);
-  u.uClear.value.set(col.r, col.g, col.b); u.uTime.value = performance.now() / 1000; const wf = typeof weather !== 'undefined' ? weather.wf : 0; u.uCover.value = 0.46 + 0.3 * wf; u.uWet.value = wf;
+  u.uClear.value.set(col.r, col.g, col.b); u.uTime.value = performance.now() / 1000; const wf = typeof weather !== 'undefined' ? weather.wf : 0; const cl = typeof weather !== 'undefined' ? weather.cl || 0 : 0; u.uCover.value = 0.4 + 0.38 * Math.max(cl, wf); u.uWet.value = Math.max(wf, 0.7 * cl); u.uCloudY.value = (world ? world.yo : 0) + 88;
   renderer.setRenderTarget(null); renderer.render(POST.qScene, POST.qCam);
 }
 window.addEventListener('resize', () => {
@@ -10963,9 +10994,17 @@ function frame(now) {
     uni.fogNear.value = renderDist * CS * 0.55 * (1 - 0.5 * weather.wf) * (1 - 0.92 * Math.max(weather.fogF, weather.sand)); uni.fogFar.value = (renderDist * CS - 6) * (1 - 0.35 * weather.wf) * (1 - 0.72 * weather.fogF - 0.82 * weather.sand);
   }
   if (!lava && !water && world.dim === 0 && HW.k > 0) { uni.fogNear.value *= 1 - 0.3 * HW.k; uni.fogFar.value *= 1 - 0.22 * HW.k; }
-  renderer.setClearColor(water ? uni.fogColor.value : skyCol);
-  $('under').style.display = water ? 'block' : 'none';
-  $('under').style.background = lava ? 'rgba(220,70,10,.55)' : 'rgba(30,70,170,.35)';
+  {                                                                                   // alles weich: Nebel/Himmel blenden bei Wasser-, Lava- und Wetterwechsel über, statt zu springen
+    const key = (lava ? 2 : water ? 1 : 0) + world.dim * 4, sm = fogSm;
+    if (state === 'loading' || sm.dim !== world.dim) sm.ok = false;
+    if (sm.key !== key) { sm.key = key; sm.fast = 1.4; }
+    sm.dim = world.dim; sm.fast = Math.max(0, sm.fast - dt);
+    if (!sm.ok) { sm.c.copy(uni.fogColor.value); sm.n = uni.fogNear.value; sm.f = uni.fogFar.value; sm.sky.copy(skyCol); sm.ok = true; }
+    else { const k = Math.min(1, dt * (sm.fast > 0 ? 5 : 2.2)); sm.c.lerp(uni.fogColor.value, k); sm.n += (uni.fogNear.value - sm.n) * k; sm.f += (uni.fogFar.value - sm.f) * k; sm.sky.lerp(skyCol, Math.min(1, dt * 3)); }
+    uni.fogColor.value.copy(sm.c); uni.fogNear.value = sm.n; uni.fogFar.value = sm.f;
+  }
+  renderer.setClearColor(water ? uni.fogColor.value : fogSm.sky);
+  { const un = $('under'); if (!un.dataset.i) { un.dataset.i = 1; un.style.cssText += ';display:block;opacity:0;pointer-events:none;transition:opacity .45s ease'; } un.style.opacity = water ? 1 : 0; un.style.background = lava ? 'rgba(220,70,10,.55)' : 'rgba(30,70,170,.35)'; }
 
   // HUD
   if (hudStatsDirty) refreshStats();
@@ -13694,7 +13733,7 @@ function seasonRepaint() {                                                  // K
 const SEASON_W = [[0.46, 0.40, 0.07, 0.07], [0.58, 0.14, 0.22, 0.06], [0.38, 0.28, 0.04, 0.30], [0.46, 0.44, 0, 0.10]];
 const WEATHER_DE = { clear: 'klar', rain: 'Regen / Schnee', thunder: 'Gewitter', fog: 'Nebel' };
 const isHotBiome = (b) => b === BIOME_DESERT || b === BIOME_MESA || b === BIOME_SAVANNA || b === BIOME_JUNGLE;
-const weather = { kind: 'clear', rain: 0, thunder: 0, wf: 0, override: null, boltT: 10, flash: 0, bolts: [], kindNow: 'clear', fogF: 0, sand: 0, cover: 0, cold: false, snowing: false };
+const weather = { kind: 'clear', rain: 0, thunder: 0, wf: 0, override: null, boltT: 10, flash: 0, bolts: [], kindNow: 'clear', fogF: 0, sand: 0, cl: 0, cover: 0, cold: false, snowing: false };
 function weatherKindAt(tSec) {
   if (weather.override && gameTime < weather.override.until) return weather.override.kind;
   const win = Math.floor(tSec / 360);
@@ -13782,13 +13821,14 @@ function updateWeather(dt) {
   if (key !== seasonKey) { seasonKey = key; seasonRepaint(); }
   if (si !== seasonLast) { if (seasonLast >= 0 && world.dim === 0 && state === 'play') toast({ 0: 'Der Frühling beginnt – es regnet öfter, Pflanzen wachsen schneller', 1: 'Der Sommer beginnt – warm, oft Gewitter', 2: 'Der Herbst beginnt – buntes Laub und viel Nebel', 3: 'Der Winter beginnt – es schneit, Pflanzen wachsen kaum' }[si]); seasonLast = si; }
   const wet = weather.kindNow === 'rain' || weather.kindNow === 'thunder', tt = weather.kindNow === 'thunder' ? 1 : 0;
-  weather.rain += ((wet ? 1 : 0) - weather.rain) * Math.min(1, dt * 0.35); weather.thunder += (tt - weather.thunder) * Math.min(1, dt * 0.35);
+  weather.rain += ((wet ? 1 : 0) - weather.rain) * Math.min(1, dt * 0.12); weather.thunder += (tt - weather.thunder) * Math.min(1, dt * 0.2);
+  { const nx = weatherKindAt(gameTime + 45), ct = (wet || nx === 'rain' || nx === 'thunder') ? 1 : weather.kindNow === 'fog' ? 0.5 : 0; weather.cl += (ct - weather.cl) * Math.min(1, dt * 0.09); }          // Wolken ziehen schon vor dem Regen zusammen und lösen sich danach langsam auf
   const biome = world.gen.biomeAt(Math.floor(P.p.x), Math.floor(P.p.z)), dim0 = world.dim === 0;
   weather.biome = biome;
   const dry = isDryBiome(biome), desert = biome === BIOME_DESERT || biome === BIOME_MESA;
-  weather.wf = dry ? 0 : weather.rain;                                         // in der Wüste regnet es nicht – dort gibt es Sandstürme
-  weather.sand += (((wet && desert && dim0) ? 1 : 0) - weather.sand) * Math.min(1, dt * 0.35);
-  weather.fogF += (((weather.kindNow === 'fog' && dim0) ? 1 : 0) - weather.fogF) * Math.min(1, dt * 0.25);
+  weather.wf += ((dry ? 0 : weather.rain) - weather.wf) * Math.min(1, dt * 0.4);     // in der Wüste regnet es nicht – dort gibt es Sandstürme; Biomwechsel blendet weich über
+  weather.sand += (((wet && desert && dim0) ? 1 : 0) - weather.sand) * Math.min(1, dt * 0.18);
+  weather.fogF += (((weather.kindNow === 'fog' && dim0) ? 1 : 0) - weather.fogF) * Math.min(1, dt * 0.15);
   const cold = dim0 && (biome === BIOME_SNOW || (si === 3 && !isHotBiome(biome)));
   weather.cold = cold;
   const snow = cold, amt = weather.wf > 0.03 ? Math.min(1, weather.wf) : 0, sandAmt = weather.sand > 0.03 ? Math.min(1, weather.sand) : 0;
@@ -13822,9 +13862,10 @@ function updateWeather(dt) {
     $('seasonTag').textContent = dim0 && state !== 'menu' ? SEASON_ICON[si] + ' ' + SEASON_DE[si] + (typeof SEASON_ALIAS[rules.season] === 'number' ? ' ' : ' · Tag ' + dis + '/' + SEASON_DAYS + ' ') + w : '';
   }
 }
+const fogSm = { ok: false, key: -1, dim: -1, fast: 0, c: new THREE.Color(), sky: new THREE.Color(), n: 0, f: 0 };
 const RAIN_GRAY = new THREE.Color(0.42, 0.45, 0.5), FLASH_COL = new THREE.Color(0.85, 0.9, 1);
 function applyWeatherSky() {
-  const wf = weather.wf;
+  const wf = Math.max(weather.wf, 0.55 * (weather.cl || 0));
   if (wf > 0.001) {
     tmpCol.copy(RAIN_GRAY).multiplyScalar(0.18 + 0.82 * env.dayF); skyCol.lerp(tmpCol, 0.7 * wf);
     uni.uDay.value *= 1 - 0.32 * wf - 0.12 * weather.thunder * wf;
@@ -18026,7 +18067,7 @@ const BOT = (() => {
 })();
 if (BOTMODE) window.BOT = BOT;
 
-if (AC_DEV) window.__vc = { renderInventory, closeContainer, AC, openEnchant, enchSlots, signOpen, bookOpen, getIcon, addEffect, kickedFromServer, showDisconnect, openContainer, containers, getWorld: () => world, P, armor, newStack, setOff(x) { offItem = x; refreshHotbar(); }, ckeyOf, inv, addItem, IID, ID, rbFill, RECIPES, gridMatch, openTable() { tableUI = true; recipeBook = true; setState('inv'); }, uni, POST, PALETTE, SPEC, CKL, cklApply, AC, acPeer, acCheck, SupabaseNet, AIB, aiBegin, aiEnd, aiOnChat, aiLLM, aiKey, aiObtain, aiSkill, aiFrame, aiTick, aiPath, aiFindBlocks, aiResolveItem, aiState, aiSay, aiParseJson, aiRunPlan, aiApply, aiSources, aiCount, aiAdd, aiMine, aiGotoPos, aiShapeCells, aiGroundY, aiRecv, aiInvText, HB, hbHarm, hbAfterTorch, hbBegin, hbEnd, hbAI, hbShrineAt, hbShrineCheck, hbUndo, hbGround, hbActTunnel, hbActPyramid, hbActTower, hbActSign, hbActTorch, hbActBreakTorches, hbMode, hbVanish, hbSay, hbRecv, tpOffline, bossDown, bossRespawn, bossContain, bossLate, mpSend, signs, signOpen, signClose, signTick, signPlaced, signSetKey, signsPack, signRemove, containerLoad, SIGN_IDS, bookOpen, bookClose, bookSignStart, bookSignDo, bookGo, bookOf, getBK: () => BK, hasGlint, enchLines, placementFor, HW, hwApply, hwTick, hwPoll, boss, bossBegin, bossEnd, bossTick, bossPos, bossRp, bossStartAct, bossDamage, bossPlayersAlive, bossLocked, BACT, blastAsk, askRealBlast, answerRealBlast, chainSet: (n, x, y, z) => { chainLocal = n; chainSum = [n * x, n * y, n * z]; }, blastQ, blastInfo: () => ({ tot: blastTot, done: blastDone, n: blastN, cur: !!blastCur }), bigSt, stepBlast, bigTick, perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+if (AC_DEV) window.__vc = { weather, renderInventory, closeContainer, AC, openEnchant, enchSlots, signOpen, bookOpen, getIcon, addEffect, kickedFromServer, showDisconnect, openContainer, containers, getWorld: () => world, P, armor, newStack, setOff(x) { offItem = x; refreshHotbar(); }, ckeyOf, inv, addItem, IID, ID, rbFill, RECIPES, gridMatch, openTable() { tableUI = true; recipeBook = true; setState('inv'); }, uni, POST, PALETTE, SPEC, CKL, cklApply, AC, acPeer, acCheck, SupabaseNet, AIB, aiBegin, aiEnd, aiOnChat, aiLLM, aiKey, aiObtain, aiSkill, aiFrame, aiTick, aiPath, aiFindBlocks, aiResolveItem, aiState, aiSay, aiParseJson, aiRunPlan, aiApply, aiSources, aiCount, aiAdd, aiMine, aiGotoPos, aiShapeCells, aiGroundY, aiRecv, aiInvText, HB, hbHarm, hbAfterTorch, hbBegin, hbEnd, hbAI, hbShrineAt, hbShrineCheck, hbUndo, hbGround, hbActTunnel, hbActPyramid, hbActTower, hbActSign, hbActTorch, hbActBreakTorches, hbMode, hbVanish, hbSay, hbRecv, tpOffline, bossDown, bossRespawn, bossContain, bossLate, mpSend, signs, signOpen, signClose, signTick, signPlaced, signSetKey, signsPack, signRemove, containerLoad, SIGN_IDS, bookOpen, bookClose, bookSignStart, bookSignDo, bookGo, bookOf, getBK: () => BK, hasGlint, enchLines, placementFor, HW, hwApply, hwTick, hwPoll, boss, bossBegin, bossEnd, bossTick, bossPos, bossRp, bossStartAct, bossDamage, bossPlayersAlive, bossLocked, BACT, blastAsk, askRealBlast, answerRealBlast, chainSet: (n, x, y, z) => { chainLocal = n; chainSum = [n * x, n * y, n * z]; }, blastQ, blastInfo: () => ({ tot: blastTot, done: blastDone, n: blastN, cur: !!blastCur }), bigSt, stepBlast, bigTick, perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>
