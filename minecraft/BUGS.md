@@ -509,6 +509,12 @@ Fuzz-/Monkey-Läufe (Tastenhagel, Zufallsklicks, Dimensionswechsel) ergaben zule
 
 * Steuerungs-Erklärung (Startmenü → Steuerung) steht jetzt mittig auf dem Bildschirm (bei kleinen Bildschirmen weiter scrollbar).
 
+## 2026-11-04.90
+
+* 🔦 **Handlicht**: Fackel, Laterne, Leuchtstein usw. in Haupt- oder Zweithand leuchten die Umgebung an (warmes, leicht flackerndes Licht mit Reichweite wie die Lichtstärke; Shader und normaler Modus).
+* 🌕 **Mond (Shader)**: echte Kugel mit Phasen (8 Tage-Zyklus), dunklen Meeren, Kratern, Hof; ersetzt die Pixel-Textur.
+* ☁️ **Dickere Wolken**: Schicht 56 statt 30 Blöcke, dichter, mehr Marsch-Schritte; Wolkenmeer von oben, dichte graue Decke von unten.
+
 ## 2026-11-04.89
 
 * 🌊 **Wassertiefe (Shader)**: eigener Wasser-Pass liefert Maske und Oberflächentiefe; je dicker die Wasserschicht über dem Grund, desto dunkler und grünblauer (Rot wird zuerst geschluckt), flaches Wasser bleibt klar.

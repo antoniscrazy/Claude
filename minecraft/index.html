@@ -2864,7 +2864,7 @@ try {                                                                  // Titel-
     } catch (e) { /* bleibt bei 2048² */ }
   }, 800);
 } catch (e) { /* egal */ }
-const GAME_VER = '2026-11-04.89';            // Spielversion (nur Anzeige)
+const GAME_VER = '2026-11-04.90';            // Spielversion (nur Anzeige)
 // Verdeckter Bot-Modus (nur per URL ?bot=1, nirgends in der Oberfläche erwähnt): läuft ohne Darstellung mit festem 20-Ticks-Takt, Steuerung über window.BOT (siehe Abschnitt BOT)
 const botChat = [];
 const BOTMODE = /[?&]bot=1(?:&|#|$)/.test(location.search);
@@ -5036,7 +5036,7 @@ const uni = {
   uShader: { value: 0 }, uTime: { value: 0 }, uSunDir: { value: new THREE.Vector3(0, 1, 0) }, uTiles: { value: 32 }, uOW: { value: 1 }, uFlags: { value: null },
   uLDir: { value: new THREE.Vector3(0, 1, 0) }, uLCol: { value: new THREE.Vector3(1, 1, 1) }, uAmbS: { value: new THREE.Vector3(0.3, 0.4, 0.6) }, uAmbG: { value: new THREE.Vector3(0.1, 0.1, 0.1) }, uShadowMap: { value: null }, uShadowMat: { value: new THREE.Matrix4() }, uShadowOn: { value: 0 }, uShadowSize: { value: 2048 },
   fogColor: { value: new THREE.Color(0x87ceeb) }, fogNear: { value: 40 }, fogFar: { value: 90 },
-  uLights: { value: Array.from({ length: 8 }, () => new THREE.Vector4(0, 0, 0, 0)) },   // nächste Lichtquellen (xyz, Radius)
+  uHand: { value: new THREE.Vector4(0, 0, 0, 0) }, uLights: { value: Array.from({ length: 8 }, () => new THREE.Vector4(0, 0, 0, 0)) },   // nächste Lichtquellen (xyz, Radius)
 };
 const VERT = `
 attribute vec3 light;
@@ -5060,12 +5060,19 @@ void main(){
 }`;
 const FRAG = `
 uniform sampler2D map; uniform float uDay; uniform float uNV; uniform float uNether; uniform float uBack; uniform float uFlick; uniform float uBackAmb; uniform vec3 uBackTint; uniform float uSnow; uniform vec3 fogColor; uniform float fogNear; uniform float fogFar;
-uniform vec4 uLights[8]; uniform float uShader; uniform float uTime; uniform vec3 uSunDir; uniform float uTiles; uniform float uOW; uniform sampler2D uFlags; uniform vec3 uLDir; uniform vec3 uLCol; uniform vec3 uAmbS; uniform vec3 uAmbG; uniform sampler2D uShadowMap; uniform mat4 uShadowMat; uniform float uShadowOn; uniform float uShadowSize;
+uniform vec4 uHand; uniform vec4 uLights[8]; uniform float uShader; uniform float uTime; uniform vec3 uSunDir; uniform float uTiles; uniform float uOW; uniform sampler2D uFlags; uniform vec3 uLDir; uniform vec3 uLCol; uniform vec3 uAmbS; uniform vec3 uAmbG; uniform sampler2D uShadowMap; uniform mat4 uShadowMat; uniform float uShadowOn; uniform float uShadowSize;
 varying vec2 vUv; varying vec3 vLight; varying float vDepth; varying vec3 vWorld;
 float wH(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
 float wN(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(wH(i), wH(i + vec2(1.0, 0.0)), f.x), mix(wH(i + vec2(0.0, 1.0)), wH(i + vec2(1.0, 1.0)), f.x), f.y); }
 void main(){
   vec4 t = texture2D(map, vUv);
+  float hl = 0.0;
+  if (uHand.w > 0.01) {                                                        // Lichtquelle in der Hand (Fackel, Laterne …) leuchtet die Umgebung an
+    float hd = distance(vWorld, uHand.xyz), R = uHand.w * 15.0;
+    vec3 hn = normalize(cross(dFdx(vWorld), dFdy(vWorld)));
+    float hf = 0.35 + 0.65 * abs(dot(hn, normalize(uHand.xyz - vWorld)));
+    hl = pow(max(1.0 - hd / R, 0.0), 1.7) * uHand.w * hf * (0.94 + 0.06 * sin(uTime * 13.0 + hd * 0.3));
+  }
   #ifdef CUTOUT
   if (t.a < 0.5) discard;
   if (uSnow > 0.04 && vLight.y > 0.8) {                                            // Schneedecke: nur nach oben zeigende, vom Himmel beschienene Flächen
@@ -5088,6 +5095,7 @@ void main(){
   tint = mix(tint, uBackTint, uBack);
   float warm = clamp(bl * 1.25 - l * 0.45, 0.0, 0.9);
   vec3 col = t.rgb * l * tint * mix(vec3(1.0), vec3(1.22, 1.0, 0.76), warm);
+  col += t.rgb * vec3(1.0, 0.72, 0.42) * hl * 0.95;
   col *= mix(1.0, uFlick, uBack);
   vec3 fogC = fogColor; float alpha = t.a;
   if (uShader > 0.5) {                                                         // ===== Shader-Modus (HDR, linear): Sonnenschatten, Himmelslicht, Fackellicht, Wasser =====
@@ -5129,7 +5137,7 @@ void main(){
     float blk = vLight.z;
     vec3 torch = (blk > 0.995 ? vec3(2.2, 1.6, 1.0) : vec3(1.0, 0.62, 0.30) * pow(blk, 1.7) * 2.4) * mix(0.7, 1.0, vLight.x);
     torch *= 1.0 - 0.75 * sky * uDay;                                         // Tageslicht überstrahlt Fackeln
-    vec3 lit3 = alb * (ambient + direct + torch);
+    vec3 lit3 = alb * (ambient + direct + torch + vec3(1.0, 0.62, 0.30) * hl * 2.6);
     lit3 = mix(lit3, max(lit3 * 1.6, alb * 0.95), uNV);
     vec3 fogL = pow(max(fogColor, 0.0), vec3(2.2));
     float sg = pow(max(dot(-V, uLDir), 0.0), 5.0) * 0.55 * uDay;
@@ -5276,45 +5284,45 @@ function postInit() {
         gl_FragColor = vec4(s, 1.0); }`, { tIn: { value: null }, uDir: { value: new THREE.Vector2() } });
     POST.mComp = postMat(`uniform sampler2D tScene; uniform sampler2D tDepth; uniform sampler2D tBloom; uniform vec2 uRes; uniform vec3 uSun; uniform vec3 uSunCol;
       uniform float uNear; uniform float uFar; uniform float uDay; uniform float uOW; uniform float uExp; uniform float uRays;
-      uniform mat4 uProjInv; uniform mat4 uCamWorld; uniform vec3 uCamPos; uniform vec3 uSunDir; uniform vec3 uClear; uniform float uTime; uniform float uCover; uniform float uWet; uniform float uCloudY; uniform sampler2D tWater; uniform sampler2D tWDepth;
+      uniform mat4 uProjInv; uniform mat4 uCamWorld; uniform vec3 uCamPos; uniform vec3 uSunDir; uniform vec3 uClear; uniform float uTime; uniform float uCover; uniform float uWet; uniform float uCloudY; uniform float uMoon; uniform sampler2D tWater; uniform sampler2D tWDepth;
       varying vec2 vUv;
       float h21(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
       float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
       float fbm(vec2 p){ float a = 0.5, s = 0.0; for (int i = 0; i < 5; i++) { s += a * vn(p); p = p * 2.03 + vec2(17.1, 9.3); a *= 0.5; } return s; }
       float cloudD(vec2 p){ float base = fbm(p); float detail = fbm(p * 3.1 + 7.0); return smoothstep(1.0 - uCover, 1.0 - uCover + 0.28, base * 0.8 + detail * 0.28); }
       float cDens(vec3 p){                                                                     // Wolkendichte im Raum: flache Unterseite, quellende Oberseite, Detail-Erosion
-        float h = clamp((p.y - uCloudY) / 30.0, 0.0, 1.0);
-        float prof = smoothstep(0.0, 0.12, h) * smoothstep(1.0, 0.42, h);
+        float h = clamp((p.y - uCloudY) / 56.0, 0.0, 1.0);
+        float prof = smoothstep(0.0, 0.1, h) * smoothstep(1.0, 0.5, h);
         vec2 q = p.xz * 0.0034 + vec2(uTime * 0.0035, uTime * 0.0012);
         float c = vn(q) * 0.55 + vn(q * 2.1 + 3.7) * 0.3 + vn(q * 4.3 + 8.1) * 0.15;
         float base = smoothstep(1.0 - uCover, 1.0 - uCover + 0.22, c);
         float det = vn(p.xz * 0.016 + vec2(p.y * 0.023, -p.y * 0.019) + uTime * 0.01);
-        return clamp(base * prof * 1.35 - det * 0.4 * (0.35 + h), 0.0, 1.0);
+        return clamp(base * prof * 1.6 - det * 0.36 * (0.35 + h), 0.0, 1.0);
       }
       vec4 cloudLayer(vec3 dir, float maxT, vec3 hor){                                       // echte 3D-Wolken (Strahlmarsch durch eine 30 Blöcke dicke Schicht): darunter, darin und darüber fliegen
-        float y0 = uCloudY, y1 = uCloudY + 30.0, cy = uCamPos.y, tA, tB;
+        float y0 = uCloudY, y1 = uCloudY + 56.0, cy = uCamPos.y, tA, tB;
         if (abs(dir.y) < 0.0008) { if (cy < y0 || cy > y1) return vec4(0.0); tA = 0.0; tB = 1400.0; }
         else { tA = (y0 - cy) / dir.y; tB = (y1 - cy) / dir.y; }
         float t0 = max(min(tA, tB), 0.0), t1 = max(tA, tB);
         if (t1 <= 0.0 || t0 >= maxT) return vec4(0.0);
         t1 = min(t1, min(maxT, t0 + 1500.0));
-        float stp = (t1 - t0) / 14.0;
+        float stp = (t1 - t0) / 18.0;
         float jit = fract(sin(dot(vUv * uRes, vec2(12.9898, 78.233))) * 43758.5453);
         vec3 warm = mix(vec3(1.0, 0.55, 0.28), vec3(1.0, 0.92, 0.75), smoothstep(0.0, 0.45, uSunDir.y));
         vec3 lit = warm * mix(0.55, 1.3, uDay) * (1.0 - uWet * 0.5);
         vec3 shadow = mix(vec3(0.07, 0.08, 0.13), vec3(0.62, 0.70, 0.84), uDay) * (1.0 - uWet * 0.4);
         float sd = max(dot(dir, uSunDir), 0.0), sunUp = 0.25 + 0.75 * smoothstep(-0.1, 0.3, uSunDir.y);
         float tr = 1.0; vec3 acc = vec3(0.0);
-        for (int i = 0; i < 14; i++) {
+        for (int i = 0; i < 18; i++) {
           float t = t0 + (float(i) + jit) * stp; vec3 pp = uCamPos + dir * t;
           float d = cDens(pp);
           if (d > 0.012) {
-            float ls = cDens(pp + uSunDir * 10.0) + cDens(pp + uSunDir * 24.0) * 0.6;
+            float ls = cDens(pp + uSunDir * 14.0) + cDens(pp + uSunDir * 36.0) * 0.6;
             float shd = exp(-ls * 1.5);
-            float hg = clamp((pp.y - y0) / 30.0, 0.0, 1.0);
+            float hg = clamp((pp.y - y0) / 56.0, 0.0, 1.0);
             vec3 cc = mix(shadow, lit, shd * sunUp) * (0.82 + 0.3 * hg);
             cc += lit * pow(sd, 10.0) * 0.9 * (1.0 - d) * sunUp;                           // Silberrand gegen die Sonne
-            float a = 1.0 - exp(-d * stp * 0.085);
+            float a = 1.0 - exp(-d * stp * 0.13);
             acc += tr * a * cc; tr *= 1.0 - a;
             if (tr < 0.03) break;
           }
@@ -5336,6 +5344,28 @@ function postInit() {
         sc += warm * (pow(sd, 7.0) * 0.32 + pow(sd, 90.0) * 0.55) * vis;
         sc += warm * smoothstep(0.99935, 0.99975, sd) * 3.0 * vis;
         sc += max(c0 - uClear, 0.0) * (1.0 - uDay) * 1.4;                          // Sterne und Mond aus der Szene
+        {                                                                                 // Mond: Kugel mit Phase, Meeren (Maria), Kratern und Hof
+          vec3 md = -uSunDir; float mc = dot(dir, md);
+          float mvis = smoothstep(-0.06, 0.05, md.y) * (1.0 - 0.9 * uDay) * (1.0 - uWet * 0.85);
+          if (mc > 0.996 && mvis > 0.001) {
+            vec3 up0 = abs(md.y) < 0.95 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+            vec3 bx = normalize(cross(up0, md)), by = cross(md, bx);
+            vec2 q = vec2(dot(dir, bx), dot(dir, by)) / 0.0632; float r2 = dot(q, q);
+            if (r2 < 1.0) {
+              vec3 nm = vec3(q, sqrt(1.0 - r2));
+              float ph = uMoon * 6.2831853; vec3 Ld = normalize(vec3(sin(ph), 0.12, -cos(ph)));
+              float lam = clamp(dot(nm, Ld), 0.0, 1.0); lam = smoothstep(0.0, 0.5, lam) * 0.8 + lam * 0.4;
+              vec2 uvm = q * 2.6;
+              float maria = smoothstep(0.46, 0.64, fbm(uvm * 1.1 + 5.3));
+              vec2 g = floor(uvm * 4.5), f = fract(uvm * 4.5); float hh = h21(g); vec2 cen = vec2(0.25 + 0.5 * hh, 0.25 + 0.5 * fract(hh * 7.13));
+              float dd = length(f - cen), cr = step(0.55, hh) * (smoothstep(0.26, 0.2, dd) * 0.5 - smoothstep(0.17, 0.1, dd) * 0.25);
+              float alb = 0.82 - 0.34 * maria - 0.16 * cr + (vn(uvm * 8.0) - 0.5) * 0.12;
+              vec3 surf = vec3(0.96, 0.94, 0.88) * alb * (lam * 1.05 + 0.025) * (0.6 + 0.4 * nm.z);
+              sc = mix(sc, surf, smoothstep(1.0, 0.93, r2) * mvis);
+            }
+          }
+          sc += vec3(0.5, 0.58, 0.8) * (pow(max(mc, 0.0), 220.0) * 0.4 + pow(max(mc, 0.0), 24.0) * 0.035) * mvis;
+        }
         { vec4 cl = cloudLayer(dir, 1.0e9, hor); sc = mix(sc, cl.rgb, cl.a * 0.96); }
         if (dir.y > 0.0 && uCamPos.y < uCloudY) {                                         // hohe, dünne Schleierwolken (nur von unten)
           float t = 520.0 / max(dir.y, 0.03); vec2 pp = (uCamPos.xz + dir.xz * t) * 0.0021 + vec2(uTime * 0.0035, uTime * 0.0012);
@@ -5410,7 +5440,7 @@ function postInit() {
         }
         vec2 vp = vUv - 0.5; float vg = 1.0 - dot(vp, vp) * 0.9; col *= mix(1.0, vg, 0.7);
         gl_FragColor = vec4(col, 1.0);
-      }`, { tScene: { value: null }, tDepth: { value: null }, tBloom: { value: null }, uRes: { value: new THREE.Vector2(1, 1) }, uSun: { value: new THREE.Vector3() }, uSunCol: { value: new THREE.Vector3(1, 0.85, 0.6) }, uNear: { value: 0.1 }, uFar: { value: 1000 }, uDay: { value: 1 }, uOW: { value: 1 }, uExp: { value: 0.82 }, uRays: { value: 1 }, uProjInv: { value: new THREE.Matrix4() }, uCamWorld: { value: new THREE.Matrix4() }, uCamPos: { value: new THREE.Vector3() }, uSunDir: { value: new THREE.Vector3(0, 1, 0) }, uClear: { value: new THREE.Vector3() }, uTime: { value: 0 }, uCover: { value: 0.5 }, uWet: { value: 0 }, uCloudY: { value: 100 }, tWater: { value: null }, tWDepth: { value: null } });
+      }`, { tScene: { value: null }, tDepth: { value: null }, tBloom: { value: null }, uRes: { value: new THREE.Vector2(1, 1) }, uSun: { value: new THREE.Vector3() }, uSunCol: { value: new THREE.Vector3(1, 0.85, 0.6) }, uNear: { value: 0.1 }, uFar: { value: 1000 }, uDay: { value: 1 }, uOW: { value: 1 }, uExp: { value: 0.82 }, uRays: { value: 1 }, uProjInv: { value: new THREE.Matrix4() }, uCamWorld: { value: new THREE.Matrix4() }, uCamPos: { value: new THREE.Vector3() }, uSunDir: { value: new THREE.Vector3(0, 1, 0) }, uClear: { value: new THREE.Vector3() }, uTime: { value: 0 }, uCover: { value: 0.5 }, uWet: { value: 0 }, uCloudY: { value: 100 }, uMoon: { value: 0.5 }, tWater: { value: null }, tWDepth: { value: null } });
     // Schatten
     const R = 56; POST.shCam = new THREE.OrthographicCamera(-R, R, R, -R, 1, 600); POST.shCam.layers.set(1); POST.shR = R;
     POST.shMat = new THREE.ShaderMaterial({ uniforms: { map: { value: ATLAS.texture } }, vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }', fragmentShader: 'uniform sampler2D map; varying vec2 vUv; void main(){ if (texture2D(map, vUv).a < 0.5) discard; gl_FragColor = vec4(1.0); }', side: THREE.DoubleSide });
@@ -5473,7 +5503,7 @@ function renderScene() {                                                        
   if (uni.uShadowOn.value > 0.5 && (POST.shFrame++ % 3) === 0) renderShadowMap();
   const sz = new THREE.Vector2(); renderer.getDrawingBufferSize(sz);
   const col = new THREE.Color(); renderer.getClearColor(col);
-  if (uni.uOW.value > 0.5) { cloudMesh.visible = false; sunMesh.visible = false; }   // eigener Himmel mit Wolken und Sonne im Nachbearbeitungs-Pass
+  if (uni.uOW.value > 0.5) { cloudMesh.visible = false; sunMesh.visible = false; moonMesh.visible = false; }   // eigener Himmel mit Wolken und Sonne im Nachbearbeitungs-Pass
   renderer.setRenderTarget(POST.rt); renderer.render(scene, camera);
   if (uni.uOW.value > 0.5) {                                                      // Wasser-Pass: Maske + Oberflächentiefe (für die Tiefenabdunklung)
     const pov = scene.overrideMaterial, pbg = scene.background; scene.overrideMaterial = POST.wMat; scene.background = null; camera.layers.set(2);
@@ -5494,7 +5524,7 @@ function renderScene() {                                                        
   u.uSun.value.set(sp.x * 0.5 + 0.5, sp.y * 0.5 + 0.5, sp.z < 1 && sunDir.y > -0.05 && uni.uOW.value > 0.5 ? 1 : 0); u.uRays.value = uni.uOW.value;
   u.uSunCol.value.set(1.0, 0.85 + 0.1 * smooth(0, 0.4, sunDir.y), 0.6 + 0.3 * smooth(0, 0.4, sunDir.y));
   camera.updateMatrixWorld(); u.uProjInv.value.copy(camera.projectionMatrixInverse); u.uCamWorld.value.copy(camera.matrixWorld); u.uCamPos.value.copy(camera.position); u.uSunDir.value.copy(sunDir);
-  u.uClear.value.set(col.r, col.g, col.b); u.uTime.value = performance.now() / 1000; const wf = typeof weather !== 'undefined' ? weather.wf : 0; const cl = typeof weather !== 'undefined' ? weather.cl || 0 : 0; u.uCover.value = 0.5 + 0.3 * Math.max(cl, wf); u.uWet.value = Math.max(wf, 0.7 * cl); u.uCloudY.value = (world ? world.yo : 0) + 88; u.tWater.value = POST.wt.texture; u.tWDepth.value = POST.wt.depthTexture;
+  u.uClear.value.set(col.r, col.g, col.b); u.uTime.value = performance.now() / 1000; const wf = typeof weather !== 'undefined' ? weather.wf : 0; const cl = typeof weather !== 'undefined' ? weather.cl || 0 : 0; u.uCover.value = 0.56 + 0.26 * Math.max(cl, wf); u.uWet.value = Math.max(wf, 0.7 * cl); u.uCloudY.value = (world ? world.yo : 0) + 88; u.uMoon.value = ((Math.floor(gameTime / DAY_LEN) % 8) + 8) % 8 / 8; u.tWater.value = POST.wt.texture; u.tWDepth.value = POST.wt.depthTexture;
   renderer.setRenderTarget(null); renderer.render(POST.qScene, POST.qCam);
 }
 window.addEventListener('resize', () => {
@@ -11018,6 +11048,11 @@ function frame(now) {
   // Himmel + Nebel
   const dayT = ((gameTime / DAY_LEN) % 1 + 1) % 1;
   updateSky(dayT); applyWeatherSky();
+  {                                                                                    // Handlicht: stärkste Lichtquelle in Haupt-/Zweithand
+    let ls = 0; for (const it of [inv[P.sel], offItem]) if (it && it.id < ITEM_BASE && BLOCKS[it.id] && BLOCKS[it.id].light) ls = Math.max(ls, BLOCKS[it.id].light);
+    uni.uHand.value.set(camera.position.x, camera.position.y - 0.25, camera.position.z, state === 'loading' ? 0 : ls / 15);
+    const fw = new THREE.Vector3(); camera.getWorldDirection(fw); uni.uHand.value.x += fw.x * 0.5; uni.uHand.value.y += fw.y * 0.5; uni.uHand.value.z += fw.z * 0.5;
+  }
   const lava = state !== 'loading' && P.headLava, water = state !== 'loading' && (P.headWater || lava);
   if (lava) {
     uni.fogColor.value.setRGB(0.55, 0.14, 0.02); uni.fogNear.value = 0.2; uni.fogFar.value = 5;
@@ -18108,7 +18143,7 @@ const BOT = (() => {
 })();
 if (BOTMODE) window.BOT = BOT;
 
-if (AC_DEV) window.__vc = { weather, renderInventory, closeContainer, AC, openEnchant, enchSlots, signOpen, bookOpen, getIcon, addEffect, kickedFromServer, showDisconnect, openContainer, containers, getWorld: () => world, P, armor, newStack, setOff(x) { offItem = x; refreshHotbar(); }, ckeyOf, inv, addItem, IID, ID, rbFill, RECIPES, gridMatch, openTable() { tableUI = true; recipeBook = true; setState('inv'); }, uni, POST, PALETTE, SPEC, CKL, cklApply, AC, acPeer, acCheck, SupabaseNet, AIB, aiBegin, aiEnd, aiOnChat, aiLLM, aiKey, aiObtain, aiSkill, aiFrame, aiTick, aiPath, aiFindBlocks, aiResolveItem, aiState, aiSay, aiParseJson, aiRunPlan, aiApply, aiSources, aiCount, aiAdd, aiMine, aiGotoPos, aiShapeCells, aiGroundY, aiRecv, aiInvText, HB, hbHarm, hbAfterTorch, hbBegin, hbEnd, hbAI, hbShrineAt, hbShrineCheck, hbUndo, hbGround, hbActTunnel, hbActPyramid, hbActTower, hbActSign, hbActTorch, hbActBreakTorches, hbMode, hbVanish, hbSay, hbRecv, tpOffline, bossDown, bossRespawn, bossContain, bossLate, mpSend, signs, signOpen, signClose, signTick, signPlaced, signSetKey, signsPack, signRemove, containerLoad, SIGN_IDS, bookOpen, bookClose, bookSignStart, bookSignDo, bookGo, bookOf, getBK: () => BK, hasGlint, enchLines, placementFor, HW, hwApply, hwTick, hwPoll, boss, bossBegin, bossEnd, bossTick, bossPos, bossRp, bossStartAct, bossDamage, bossPlayersAlive, bossLocked, BACT, blastAsk, askRealBlast, answerRealBlast, chainSet: (n, x, y, z) => { chainLocal = n; chainSum = [n * x, n * y, n * z]; }, blastQ, blastInfo: () => ({ tot: blastTot, done: blastDone, n: blastN, cur: !!blastCur }), bigSt, stepBlast, bigTick, perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
+if (AC_DEV) window.__vc = { setGT(t) { gameTime = t; }, DAY_LEN, weather, renderInventory, closeContainer, AC, openEnchant, enchSlots, signOpen, bookOpen, getIcon, addEffect, kickedFromServer, showDisconnect, openContainer, containers, getWorld: () => world, P, armor, newStack, setOff(x) { offItem = x; refreshHotbar(); }, ckeyOf, inv, addItem, IID, ID, rbFill, RECIPES, gridMatch, openTable() { tableUI = true; recipeBook = true; setState('inv'); }, uni, POST, PALETTE, SPEC, CKL, cklApply, AC, acPeer, acCheck, SupabaseNet, AIB, aiBegin, aiEnd, aiOnChat, aiLLM, aiKey, aiObtain, aiSkill, aiFrame, aiTick, aiPath, aiFindBlocks, aiResolveItem, aiState, aiSay, aiParseJson, aiRunPlan, aiApply, aiSources, aiCount, aiAdd, aiMine, aiGotoPos, aiShapeCells, aiGroundY, aiRecv, aiInvText, HB, hbHarm, hbAfterTorch, hbBegin, hbEnd, hbAI, hbShrineAt, hbShrineCheck, hbUndo, hbGround, hbActTunnel, hbActPyramid, hbActTower, hbActSign, hbActTorch, hbActBreakTorches, hbMode, hbVanish, hbSay, hbRecv, tpOffline, bossDown, bossRespawn, bossContain, bossLate, mpSend, signs, signOpen, signClose, signTick, signPlaced, signSetKey, signsPack, signRemove, containerLoad, SIGN_IDS, bookOpen, bookClose, bookSignStart, bookSignDo, bookGo, bookOf, getBK: () => BK, hasGlint, enchLines, placementFor, HW, hwApply, hwTick, hwPoll, boss, bossBegin, bossEnd, bossTick, bossPos, bossRp, bossStartAct, bossDamage, bossPlayersAlive, bossLocked, BACT, blastAsk, askRealBlast, answerRealBlast, chainSet: (n, x, y, z) => { chainLocal = n; chainSum = [n * x, n * y, n * z]; }, blastQ, blastInfo: () => ({ tot: blastTot, done: blastDone, n: blastN, cur: !!blastCur }), bigSt, stepBlast, bigTick, perf, perfSet, perfTick, spLoadPolicy, cmdPolicy, buildJob: () => buildJob, stepBuildJob, classNow, CLASS_TIMES, classGateCheck, mpHandlers, mpCheckBan, bannedFromServer, xpTotal, xpSetTotal, respawn, ewPaint, ewMouse, emRender, EMOTES, emote, emoteSlots, playEmote, openWheel, closeWheel, openEmoteMenu, ewChoose, applyEmote, mpCompat, MP_PROTO, verKey, missingRecipeKeys, POWDER2CONC, LOOT_TABLES, fishLoot, attackPlayer, seasonPhase, seasonIdx, seasonColor, seasonRepaint, SEASONS, weather, growMul, navReset: () => { navFrame = 0; }, NAV, openLoot, MOBTYPES, TAG, useItem, endVictory, updateEnd, endDead, showCredits, startEndTravel, endArrive, END, END_PILLARS, ENDF_IDS, END_PORTAL_ID, tryEndPortal, strongholdChunkFor, throwPearl, Pearl, mountMob, rsTick, rsAround, LEVER_IDS, BUTTON_IDS, PLATE_IDS, DUST_IDS, PIS_BASE, PIS_HEAD, HOP_IDS, PRAIL_IDS, TORCH_V, rsToggleLever, containers, rsContainer, vehicles, Vehicle, mpPetData, mpRestorePets, placeVehicle, mountVehicle, dismountVehicle, pickupVehicle, RAIL_IDS, railAround, spawnOrbs, enchOptions, doEnchant, openEnchant, enchPower, limitMsg, fluidQ, fluidScanQ, fluidUpdate, updateFluids, LQ, LVL, FLW, FLL, toWire, fromWire, keyY, fromKeyY, setWorldKeys, DIM_Y, enchSlots, renderInventory, toggleInventory, packItems, unpackItems, hurt, newStack, orbs, hasEnch, addXP, lootFor, breakBlock, Snake, snakeStep, snakeReset, menuCreeper, atUpdateSteve, atUpdateMobs, atBlock, atHeight, atTreeAt, AT, atStart, atStop, atStartState, atFindFlat, atFindTree, Dino, MenuScene, sandBuried, enterBackrooms, leaveBackrooms, toast, SNDBUF, SND, playGroup, blockSfx, mobSay, playMusic, ambientTick, fxTick, matOf, VOICES, SFX, amb, mus, ATLAS, TILE_LIST, ANIM, tryLightPortal, enterDimension, startDimTravel, PORTAL_IDS, mpDevRestart, mpRateLimited, mpFlushInterval, BED_IDS, useBed, mp, RemotePlayer, mpCfg, containers, armor, fallers, drops, primed, arrows, explode, spawnDrop, igniteTNT, addItem, newStack, RECIPES, craft, ID, IID, ITEMS, uni, spawnMob: (t, x, y, z) => { const m = new Mob(t, x, y, z); mobs.push(m); return m; }, get world() { return world; }, get lookT() { return lookT; }, get touchMode() { return touchMode; }, get gameTime() { return gameTime; }, set gameTime(v) { gameTime = v; }, DAY_LEN, P, inv, mobs, get state() { return state; }, setState, keys, mouse, BLOCKS, startGame, saveGame, env, get target() { return target; }, get tradeMob() { return tradeMob; }, VILLAGER_JOBS, LOOT_CHEST_IDS, SPAWNER_IDS, Mob, updateStructs, interactMob, openTrade, get achDone2() { return achDone; }, get tileCount() { return TILE_LIST.length; }, computeBlockLight, buildChunkMesh, handRoot, armPivot, itemPivot, hand, buildHandItem, getLG: () => ({ LG, lgOn, GW }), chatCommand, chatSuggest, rules, addEffect, weather, get achDone() { return achDone; }, ACHIEVEMENTS, settings, fishing: () => fishing, useRod, strikeLightning, updateMinimap, setWeather, fxAmp, DOOR_FAMS, LADDER_IDS, CONN_FAMS, catalog, canCheat };
 
 })();
 </script>
