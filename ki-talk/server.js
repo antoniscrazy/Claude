@@ -53,13 +53,13 @@ const json = (res, code, obj) => {
 
 async function listVoices() {
   const out = [];
-  let url = "https://api.cartesia.ai/voices?limit=100";
+  let url = "https://api.cartesia.ai/voices?limit=100&is_owner=true";
   for (let i = 0; i < 10 && url; i++) {
     const r = await fetch(url, { headers: { "X-API-Key": CARTESIA_API_KEY, "Cartesia-Version": CARTESIA_VERSION } });
     if (!r.ok) throw new Error("Cartesia voices: " + r.status);
     const j = await r.json();
     out.push(...j.data);
-    url = j.has_more && j.next_page ? "https://api.cartesia.ai/voices?limit=100&starting_after=" + j.next_page : null;
+    url = j.has_more && j.next_page ? "https://api.cartesia.ai/voices?limit=100&is_owner=true&starting_after=" + j.next_page : null;
   }
   return out.map((v) => ({ id: v.id, name: v.name.trim(), language: v.language, own: !!v.is_owner }));
 }
