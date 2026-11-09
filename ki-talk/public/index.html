@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KI-Talk</title>
+<style>
+  :root { --bg:#0f1117; --card:#181b24; --line:#2a2f3d; --txt:#e8eaf0; --mute:#8b92a5; --a:#6ea8ff; --b:#ff7eb6; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt); font:16px/1.5 system-ui,sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:20px 16px 40px; }
+  h1 { font-size:1.4rem; margin:0 0 16px; }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; display:grid; gap:12px; grid-template-columns:1fr 1fr; }
+  .panel .full { grid-column:1/-1; }
+  label { display:grid; gap:4px; font-size:.8rem; color:var(--mute); }
+  select,input { background:var(--bg); color:var(--txt); border:1px solid var(--line); border-radius:8px; padding:9px 10px; font:inherit; }
+  .btns { display:flex; gap:10px; margin:14px 0; }
+  button { background:var(--a); color:#06101f; border:0; border-radius:8px; padding:10px 18px; font:inherit; font-weight:600; cursor:pointer; }
+  button.stop { background:var(--line); color:var(--txt); }
+  button:disabled { opacity:.4; cursor:default; }
+  #log { display:grid; gap:10px; min-height:200px; }
+  .msg { max-width:85%; padding:10px 14px; border-radius:14px; border:1px solid var(--line); background:var(--card); }
+  .msg small { display:block; font-size:.72rem; color:var(--mute); margin-bottom:2px; }
+  .msg.A { justify-self:start; border-left:3px solid var(--a); }
+  .msg.B { justify-self:end; border-right:3px solid var(--b); }
+  .msg.speaking { background:#212636; }
+  #status { color:var(--mute); font-size:.85rem; min-height:1.3em; }
+  #status.err { color:#ff7a7a; }
+  @media (max-width:520px){ .panel{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<main>
+  <h1>🎙️ KI-Talk – zwei Freunde quatschen</h1>
+  <div class="panel">
+    <label>Sprache<select id="lang"></select></label>
+    <label>Thema (optional)<input id="topic" placeholder="z. B. Wochenende, Schule, Zocken …"></label>
+    <label>Person 1 – Name &amp; Stimme<select id="voiceA"></select></label>
+    <label>Person 2 – Name &amp; Stimme<select id="voiceB"></select></label>
+  </div>
+  <div class="btns">
+    <button id="start">Start</button>
+    <button id="stop" class="stop" disabled>Stopp</button>
+  </div>
+  <div id="status"></div>
+  <div id="log"></div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+let voices = [], running = false, runId = 0, currentAudio = null;
+
+function status(t, err) { $("status").textContent = t; $("status").className = err ? "err" : ""; }
+
+async function init() {
+  try {
+    const cfg = await (await fetch("/api/config")).json();
+    if (cfg.error) throw new Error(cfg.error);
+    voices = cfg.voices.sort((a, b) => (b.own - a.own) || a.name.localeCompare(b.name));
+    $("lang").innerHTML = Object.entries(cfg.langs).map(([k, v]) => `<option value="${k}">${v}</option>`).join("");
+    const opts = voices.map((v) => `<option value="${v.id}">${v.name} (${v.language})</option>`).join("");
+    $("voiceA").innerHTML = opts; $("voiceB").innerHTML = opts;
+    const find = (n) => voices.find((v) => v.name.toLowerCase() === n);
+    if (find("oscar")) $("voiceA").value = find("oscar").id;
+    if (find("chrissi")) $("voiceB").value = find("chrissi").id;
+    status("Bereit.");
+  } catch (e) { status("Konnte Konfiguration nicht laden: " + e.message, true); }
+}
+
+const voiceName = (id) => voices.find((v) => v.id === id)?.name || "?";
+
+async function fetchTurn(ctx, history, idx) {
+  const A = idx % 2 === 0;
+  const body = {
+    lang: ctx.lang, topic: ctx.topic, history,
+    speaker: A ? ctx.nameA : ctx.nameB, other: A ? ctx.nameB : ctx.nameA,
+    voiceId: A ? ctx.voiceA : ctx.voiceB,
+  };
+  const r = await fetch("/api/turn", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || r.status);
+  return { speaker: body.speaker, side: A ? "A" : "B", text: j.text, audio: "data:audio/wav;base64," + j.audio };
+}
+
+function play(src) {
+  return new Promise((resolve) => {
+    const a = new Audio(src);
+    currentAudio = a;
+    a.onended = a.onerror = () => resolve();
+    a.play().catch(() => resolve());
+  });
+}
+
+async function run() {
+  const my = ++runId;
+  running = true; $("start").disabled = true; $("stop").disabled = false; $("log").innerHTML = "";
+  const ctx = {
+    lang: $("lang").value, topic: $("topic").value.trim(),
+    voiceA: $("voiceA").value, voiceB: $("voiceB").value,
+    nameA: voiceName($("voiceA").value), nameB: voiceName($("voiceB").value),
+  };
+  if (ctx.nameA === ctx.nameB) { ctx.nameA += " 1"; ctx.nameB += " 2"; }
+  const history = [];
+  try {
+    status("Erste Nachricht wird erzeugt …");
+    let next = fetchTurn(ctx, history, 0);
+    for (let i = 0; running && my === runId; i++) {
+      const turn = await next;
+      if (!running || my !== runId) break;
+      history.push({ speaker: turn.speaker, text: turn.text });
+      // nächste Zeile schon vorbereiten, während diese abgespielt wird
+      next = fetchTurn(ctx, history, i + 1);
+      next.catch(() => {});
+      const el = document.createElement("div");
+      el.className = "msg " + turn.side + " speaking";
+      el.innerHTML = `<small></small><span></span>`;
+      el.querySelector("small").textContent = turn.speaker;
+      el.querySelector("span").textContent = turn.text;
+      $("log").appendChild(el); el.scrollIntoView({ block: "end", behavior: "smooth" });
+      status(turn.speaker + " spricht …");
+      await play(turn.audio);
+      el.classList.remove("speaking");
+    }
+  } catch (e) { status("Fehler: " + e.message, true); }
+  if (my === runId) { running = false; $("start").disabled = false; $("stop").disabled = true; if (!$("status").classList.contains("err")) status("Gestoppt."); }
+}
+
+$("start").onclick = run;
+$("stop").onclick = () => { running = false; runId++; if (currentAudio) currentAudio.pause(); $("start").disabled = false; $("stop").disabled = true; status("Gestoppt."); };
+init();
+</script>
+</body>
+</html>
