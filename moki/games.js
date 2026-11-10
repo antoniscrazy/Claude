@@ -45,6 +45,17 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "my-perfect-hotel",
+    title: "My Perfect Hotel",
+    url: "https://frolicking-cocada-f60e06.netlify.app",
+    category: "Simulation",
+    image: "my-perfect-hotel.jpg",
+    emoji: "🏨",
+    colors: ["#6a4cff", "#e0723a"],
+    description: "Baue und führe dein eigenes Hotel.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
