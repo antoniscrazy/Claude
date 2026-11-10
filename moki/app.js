@@ -18,7 +18,7 @@ function home() {
     <div class="chips">${cats.map(c => `<button class="chip ${c === category ? "on" : ""}" data-c="${esc(c)}">${esc(c)}</button>`).join("")}</div>
     <div style="height:16px"></div>
     ${list.length ? `<div class="grid">${list.map(g => tile(g)).join("")}</div>` : `<p class="empty">Kein Spiel gefunden.</p>`}
-    ${!q && category === "Alle" && sites.length ? `<h2>🌐 Weitere Seiten</h2><div class="grid">${sites.map(g => tile(g)).join("")}</div>` : ""}`;
+    ${!q && category === "Alle" && sites.length ? `<h2>🌐 Weitere Seiten</h2><p class="warn">⚠️ Achtung: Auf diesen Seiten funktionieren nicht alle Spiele. Wenn eins nicht lädt, probier ein anderes.</p><div class="grid">${sites.map(g => tile(g)).join("")}</div>` : ""}`;
   app.querySelectorAll(".chip").forEach(b => b.onclick = () => { category = b.dataset.c; home(); });
 }
 

@@ -38,3 +38,4 @@ h2{font-size:22px;margin:28px 0 14px}
 .tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .hero .tile img{object-position:center}
 .tile.wide{width:356px;max-width:100%}
+.warn{background:#3a2e08;border:1px solid #ffd23f66;color:#ffe9a0;padding:10px 14px;border-radius:12px;font-size:14px;line-height:1.4;margin-bottom:14px;max-width:760px}
