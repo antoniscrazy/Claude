@@ -62,7 +62,36 @@ function unproxy(url, fallbackHost) {
   return "https://" + fallbackHost + p;
 }
 
+// Service Worker: leitet im Browser ALLE Anfragen an erlaubte Hosts (auch die, die
+// erst im JavaScript zusammengebaut werden) über den Proxy.
+const SW_JS = `
+const ALLOWED = ${ALLOWED.toString()};
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
+self.addEventListener("fetch", (e) => {
+  const u = new URL(e.request.url);
+  if (u.origin === self.location.origin || !ALLOWED.test(u.hostname)) return;
+  const target = "/__h/" + u.hostname.toLowerCase() + u.pathname + u.search;
+  e.respondWith(fetch(new Request(target, e.request)));
+});
+`;
+// Wird in jede HTML-Seite eingefügt: registriert den Worker, lädt beim ersten Mal einmal neu.
+const REG_TAG =
+  "<script>(function(){if(!('serviceWorker' in navigator))return;" +
+  "var top=window===window.top,k='__sw_reloaded';" +
+  "navigator.serviceWorker.register('/__sw.js',{scope:'/'}).then(function(){return navigator.serviceWorker.ready}).then(function(){" +
+  "if(top&&!navigator.serviceWorker.controller){try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1')}catch(e){}location.reload()}" +
+  "}).catch(function(){})})();</script>";
+
 const server = http.createServer((req, res) => {
+  if (req.url === "/__sw.js") {
+    res.writeHead(200, {
+      "content-type": "application/javascript; charset=utf-8",
+      "service-worker-allowed": "/",
+      "cache-control": "no-cache",
+    });
+    return res.end(SW_JS);
+  }
   const { host, path } = resolveTarget(req);
   if (!ALLOWED.test(host)) {
     res.writeHead(403, { "content-type": "text/plain; charset=utf-8" });
@@ -91,7 +120,11 @@ const server = http.createServer((req, res) => {
       const chunks = [];
       r.on("data", (c) => chunks.push(c));
       r.on("end", () => {
-        const body = Buffer.from(rewriteText(Buffer.concat(chunks).toString("utf8")));
+        let text = rewriteText(Buffer.concat(chunks).toString("utf8"));
+        if (/text\/html/.test(type)) {
+          text = /<head[^>]*>/i.test(text) ? text.replace(/<head[^>]*>/i, (m) => m + REG_TAG) : REG_TAG + text;
+        }
+        const body = Buffer.from(text);
         h["content-length"] = body.length;
         res.writeHead(r.statusCode, h);
         res.end(body);
