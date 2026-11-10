@@ -12,15 +12,14 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
-    id: "block-dash",
-    title: "Block Dash",
-    url: "https://splendorous-pony-421cac.netlify.app",
+    id: "geometry-dash",
+    title: "Geometry Dash",
+    url: "https://friendly-fenglisu-b0d7a5.netlify.app",
     category: "Rhythmus",
-    image: "block-dash.jpg",
-    wide: true,
-    emoji: "🟦",
-    colors: ["#7b2ff7", "#f107a3"],
-    description: "Rhythmus-Runner mit 12 Levels, 7 Modi und Map Maker.",
+    image: "geometry-dash.jpg",
+    emoji: "🟨",
+    colors: ["#f5a500", "#1b9ad6"],
+    description: "Rhythmus-Runner: springe über Hindernisse im Takt.",
     featured: false
   },
   {
