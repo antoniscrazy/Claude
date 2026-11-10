@@ -37,10 +37,14 @@
 
 // ---------- Konstanten ----------
 const W = 960, H = 540, T = 40, GROUND = 450, CAMX = 240;
-const DT = 1 / 240, SPD = 416;
-const GRAV = 1260, JUMP_V = 460, FALL_MAX = 900;
-const PAD_V = { y: 620, p: 400 }, ORB_V = { y: 480, p: 340 };
-const SHIP_UP = 1500, SHIP_DN = 1500, SHIP_MAX = 340;
+// K = Spiel-Tempo. Zeit und Beschleunigung werden gemeinsam skaliert: alle Abstände in Kacheln bleiben gleich,
+// nur alles läuft schneller/knackiger. Anpassbar über die Adresse, z. B. block-dash.html?k=1.5
+const K = Math.min(2, Math.max(0.8, parseFloat(new URLSearchParams(location.search).get('k')) || 1.4));
+const DT = 1 / 240, SPD = 416 * K;
+const GRAV = 1260 * K * K, JUMP_V = 460 * K, FALL_MAX = 900 * K;
+const PAD_V = { y: 620 * K, p: 400 * K }, ORB_V = { y: 480 * K, p: 340 * K };
+const SHIP_UP = 1500 * K * K, SHIP_DN = 1500 * K * K, SHIP_MAX = 340 * K;
+const TOL = 4 * K, SNAP = 5 * K, PRESS_WIN = 0.1 / K;
 const CEIL = 400;
 const DIM = {
   cube: { w: 40, h: 40, ox: 0,  ins: 6 },
@@ -151,7 +155,7 @@ const LEVEL_DEFS = [
   }
 },
 {
-  name: 'Inferno', diff: 'Schwer', diffCol: '#ff5a5a', theme: 'mount', bpm: 150, endX: 596, demoEnd: 100, seed: 37,
+  name: 'Inferno', diff: 'Schwer', diffCol: '#ff5a5a', theme: 'mount', bpm: 150, endX: 599, demoEnd: 100, seed: 37,
   pal: [
     { x: 0,   a: '#6e1010', b: '#1a0404', acc: '#ff5a3c' },
     { x: 124, a: '#4a106e', b: '#12041f', acc: '#e05bff' },
@@ -166,7 +170,7 @@ const LEVEL_DEFS = [
     PAD(90); SPIKES(95, 7);
     SPIKES(108, 6); ORB(110, 2);
     PORTAL(124, 'gflip', 0, 10);
-    SPIKES(134, 2, 9, true); SAW(144, 9, 30); B(152, 9, 3, 1); SPIKES(157, 3, 9, true); COIN(153, 7);
+    SPIKES(134, 2, 9, true); SAW(144, 9, 30); B(156, 9, 3, 1); SPIKES(161, 3, 9, true); COIN(157, 7);
     PORTAL(170, 'gnorm', 0, 10);
     SPIKES(184, 5); ORB(186, 2, 'b');
     SPIKES(194, 1, 9, true); ORB(196, 7, 'b');
@@ -179,11 +183,11 @@ const LEVEL_DEFS = [
     SAW(356, 6, 24); SAW(374, 3, 24); SAW(401, 6, 24); SAW(419, 3, 24);
     PORTAL(446, 'cube', 0, 10);
     PORTAL(450, 'spd', 0, 6, 1.25);
-    SPIKES(462, 2); SAW(471, 0, 30); B(480, 0, 3, 1); SPIKES(485, 3);
-    PAD(496); SPIKES(500, 7);
-    SPIKES(520, 1); SPIKES(523, 1); SAW(535, 0, 30);
-    B(544, 0, 4, 1); B(549, 0, 4, 2); SPIKES(555, 3);
-    SPIKES(570, 7); ORB(573, 2); SPIKES(588, 1);
+    SPIKES(462, 2); SAW(471, 0, 30); B(483, 0, 3, 1); SPIKES(488, 3);
+    PAD(503); SPIKES(507, 6);
+    SPIKES(525, 1); SPIKES(528, 1); SAW(538, 0, 30);
+    B(548, 0, 4, 1); B(552, 0, 4, 2); SPIKES(558, 3);
+    SPIKES(573, 7); ORB(576, 2); SPIKES(591, 1);
   }
 },
 {
@@ -464,15 +468,15 @@ function step(s, held, dt) {
   } else if (m === 'wave') {
     s.vy = (held ? 1 : -1) * d * SPD * s.speed;
   } else if (m === 'ball') {
-    if (s.onGround && s.pressT !== s.lastPress && s.t - s.pressT < 0.12) {
-      s.lastPress = s.pressT; s.grav = -s.grav; d = s.grav; s.onGround = false; s.vy = -d * 120;
+    if (s.onGround && s.pressT !== s.lastPress && s.t - s.pressT < PRESS_WIN * 1.2) {
+      s.lastPress = s.pressT; s.grav = -s.grav; d = s.grav; s.onGround = false; s.vy = -d * 120 * K;
     }
     s.vy -= d * GRAV * 0.75 * dt;
-    if (d * s.vy < -700) s.vy = -d * 700;
+    if (d * s.vy < -700 * K) s.vy = -d * 700 * K;
   } else if (m === 'ufo') {
-    if (s.pressT !== s.lastPress && s.t - s.pressT < 0.1) { s.lastPress = s.pressT; s.vy = d * 330; }
+    if (s.pressT !== s.lastPress && s.t - s.pressT < PRESS_WIN) { s.lastPress = s.pressT; s.vy = d * 330 * K; }
     s.vy -= d * GRAV * 0.7 * dt;
-    if (d * s.vy < -520) s.vy = -d * 520;
+    if (d * s.vy < -520 * K) s.vy = -d * 520 * K;
   } else {
     if (s.onGround && held) { s.vy = d * JUMP_V; s.onGround = false; }
     s.vy -= d * GRAV * dt;
@@ -486,10 +490,10 @@ function step(s, held, dt) {
   for (let i = 0; i < near.length; i++) {
     const o = near[i]; if (o.k !== 'b') continue;
     if (px + w > o.x0 + 0.01 && px < o.x1 - 0.01 && s.y < o.y1 - 0.001 && s.y + h > o.y0 + 0.001) {
-      if (s.vy <= 0 && py0 >= o.y1 - 4) {
+      if (s.vy <= 0 && py0 >= o.y1 - TOL) {
         if (m === 'cube' && d < 0) { s.dead = true; return; }
         s.y = o.y1; if (s.vy < 0) s.vy = 0; if (d > 0) s.onGround = true;
-      } else if (s.vy >= 0 && py0 + h <= o.y0 + 4) {
+      } else if (s.vy >= 0 && py0 + h <= o.y0 + TOL) {
         if (m === 'cube' && d > 0) { s.dead = true; return; }
         s.y = o.y0 - h; if (s.vy > 0) s.vy = 0; if (d < 0) s.onGround = true;
       }
@@ -502,8 +506,8 @@ function step(s, held, dt) {
   for (let i = 0; i < near.length; i++) {
     const o = near[i]; if (o.k !== 'b') continue;
     if (px + w > o.x0 + 0.01 && px < o.x1 - 0.01 && s.y < o.y1 - 0.001 && s.y + h > o.y0 + 0.001) {
-      if (d > 0 && s.y >= o.y1 - 5) { s.y = o.y1; if (s.vy < 0) s.vy = 0; s.onGround = true; }
-      else if (d < 0 && s.y + h <= o.y0 + 5) { s.y = o.y0 - h; if (s.vy > 0) s.vy = 0; s.onGround = true; }
+      if (d > 0 && s.y >= o.y1 - SNAP) { s.y = o.y1; if (s.vy < 0) s.vy = 0; s.onGround = true; }
+      else if (d < 0 && s.y + h <= o.y0 + SNAP) { s.y = o.y0 - h; if (s.vy > 0) s.vy = 0; s.onGround = true; }
       else { s.dead = true; return; }
     }
   }
@@ -528,7 +532,7 @@ function step(s, held, dt) {
         const hit = px < o.x1 && px + w > o.x0 && s.y < o.y1 && s.y + h > o.y0;
         if (hit && !s.used.has(o.id)) {
           s.used.add(o.id); s.onGround = false;
-          if (o.kind === 'b') { s.grav = -s.grav; s.vy = s.grav * -200; }
+          if (o.kind === 'b') { s.grav = -s.grav; s.vy = s.grav * -200 * K; }
           else s.vy = d * PAD_V[o.kind];
         } else if (!hit && s.used.has(o.id)) s.used.delete(o.id);
         break;
@@ -536,9 +540,9 @@ function step(s, held, dt) {
       case 'o': {
         const dx = pcx - o.cx, dy = pcy - o.cy;
         const hit = dx * dx + dy * dy < 38 * 38;
-        if (hit && !s.used.has(o.id) && s.t - s.pressT < 0.1 && m !== 'wave') {
+        if (hit && !s.used.has(o.id) && s.t - s.pressT < PRESS_WIN && m !== 'wave') {
           s.used.add(o.id); s.onGround = false;
-          if (o.kind === 'b') { s.grav = -s.grav; s.vy = s.grav * -200; }
+          if (o.kind === 'b') { s.grav = -s.grav; s.vy = s.grav * -200 * K; }
           else s.vy = d * ORB_V[o.kind];
         } else if (!hit && s.used.has(o.id)) s.used.delete(o.id);
         break;
@@ -770,8 +774,8 @@ function visuals(dt) {
     if (s.onGround) {
       const t = Math.round(game.rot / (Math.PI / 2)) * (Math.PI / 2);
       game.rot += (t - game.rot) * Math.min(1, dt * 30);
-    } else game.rot += 4.3 * dt * d;
-  } else if (s.mode === 'ball') game.rot += 13 * dt * s.speed * d;
+    } else game.rot += 4.3 * K * dt * d;
+  } else if (s.mode === 'ball') game.rot += 13 * K * dt * s.speed * d;
   else game.rot = 0;
   game.ceilAmt += (((s.mode !== 'cube' || s.grav < 0) ? 1 : 0) - game.ceilAmt) * Math.min(1, dt * 6);
   // Landen / Springen
@@ -1170,7 +1174,7 @@ function drawPlayerShape(s, camX, alpha) {
   ctx.globalAlpha = alpha;
   if (s.mode === 'ship') {
     const cx = x + T / 2, cy = GROUND - s.y - D.h / 2;
-    const ang = clamp(-s.vy / 420, -0.6, 0.6) * d;
+    const ang = clamp(-s.vy / (420 * K), -0.6, 0.6) * d;
     ctx.translate(cx, cy); ctx.rotate(ang); ctx.scale(1, d);
     ctx.shadowColor = sk.glow; ctx.shadowBlur = 18;
     // Kuppel mit kleinem Würfel
