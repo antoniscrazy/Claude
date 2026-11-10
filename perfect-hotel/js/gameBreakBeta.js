@@ -1,89 +1,33 @@
-window.adsbygoogle = window.adsbygoogle || [];
-const adBreak = adConfig = function(o) {adsbygoogle.push(o);}
-adConfig({
-    preloadAdBreaks: 'on',
-    sound: 'on', // This game has sound
-    onReady: () => {
-        console.log("ready");
-    }, // Called when API has initialised and adBreak() is ready
-});
-function showNextAd()
-{
-    console.log("showNextAd")
-    adBreak({
-        type: 'next', // ad shows at start of next level
-        name: 'next-game',
-        beforeAd: () => {            
-            console.log("beforeAd")
-            passBeforeAdData()
-        }, // You may also want to mute thegame's sound.
-        afterAd: () => {
-            console.log("afterAd")
-            adBreakDoneData()
-        }, // resume the game flow.
-        adBreakDone: (placementInfo) => {
-            console.log("adBreak complete ");
-            console.log(placementInfo.breakType);
-            console.log(placementInfo.breakName);
-            console.log(placementInfo.breakFormat);
-            console.log(placementInfo.breakStatus);
-        },
-    });
+// Lokaler Ersatz für die Google-Ad-Breaks: keine Werbung, Belohnungen gibt es sofort.
+// Das Spiel ruft showNextAd() (Zwischenwerbung) und showReward() (Belohnungs-Werbung) auf.
+function showNextAd() {
+    // Keine Werbung – das Spiel läuft einfach weiter.
+    myGameInstance.SendMessage('GameObjectAds', 'resumeGame');
 }
 
-function showReward()
-{
-    console.log("showReward")
-    adBreak({
-        type: 'reward', // ad shows at start of next level
-        name: 'rewarded Ad',
-        beforeAd: () => {            
-            console.log("beforeAd")
-            passBeforeAdData()
-        }, // You may also want to mute thegame's sound.
-        afterAd: () => {
-            console.log("afterAd")
-        }, // resume the game flow.
-        beforeReward: (showAdFn) => {console.log("beforeReward ")+showAdFn(0)},
-        adDismissed: () => {console.log("adDismissed");cancelReward()},
-        adViewed: () => {console.log("adViewed");gainReward()},
-        adBreakDone: (placementInfo) => {
-            console.log("adBreak complete ");
-            console.log(placementInfo.breakType);
-            console.log(placementInfo.breakName);
-            console.log(placementInfo.breakFormat);
-            console.log(placementInfo.breakStatus);
-            if(placementInfo.breakStatus == "frequencyCapped"){noRewardAdsAvailable()};
-			if(placementInfo.breakStatus == "other"){noRewardAdsAvailable()};
-        },
-    });
+function showReward() {
+    // Belohnung sofort gewähren, als wäre die Werbung angesehen worden.
+    gainReward();
 }
-function noRewardAdsAvailable()
-{
-    console.log("noRewardAdsAvailable")
+
+function noRewardAdsAvailable() {
     myGameInstance.SendMessage('GameObjectAds', 'NoRewardedAdsTryLater');
 }
 
-function cancelReward()
-{
-    console.log("cancelReward")
+function cancelReward() {
     myGameInstance.SendMessage('GameObjectAds', 'resumeGameRewarded');
     myGameInstance.SendMessage('GameObjectAds', 'rewardAdsCanceled');
 }
 
-function gainReward()
-{
-    console.log("gainReward")
+function gainReward() {
     myGameInstance.SendMessage('GameObjectAds', 'resumeGameRewarded');
     myGameInstance.SendMessage('GameObjectAds', 'rewardAdsCompleted');
 }
 
-function passBeforeAdData() 
-{
+function passBeforeAdData() {
     myGameInstance.SendMessage('GameObjectAds', 'pauseGame');
 }
 
-function adBreakDoneData()
-{
+function adBreakDoneData() {
     myGameInstance.SendMessage('GameObjectAds', 'resumeGame');
 }
