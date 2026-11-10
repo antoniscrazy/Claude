@@ -104,6 +104,17 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "subway-surfers",
+    title: "Subway Surfers",
+    url: "https://animated-phoenix-4f21a5.netlify.app",
+    category: "Action",
+    image: "subway-surfers.jpg",
+    emoji: "🛹",
+    colors: ["#2b9cf0", "#e0723a"],
+    description: "Renne durch die U-Bahn und weiche Zügen aus.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
