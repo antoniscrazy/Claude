@@ -205,28 +205,156 @@ async function adminPage(newCodes, err) {
     <script>setInterval(function(){var a=document.activeElement;if(!a||a.tagName!=='INPUT')location.reload()},15000)</script>`);
 }
 
+// ---------- Sperrseiten im Weltraum-Design ----------
+const LOCK_CSS = `
+@property --a{syntax:'<angle>';initial-value:0deg;inherits:false}
+:root{color-scheme:dark;--mint:#00e5a8;--gold:#ffd23f;--vio:#7c3aed;--text:#eaf1ff;--mut:#8fa0c4;--bad:#ff5d73}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{color:var(--text);font:16px/1.5 "Segoe UI",system-ui,-apple-system,sans-serif;overflow-x:hidden;
+ background:radial-gradient(1200px 700px at 12% 8%,rgba(124,58,237,.38),transparent 60%),
+  radial-gradient(900px 650px at 92% 88%,rgba(0,229,168,.20),transparent 60%),
+  radial-gradient(700px 500px at 72% 12%,rgba(255,210,63,.10),transparent 60%),#05060f;background-attachment:fixed}
+#stars{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.shoot{position:fixed;top:-10px;left:0;width:140px;height:2px;z-index:0;pointer-events:none;opacity:0;
+ background:linear-gradient(90deg,transparent,#fff);transform:rotate(35deg);filter:drop-shadow(0 0 6px #9fd8ff);animation:shoot 9s linear infinite}
+.shoot:nth-of-type(2){animation-delay:3.5s;top:12vh;left:40vw}.shoot:nth-of-type(3){animation-delay:6.2s;top:4vh;left:75vw}
+@keyframes shoot{0%{opacity:0;transform:translate(0,0) rotate(35deg)}4%{opacity:1}14%{opacity:0;transform:translate(-420px,300px) rotate(35deg)}100%{opacity:0}}
+.planet{position:fixed;right:-70px;bottom:-60px;width:260px;height:260px;border-radius:50%;z-index:0;pointer-events:none;
+ background:radial-gradient(circle at 32% 30%,#9ff7da 0,#00e5a8 22%,#5b34c9 62%,#1b0f45 100%);
+ box-shadow:0 0 70px rgba(0,229,168,.35),inset -30px -30px 60px rgba(0,0,0,.55);animation:float 9s ease-in-out infinite}
+.planet:before{content:"";position:absolute;left:-45%;top:38%;width:190%;height:24%;border-radius:50%;
+ border:6px solid rgba(255,210,63,.55);border-left-color:rgba(255,210,63,.15);transform:rotate(-18deg);box-shadow:0 0 18px rgba(255,210,63,.35)}
+.moon{position:fixed;left:7vw;top:62vh;width:46px;height:46px;border-radius:50%;z-index:0;pointer-events:none;
+ background:radial-gradient(circle at 35% 30%,#fff 0,#c9d3f5 40%,#5d6aa0 100%);box-shadow:0 0 24px rgba(160,190,255,.4);animation:float 7s ease-in-out infinite reverse}
+@keyframes float{50%{transform:translateY(-18px) rotate(3deg)}}
+.lock-wrap{position:relative;z-index:1;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:84px 16px 40px}
+.panel{width:100%;max-width:470px;border-radius:24px;padding:30px 26px 26px;border:1.5px solid transparent;
+ background:linear-gradient(rgba(9,12,28,.82),rgba(9,12,28,.82)) padding-box,
+  conic-gradient(from var(--a),var(--mint),var(--vio),var(--gold),var(--mint)) border-box;
+ -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);animation:spin 7s linear infinite,rise .8s ease both;
+ box-shadow:0 20px 70px rgba(0,0,0,.6),0 0 60px rgba(124,58,237,.25)}
+@keyframes spin{to{--a:360deg}}@keyframes rise{from{opacity:0;transform:translateY(24px) scale(.97)}}
+.hero{text-align:center;margin-bottom:20px}
+.lockring{position:relative;width:92px;height:92px;margin:0 auto 14px;display:grid;place-items:center}
+.lockring i{position:absolute;inset:0;border-radius:50%;border:2px solid var(--bad);opacity:0;animation:pulse 2.6s ease-out infinite}
+.lockring i:nth-child(2){animation-delay:.85s}.lockring i:nth-child(3){animation-delay:1.7s}
+@keyframes pulse{0%{transform:scale(.55);opacity:.8}100%{transform:scale(1.35);opacity:0}}
+.lockring svg{position:relative;width:46px;height:46px;filter:drop-shadow(0 0 10px rgba(255,93,115,.8))}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:4px 12px;border-radius:99px;font-size:.74rem;letter-spacing:.18em;font-weight:700;
+ text-transform:uppercase;color:#ffd0d6;background:rgba(255,93,115,.12);border:1px solid rgba(255,93,115,.45)}
+.chip b{width:8px;height:8px;border-radius:50%;background:var(--bad);box-shadow:0 0 10px var(--bad);animation:blink 1.4s infinite}
+@keyframes blink{50%{opacity:.25}}
+h1.t{margin:14px 0 6px;font-size:clamp(1.55rem,6vw,2rem);font-weight:900;letter-spacing:.1em;text-transform:uppercase;line-height:1.15;
+ background:linear-gradient(90deg,var(--mint),#9db8ff,var(--gold),#9db8ff,var(--mint));background-size:200% 100%;background-repeat:repeat-x;-webkit-background-clip:text;background-clip:text;
+ -webkit-text-fill-color:transparent;animation:shine 6s linear infinite}
+@keyframes shine{to{background-position:-200% 0}}
+.sub{margin:0;color:var(--mut);font-size:.95rem}
+label{display:block;color:var(--mut);font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;margin:0 0 6px}
+input,select{width:100%;font:inherit;color:var(--text);background:rgba(255,255,255,.05);border:1px solid rgba(143,160,196,.35);border-radius:14px;padding:12px 14px;outline:none;
+ transition:border-color .2s,box-shadow .2s}
+input:focus,select:focus{border-color:var(--mint);box-shadow:0 0 0 3px rgba(0,229,168,.18),0 0 22px rgba(0,229,168,.3)}
+select option{background:#0b0d1e}
+input.codein{text-align:center;font:800 1.7rem ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.28em;text-transform:uppercase;padding:14px 10px;text-indent:.28em}
+input.codein::placeholder{color:rgba(143,160,196,.35)}
+button{font:inherit;cursor:pointer;border:0;border-radius:14px;padding:14px 18px;font-weight:800;letter-spacing:.04em;transition:transform .15s,box-shadow .2s,opacity .2s}
+button.go{width:100%;margin-top:14px;color:#04201a;background:linear-gradient(90deg,var(--mint),var(--gold),var(--mint));background-size:200% 100%;background-repeat:repeat-x;
+ box-shadow:0 8px 28px rgba(0,229,168,.35);animation:shine 5s linear infinite}
+button.go:hover{transform:translateY(-2px) scale(1.01);box-shadow:0 12px 36px rgba(0,229,168,.55)}
+button.go:active{transform:scale(.98)}
+button.ghost{color:var(--text);background:rgba(255,255,255,.06);border:1px solid rgba(143,160,196,.4);padding:12px 16px}
+button.ghost:hover{background:rgba(255,255,255,.12);transform:translateY(-1px)}
+.or{display:flex;align-items:center;gap:12px;margin:22px 0 14px;color:var(--mut);font-size:.74rem;letter-spacing:.2em;text-transform:uppercase}
+.or:before,.or:after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(143,160,196,.45),transparent)}
+.req{display:grid;grid-template-columns:1fr 1.4fr;gap:10px}.req .full{grid-column:1/-1}
+.hint{margin:0 0 12px;color:var(--mut);font-size:.88rem}
+.err{margin:12px 0 0;padding:10px 12px;border-radius:12px;color:#ffd0d6;background:rgba(255,93,115,.12);border:1px solid rgba(255,93,115,.45);font-size:.92rem}
+.radar{position:relative;width:150px;height:150px;margin:6px auto 14px}
+.radar i{position:absolute;inset:0;border-radius:50%;border:2px solid var(--mint);opacity:0;animation:ping 3s ease-out infinite}
+.radar i:nth-child(2){animation-delay:1s}.radar i:nth-child(3){animation-delay:2s}
+@keyframes ping{0%{transform:scale(.15);opacity:.9}100%{transform:scale(1);opacity:0}}
+.radar em{position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px;border-radius:50%;background:var(--gold);box-shadow:0 0 22px var(--gold),0 0 50px rgba(255,210,63,.5)}
+.dots:after{content:"";animation:dots 1.6s steps(4) infinite}
+@keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+.center{text-align:center}
+a.cancel{color:var(--mut);font-size:.9rem}
+@media (max-width:520px){.req{grid-template-columns:1fr}.planet{width:190px;height:190px;right:-70px;bottom:-70px}.moon{display:none}.panel{padding:24px 18px 20px}}
+@media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+`;
+const STARS_JS = `(function(){var c=document.getElementById('stars');if(!c||!c.getContext)return;var x=c.getContext('2d'),w,h,d=Math.min(devicePixelRatio||1,2),S=[],N=170,
+reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function rs(){w=innerWidth;h=innerHeight;c.width=w*d;c.height=h*d;x.setTransform(d,0,0,d,0,0)}
+function n(r){return{x:Math.random()*2-1,y:Math.random()*2-1,z:r?Math.random():1,c:Math.random()}}
+function f(){x.clearRect(0,0,w,h);var cx=w/2,cy=h/2,m=Math.max(w,h)/2;
+for(var i=0;i<S.length;i++){var s=S[i];if(!reduce)s.z-=.0011;if(s.z<=.02){S[i]=n(false);continue}
+var px=cx+s.x/s.z*m*.22,py=cy+s.y/s.z*m*.22;if(px<-5||px>w+5||py<-5||py>h+5){S[i]=n(false);continue}
+x.globalAlpha=Math.min(1,(1-s.z)*1.5+.12);x.fillStyle=s.c>.88?'#ffd23f':s.c>.65?'#00e5a8':'#cfe3ff';
+x.beginPath();x.arc(px,py,(1-s.z)*2.1+.3,0,6.2832);x.fill()}
+if(!reduce)requestAnimationFrame(f)}
+rs();for(var i=0;i<N;i++)S.push(n(true));addEventListener('resize',rs);f()})();`;
+
+// Back-Button zu Moki (wird nur auf den Sperrseiten angezeigt)
+const MOKI_BACK = `<!-- Moki: Back-Button -->
+<a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a>
+<style>
+  #moki-back {
+    position: fixed; top: 12px; right: 12px; z-index: 2147483647;
+    padding: 9px 16px; border-radius: 999px;
+    background: linear-gradient(90deg, #00e5a8, #ffd23f);
+    color: #04201a; font: 800 14px "Segoe UI", system-ui, sans-serif;
+    text-decoration: none; box-shadow: 0 3px 12px rgba(0, 0, 0, .5); opacity: .92;
+  }
+  #moki-back:hover { opacity: 1; transform: scale(1.05); }
+</style>`;
+
+const LOCK_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="#ff8fa0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5" fill="rgba(255,93,115,.18)"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.3" fill="#ff8fa0"/><path d="M12 16.5v1.8"/></svg>`;
+
+const lockShell = (title, inner) =>
+  `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>${esc(title)}</title><style>${LOCK_CSS}</style></head><body>
+<canvas id="stars"></canvas><i class="shoot"></i><i class="shoot"></i><i class="shoot"></i><div class="planet"></div><div class="moon"></div>
+${MOKI_BACK}
+<div class="lock-wrap"><main class="panel">${inner}</main></div><script>${STARS_JS}</script></body></html>`;
+
 function codePage(site, err) {
   const s = SITES[site];
-  return shell("Zugangscode", `<h1>${s ? esc(s.name) : "Spiele"} – Zugangscode</h1><div class="card"><form method="post" action="/redeem">
-    <input type="hidden" name="site" value="${esc(site || "")}">
-    <label for="c">Code eingeben</label>
-    <input id="c" name="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX" maxlength="12" autofocus required style="font-size:1.4rem;letter-spacing:.1em;text-transform:uppercase">
-    ${err ? `<div class="err">${esc(err)}</div>` : ""}<p><button>Freischalten</button></p></form></div>
-    <div class="card"><h2>Keinen Code?</h2><p class="mut">Frag um eine Zeit an. Du bekommst Zugang, sobald es freigegeben wird.</p>
-    <form method="post" action="/request"><input type="hidden" name="site" value="${esc(site || "")}">
-      <div class="row"><div><label for="sec">Wie lange?</label><select id="sec" name="seconds" style="width:100%;font:inherit;border-radius:8px;border:1px solid var(--line);background:#14151a;color:var(--text);padding:10px 12px">
+  return lockShell("Zugang gesperrt", `
+    <div class="hero">
+      <div class="lockring"><i></i><i></i><i></i>${LOCK_ICON}</div>
+      <span class="chip"><b></b>${s ? esc(s.name) + " · " : ""}Gesperrt</span>
+      <h1 class="t">Zugang gesperrt</h1>
+      <p class="sub">Gib deinen Zugangscode ein, um die Seite zu öffnen.</p>
+    </div>
+    <form method="post" action="/redeem">
+      <input type="hidden" name="site" value="${esc(site || "")}">
+      <label for="c">Zugangscode</label>
+      <input class="codein" id="c" name="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX" maxlength="12" autofocus required>
+      ${err ? `<div class="err">${esc(err)}</div>` : ""}
+      <button class="go">Freischalten</button>
+    </form>
+    <div class="or">oder</div>
+    <p class="hint">Du hast keinen Code? Wähle eine Zeit und frage sie an. Sobald sie freigegeben wird, kommst du rein.</p>
+    <form method="post" action="/request" class="req">
+      <input type="hidden" name="site" value="${esc(site || "")}">
+      <div><label for="sec">Wie lange?</label><select id="sec" name="seconds">
         ${REQUEST_OPTIONS.map(([v, t]) => `<option value="${v}"${v === 1800 ? " selected" : ""}>${t}</option>`).join("")}</select></div>
-      <div style="flex:2"><label for="nm">Dein Name</label><input id="nm" name="name" maxlength="40" placeholder="Name"></div>
-      <div style="flex:0"><button class="sec">Anfragen</button></div></div></form></div>`);
+      <div><label for="nm">Dein Name</label><input id="nm" name="name" maxlength="40" placeholder="Name"></div>
+      <button class="ghost full">Zeit anfragen</button>
+    </form>`);
 }
 
 function waitPage(site) {
-  return shell("Anfrage gesendet", `<h1>Anfrage gesendet</h1><div class="card"><p id="msg">Warte auf Freigabe …</p><p class="mut">Diese Seite bitte offen lassen. Es geht automatisch weiter.</p>
-    <p><a href="/go${site ? "?site=" + esc(site) : ""}" class="mut">Abbrechen</a></p></div>
+  const back = "/go" + (site ? "?site=" + esc(site) : "");
+  return lockShell("Anfrage gesendet", `
+    <div class="hero center">
+      <div class="radar"><i></i><i></i><i></i><em></em></div>
+      <h1 class="t">Anfrage gesendet</h1>
+      <p class="sub" id="msg"><span class="dots">Warte auf Freigabe</span></p>
+    </div>
+    <p class="hint center">Diese Seite bitte offen lassen. Sobald es freigegeben ist, geht es automatisch weiter.</p>
+    <p class="center"><a class="cancel" href="${back}">Abbrechen</a></p>
     <script>(function(){var t=setInterval(function(){fetch('/wait/status',{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){
-      if(d.status==='granted'||d.status==='claimed'){clearInterval(t);location.href='/go${site ? "?site=" + esc(site) : ""}'}
-      else if(d.status==='denied'){clearInterval(t);document.getElementById('msg').textContent='Abgelehnt.'}
-      else if(d.status==='none'){clearInterval(t);location.href='/go${site ? "?site=" + esc(site) : ""}'}
+      if(d.status==='granted'||d.status==='claimed'||d.status==='none'){clearInterval(t);location.href='${back}'}
+      else if(d.status==='denied'){clearInterval(t);document.getElementById('msg').textContent='Deine Anfrage wurde abgelehnt.'}
     }).catch(function(){})},3000)})()</script>`);
 }
 
