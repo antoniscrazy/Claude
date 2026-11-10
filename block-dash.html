@@ -2,16 +2,24 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
 <title>Block Dash</title>
 <style>
   html,body{margin:0;height:100%;background:#000;overflow:hidden;touch-action:none;
     -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
   canvas{display:block;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
+  #rot{display:none;position:fixed;left:0;right:0;top:0;padding:8px 12px;background:rgba(0,0,0,.75);color:#fff;
+    font:600 15px system-ui,sans-serif;text-align:center;pointer-events:none;z-index:5;
+    padding-top:calc(8px + env(safe-area-inset-top))}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<div id="rot">↻ Für das beste Erlebnis: Gerät quer halten</div>
 <script>
 'use strict';
 /* =====================================================================
@@ -36,6 +44,7 @@ const DIM = {
   ball: { w: 36, h: 36, ox: 2,  ins: 4 },
   ufo:  { w: 40, h: 30, ox: 0,  ins: 6 }
 };
+const isTouch = (window.matchMedia && matchMedia('(pointer: coarse)').matches) || 'ontouchstart' in window;
 const FONT = '"Segoe UI", system-ui, -apple-system, sans-serif';
 
 // ---------- Level-Compiler ----------
@@ -81,8 +90,8 @@ const LEVEL_DEFS = [
   build({ B, S, SPIKES, PAD, ORB, PORTAL, COIN, PILLAR }) {
     S(16); SPIKES(23, 2); SPIKES(31, 3); B(40, 0, 3, 1); S(45);
     SPIKES(52, 2); B(56, 0, 3, 1); SPIKES(61, 2);
-    B(68, 0, 3, 1); B(72, 0, 3, 2); B(76, 0, 3, 3); B(80, 0, 3, 2); B(84, 0, 3, 1);
-    SPIKES(89, 2); COIN(77, 4);
+    B(68, 0, 3, 1); B(71, 0, 3, 2); B(74, 0, 3, 3); B(77, 0, 3, 2); B(80, 0, 3, 1);
+    SPIKES(85, 2); COIN(75, 4);
     PAD(96); SPIKES(100, 5);
     SPIKES(112, 6); ORB(114, 2);
     SPIKES(126, 2); PAD(132); B(137, 2, 4, 1); SPIKES(145, 3);
@@ -92,8 +101,8 @@ const LEVEL_DEFS = [
     PORTAL(292, 'cube', 0, 10);
     PORTAL(300, 'spd', 0, 6, 1.25);
     SPIKES(312, 2); SPIKES(322, 3); B(332, 0, 3, 1); SPIKES(337, 2);
-    B(346, 0, 4, 1); B(351, 0, 4, 2); SPIKES(357, 2);
-    PAD(366); SPIKES(370, 6);
+    B(350, 0, 4, 1); B(354, 0, 4, 2); SPIKES(360, 2);
+    PAD(369); SPIKES(373, 6);
     SPIKES(388, 1); SPIKES(391, 1); SPIKES(394, 1); COIN(391, 2);
     SPIKES(404, 7); ORB(407, 2); SPIKES(424, 2);
   }
@@ -110,7 +119,7 @@ const LEVEL_DEFS = [
   build({ B, S, SPIKES, PAD, ORB, PORTAL, SAW, COIN, PILLAR }) {
     // Intro
     S(16); SPIKES(23, 2); B(31, 0, 1, 1); S(31, 1); SPIKES(40, 3);
-    B(48, 0, 3, 1); B(52, 0, 3, 2); B(56, 0, 3, 3); SPIKES(61, 4);
+    B(48, 0, 3, 1); B(51, 0, 3, 2); B(54, 0, 3, 3); SPIKES(59, 4);
     PAD(76); SPIKES(80, 5); COIN(82, 3);
     SAW(92, 0, 30);
     SPIKES(102, 6); ORB(104, 2);
@@ -148,7 +157,7 @@ const LEVEL_DEFS = [
   build({ B, S, SPIKES, PAD, ORB, PORTAL, SAW, COIN, PILLAR }) {
     PORTAL(8, 'spd', 0, 6, 1.25);
     S(24); SPIKES(31, 2); SAW(42, 0, 30); B(52, 0, 3, 1); SPIKES(56, 3);
-    B(62, 0, 4, 1); B(67, 0, 4, 2); B(72, 0, 4, 3); SPIKES(77, 5); COIN(73, 4);
+    B(62, 0, 4, 1); B(66, 0, 4, 2); B(70, 0, 4, 3); SPIKES(75, 5); COIN(71, 4);
     PAD(90); SPIKES(95, 7);
     SPIKES(108, 6); ORB(110, 2);
     PORTAL(124, 'gflip', 0, 10);
@@ -182,7 +191,7 @@ const LEVEL_DEFS = [
   ],
   build({ B, S, SPIKES, PAD, ORB, PORTAL, SAW, COIN, PILLAR }) {
     S(16); SPIKES(23, 3); B(33, 0, 3, 1); SPIKES(38, 2);
-    B(46, 0, 3, 1); B(50, 0, 3, 2); B(54, 0, 3, 1); SPIKES(59, 3);
+    B(46, 0, 3, 1); B(49, 0, 3, 2); B(52, 0, 3, 1); SPIKES(57, 3);
     PAD(70, 'p'); SPIKES(73, 2); COIN(75, 2);
     SAW(86, 0, 30);
     // Ball
@@ -214,7 +223,7 @@ const LEVEL_DEFS = [
   build({ B, S, SPIKES, PAD, ORB, PORTAL, SAW, COIN, PILLAR }) {
     PORTAL(8, 'spd', 0, 6, 1.25);
     S(24); SPIKES(31, 2); B(40, 0, 3, 1); SPIKES(45, 3); SAW(58, 0, 30);
-    B(66, 0, 4, 1); B(71, 0, 4, 2); B(76, 0, 4, 3); SPIKES(81, 4); COIN(77, 4);
+    B(66, 0, 4, 1); B(70, 0, 4, 2); B(74, 0, 4, 3); SPIKES(79, 4); COIN(75, 4);
     PAD(94, 'p'); SPIKES(98, 3);
     SPIKES(112, 6); ORB(114, 2);
     PORTAL(120, 'gflip', 0, 10);
@@ -236,12 +245,171 @@ const LEVEL_DEFS = [
     PORTAL(546, 'spd', 0, 6, 1.25);
     SPIKES(558, 2); SAW(567, 0, 30); B(576, 0, 3, 1); SPIKES(581, 3);
     PAD(592); SPIKES(596, 7); SPIKES(612, 1); SPIKES(615, 1); SAW(626, 0, 30);
-    B(636, 0, 4, 1); B(641, 0, 4, 2); SPIKES(647, 3);
+    B(636, 0, 4, 1); B(640, 0, 4, 2); SPIKES(646, 3);
     SPIKES(660, 7); ORB(663, 2); SPIKES(678, 1);
   }
 }
 ];
-const LEVELS = LEVEL_DEFS.map(compile);
+
+// ---------- Level-Generator (setzt Level aus erprobten Bausteinen zusammen) ----------
+function generate(a, def) {
+  const R = rng(def.seed), rnd = n => Math.floor(R() * n), pick = arr => arr[rnd(arr.length)];
+  const { B, S, SPIKES, PAD, ORB, PORTAL, SAW, COIN, PILLAR } = a;
+  let x = 16, sp = 1, mode = 'cube', needReset = false;
+  const hints = [], stops = [], tier = def.tier || 1;
+  const gap = () => Math.round(7 * sp) + rnd(4);
+  const enter = type => {
+    if (mode === type) return;
+    if (needReset) { PORTAL(x, 'gnorm', 0, 10); x += 4; needReset = false; }
+    PORTAL(x, type, 0, 10); mode = type; x += 14;
+  };
+  const CT = {
+    single: () => { S(x); hints.push({ x, y: 2 }); return x + 1; },
+    double: () => { SPIKES(x, 2); return x + 2; },
+    triple: () => { SPIKES(x, 3); hints.push({ x: x + 1, y: 2 }); return x + 3; },
+    blockSpike: () => { B(x, 0, 3, 1); const n = sp > 1 ? 2 : 1; SPIKES(x + 5, n); return x + 5 + n; },
+    stairs: () => {
+      const w = sp > 1 ? 4 : 3;
+      B(x, 0, w, 1); B(x + w, 0, w, 2); B(x + 2 * w, 0, w, 3);
+      hints.push({ x: x + 2 * w + 1, y: 4 });
+      const e = x + 3 * w + (sp > 1 ? 1 : 2), n = sp > 1 ? 5 : 4;
+      SPIKES(e, n); return e + n;
+    },
+    padField: () => { PAD(x, 'y'); const n = sp > 1 ? 6 : 5; SPIKES(x + 4, n); hints.push({ x: x + 6, y: 3 }); return x + 4 + n; },
+    padPink: () => { PAD(x, 'p'); if (sp > 1) { SPIKES(x + 4, 3); return x + 7; } SPIKES(x + 3, 2); return x + 5; },
+    orb: () => { const n = sp > 1 ? 7 : 6, o = sp > 1 ? 3 : 2; SPIKES(x, n); ORB(x + o, 2); return x + o + Math.round(8 * sp) + 3; },
+    saw: () => { SAW(x, 0, 30); return x + 1 + Math.round(10 * sp); },
+    spikeBlock: () => { B(x, 0, 1, 1); S(x, 1); return x + 1; },
+    plat: () => { PAD(x); B(x + 5, 2, 4, 1); SPIKES(x + 13, 3); return x + 16; }
+  };
+  const cubeSection = n => {
+    enter('cube');
+    let names = ['single', 'double', 'triple', 'blockSpike', 'stairs', 'padField', 'spikeBlock'];
+    if (tier >= 2) names = names.concat(['padPink', 'orb', 'saw', 'plat']);
+    if (sp > 1) names = names.filter(k => k !== 'spikeBlock' && k !== 'plat');
+    let prev = '';
+    for (let i = 0; i < n; i++) {
+      let k = pick(names); if (k === prev && (k === 'orb' || k === 'saw')) k = 'triple';
+      if (k === 'blockSpike' || k === 'stairs' || k === 'plat') x += 3;
+      x = CT[k](); prev = k; x += gap();
+    }
+  };
+  const gapList = (n, minH, hRand, maxDelta) => {
+    const out = []; let prev = -1;
+    for (let i = 0; i < n; i++) {
+      const gh = minH + rnd(hRand); let gy = 1 + rnd(5);
+      if (gy + gh > 10) gy = 10 - gh;
+      if (prev >= 0 && Math.abs(gy - prev) > maxDelta) gy = prev + (gy > prev ? maxDelta : -maxDelta);
+      gy = Math.max(0, Math.min(10 - gh, gy)); out.push([gy, gh]); prev = gy;
+    }
+    return out;
+  };
+  const pillarSection = (type, n, spacing, saws) => {
+    enter(type);
+    gapList(n, tier >= 3 ? 4 : 4, tier >= 3 ? 1 : 2, 4).forEach((g, i) => {
+      PILLAR(x, g[0], g[1]);
+      if (saws && i < n - 1 && rnd(2)) SAW(x + (sp > 1 ? 5 : 6), 2 + rnd(5), 26);
+      if (i === 1) hints.push({ x: x + 7, y: g[0] + 2 });
+      x += spacing;
+    });
+  };
+  const gravSection = n => {
+    if (mode !== 'cube') enter('cube');
+    PORTAL(x, 'gflip', 0, 10); x += Math.round(11 * sp) + 2;
+    for (let i = 0; i < n; i++) {
+      const k = i === 0 ? pick(['c2', 'c3', 'blk']) : pick(['c2', 'c3', 'blk', 'saw']);
+      if (k === 'c2') { SPIKES(x, 2, 9, true); x += 2; }
+      else if (k === 'c3') { SPIKES(x, 3, 9, true); x += 3; }
+      else if (k === 'blk') { B(x, 9, 3, 1); S(x + 5, 9, true); hints.push({ x: x + 1, y: 7 }); x += 6; }
+      else { SAW(x, 9, 30); x += 1; }
+      x += 8;
+    }
+    PORTAL(x, 'gnorm', 0, 10); x += 12;
+  };
+  const ballSection = n => {
+    enter('ball');
+    const sx = sp > 1 ? 13 : 14;
+    for (let i = 0; i < n; i++) {
+      const floor = rnd(2) === 0;
+      if (floor) { if (rnd(3) === 0) B(x, 0, 2, 4); else SPIKES(x, 2 + rnd(2)); }
+      else { if (rnd(3) === 0) B(x, 6, 2, 4); else SPIKES(x, 2, 9, true); }
+      x += sx;
+    }
+    needReset = true; x += 4;
+  };
+  const waveSection = n => {
+    enter('wave');
+    let prev = -1;
+    for (let i = 0; i < n; i++) {
+      const gh = 4 + rnd(2); let gy = 1 + rnd(5);
+      if (gy + gh > 10) gy = 10 - gh;
+      if (prev >= 0 && Math.abs(gy - prev) > 3) gy = prev + (gy > prev ? 3 : -3);
+      gy = Math.max(0, Math.min(10 - gh, gy));
+      PILLAR(x, gy, gh);
+      if (i % 2 === 0) { if ((i / 2) % 2 === 0) SPIKES(x + 5, 3); else SPIKES(x + 5, 3, 9, true); }
+      prev = gy; x += 9;
+    }
+    x += 6;
+  };
+  const bpads = () => {
+    enter('cube');
+    const d = Math.round(10 * sp);
+    PAD(x, 'b'); SPIKES(x + 2, 7); PAD(x + d, 'b', 9, true); x += d + 14;
+  };
+  (def.sections || []).forEach(sec => {
+    const t = sec[0];
+    if (t === 'speed') { PORTAL(x, 'spd', 0, mode === 'cube' ? 6 : 10, sec[1]); sp = sec[1]; x += 6; return; }
+    stops.push(x);
+    if (t === 'cube') cubeSection(sec[1]);
+    else if (t === 'grav') gravSection(sec[1]);
+    else if (t === 'bpads') bpads();
+    else if (t === 'ball') ballSection(sec[1]);
+    else if (t === 'ship') pillarSection('ship', sec[1], sp > 1 ? 11 : 12, true);
+    else if (t === 'ufo') pillarSection('ufo', sec[1], 12, false);
+    else if (t === 'wave') waveSection(sec[1]);
+  });
+  enter('cube');
+  def.endX = Math.round(x + 4);
+  def.pal = stops.map((sx, i) => { const c = def.colors[i % def.colors.length]; return { x: i === 0 ? 0 : sx, a: c[0], b: c[1], acc: c[2] }; });
+  hints.sort((p, q) => p.x - q.x);
+  const picks = hints.length >= 3 ? [0, 1, 2].map(k => hints[Math.floor(hints.length * (k + 0.5) / 3)]) : hints.slice(0, 3);
+  picks.forEach(h => COIN(h.x, h.y));
+}
+
+const GEN_DEFS = {
+  synth: {
+    name: 'Synth Sunset', diff: 'Leicht', diffCol: '#6dff9a', theme: 'sunset', style: 1, bpm: 118, seed: 101, tier: 1, demoEnd: 90,
+    colors: [['#4a0a6e', '#14042e', '#ff5fd2'], ['#6e0a3a', '#2a0414', '#ffb84d'], ['#0a3a6e', '#04122e', '#4dd2ff']],
+    sections: [['cube', 7], ['ship', 4], ['cube', 6], ['ufo', 3], ['cube', 6]],
+    build(a) { generate(a, this); }
+  },
+  deep: {
+    name: 'Deep Dive', diff: 'Mittel', diffCol: '#ffd84d', theme: 'ocean', style: 1, bpm: 124, seed: 202, tier: 2, demoEnd: 90,
+    colors: [['#0a4a6e', '#03142e', '#4de8ff'], ['#0a6e5a', '#03261e', '#4dffb0'], ['#2a1a8a', '#0a0630', '#8f8bff']],
+    sections: [['cube', 5], ['ship', 5], ['ufo', 4], ['speed', 1.25], ['cube', 6], ['ship', 4], ['cube', 5]],
+    build(a) { generate(a, this); }
+  },
+  grav: {
+    name: 'Gravity Falls', diff: 'Schwer', diffCol: '#ff5a5a', theme: 'hex', style: 0, bpm: 136, seed: 303, tier: 3, demoEnd: 90,
+    colors: [['#1a3a8a', '#060c30', '#6fa8ff'], ['#5a1a8a', '#1a0630', '#e07bff'], ['#8a3a1a', '#300e06', '#ffa04d']],
+    sections: [['cube', 4], ['grav', 4], ['cube', 3], ['bpads'], ['cube', 3], ['grav', 3], ['ball', 5], ['cube', 4]],
+    build(a) { generate(a, this); }
+  },
+  clock: {
+    name: 'Clockwork', diff: 'Sehr schwer', diffCol: '#ff9a3c', theme: 'city', style: 2, bpm: 142, seed: 404, tier: 3, demoEnd: 90,
+    colors: [['#6e5a0b', '#261f04', '#ffd24d'], ['#6e2a0b', '#260d04', '#ff8a4d'], ['#0b5a6e', '#04202a', '#4dd8ff']],
+    sections: [['speed', 1.25], ['cube', 6], ['ufo', 5], ['wave', 6], ['ship', 5], ['cube', 6]],
+    build(a) { generate(a, this); }
+  },
+  boss: {
+    name: 'Final Boss', diff: 'Extrem', diffCol: '#ff4fd8', theme: 'mount', style: 2, bpm: 160, seed: 505, tier: 3, demoEnd: 90,
+    colors: [['#6e0b2a', '#26040e', '#ff4d6a'], ['#4a0b6e', '#16042a', '#c04dff'], ['#6e4a0b', '#261a04', '#ffc04d'], ['#0b4a6e', '#04182a', '#4dc8ff']],
+    sections: [['speed', 1.25], ['cube', 6], ['grav', 4], ['ball', 6], ['ship', 6], ['ufo', 6], ['bpads'], ['wave', 8], ['cube', 8]],
+    build(a) { generate(a, this); }
+  }
+};
+const ALL_DEFS = [LEVEL_DEFS[0], GEN_DEFS.synth, LEVEL_DEFS[1], GEN_DEFS.deep, LEVEL_DEFS[2], GEN_DEFS.grav, LEVEL_DEFS[3], GEN_DEFS.clock, LEVEL_DEFS[4], GEN_DEFS.boss];
+const LEVELS = ALL_DEFS.map(compile);
 let LV = LEVELS[0], LVI = 0;
 function setLevel(i) { LVI = i; LV = LEVELS[i]; }
 
@@ -418,18 +586,18 @@ const SKINS = [
 const game = {
   scene: 'menu', s: newState(), attempt: 1, deadT: 0, shake: 0, flash: 0, sel: 0, practice: false, cps: [],
   parts: [], rings: [], trail: [], acc: 0, trailT: 0, rot: 0, ceilAmt: 0, frame: 0, time: 0, winT: 0,
-  beat: 0, squash: 0, prevGround: true, icon: 0, deadPct: 0, newBest: false, exploded: false
+  beat: 0, squash: 0, prevGround: true, prevUsed: 0, prevCoins: 0, icon: 0, deadPct: 0, newBest: false, exploded: false
 };
-let save = { best: [0, 0, 0], coins: [[0, 0, 0], [0, 0, 0], [0, 0, 0]], icon: 0 };
-try { const r = JSON.parse(localStorage.getItem('blockdash_save_v2')); if (r && r.best) save = Object.assign(save, r); } catch (e) {}
+let save = { best: [], coins: [], icon: 0 };
+try { const r = JSON.parse(localStorage.getItem('blockdash_save_v3')); if (r && r.best) save = Object.assign(save, r); } catch (e) {}
 game.icon = save.icon | 0;
 for (let i = 0; i < LEVELS.length; i++) { if (save.best[i] == null) save.best[i] = 0; if (!save.coins[i]) save.coins[i] = [0, 0, 0]; }
-function persist() { try { localStorage.setItem('blockdash_save_v2', JSON.stringify(save)); } catch (e) {} }
+function persist() { try { localStorage.setItem('blockdash_save_v3', JSON.stringify(save)); } catch (e) {} }
 
-const keys = new Set(); let pointerDown = false;
+const keys = new Set(); const pointers = new Set();
 const mouse = { x: -1, y: -1 };
 let buttons = [];
-const isHeld = () => keys.size > 0 || pointerDown;
+const isHeld = () => keys.size > 0 || pointers.size > 0;
 const progress = () => clamp(Math.floor(game.s.x / (LV.endX * T) * 100), 0, 100);
 
 function selectLevel(i) { game.sel = (i + LEVELS.length) % LEVELS.length; setLevel(game.sel); resetDemo(); }
@@ -489,16 +657,20 @@ cv.addEventListener('pointerdown', e => {
     if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) { b.fn(); return; }
   }
   if (game.scene === 'menu' || game.scene === 'win') return;
-  pointerDown = true; onPress();
+  pointers.add(e.pointerId); onPress();
 });
 cv.addEventListener('pointermove', e => { const p = toLogical(e); mouse.x = p.x; mouse.y = p.y; });
-addEventListener('pointerup', () => { pointerDown = false; });
-addEventListener('pointercancel', () => { pointerDown = false; });
-addEventListener('blur', () => { keys.clear(); pointerDown = false; if (game.scene === 'play') game.scene = 'pause'; });
+addEventListener('pointerup', e => { pointers.delete(e.pointerId); });
+addEventListener('pointercancel', e => { pointers.delete(e.pointerId); });
+addEventListener('blur', () => { keys.clear(); pointers.clear(); if (game.scene === 'play') game.scene = 'pause'; });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { keys.clear(); pointers.clear(); if (game.scene === 'play') game.scene = 'pause'; } });
+addEventListener('gesturestart', e => e.preventDefault());
+document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
 addEventListener('contextmenu', e => e.preventDefault());
 function resize() {
-  const dpr = window.devicePixelRatio || 1;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const sc = Math.min(innerWidth / W, innerHeight / H);
+  document.getElementById('rot').style.display = (isTouch && innerHeight > innerWidth * 1.1) ? 'block' : 'none';
   cv.style.width = W * sc + 'px'; cv.style.height = H * sc + 'px';
   cv.width = Math.round(W * sc * dpr); cv.height = Math.round(H * sc * dpr);
   scale = sc * dpr;
@@ -587,6 +759,16 @@ function visuals(dt) {
     }
   }
   game.prevGround = s.onGround;
+  if (s.used.size > game.prevUsed) {
+    ring(cx, cy, 6, 48, 0.35, '#ffe14a', 4);
+    for (let i = 0; i < 9; i++) { const an = Math.random() * 6.28; spawn(cx, cy, Math.cos(an) * 230, Math.sin(an) * 230, 0.35, 4, '#ffe14a', { add: true, circ: true }); }
+  }
+  game.prevUsed = s.used.size;
+  if (s.coins.size > game.prevCoins) {
+    ring(cx, cy, 6, 80, 0.55, '#ffd24d', 5);
+    for (let i = 0; i < 18; i++) { const an = Math.random() * 6.28, v = 120 + Math.random() * 260; spawn(cx, cy, Math.cos(an) * v, Math.sin(an) * v, 0.6, 5, '#ffd24d', { add: true, circ: true, g: 300 }); }
+  }
+  game.prevCoins = s.coins.size;
   game.squash = Math.max(0, game.squash - dt * 1.4);
   // Spur
   game.trailT -= dt;
@@ -661,7 +843,7 @@ function update(dt) {
 // ---------- Hintergrund-Deko ----------
 const P_W = 3000;
 function genDeco(def) {
-  const R = rng(def.seed), D = { stars: [], far: [], near: [], hex: [], peaks1: [], peaks2: [], embers: [], planets: [], rain: [] };
+  const R = rng(def.seed), D = { stars: [], far: [], near: [], hex: [], peaks1: [], peaks2: [], embers: [], planets: [], rain: [], bubbles: [], fish: [], rays: [] };
   for (let i = 0; i < 110; i++) D.stars.push({ x: R() * P_W, y: R() * 330, r: 0.5 + R() * 1.5, tw: R() * 6 });
   for (let x = 0; x < P_W; ) { const w = 50 + R() * 70, h = 110 + R() * 190; const lights = []; for (let i = 0; i < 14; i++) lights.push([R(), R(), R()]); D.far.push({ x, w, h, lights }); x += w + R() * 14; }
   for (let x = 0; x < P_W; ) { const w = 70 + R() * 90, h = 70 + R() * 150; const lights = []; for (let i = 0; i < 10; i++) lights.push([R(), R(), R()]); D.near.push({ x, w, h, lights }); x += w + R() * 30; }
@@ -671,6 +853,9 @@ function genDeco(def) {
   for (let i = 0; i < 60; i++) D.embers.push({ x: R() * P_W, p: R(), sp: 0.05 + R() * 0.1, r: 1 + R() * 2.5, w: R() * 6 });
   for (let i = 0; i < 7; i++) D.planets.push({ x: R() * P_W, y: 60 + R() * 250, r: 30 + R() * 70, par: 0.06 + R() * 0.16, ring: R() < 0.4 });
   for (let i = 0; i < 90; i++) D.rain.push({ x: R() * P_W, p: R(), sp: 0.15 + R() * 0.3, len: 40 + R() * 140 });
+  for (let i = 0; i < 60; i++) D.bubbles.push({ x: R() * P_W, p: R(), sp: 0.04 + R() * 0.08, r: 2 + R() * 7, w: R() * 6 });
+  for (let i = 0; i < 16; i++) D.fish.push({ x: R() * P_W, y: 60 + R() * 300, s: 10 + R() * 22, par: 0.1 + R() * 0.3, sp: 25 + R() * 50 });
+  for (let i = 0; i < 7; i++) D.rays.push({ x: R() * P_W, w: 30 + R() * 60, a: R() * 6 });
   return D;
 }
 function drawBackground(camX, pal) {
@@ -686,7 +871,7 @@ function drawBackground(camX, pal) {
   ctx.fillStyle = rg; ctx.fillRect(-30, -30, W + 60, H + 60);
   const wrap = (x, par, w) => { const off = camX * par; let px = ((x - off) % P_W + P_W) % P_W; return px - (P_W - W) * 0 - (px > W + 200 ? P_W : 0); };
   // Sterne
-  if (def.theme !== 'hex' && def.theme !== 'rain') {
+  if (def.theme !== 'hex' && def.theme !== 'rain' && def.theme !== 'ocean') {
     ctx.fillStyle = '#fff';
     for (const st of D.stars) {
       const x = wrap(st.x, 0.06); if (x < -4 || x > W + 4) continue;
@@ -762,6 +947,39 @@ function drawBackground(camX, pal) {
       ctx.fillStyle = gr; ctx.fillRect(x, y, 3, r.len); ctx.fillStyle = rgb(pal.acc, 0.8); ctx.fillRect(x, y + r.len - 3, 3, 3);
     }
     ctx.globalCompositeOperation = 'source-over';
+  } else if (def.theme === 'sunset') {
+    const sx = W * 0.5, sy = GROUND - 10, sr = 175 * (1 + pulse * 0.02);
+    for (const p of D.peaks2) {
+      const x = wrap(p.x, 0.1); if (x > W + 60 || x + p.w < -60) continue;
+      ctx.beginPath(); ctx.moveTo(x, GROUND + 4); ctx.lineTo(x + p.w / 2, GROUND - p.h * 0.7); ctx.lineTo(x + p.w, GROUND + 4); ctx.closePath();
+      ctx.fillStyle = rgb(mixC(pal.b, [0, 0, 0], 0.4), 0.9); ctx.fill(); ctx.strokeStyle = rgb(pal.acc, 0.35); ctx.lineWidth = 2; ctx.stroke();
+    }
+    ctx.save(); ctx.beginPath(); ctx.arc(sx, sy, sr, Math.PI, 0); ctx.closePath(); ctx.clip();
+    const sg = ctx.createLinearGradient(0, sy - sr, 0, sy); sg.addColorStop(0, '#ffe66b'); sg.addColorStop(0.55, rgb(mixC(pal.acc, [255, 110, 190], 0.5))); sg.addColorStop(1, rgb(pal.acc));
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.9;
+    ctx.fillStyle = sg; ctx.fillRect(sx - sr, sy - sr, sr * 2, sr);
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+    ctx.fillStyle = rgb(mixC(pal.a, pal.b, 0.55));
+    for (let i = 0; i < 7; i++) ctx.fillRect(sx - sr, sy - 14 - i * 22, sr * 2, 2 + i * 1.8);
+    ctx.restore();
+  } else if (def.theme === 'ocean') {
+    for (const r of D.rays) {
+      const x = wrap(r.x, 0.05) + Math.sin(t * 0.3 + r.a) * 30;
+      const g3 = ctx.createLinearGradient(x, 0, x + 100, GROUND); g3.addColorStop(0, rgb(pal.acc, 0.16)); g3.addColorStop(1, rgb(pal.acc, 0));
+      ctx.fillStyle = g3; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + r.w, 0); ctx.lineTo(x + r.w + 170, GROUND); ctx.lineTo(x + 50, GROUND); ctx.closePath(); ctx.fill();
+    }
+    for (const f of D.fish) {
+      const x = wrap(f.x - t * f.sp, f.par); if (x < -60 || x > W + 60) continue;
+      const y = f.y + Math.sin(t * 2 + f.x) * 8;
+      ctx.fillStyle = rgb(mixC(pal.acc, pal.b, 0.6), 0.35);
+      ctx.beginPath(); ctx.ellipse(x, y, f.s, f.s * 0.45, 0, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(x + f.s * 0.8, y); ctx.lineTo(x + f.s * 1.5, y - f.s * 0.5); ctx.lineTo(x + f.s * 1.5, y + f.s * 0.5); ctx.closePath(); ctx.fill();
+    }
+    ctx.strokeStyle = rgb(pal.acc, 0.35); ctx.lineWidth = 1.5;
+    for (const b of D.bubbles) {
+      const x = wrap(b.x, 0.3) + Math.sin(t * 1.3 + b.w) * 10, y = GROUND - ((b.p + t * b.sp) % 1) * (GROUND + 20);
+      ctx.beginPath(); ctx.arc(x, y, b.r, 0, 7); ctx.stroke();
+    }
   }
   // Takt-Puls
   ctx.fillStyle = 'rgba(255,255,255,' + (pulse * 0.05) + ')'; ctx.fillRect(-30, -30, W + 60, H + 60);
@@ -782,12 +1000,23 @@ function drawObj(o, camX, pal) {
       for (let j = 1; j < o.h; j++) { ctx.moveTo(x, y + j * T); ctx.lineTo(x + wp, y + j * T); }
       ctx.stroke();
       ctx.strokeStyle = rgb(pal.acc, 0.4);
+      const sty = LV.def.style | 0;
       for (let i = 0; i < o.w; i++) for (let j = 0; j < o.h; j++) {
         const tx = x + i * T, ty = y + j * T;
-        ctx.strokeRect(tx + 11, ty + 11, T - 22, T - 22);
-        ctx.fillStyle = rgb(pal.acc, 0.8);
-        ctx.fillRect(tx + 3, ty + 3, 3, 3); ctx.fillRect(tx + T - 6, ty + 3, 3, 3);
-        ctx.fillRect(tx + 3, ty + T - 6, 3, 3); ctx.fillRect(tx + T - 6, ty + T - 6, 3, 3);
+        if (sty === 1) {
+          ctx.fillStyle = rgb(pal.acc, 0.10); ctx.fillRect(tx + 2, ty + 2, T - 4, T - 4);
+          ctx.beginPath(); ctx.moveTo(tx + 8, ty + T - 8); ctx.lineTo(tx + T - 8, ty + 8);
+          ctx.moveTo(tx + 8, ty + T - 17); ctx.lineTo(tx + T - 17, ty + 8); ctx.stroke();
+        } else if (sty === 2) {
+          ctx.beginPath(); ctx.moveTo(tx + 4, ty + T - 4); ctx.lineTo(tx + T - 4, ty + 4);
+          ctx.moveTo(tx + 4, ty + 4); ctx.lineTo(tx + T - 4, ty + T - 4); ctx.stroke();
+          ctx.fillStyle = rgb(pal.acc, 0.85); ctx.beginPath(); ctx.arc(tx + T / 2, ty + T / 2, 3.5, 0, 7); ctx.fill();
+        } else {
+          ctx.strokeRect(tx + 11, ty + 11, T - 22, T - 22);
+          ctx.fillStyle = rgb(pal.acc, 0.8);
+          ctx.fillRect(tx + 3, ty + 3, 3, 3); ctx.fillRect(tx + T - 6, ty + 3, 3, 3);
+          ctx.fillRect(tx + 3, ty + T - 6, 3, 3); ctx.fillRect(tx + T - 6, ty + T - 6, 3, 3);
+        }
       }
       ctx.fillStyle = 'rgba(255,255,255,0.14)'; ctx.fillRect(x, y, wp, 3);
       ctx.save(); ctx.shadowColor = acc; ctx.shadowBlur = 16; ctx.strokeStyle = acc; ctx.lineWidth = 2.5;
@@ -1105,6 +1334,7 @@ function drawUI(pal) {
     rr(bx, by, bw, 14, 7); ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 2; ctx.stroke();
     ctx.restore();
     text(p + '%', bx + bw + 14, by + 8, 22, '#fff', 'left');
+    if (sc === 'play') button(W - 66, 8, 50, 42, '❚❚', () => { game.scene = 'pause'; }, { size: 15, r: 10 });
     // Münzen
     for (let i = 0; i < 3; i++) {
       const got = game.s.coins.has(i);
@@ -1161,6 +1391,13 @@ function drawUI(pal) {
   }
   if (sc === 'menu') drawMenu(pal);
 }
+function toggleFs() {
+  try {
+    const d = document, el = d.documentElement;
+    if (d.fullscreenElement || d.webkitFullscreenElement) (d.exitFullscreen || d.webkitExitFullscreen).call(d);
+    else (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+  } catch (e) {}
+}
 function drawMenu(pal) {
   const acc = rgb(pal.acc);
   ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.fillRect(0, 0, W, H);
@@ -1173,6 +1410,9 @@ function drawMenu(pal) {
   const g = ctx.createLinearGradient(0, -36, 0, 36); g.addColorStop(0, '#ffffff'); g.addColorStop(1, acc);
   ctx.fillStyle = g; ctx.fillText('BLOCK DASH', 0, 0); ctx.restore();
 
+  if (document.fullscreenEnabled || document.webkitFullscreenEnabled) button(14, 12, 46, 38, '⛶', toggleFs, { size: 20, r: 10 });
+  let tc = 0; save.coins.forEach(arr => arr.forEach(v => { if (v) tc++; }));
+  text('Münzen: ' + tc + '/' + LEVELS.length * 3, W - 24, 24, 18, '#ffd24d', 'right');
   // Level-Karten
   const cw = 270, ch = 168, gap = 24, x0 = (W - (cw * 3 + gap * 2)) / 2, y0 = 128;
   const first = clamp(game.sel - 1, 0, Math.max(0, LEVELS.length - 3));
@@ -1223,20 +1463,24 @@ function drawMenu(pal) {
     ctx.fillStyle = gr; ctx.shadowColor = sk.glow; ctx.shadowBlur = active ? 16 : 0; ctx.fillRect(cx - 11, cy - 11, 22, 22);
     ctx.strokeStyle = active ? '#fff' : sk.line; ctx.lineWidth = active ? 3 : 2; ctx.strokeRect(cx - 11, cy - 11, 22, 22);
     ctx.restore();
-    buttons.push({ x: cx - 15, y: cy - 15, w: 30, h: 30, fn: () => { game.icon = i; save.icon = i; persist(); } });
+    buttons.push({ x: cx - 17, y: cy - 22, w: 34, h: 44, fn: () => { game.icon = i; save.icon = i; persist(); } });
   });
   // Practice + Start
   button(W - 440, 458, 190, 48, game.practice ? 'Übung: AN' : 'Übung: AUS', () => { game.practice = !game.practice; },
          { size: 20, col: game.practice ? '#6dff9a' : '#ffffff', active: game.practice });
   button(W - 236, 452, 200, 60, '▶  SPIELEN', startLevel, { size: 26, col: '#6dff9a', fill: 'rgba(40,160,80,0.45)' });
-  text('←/→ Level · ↑/↓ Farbe · T Übung · Leertaste Start', W / 2, 526, 14, 'rgba(255,255,255,0.55)');
+  text(isTouch ? 'Tippen = Springen · Level antippen = auswählen, nochmal tippen = starten' : '←/→ Level · ↑/↓ Farbe · T Übung · Leertaste Start', W / 2, 526, 14, 'rgba(255,255,255,0.55)');
 }
 
 // ---------- Hauptschleife ----------
 resetDemo();
-let last = performance.now();
+let last = performance.now(), slowT = 0, fxOff = false;
 function loop(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (!fxOff) {
+    if (dt > 0.026) slowT += dt; else slowT = Math.max(0, slowT - dt * 0.5);
+    if (slowT > 2.5) { fxOff = true; try { Object.defineProperty(ctx, 'shadowBlur', { set() {}, get() { return 0; }, configurable: true }); } catch (e) {} }
+  }
   if (game.scene !== 'pause') update(dt); else game.time += dt;
   render();
   requestAnimationFrame(loop);
@@ -1244,7 +1488,8 @@ function loop(now) {
 requestAnimationFrame(loop);
 
 // Hooks für automatische Tests
-window.__gd = { newState, cloneState, step, DT, T, setLevel, levels: LEVELS, endX: () => LV.endX };
+window.__gd = { newState, cloneState, step, DT, T, setLevel, levels: LEVELS, endX: () => LV.endX,
+  reseed: (i, seed) => { LEVELS[i] = compile(Object.assign({}, ALL_DEFS[i], { seed })); return LEVELS[i].endX; } };
 </script>
 </body>
 </html>
