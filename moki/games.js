@@ -34,6 +34,17 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "hills-of-steel",
+    title: "Hills of Steel",
+    url: "https://strong-basbousa-d83044.netlify.app",
+    category: "Fahren",
+    image: "hills-of-steel.jpg",
+    emoji: "🪖",
+    colors: ["#2e9c2e", "#e08a1e"],
+    description: "Panzer-Kämpfe auf Hügeln.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
