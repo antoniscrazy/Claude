@@ -46,5 +46,14 @@ window.MOKI_SITES = [
     wide: true,
     emoji: "🎮",
     colors: ["#00c2b8", "#0a2a5e"]
+  },
+  {
+    id: "crazygames",
+    title: "CrazyGames",
+    url: "https://crazygames-proxy.onrender.com",
+    image: "crazygames.jpg",
+    wide: true,
+    emoji: "🎮",
+    colors: ["#6c3be0", "#1b0f4a"]
   }
 ];
