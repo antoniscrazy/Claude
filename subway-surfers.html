@@ -29,7 +29,20 @@
 // Das Spiel ruft Funktionen der einbettenden Seite auf (parent.*) – hier ohne Werbung.
 window.getReferrer = () => ""; window.isAdsComplete = () => true; window.ora_getPayloadAmount = () => 0; window.myConsoleLog = () => {};
 const BASE = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@b6bb44a995beb730842e2bcb665165e0206dfa07/subway-surfers/";
-const SHIM = '<script>window.sdk={showBanner:function(){}};Object.defineProperty(Document.prototype,"URL",{get(){return "' + BASE + 'index.html"},configurable:true})<\/script>';
+// Web Worker von fremder Adresse (CDN) erlauben: über importScripts in einem Blob-Worker.
+function workerShim() {
+  var OW = window.Worker;
+  window.Worker = function (u, o) {
+    var a = new URL(u, document.URL).href;
+    // importScripts-Pfade im Worker relativ zur echten Adresse auflösen (nicht zur Blob-Adresse)
+    var code = 'var __u=' + JSON.stringify(a) + ',__is=self.importScripts;' +
+      'self.importScripts=function(){__is.apply(self,Array.prototype.map.call(arguments,function(x){return new URL(x,__u).href}))};' +
+      '__is(__u);';
+    var b = new Blob([code], { type: "text/javascript" });
+    return new OW(URL.createObjectURL(b), o);
+  };
+}
+const SHIM = '<script>window.sdk={showBanner:function(){}};Object.defineProperty(Document.prototype,"URL",{get(){return "' + BASE + 'index.html"},configurable:true})<\/script><script>(' + workerShim.toString() + ')();<\/script>';
 fetch(BASE + "index.html")
   .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
   .then(html => {
