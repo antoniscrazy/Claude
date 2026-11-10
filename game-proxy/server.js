@@ -150,9 +150,23 @@ self.addEventListener("fetch", (e) => {
 `;
 // Wird in jede HTML-Seite eingefügt: registriert den Worker, lädt beim ersten Mal einmal neu,
 // und lädt die Seite beim Ablauf der Zugangszeit neu (dann greift die Sperre).
+// Seiten bauen Link-Adressen oft erst im JavaScript zusammen (z. B. "https://www." + domain),
+// das kann der Textersatz nicht erwischen. Darum: Klicks auf Links zu erlaubten Hosts und
+// window.open im Browser abfangen und über den Proxy leiten.
+const LINK_GUARD =
+  "var A=new RegExp(" + JSON.stringify(ALLOWED.source) + ",'i'),M=" + JSON.stringify(cfg.aliases) + ";" +
+  "function px(u){try{var x=new URL(u,location.href);if(x.origin===location.origin||!/^https?:$/.test(x.protocol)||!A.test(x.hostname))return null;" +
+  "return(M.indexOf(x.hostname.toLowerCase())>=0?'':'/__h/'+x.hostname.toLowerCase())+x.pathname+x.search+x.hash}catch(e){return null}}" +
+  "document.addEventListener('click',function(e){if(e.defaultPrevented||e.button||e.metaKey||e.ctrlKey||e.shiftKey)return;" +
+  "var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;if(!a)return;var t=px(a.href);if(!t)return;" +
+  "e.preventDefault();e.stopImmediatePropagation();" +
+  "if(a.target==='_blank')window.open(t,'_blank');else if(a.target==='_top'&&window.top)window.top.location.href=t;else location.href=t},true);" +
+  "var ow=window.open;window.open=function(u,n,f){var t=u?px(String(u)):null;return ow.call(window,t||u,n,f)};";
+
 function regTag(msLeft) {
   return (
     "<script>(function(){var top=window===window.top;" +
+    LINK_GUARD +
     (msLeft ? "if(top)setTimeout(function(){location.reload()}," + Math.max(1000, Math.floor(msLeft)) + ");" : "") +
     "if(!('serviceWorker' in navigator))return;var k='__sw_reloaded';" +
     "navigator.serviceWorker.register('/__sw.js',{scope:'/'}).then(function(){return navigator.serviceWorker.ready}).then(function(){" +
