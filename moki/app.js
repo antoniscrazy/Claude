@@ -3,7 +3,7 @@ const app = document.getElementById("app");
 const search = document.getElementById("q");
 let category = "Alle";
 
-const tile = (g, big) => `<a class="tile" href="#/spiel/${g.id}" style="background:linear-gradient(135deg,${g.colors[0]},${g.colors[1]})"><span class="em">${g.emoji}</span><span class="name">${g.title}</span></a>`;
+const tile = g => `<a class="tile" href="${g.url}" style="background:linear-gradient(135deg,${g.colors[0]},${g.colors[1]})">${g.image ? `<img src="${g.image}" alt="">` : `<span class="em">${g.emoji}</span>`}<span class="name">${g.title}</span></a>`;
 const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 function home() {
@@ -20,38 +20,10 @@ function home() {
   app.querySelectorAll(".chip").forEach(b => b.onclick = () => { category = b.dataset.c; home(); });
 }
 
-function play(id) {
-  const g = games.find(x => x.id === id);
-  if (!g) return location.hash = "#/";
-  document.title = g.title + " – Moki";
-  const others = games.filter(x => x.id !== id);
-  app.innerHTML = `
-    <a class="back" href="#/">← Zurück zu Moki</a>
-    <div class="play">
-      <div>
-        <div class="frame"><iframe id="f" src="${g.url}" allow="fullscreen; autoplay; gamepad" allowfullscreen title="${esc(g.title)}"></iframe></div>
-        <div class="bar"><h1>${g.emoji} ${esc(g.title)}</h1>
-          <button class="btn" id="fs">⛶ Vollbild</button><button class="btn" id="rl">↻ Neu laden</button></div>
-      </div>
-      <aside class="side"><strong>Über das Spiel</strong><p>${esc(g.description)}</p>
-        ${others.length ? `<h2 style="font-size:16px;margin-top:22px">Mehr Spiele</h2><div class="grid" style="grid-template-columns:1fr 1fr">${others.map(x => tile(x)).join("")}</div>` : ""}
-      </aside>
-    </div>`;
-  const f = document.getElementById("f");
-  document.getElementById("fs").onclick = () => f.requestFullscreen?.();
-  document.getElementById("rl").onclick = () => { f.src = g.url; };
-}
-
 function route() {
-  const m = location.hash.match(/^#\/spiel\/(.+)$/);
-  window.scrollTo(0, 0);
-  if (m) return play(m[1]);
   document.title = "Moki – Spiele";
   home();
 }
-search.addEventListener("input", () => { if (location.hash.startsWith("#/spiel")) location.hash = "#/"; else home(); });
+search.addEventListener("input", () => { home(); });
 addEventListener("hashchange", route);
 route();
-
-// "Back to Moki"-Button im Spiel schickt eine Nachricht -> zurück zur Startseite
-addEventListener("message", e => { if (e.data && e.data.moki === "back") location.hash = "#/"; });
