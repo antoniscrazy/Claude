@@ -56,6 +56,17 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "level-devil",
+    title: "Level Devil",
+    url: "https://imaginative-donut-66def2.netlify.app",
+    category: "Action",
+    image: "level-devil.jpg",
+    emoji: "😈",
+    colors: ["#ffcc33", "#111111"],
+    description: "Plattformer mit fiesen Fallen.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
