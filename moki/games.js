@@ -67,6 +67,17 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "fruit-ninja",
+    title: "Fruit Ninja",
+    url: "https://sparkling-druid-1ff914.netlify.app",
+    category: "Action",
+    image: "fruit-ninja.jpg",
+    emoji: "🍉",
+    colors: ["#2e9c2e", "#d93a2b"],
+    description: "Schneide Früchte in Scheiben.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
