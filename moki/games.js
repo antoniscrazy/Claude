@@ -10,5 +10,17 @@ window.MOKI_GAMES = [
     colors: ["#ff7a18", "#af002d"],
     description: "Fahre durch verrückte Level, überwinde Hindernisse und erreiche das Ziel, ohne dein Auto zu zerstören.",
     featured: false
+  },
+  {
+    id: "block-dash",
+    title: "Block Dash",
+    url: "https://splendorous-pony-421cac.netlify.app",
+    category: "Rhythmus",
+    image: "block-dash.jpg",
+    wide: true,
+    emoji: "🟦",
+    colors: ["#7b2ff7", "#f107a3"],
+    description: "Rhythmus-Runner mit 12 Levels, 7 Modi und Map Maker.",
+    featured: false
   }
 ];

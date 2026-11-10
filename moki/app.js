@@ -3,7 +3,7 @@ const app = document.getElementById("app");
 const search = document.getElementById("q");
 let category = "Alle";
 
-const tile = g => `<a class="tile" href="${g.url}" style="background:linear-gradient(135deg,${g.colors[0]},${g.colors[1]})">${g.image ? `<img src="${g.image}" alt="">` : `<span class="em">${g.emoji}</span>`}<span class="name">${g.title}</span></a>`;
+const tile = g => `<a class="tile${g.wide ? " wide" : ""}" href="${g.url}" style="background:linear-gradient(135deg,${g.colors[0]},${g.colors[1]})">${g.image ? `<img src="${g.image}" alt="">` : `<span class="em">${g.emoji}</span>`}<span class="name">${g.title}</span></a>`;
 const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 function home() {
