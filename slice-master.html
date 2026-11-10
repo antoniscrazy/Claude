@@ -10,6 +10,16 @@
   /* Eigene Leiste über dem Spiel – der Button verdeckt dadurch nichts vom Spiel. */
   #bar { flex: 0 0 auto; display: flex; justify-content: flex-end; padding: 6px 12px; background: #111; }
   #game { flex: 1 1 auto; width: 100%; border: 0; display: block; min-height: 0; }
+  /* Lade-Hinweis: liegt über dem Spiel, bis es wirklich läuft. */
+  #game-wrap { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }
+  #loading { position: absolute; inset: 0; z-index: 5; background: #1b2a6b; color: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; text-align: center; padding: 20px; transition: opacity .4s; }
+  #loading.done { opacity: 0; pointer-events: none; }
+  #loading h2 { margin: 0; font-size: 22px; }
+  #loading p { margin: 0; opacity: .85; max-width: 460px; line-height: 1.4; }
+  #track { width: min(420px, 80%); height: 16px; border-radius: 99px; background: rgba(255,255,255,.2); overflow: hidden; }
+  #fill { height: 100%; width: 0%; border-radius: 99px; background: linear-gradient(90deg, #00e5a8, #ffd23f); transition: width .5s linear; }
   /* Moki: Back-Button */
   #moki-back {
     padding: 9px 16px; border-radius: 999px;
@@ -22,16 +32,42 @@
 </head>
 <body>
 <div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
+<div id="game-wrap">
+<div id="loading">
+  <h2>Slice Master lädt …</h2>
+  <p>Das Spiel besteht aus sehr vielen Dateien und braucht deshalb lange zum Laden – etwa 1 Minute oder länger. Zwischendurch kann der Bildschirm kurz schwarz sein. Bitte einfach warten.</p>
+  <div id="track"><div id="fill"></div></div>
+  <p id="eta">noch ca. 60 Sekunden</p>
+</div>
 <iframe id="game" allow="autoplay *; fullscreen *; gamepad *; clipboard-write *" allowfullscreen></iframe>
+</div>
 <script>
 // Lädt das Spiel direkt aus dem GitHub-Repo (über jsDelivr, mit Commit-Version fest verdrahtet).
 // Kein lokaler Server nötig – die Datei funktioniert auch per Doppelklick.
 const BASE = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@83762f7e29c96fb978d7632cf61e3d8ba4354820/slice-master/";
 const SHIM = '<script>Object.defineProperty(Document.prototype,"URL",{get(){return "' + BASE + 'index.html"},configurable:true})<\/script>';
+
+// --- Lade-Anzeige (Schätzung: ca. 60 Sekunden, Balken läuft zeitbasiert) ---
+const EST = 60;
+const t0 = Date.now();
+const fill = document.getElementById("fill"), eta = document.getElementById("eta"), loading = document.getElementById("loading");
+let ready = false;
+const tick = setInterval(() => {
+  const sec = (Date.now() - t0) / 1000;
+  const pct = ready ? 100 : Math.min(95, 95 * (1 - Math.exp(-2.2 * sec / EST)));
+  fill.style.width = pct + "%";
+  const left = Math.max(0, Math.round(EST - sec));
+  eta.textContent = ready ? "fertig!" : (left > 0 ? "noch ca. " + left + " Sekunden" : "gleich geschafft – dauert etwas länger als gedacht …");
+  if (sec > 240) finish();
+}, 500);
+function finish() { ready = true; clearInterval(tick); fill.style.width = "100%"; loading.classList.add("done"); setTimeout(() => loading.remove(), 600); }
+window.addEventListener("message", e => { if (e.data === "sm-ready") finish(); });
+// Wird ins Spiel eingefügt: meldet, sobald PlayCanvas wirklich Bilder zeichnet.
+const READY_SCRIPT = '<script>(function(){var i=setInterval(function(){try{var a=pc.Application.getApplication();if(a&&a.frame>30){clearInterval(i);parent.postMessage("sm-ready","*");}}catch(e){}},300);})()<\/script>';
 fetch(BASE + "index.html")
   .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
   .then(html => {
-    html = html.replace("<head>", '<head><base href="' + BASE + '">' + SHIM);
+    html = html.replace("<head>", '<head><base href="' + BASE + '">' + SHIM + READY_SCRIPT);
     document.getElementById("game").srcdoc = html;
   })
   .catch(e => { document.body.append("Fehler beim Laden: " + e.message); });
