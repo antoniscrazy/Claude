@@ -125,6 +125,7 @@ const server = http.createServer((req, res) => {
           text = /<head[^>]*>/i.test(text) ? text.replace(/<head[^>]*>/i, (m) => m + REG_TAG) : REG_TAG + text;
         }
         const body = Buffer.from(text);
+        delete h["transfer-encoding"];
         h["content-length"] = body.length;
         res.writeHead(r.statusCode, h);
         res.end(body);
