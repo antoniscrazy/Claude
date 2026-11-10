@@ -99,6 +99,10 @@ const server = http.createServer((req, res) => {
   }
 
   const headers = { ...req.headers, host, "accept-encoding": "identity" };
+  // Von Renders Infrastruktur angehängte Weiterleitungs-Header nicht an Poki durchreichen
+  for (const k of Object.keys(headers)) {
+    if (/^(x-forwarded-|x-real-ip|cf-|cdn-loop|rndr-|render-|true-client-ip|forwarded$|via$|x-request-id|x-render-)/i.test(k)) delete headers[k];
+  }
   if (headers.referer) headers.referer = unproxy(headers.referer, MAIN);
   if (headers.origin) headers.origin = "https://" + host;
 
