@@ -85,19 +85,27 @@ const store={
 
 /* ---------- level building ---------- */
 const BOT=2600;
-function mk(name){return{name,polys:[],spikes:[],start:{x:60,y:340},finish:0,deathY:1000}}
-function path(L,x,y,segs){
-  const pts=[[x,y]],x0=x;
-  for(const s of segs){
-    const t=s[0],len=s[1],dy=s[2]||0,n=Math.max(1,Math.round(len/20));
+function mk(name){return{name,polys:[],deco:[],spikes:[],start:{x:60,y:340},finish:0,deathY:1000}}
+const TH=40;
+function path(L,x,y,segs,wave){
+  const pts=[[x,y]],x0=x,A=wave||0;
+  for(const sg of segs){
+    const t=sg[0],len=sg[1],dy=sg[2]||0,n=Math.max(1,Math.round(len/16));
+    const k=Math.max(1,Math.round(len/300));
     for(let i=1;i<=n;i++){
       const u=i/n;
-      const o=t==='f'?0:t==='r'?dy*u:dy*(1-Math.cos(Math.PI*u))/2;
+      const o=t==='f'?A*Math.sin(2*Math.PI*k*u):t==='r'?dy*u:dy*(1-Math.cos(Math.PI*u))/2;
       pts.push([x+len*u,y+o]);
     }
     x+=len;y+=dy;
   }
-  L.polys.push({pts:pts.concat([[x,BOT],[x0,BOT]]),kind:'g'});
+  const bot=pts.slice().reverse().map(q=>[q[0],q[1]+TH]);
+  L.polys.push({pts:pts.concat(bot),kind:'g',top:pts});
+  // bridge pillars
+  for(let px=x0+120;px<x-60;px+=300){
+    let py=y;for(let i=1;i<pts.length;i++)if(pts[i][0]>=px){const a=pts[i-1],b=pts[i];py=a[1]+(b[1]-a[1])*(px-a[0])/((b[0]-a[0])||1);break}
+    L.deco.push([[px-26,py+TH-4],[px+26,py+TH-4],[px+26,py+1400],[px-26,py+1400]]);
+  }
   return{x,y};
 }
 function rect(L,x,y,w,h,kind){L.polys.push({pts:[[x,y],[x+w,y],[x+w,y+h],[x,y+h]],kind:kind||'b'})}
@@ -111,10 +119,10 @@ function pit(L,x0,x1,floorY){rect(L,x0-4,floorY,x1-x0+8,400,'g');spikes(L,x0+6,f
 
 const LEVELS=[
  L=>{const l=mk('Erste Fahrt');wall(l,-340,400);
-   const p=path(l,-300,400,[['f',1300],['s',300,-70],['f',300],['s',300,70],['f',500]]);l.finish=p.x-120;return l},
+   const p=path(l,-300,400,[['f',1300],['s',300,-90],['f',300],['s',300,90],['f',500]],26);l.finish=p.x-120;return l},
  L=>{const l=mk('Sanfte Hügel');wall(l,-340,400);
-   let s=[['f',900]];for(let i=0;i<4;i++)s.push(['s',260,-80],['s',260,80],['f',120]);s.push(['f',500]);
-   const p=path(l,-300,400,s);l.finish=p.x-120;return l},
+   let s=[['f',900]];for(let i=0;i<4;i++)s.push(['s',260,-110],['s',260,110],['f',120]);s.push(['f',500]);
+   const p=path(l,-300,400,s,20);l.finish=p.x-120;return l},
  L=>{const l=mk('Kleine Stufen');wall(l,-340,400);
    const p=path(l,-300,400,[['f',4200]]);
    [[900,22],[1400,26],[1900,30],[2400,24],[2500,24],[3000,32]].forEach(([x,h])=>block(l,x,h,110,400));
@@ -127,7 +135,7 @@ const LEVELS=[
    p=path(l,p.x+140,p.y+25,[['f',500],['r',200,-60]]);pit(l,p.x,p.x+150,p.y+260);
    p=path(l,p.x+150,p.y+25,[['f',800]]);l.finish=p.x-150;return l},
  L=>{const l=mk('Bergfahrt');wall(l,-340,400);
-   const p=path(l,-300,400,[['f',1000],['r',300,-150],['f',200],['r',250,100],['f',150],['r',350,-200],['f',300],['r',400,250],['f',700]]);
+   const p=path(l,-300,400,[['f',1000],['r',300,-150],['f',200],['r',250,100],['f',150],['r',350,-200],['f',300],['r',400,250],['f',700]],22);
    l.finish=p.x-150;return l},
  L=>{const l=mk('Der Tunnel');wall(l,-340,400);
    let s=[['f',900]];for(let i=0;i<6;i++)s.push(['s',140,-22],['s',140,22]);s.push(['f',300],['s',200,-30],['f',700]);
@@ -150,10 +158,10 @@ const LEVELS=[
 ];
 
 /* ---------- car ---------- */
-const WR=19,PR=4;
+const WR=24,PR=4;
 const G=1500,SUB=8,ITER=5,DAMP=0.9997;
 const DRIVE=1500,VMAX=520,BRAKE=2400,REV=900,VREV=260,AIR=900;
-const LOCAL={R:[-30,0],F:[30,0],A:[-18,-30],B:[12,-30]};
+const LOCAL={R:[-34,0],F:[34,0],A:[-20,-38],B:[16,-38]};
 
 let car,L,keys={l:false,r:false},parts=[],cam={x:0,y:0};
 let state='menu',level=0,attempts=1,time=0,deadT=0,progress=store.get('rm_progress',0);
@@ -357,7 +365,7 @@ function drawBackground(sc){
   }
 }
 function drawPoly(pts){ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);ctx.closePath()}
-const EX=24,EY=-20;
+const EX=44,EY=-36;
 function extrude(pts,top,side,ex,ey){
   let a=0;for(let i=0,j=pts.length-1;i<pts.length;j=i++)a+=pts[j][0]*pts[i][1]-pts[i][0]*pts[j][1];
   const sg=a>0?1:-1;
@@ -383,13 +391,33 @@ function drawWorld(sc){
   if(!patG){patG=makePat('#a84a58',['#a84a58','#b05260','#9e4350','#a84a58']);patB=makePat('#ffb627',['#ffb627','#ffc13d','#f0a413'])}
   const left=cam.x-W/2/sc-60,right=cam.x+W/2/sc+60;
   ctx.lineJoin='round';
+  for(const d of L.deco){
+    if(d[1][0]<left-EX||d[0][0]>right)continue;
+    const q=d.map(v=>[v[0]+EX*.2,v[1]+EY*.2]);
+    extrude(q,'#b8506a','#6a2a40',EX*.6,EY*.6);
+    drawPoly(q);ctx.fillStyle=patG;ctx.fill();ctx.lineWidth=3;ctx.strokeStyle='#5c2236';ctx.stroke();
+    ctx.fillStyle='rgba(0,0,0,.18)';ctx.fill();
+  }
   for(const p of L.polys){
     if(p.bb[2]<left-EX||p.bb[0]>right)continue;
     const blk=p.kind==='b';
-    extrude(p.pts,blk?'#ffe27a':'#ff9fb0',blk?'#c98200':'#7d3450',EX,EY);
+    extrude(p.pts,blk?'#ffe27a':'#d9657c',blk?'#c98200':'#8e3a52',EX,EY);
     drawPoly(p.pts);
     ctx.fillStyle=blk?patB:patG;ctx.fill();
     ctx.lineWidth=3;ctx.strokeStyle=blk?'#a56a00':'#5c2236';ctx.stroke();
+    if(p.top){
+      // back guard wall (raised) + front curb
+      ctx.lineJoin='round';
+      for(let i=1;i<p.top.length;i++){
+        const a=p.top[i-1],b=p.top[i];
+        ctx.fillStyle=i%2?'#ffa9bb':'#ff95ab';
+        ctx.beginPath();ctx.moveTo(a[0]+EX,a[1]+EY);ctx.lineTo(b[0]+EX,b[1]+EY);ctx.lineTo(b[0]+EX,b[1]+EY-18);ctx.lineTo(a[0]+EX,a[1]+EY-18);ctx.closePath();ctx.fill();
+      }
+      ctx.lineWidth=4;ctx.strokeStyle='#ffd3dc';
+      ctx.beginPath();p.top.forEach((q,i)=>i?ctx.lineTo(q[0]+EX,q[1]+EY-18):ctx.moveTo(q[0]+EX,q[1]+EY-18));ctx.stroke();
+      ctx.lineWidth=7;ctx.strokeStyle='#ffc9d4';
+      ctx.beginPath();p.top.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.stroke();
+    }
   }
   for(const s of L.spikes){
     if(s.bb[2]<left||s.bb[0]>right)continue;
@@ -416,12 +444,12 @@ function drawCar(){
   const mx=(R.x+F.x)/2,my=(R.y+F.y)/2;
   let ux=F.x-R.x,uy=F.y-R.y;const l=Math.hypot(ux,uy)||1;ux/=l;uy/=l;
   const px=-uy,py=ux;
-  const ewx=EX*.5,ewy=EY*.5;               // car depth in screen space
+  const ewx=EX*.62,ewy=EY*.62;               // car depth in screen space
   const elx=ewx*ux+ewy*uy,ely=ewx*px+ewy*py; // same vector in car space
-  ctx.save();ctx.translate(EX*.3,EY*.3);
+  ctx.save();ctx.translate(EX*.19,EY*.19);
   const wheel=(w,dx,dy,far)=>{
     ctx.save();ctx.translate(w.x+dx,w.y+dy);ctx.rotate(w.ang);
-    const N=5,tx=ewx*.28,ty=ewy*.28;
+    const N=7,tx=ewx*.3,ty=ewy*.3;
     ctx.fillStyle=far?'#0b0c12':'#12141c';
     for(let k=N;k>=1;k--){
       ctx.save();ctx.rotate(-w.ang);ctx.translate(tx*k/N,ty*k/N);ctx.rotate(w.ang);
@@ -453,21 +481,19 @@ function drawCar(){
     ctx.fillStyle=col;ctx.beginPath();
     ctx.moveTo(xx+ex*t1,y1+ey*t1);ctx.lineTo(xx+ex*t1,y2+ey*t1);ctx.lineTo(xx+ex*t2,y2+ey*t2);ctx.lineTo(xx+ex*t2,y1+ey*t2);ctx.closePath();ctx.fill();
   };
-  box3(-42,-14,86,10,'#2b2e3d','#1b1d2a','#4a4f66','#171923');
-  box3(-42,-30,36,18,'#b9bfc9','#8e95a2','#e3e7ee','#7c8392');
-  const cx=box3(-6,-38,44,26,'#ffc21a','#e09a00','#ffe680','#d99500');
-  const hx=box3(30,-26,14,14,'#ffc21a','#e09a00','#ffe680','#e8a200');
-  // windows
-  ctx.fillStyle='#e9f8ff';ctx.fillRect(5,-33,25,13);
-  ctx.fillStyle='#9fd6f2';ctx.fillRect(5,-25,25,5);
-  ctx.fillStyle='#ffc21a';ctx.fillRect(16,-33,3,13);
-  face(cx,-34,-24,.12,.88,'#7cc6ea');
-  // headlights + grille on hood front
-  face(hx,-23,-17,.1,.3,'#fff7c2');face(hx,-23,-17,.7,.9,'#fff7c2');
-  face(hx,-15,-13,.2,.8,'#2b2e3d');
-  ctx.fillStyle='#e63946';ctx.fillRect(-42,-24,3,6);
+  box3(-50,-20,100,11,'#2b2e3d','#1b1d2a','#4a4f66','#171923');
+  box3(-50,-38,42,20,'#b9bfc9','#8e95a2','#e3e7ee','#7c8392');
+  const cx=box3(-8,-48,48,30,'#ffc21a','#e09a00','#ffe680','#d99500');
+  const hx=box3(34,-32,16,14,'#ffc21a','#e09a00','#ffe680','#e8a200');
+  ctx.fillStyle='#e9f8ff';ctx.fillRect(6,-43,28,15);
+  ctx.fillStyle='#9fd6f2';ctx.fillRect(6,-34,28,6);
+  ctx.fillStyle='#ffc21a';ctx.fillRect(18,-43,3,15);
+  face(cx,-44,-30,.1,.9,'#7cc6ea');
+  face(hx,-28,-21,.1,.3,'#fff7c2');face(hx,-28,-21,.7,.9,'#fff7c2');
+  face(hx,-19,-16,.2,.8,'#2b2e3d');
+  ctx.fillStyle='#e63946';ctx.fillRect(-50,-30,3,7);
   ctx.strokeStyle='#14161f';ctx.lineWidth=2;
-  ctx.strokeRect(-42,-30,36,18);ctx.strokeRect(-6,-38,44,26);ctx.strokeRect(30,-26,14,14);
+  ctx.strokeRect(-50,-38,42,20);ctx.strokeRect(-8,-48,48,30);ctx.strokeRect(34,-32,16,14);
   ctx.restore();
   wheel(R,0,0,false);wheel(F,0,0,false);
   ctx.restore();
@@ -514,7 +540,7 @@ function frame(now){
   render(dt);
 }
 function render(dt){
-  const sc=H/440;
+  const sc=H/470;
   ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);
   if(!L){ctx.fillStyle='#2ab3f6';ctx.fillRect(0,0,cv.width,cv.height);return}
   if(car){
