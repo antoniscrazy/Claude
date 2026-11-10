@@ -35,3 +35,16 @@ window.MOKI_GAMES = [
     featured: false
   }
 ];
+
+// Weitere Seiten (erscheinen als eigener Bereich unter den Spielen)
+window.MOKI_SITES = [
+  {
+    id: "poki",
+    title: "Poki",
+    url: "https://poki-proxy-us.onrender.com",
+    image: "poki.jpg",
+    wide: true,
+    emoji: "🎮",
+    colors: ["#00c2b8", "#0a2a5e"]
+  }
+];
