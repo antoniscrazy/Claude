@@ -26,7 +26,7 @@
 <script>
 // Lädt das Spiel direkt aus dem GitHub-Repo (über jsDelivr, mit Commit-Version fest verdrahtet).
 // Kein lokaler Server nötig – die Datei funktioniert auch per Doppelklick.
-const BASE = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@63fb95772d703f8db2d8a6203ba68ea515c026c4/perfect-hotel/";
+const BASE = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@266ce3c13116e5a10dc23cce8ccb332e8ac7817e/perfect-hotel/";
 const SHIM = '<script>Object.defineProperty(Document.prototype,"URL",{get(){return "' + BASE + 'index.html"},configurable:true})<\/script>';
 fetch(BASE + "index.html")
   .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
