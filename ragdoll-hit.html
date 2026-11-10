@@ -4,12 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ragdoll Hit</title>
-<style>
-  html, body { margin: 0; height: 100%; background: #222; }
-  iframe { width: 100%; height: 100%; border: 0; display: block; }
-</style>
+<style>html,body{margin:0;height:100%;background:#222;color:#fff;font-family:sans-serif}</style>
 </head>
 <body>
-<iframe src="ragdoll-hit/index.html" allow="autoplay; fullscreen" allowfullscreen></iframe>
+<p id="msg" style="padding:20px">Lade Ragdoll Hit aus dem GitHub-Repo …</p>
+<script>
+// Lädt das Spiel direkt aus dem GitHub-Repo (über jsDelivr, mit Commit-Version fest verdrahtet).
+// Kein lokaler Server nötig – die Datei funktioniert auch per Doppelklick.
+const BASE = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@d780d82d452bf455e00c6a7f53765091e412041f/ragdoll-hit/";
+fetch(BASE + "index.html")
+  .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+  .then(html => {
+    html = html.replace("<head>", '<head><base href="' + BASE + '">');
+    document.open(); document.write(html); document.close();
+  })
+  .catch(e => { document.getElementById("msg").textContent = "Fehler beim Laden: " + e.message; });
+</script>
 </body>
 </html>
