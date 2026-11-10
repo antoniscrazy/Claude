@@ -3,7 +3,7 @@ window.MOKI_GAMES = [
   {
     id: "drive-mad",
     title: "Drive Mad",
-    url: "https://tranquil-crisp-0b9532.netlify.app",
+    url: "drive-mad.html",
     category: "Fahren",
     emoji: "🚗",
     colors: ["#ff7a18", "#af002d"],

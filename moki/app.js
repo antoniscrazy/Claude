@@ -52,3 +52,6 @@ function route() {
 search.addEventListener("input", () => { if (location.hash.startsWith("#/spiel")) location.hash = "#/"; else home(); });
 addEventListener("hashchange", route);
 route();
+
+// "Back to Moki"-Button im Spiel schickt eine Nachricht -> zurück zur Startseite
+addEventListener("message", e => { if (e.data && e.data.moki === "back") location.hash = "#/"; });
