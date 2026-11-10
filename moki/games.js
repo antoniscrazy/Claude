@@ -22,5 +22,17 @@ window.MOKI_GAMES = [
     colors: ["#7b2ff7", "#f107a3"],
     description: "Rhythmus-Runner mit 12 Levels, 7 Modi und Map Maker.",
     featured: false
+  },
+  {
+    id: "voxelcraft",
+    title: "VoxelCraft",
+    url: "https://sage-beijinho-7ca6f4.netlify.app",
+    category: "Abenteuer",
+    image: "voxelcraft.jpg",
+    wide: true,
+    emoji: "⛏️",
+    colors: ["#3d8c2f", "#6b4423"],
+    description: "Minecraft im Browser.",
+    featured: false
   }
 ];
