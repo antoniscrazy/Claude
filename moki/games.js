@@ -23,6 +23,17 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "ragdoll-hit",
+    title: "Ragdoll Hit",
+    url: "https://beautiful-mochi-ba28f3.netlify.app",
+    category: "Action",
+    image: "ragdoll-hit.jpg",
+    emoji: "🪓",
+    colors: ["#4a4a4a", "#f5a500"],
+    description: "Ragdoll-Kämpfe.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
