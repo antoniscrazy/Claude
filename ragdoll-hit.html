@@ -12,9 +12,11 @@
 // Lädt das Spiel direkt aus dem GitHub-Repo (über jsDelivr, mit Commit-Version fest verdrahtet).
 // Kein lokaler Server nötig – die Datei funktioniert auch per Doppelklick.
 const BASE = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@d780d82d452bf455e00c6a7f53765091e412041f/ragdoll-hit/";
+const MOKI_BTN = "<!-- Moki: Back-Button -->\n<a id=\"moki-back\" href=\"https://mokiorg.netlify.app\">&larr; Back to Moki</a>\n<style>\n  #moki-back {\n    position: fixed; top: 12px; right: 12px; z-index: 2147483647;\n    padding: 9px 16px; border-radius: 999px;\n    background: linear-gradient(90deg, #00e5a8, #ffd23f);\n    color: #04201a; font: 800 14px \"Segoe UI\", system-ui, sans-serif;\n    text-decoration: none; box-shadow: 0 3px 12px rgba(0, 0, 0, .5); opacity: .92;\n  }\n  #moki-back:hover { opacity: 1; transform: scale(1.05); }\n</style>\n";
 fetch(BASE + "index.html")
   .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
   .then(html => {
+    html = html.replace("</body>", MOKI_BTN + "</body>");
     html = html.replace("<head>", '<head><base href="' + BASE + '">');
     document.open(); document.write(html); document.close();
   })
