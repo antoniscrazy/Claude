@@ -92,6 +92,18 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "angry-birds",
+    title: "Angry Birds",
+    url: "https://elegant-stardust-e6917d.netlify.app",
+    category: "Action",
+    image: "angry-birds.jpg",
+    wide: true,
+    emoji: "🐦",
+    colors: ["#d62828", "#2b9cf0"],
+    description: "Schleudere Vögel auf die Schweine.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
