@@ -115,6 +115,17 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "kick-the-buddy",
+    title: "Kick The Buddy",
+    url: "https://adorable-vacherin-7971d2.netlify.app",
+    category: "Action",
+    image: "kick-the-buddy.jpg",
+    emoji: "🥊",
+    colors: ["#9acd1a", "#2b6fd6"],
+    description: "Lass deinen Frust an Buddy aus.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
