@@ -4,7 +4,7 @@ const app = document.getElementById("app");
 const search = document.getElementById("q");
 let category = "Alle";
 
-const tile = g => `<a class="tile${g.wide ? " wide" : ""}" href="${g.url}" style="background:linear-gradient(135deg,${g.colors[0]},${g.colors[1]})">${g.image ? `<img src="${g.image}" alt="">` : `<span class="em">${g.emoji}</span>`}<span class="name">${g.title}</span></a>`;
+const tile = g => `<a class="tile${g.wide ? " wide" : ""}" href="${g.url}" data-id="${g.id}" style="background:linear-gradient(135deg,${g.colors[0]},${g.colors[1]})">${g.image ? `<img src="${g.image}" alt="">` : `<span class="em">${g.emoji}</span>`}<span class="name">${g.title}</span></a>`;
 const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 function home() {
@@ -29,3 +29,22 @@ function route() {
 search.addEventListener("input", () => { home(); });
 addEventListener("hashchange", route);
 route();
+
+// Popup-Warnung vor Spielen mit "warning" in games.js
+function warnDialog(g) {
+  const o = document.createElement("div");
+  o.className = "modal";
+  o.innerHTML = `<div class="box" role="dialog" aria-modal="true"><h3>⚠️ Experimentell</h3><p>${esc(g.warning)}</p>
+    <div class="acts"><button class="btn" data-a="no">Abbrechen</button><a class="btn go" href="${g.url}">Trotzdem öffnen</a></div></div>`;
+  const close = () => o.remove();
+  o.addEventListener("click", e => { if (e.target === o || e.target.dataset.a === "no") close(); });
+  addEventListener("keydown", function k(e) { if (e.key === "Escape") { close(); removeEventListener("keydown", k); } });
+  document.body.appendChild(o);
+  o.querySelector(".go").focus();
+}
+document.addEventListener("click", e => {
+  const t = e.target.closest("a.tile[data-id]");
+  if (!t || e.ctrlKey || e.metaKey || e.shiftKey) return;
+  const g = [...games, ...sites].find(x => x.id === t.dataset.id);
+  if (g && g.warning) { e.preventDefault(); warnDialog(g); }
+});

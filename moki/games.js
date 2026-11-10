@@ -78,6 +78,20 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "slice-master",
+    title: "Slice Master",
+    url: "https://warm-alfajores-0ead0a.netlify.app",
+    category: "Action",
+    image: "slice-master.jpg",
+    wide: true,
+    emoji: "🔪",
+    colors: ["#2b9cf0", "#ffd400"],
+    description: "Schneide Türme in Scheiben.",
+    // Popup vor dem Öffnen (weglassen = kein Popup)
+    warning: "Dieses Spiel ist experimentell. Es lädt möglicherweise nicht oder dauert sehr lange.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
