@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}canvas{display:block}</style></head>
+<body><canvas id="c" width="1920" height="1080"></canvas>
+<script>
+const c = document.getElementById('c'), ctx = c.getContext('2d');
+const W = 1920, H = 1080, GY = 800;
+const F = '"Segoe UI", "Helvetica Neue", Arial, sans-serif';
+function rng(seed){let a=seed;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const R = rng(7);
+
+// ---------- Hintergrund ----------
+let g = ctx.createLinearGradient(0,0,0,H);
+g.addColorStop(0,'#14083a'); g.addColorStop(0.45,'#5a118f'); g.addColorStop(0.75,'#c2208f'); g.addColorStop(1,'#ff7a45');
+ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+
+// Sterne
+for (let i=0;i<260;i++){ const x=R()*W, y=R()*GY*0.7, r=R()*2.2+0.4; ctx.fillStyle='rgba(255,255,255,'+(0.3+R()*0.6)+')'; ctx.fillRect(x,y,r,r); }
+
+// Sonne mit Streifen
+const sx=1280, sy=GY-40, sr=360;
+ctx.save(); ctx.beginPath(); ctx.arc(sx,sy,sr,Math.PI,0); ctx.closePath(); ctx.clip();
+let sg = ctx.createLinearGradient(0,sy-sr,0,sy); sg.addColorStop(0,'#fff27a'); sg.addColorStop(0.5,'#ff8fb0'); sg.addColorStop(1,'#ff3fb4');
+ctx.fillStyle = sg; ctx.fillRect(sx-sr,sy-sr,sr*2,sr);
+ctx.fillStyle = '#7a1a8c';
+for (let i=0;i<9;i++) ctx.fillRect(sx-sr, sy-20-i*40, sr*2, 3+i*3.2);
+ctx.restore();
+// Sonnen-Glow
+let rg = ctx.createRadialGradient(sx,sy,60,sx,sy,760); rg.addColorStop(0,'rgba(255,120,200,0.45)'); rg.addColorStop(1,'rgba(255,120,200,0)');
+ctx.fillStyle = rg; ctx.fillRect(0,0,W,H);
+
+// Berge (Neon-Kontur)
+function peaks(seed, base, hmin, hmax, fill, stroke){
+  const r = rng(seed); let x=-200;
+  while (x < W+200){ const w=260+r()*320, h=hmin+r()*(hmax-hmin);
+    ctx.beginPath(); ctx.moveTo(x,GY+6); ctx.lineTo(x+w/2,GY-h); ctx.lineTo(x+w,GY+6); ctx.closePath();
+    ctx.fillStyle=fill; ctx.fill(); ctx.strokeStyle=stroke; ctx.lineWidth=3; ctx.stroke(); x += w*0.62; }
+}
+peaks(3, GY, 140, 330, 'rgba(48,10,90,0.92)', 'rgba(255,120,220,0.45)');
+peaks(9, GY, 80, 200, 'rgba(24,4,56,0.97)', 'rgba(120,220,255,0.55)');
+
+// Stadt-Silhouette
+let x = -20;
+const r2 = rng(21);
+while (x < W){ const w=60+r2()*90, h=90+r2()*260;
+  ctx.fillStyle='rgba(10,2,30,0.96)'; ctx.fillRect(x,GY-h,w,h+4);
+  for (let k=0;k<Math.floor(h/26);k++) for (let m=0;m<Math.floor(w/20);m++) if (r2()<0.35){ ctx.fillStyle='rgba(120,230,255,'+(0.25+r2()*0.5)+')'; ctx.fillRect(x+8+m*20,GY-h+10+k*26,7,10); }
+  x += w+r2()*18; }
+
+// Boden mit Perspektiv-Raster
+let gg = ctx.createLinearGradient(0,GY,0,H); gg.addColorStop(0,'#1a0630'); gg.addColorStop(1,'#050010');
+ctx.fillStyle=gg; ctx.fillRect(0,GY,W,H-GY);
+ctx.strokeStyle='rgba(120,230,255,0.35)'; ctx.lineWidth=2; ctx.beginPath();
+for (let i=-30;i<=50;i++){ const bx=W/2+i*130; ctx.moveTo(W/2+(bx-W/2)*0.12,GY); ctx.lineTo(bx*1.0+(bx-W/2)*1.2,H); }
+for (let j=1;j<9;j++){ const y=GY+Math.pow(j/8,2)*(H-GY); ctx.moveTo(0,y); ctx.lineTo(W,y); }
+ctx.stroke();
+ctx.save(); ctx.shadowColor='#6df0ff'; ctx.shadowBlur=40; ctx.fillStyle='#8af4ff'; ctx.fillRect(0,GY-3,W,6); ctx.restore();
+
+// ---------- Objekte ----------
+function glow(col,b,fn){ ctx.save(); ctx.shadowColor=col; ctx.shadowBlur=b; fn(); ctx.restore(); }
+function spike(x,y,s,flip){ // x links, y Basis
+  ctx.beginPath();
+  if(!flip){ctx.moveTo(x,y); ctx.lineTo(x+s/2,y-s); ctx.lineTo(x+s,y);} else {ctx.moveTo(x,y); ctx.lineTo(x+s/2,y+s); ctx.lineTo(x+s,y);}
+  ctx.closePath();
+  const gs=ctx.createLinearGradient(0,y-s,0,y); gs.addColorStop(0,'rgba(120,230,255,0.6)'); gs.addColorStop(0.5,'#05030f'); gs.addColorStop(1,'#000');
+  ctx.fillStyle=gs; glow('#6df0ff',24,()=>{ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=4; ctx.stroke();});
+}
+function block(x,y,s,col){
+  const g2=ctx.createLinearGradient(0,y,0,y+s); g2.addColorStop(0,'#3a1d6e'); g2.addColorStop(1,'#12072e');
+  ctx.fillStyle=g2; ctx.fillRect(x,y,s,s);
+  ctx.strokeStyle=col+'88'; ctx.lineWidth=2; ctx.strokeRect(x+s*0.28,y+s*0.28,s*0.44,s*0.44);
+  ctx.fillStyle=col; for (const [a,b] of [[6,6],[s-12,6],[6,s-12],[s-12,s-12]]) ctx.fillRect(x+a,y+b,6,6);
+  glow(col,26,()=>{ctx.strokeStyle=col; ctx.lineWidth=4; ctx.strokeRect(x+2,y+2,s-4,s-4);});
+}
+function saw(cx,cy,r,rot){
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(rot); ctx.beginPath();
+  for(let i=0;i<28;i++){const a=i/28*Math.PI*2, rr=i%2?r*0.72:r; ctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr);} ctx.closePath();
+  const gs=ctx.createRadialGradient(0,0,4,0,0,r); gs.addColorStop(0,'#8a93b8'); gs.addColorStop(0.6,'#2b3050'); gs.addColorStop(1,'#10122a');
+  ctx.fillStyle=gs; glow('#ff3b3b',34,()=>{ctx.fill(); ctx.strokeStyle='#ff6b6b'; ctx.lineWidth=5; ctx.stroke();});
+  ctx.fillStyle='#0a0c20'; ctx.beginPath(); ctx.arc(0,0,r*0.3,0,7); ctx.fill(); ctx.strokeStyle='#ff6b6b'; ctx.lineWidth=4; ctx.stroke(); ctx.restore();
+}
+function orb(cx,cy,col,r){
+  glow(col,50,()=>{ ctx.fillStyle=col; ctx.beginPath(); ctx.arc(cx,cy,r*0.5,0,7); ctx.fill(); ctx.strokeStyle=col; ctx.lineWidth=7; ctx.beginPath(); ctx.arc(cx,cy,r,0,7); ctx.stroke();
+    ctx.setLineDash([14,16]); ctx.lineWidth=4; ctx.beginPath(); ctx.arc(cx,cy,r*1.4,0,7); ctx.stroke(); ctx.setLineDash([]); });
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(cx,cy,r*0.2,0,7); ctx.fill();
+}
+function portal(cx,cy,ry,col){
+  ctx.save(); ctx.fillStyle=col; ctx.globalAlpha=0.18; ctx.beginPath(); ctx.ellipse(cx,cy,60,ry,0,0,7); ctx.fill(); ctx.globalAlpha=1;
+  glow(col,50,()=>{ctx.strokeStyle=col; ctx.lineWidth=12; ctx.beginPath(); ctx.ellipse(cx,cy,32,ry,0,0,7); ctx.stroke();});
+  ctx.setLineDash([22,26]); ctx.strokeStyle=col; ctx.globalAlpha=0.7; ctx.lineWidth=4; ctx.beginPath(); ctx.ellipse(cx,cy,56,ry+14,0,0,7); ctx.stroke(); ctx.restore();
+}
+
+// Portale & Orbs im Hintergrund
+portal(1500, GY-250, 250, '#ff4fa3');
+portal(1740, GY-250, 250, '#4dff88');
+orb(1135, GY-300, '#ffe14a', 34);
+orb(1010, GY-200, '#4da6ff', 28);
+
+// Blöcke + Spikes + Säge
+for (let i=0;i<3;i++) block(1230+i*100, GY-100, 100, '#6df0ff');
+block(1330, GY-200, 100, '#ff7be0');
+for (let i=0;i<4;i++) spike(1620+i*80, GY, 80);
+saw(1850, GY-60, 85, 0.5);
+for (let i=0;i<3;i++) spike(40+i*90, GY, 90);
+spike(560, GY, 90); spike(650, GY, 90);
+
+// ---------- Spieler-Würfel in der Luft ----------
+const px=900, py=GY-330;
+// Streifen/Spur
+for (let i=0;i<14;i++){ const t=i/14; ctx.save(); ctx.globalAlpha=0.5*(1-t); ctx.fillStyle=i%2?'#7df3ff':'#ffffff'; ctx.shadowColor='#6df0ff'; ctx.shadowBlur=30;
+  ctx.fillRect(px-70-i*46, py+10+i*3, 40-i*1.6, 100-i*5); ctx.restore(); }
+// Würfel
+ctx.save(); ctx.translate(px+70,py+70); ctx.rotate(0.38);
+const s=140;
+const cg=ctx.createLinearGradient(-s/2,-s/2,s/2,s/2); cg.addColorStop(0,'#b8f8ff'); cg.addColorStop(1,'#1fa3e0');
+ctx.shadowColor='#6df0ff'; ctx.shadowBlur=70; ctx.fillStyle=cg; ctx.fillRect(-s/2,-s/2,s,s); ctx.shadowBlur=0;
+ctx.strokeStyle='#052a40'; ctx.lineWidth=9; ctx.strokeRect(-s/2+5,-s/2+5,s-10,s-10);
+ctx.fillStyle='rgba(255,255,255,0.3)'; ctx.fillRect(-s/2+14,-s/2+14,s-28,16);
+ctx.fillStyle='#052a40'; ctx.fillRect(-42,-28,32,32); ctx.fillRect(10,-28,32,32);
+ctx.fillStyle='#fff'; ctx.fillRect(-32,-24,13,13); ctx.fillRect(20,-24,13,13);
+ctx.fillStyle='#052a40'; ctx.fillRect(-44,30,88,17);
+ctx.fillStyle='#b8f8ff'; for (const mx of [-27,-4,19]) ctx.fillRect(mx,30,9,17);
+ctx.restore();
+// Aufprall-Ringe unter dem Würfel
+ctx.save(); ctx.strokeStyle='rgba(120,240,255,0.5)'; ctx.lineWidth=5; ctx.beginPath(); ctx.ellipse(px+70,GY,150,22,0,0,7); ctx.stroke();
+ctx.strokeStyle='rgba(120,240,255,0.25)'; ctx.beginPath(); ctx.ellipse(px+70,GY,230,34,0,0,7); ctx.stroke(); ctx.restore();
+
+// Funken
+for (let i=0;i<120;i++){ const x=R()*W, y=100+R()*(GY-120), r=1+R()*3.5; ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle=['#6df0ff','#ff7be0','#ffe14a','#ffffff'][i%4]; ctx.globalAlpha=0.3+R()*0.6; ctx.shadowColor=ctx.fillStyle; ctx.shadowBlur=14; ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill(); ctx.restore(); }
+
+// ---------- Titel ----------
+ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle';
+ctx.font='900 250px '+F;
+const title='BLOCK DASH';
+ctx.translate(W/2-40, 215);
+ctx.transform(1,0,-0.12,1,0,0);
+ctx.lineJoin='round'; ctx.lineWidth=40; ctx.strokeStyle='#12043a'; ctx.strokeText(title,0,0);
+ctx.lineWidth=22; ctx.strokeStyle='#ff4fc8'; ctx.shadowColor='#ff4fc8'; ctx.shadowBlur=60; ctx.strokeText(title,0,0);
+ctx.shadowBlur=0;
+const tg=ctx.createLinearGradient(0,-120,0,120); tg.addColorStop(0,'#ffffff'); tg.addColorStop(0.5,'#bff6ff'); tg.addColorStop(1,'#35c8ff');
+ctx.fillStyle=tg; ctx.fillText(title,0,0);
+ctx.lineWidth=4; ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.strokeText(title,0,0);
+ctx.restore();
+
+// Untertitel-Band
+ctx.save(); ctx.translate(W/2,395); ctx.transform(1,0,-0.12,1,0,0);
+ctx.fillStyle='rgba(10,2,40,0.8)'; ctx.fillRect(-520,-42,1040,84);
+glow('#6df0ff',24,()=>{ctx.strokeStyle='#6df0ff'; ctx.lineWidth=4; ctx.strokeRect(-520,-42,1040,84);});
+ctx.fillStyle='#ffffff'; ctx.font='bold 46px '+F; ctx.textAlign='center'; ctx.textBaseline='middle';
+ctx.fillText('12 LEVEL  ·  5 MODI  ·  MAP MAKER', 0, 3);
+ctx.restore();
+
+// Badges
+function badge(x,y,label,col){
+  ctx.save(); ctx.translate(x,y); ctx.font='bold 34px '+F; const w=ctx.measureText(label).width+54;
+  ctx.fillStyle='rgba(10,2,40,0.82)'; ctx.beginPath(); ctx.roundRect(-w/2,-30,w,60,30); ctx.fill();
+  glow(col,20,()=>{ctx.strokeStyle=col; ctx.lineWidth=4; ctx.stroke();});
+  ctx.fillStyle=col; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(label,0,2); ctx.restore();
+}
+badge(330, 990, 'Cube · Ship · Wave · Ball · UFO', '#ff7be0');
+badge(1060, 990, 'Gravity · Orbs · Pads', '#ffe14a');
+badge(1630, 990, 'Läuft im Browser · auch iPad', '#6dff9a');
+
+// Vignette
+let vg = ctx.createRadialGradient(W/2,H/2,H*0.5,W/2,H/2,H*1.05); vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,0.55)');
+ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
+</script></body></html>
