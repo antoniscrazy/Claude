@@ -29,47 +29,85 @@
 const BASE = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@c79dcad54ad6c02e389dbcbe400a8e519e4b0d59/kick-the-buddy/";
 // (geheim) Taste K: Münzen & Gems auf Maximum und dort halten; nochmal K = aus.
 function cheatShim() {
-  var on = false, timer = null, pairs = [], MAX = 999999999;
+  var on = false, timer = null, pairs = [], tier = 0, diag = "", tries = 0, lastScan = 0, lastMs = 0, MAX = 999999999;
   function sane(v) { return (v >= 0 && v <= 100000000) || v === MAX; }
-  // Währungs-Objekt: [Typ-Zeiger, 0, Schlüssel(1=Münzen,2=Gems), Betrag, 0, ptr, 0, 0, ptr, 0, 73168600]
-  function isCur(h, x, key) {
-    return h[x - 1] === key && h[x - 2] === 0 && h[x + 1] === 0 && h[x + 3] === 0 && h[x + 7] === 73168600 && sane(h[x]);
+  function view() {
+    var M = unityGame.Module;
+    if (M.wasmMemory && M.wasmMemory.buffer) return new Int32Array(M.wasmMemory.buffer);
+    if (M.HEAPU8 && M.HEAPU8.buffer) return new Int32Array(M.HEAPU8.buffer);
+    return M.HEAP32;
   }
-  function find(h) {
-    var coins = {}, gems = {}, i, P;
-    for (i = 3; i < h.length - 8; i++) {
-      if (h[i + 7] !== 73168600 || h[i - 2] !== 0) continue;
+  // Währungs-Objekt: [Typ-Zeiger, 0, Schlüssel(1=Münzen,2=Gems), Betrag, 0, ptr, 0, 0, ptr, 0, 73168600]
+  // Stufe 1 (schnell): nur Kandidaten mit der festen Zahl 73168600 an Position +7 prüfen.
+  function findStrict(h) {
+    var s1 = {}, s2 = {}, n1 = 0, n2 = 0, P, out = [];
+    for (var i = 3, e = h.length - 8; i < e; i++) {
+      if (h[i + 7] !== 73168600) continue;
       var k = h[i - 1];
-      if (k !== 1 && k !== 2) continue;
-      if (h[i + 1] !== 0 || h[i + 3] !== 0 || !sane(h[i])) continue;
+      if ((k !== 1 && k !== 2) || h[i - 2] !== 0 || h[i + 1] !== 0 || h[i + 3] !== 0 || !sane(h[i])) continue;
       P = h[i - 3];
-      (k === 1 ? coins : gems)[P] = ((k === 1 ? coins : gems)[P] || []).concat(i);
+      if (k === 1) { (s1[P] = s1[P] || []).push(i); n1++; } else { (s2[P] = s2[P] || []).push(i); n2++; }
     }
-    var out = [];
-    for (P in coins) {
-      if (gems[P] && coins[P].length === 1 && gems[P].length === 1) out.push([coins[P][0], gems[P][0]]);
-    }
+    diag = "s1=" + n1 + " s2=" + n2;
+    for (P in s1) if (s2[P] && s1[P].length === 1 && s2[P].length === 1) out.push([s1[P][0], s2[P][0]]);
     return out.length >= 1 && out.length <= 3 ? out : [];
   }
+  // Stufe 2/3 (langsamer, nur gelegentlich): lockerer, bzw. über die Startwerte 100 / 25.
+  function findLoose(h) {
+    var l1 = {}, l2 = {}, P, out = [], n1 = 0, n2 = 0;
+    for (var i = 3, e = h.length - 8; i < e; i++) {
+      if (h[i + 1] !== 0 || h[i - 2] !== 0) continue;
+      var k = h[i - 1];
+      if ((k !== 1 && k !== 2) || h[i + 3] !== 0 || !sane(h[i])) continue;
+      P = h[i - 3];
+      if (P < 1000000 || P > 300000000) continue;
+      if (k === 1) { (l1[P] = l1[P] || []).push(i); n1++; } else { (l2[P] = l2[P] || []).push(i); n2++; }
+    }
+    diag += " | l1=" + n1 + " l2=" + n2;
+    for (P in l1) if (l2[P] && l1[P].length === 1 && l2[P].length === 1) out.push([l1[P][0], l2[P][0]]);
+    if (out.length >= 1 && out.length <= 3) { tier = 2; return out; }
+    out = [];
+    for (P in l1) for (var a = 0; a < l1[P].length; a++) {
+      var x = l1[P][a]; if (h[x] !== 100) continue;
+      for (var Q in l2) for (var b = 0; b < l2[Q].length; b++) {
+        var y = l2[Q][b]; if (h[y] === 25 && Math.abs(x - y) < 5000) out.push([x, y]);
+      }
+    }
+    if (out.length >= 1 && out.length <= 3) { tier = 3; return out; }
+    return [];
+  }
   function valid(h) {
-    for (var k = 0; k < pairs.length; k++) if (!isCur(h, pairs[k][0], 1) || !isCur(h, pairs[k][1], 2)) return false;
-    return pairs.length > 0;
+    if (!pairs.length) return false;
+    for (var k = 0; k < pairs.length; k++) {
+      var x = pairs[k][0], y = pairs[k][1];
+      if (h[x - 1] !== 1 || h[x - 2] !== 0 || h[y - 1] !== 2 || h[y - 2] !== 0) return false;
+    }
+    return true;
   }
   function apply() {
     try {
-      var h = unityGame.Module.HEAP32;
-      if (!valid(h)) pairs = find(h);
+      var h = view();
+      if (!valid(h)) {
+        var now = Date.now();
+        if (now - lastScan < 2500) return;          // nicht ständig suchen (das Spiel würde ruckeln)
+        lastScan = now; tries++;
+        var t0 = now;
+        pairs = findStrict(h); if (pairs.length) tier = 1;
+        else if (tries % 4 === 0) pairs = findLoose(h);   // lockere Suche nur jeden 4. Versuch
+        lastMs = Date.now() - t0;
+        if (!pairs.length) return;
+      }
       for (var k = 0; k < pairs.length; k++) { h[pairs[k][0]] = MAX; h[pairs[k][1]] = MAX; }
-    } catch (e) {}
+    } catch (e) { diag = "Fehler: " + e.message; }
   }
   function toggle() {
     on = !on;
-    if (on) { apply(); timer = setInterval(apply, 500); } else { clearInterval(timer); }
+    if (on) { lastScan = 0; apply(); timer = setInterval(apply, 500); } else { clearInterval(timer); }
   }
   window.__cheat = toggle;
   window.__cheatInfo = function () {
-    var n = -1; try { n = unityGame.Module.HEAP32.length; } catch (e) {}
-    return (on ? "an" : "aus") + " | " + (pairs.length ? "Stelle gefunden (" + pairs.length + ")" : "Stelle NICHT gefunden") + " | heap " + n;
+    var n = -1; try { n = view().length; } catch (e) {}
+    return (on ? "an" : "aus") + " | " + (pairs.length ? "Stelle gefunden (Stufe " + tier + ")" : "sucht… Versuch " + tries + " (" + diag + ")") + " | " + lastMs + "ms | heap " + n;
   };
   addEventListener("keydown", function (e) {
     if (e.code === "KeyK" || e.key === "k" || e.key === "K") toggle();
