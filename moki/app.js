@@ -3,7 +3,7 @@ const sites = window.MOKI_SITES || [];
 const app = document.getElementById("app");
 const side = document.getElementById("side");
 const search = document.getElementById("q");
-const ICONS = { Alle: "🏠", Fahren: "🏎️", Action: "💥", Simulation: "🏨", Abenteuer: "🧭" };
+const ICONS = { Alle: "🏠", Fahren: "🏎️", Action: "💥", Simulation: "🏨", Abenteuer: "🧭", Strategie: "⚔️" };
 let category = "Alle";
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));

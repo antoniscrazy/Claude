@@ -171,6 +171,17 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "war-of-sticks",
+    title: "War of Sticks",
+    url: "https://tourmaline-cuchufli-2c8f47.netlify.app",
+    category: "Strategie",
+    image: "war-of-sticks.jpg",
+    emoji: "⚔️",
+    colors: ["#ffe600", "#1b9ad6"],
+    description: "Führe deine Strichmännchen-Armee in die Schlacht.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
