@@ -44,7 +44,7 @@
 // Kein lokaler Server nötig – die Datei funktioniert auch per Doppelklick.
 const BASE = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@f1ad30272fd9912b2eac68856b2dfeeec261dc55/hills-of-steel/";
 // Admin-Variante: nur die StreamingAssets (Admin-Panzer: neuer Look + starke Werte) kommen aus einem eigenen Ordner.
-const ADMIN_BASE = "@@ADMIN_BASE@@";
+const ADMIN_BASE = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@482ebd9b72c887178e9441b9ef6c2ee5537a6277/hills-of-steel-admin/";
 let rawHtml = "";
 function shimFor(root) { return '<script>Object.defineProperty(Document.prototype,"URL",{get(){return "' + root + 'index.html"},configurable:true})<\/script>'; }
 function makeDoc(admin) { return rawHtml.replace("<head>", '<head><base href="' + BASE + '">' + shimFor(admin ? ADMIN_BASE : BASE)); }
