@@ -15,7 +15,7 @@ window.MOKI_GAMES = [
     id: "geometry-dash",
     title: "Geometry Dash",
     url: "https://friendly-fenglisu-b0d7a5.netlify.app",
-    category: "Rhythmus",
+    category: "Action",
     image: "geometry-dash.jpg",
     emoji: "🟨",
     colors: ["#f5a500", "#1b9ad6"],
