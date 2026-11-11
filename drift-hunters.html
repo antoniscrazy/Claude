@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drift Hunters</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #111; color: #fff; font-family: sans-serif; }
+  body { display: flex; flex-direction: column; }
+  /* Eigene Leiste über dem Spiel – der Button verdeckt dadurch nichts vom Spiel. */
+  #bar { flex: 0 0 auto; display: flex; justify-content: flex-end; padding: 6px 12px; background: #111; }
+  #game { flex: 1 1 auto; width: 100%; border: 0; display: block; min-height: 0; }
+  /* Moki: Back-Button */
+  #moki-back {
+    padding: 9px 16px; border-radius: 999px;
+    background: linear-gradient(90deg, #00e5a8, #ffd23f);
+    color: #04201a; font: 800 14px "Segoe UI", system-ui, sans-serif;
+    text-decoration: none; box-shadow: 0 3px 12px rgba(0, 0, 0, .5); opacity: .92;
+  }
+  #moki-back:hover { opacity: 1; transform: scale(1.05); }
+</style>
+</head>
+<body>
+<div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
+<iframe id="game" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe>
+<script>
+// Lädt das Spiel direkt aus dem GitHub-Repo (über jsDelivr, mit Commit-Version fest verdrahtet).
+// Kein lokaler Server nötig – die Datei funktioniert auch per Doppelklick.
+const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/1aa9534c756ed0d247ea49a3f1203695035e0684/drift-hunters/";
+const PAGE_CSS = "html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#111}.webgl-content,#gameContainer,#unityContainer,canvas{width:100% !important;height:100% !important}.webgl-content{position:absolute}.webgl-content *{border:0;margin:0;padding:0}.webgl-content .progress{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:18px;width:141px;margin-top:90px}";
+fetch(BASE + "UnityLoader2019.js")
+  .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+  .then(loader => {
+    // Keine Werbung / keine Store-Links: window.open wird im Spiel abgeblockt.
+    const guard = 'window.open=function(){return null;};';
+    const html = '<!doctype html><html><head><meta charset="utf-8"><base href="' + BASE + '"><style>' + PAGE_CSS + '</style></head><body>' +
+      '<div class="webgl-content"><div id="gameContainer"></div></div>' +
+      '<script>' + guard + '<\/script><script>' + loader.replace(/<\/script>/gi, "<\\/script>") + '<\/script>' +
+      '<script>var gameInstance = UnityLoader.instantiate("gameContainer", "' + BASE + 'dh.json");<\/script></body></html>';
+    document.getElementById("game").srcdoc = html;
+  })
+  .catch(e => { document.body.append("Fehler beim Laden: " + e.message); });
+</script>
+</body>
+</html>
