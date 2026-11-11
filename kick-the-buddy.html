@@ -29,29 +29,54 @@
 const BASE = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@c79dcad54ad6c02e389dbcbe400a8e519e4b0d59/kick-the-buddy/";
 // (geheim) Taste K: Münzen & Gems auf Maximum und dort halten; nochmal K = aus.
 function cheatShim() {
-  var on = false, timer = null, addr = -1;
+  var on = false, timer = null, addr = -1, MAX = 999999999;
+  function sane(v) { return v >= 0 && v <= 100000000; }
+  function ok(h, i) {
+    return h[i - 2] === 0 && h[i - 1] === 1 && h[i + 7] === 73168600 && h[i + 13] === 61785848 &&
+      h[i + 15] === 33886952 && (sane(h[i]) || h[i] === MAX) && (sane(h[i + 40]) || h[i + 40] === MAX);
+  }
   function find(h) {
-    for (var i = 3; i < h.length - 16; i++) {
-      if (h[i - 2] === 0 && h[i - 1] === 1 && h[i + 7] === 73168600 && h[i + 13] === 61785848 && h[i + 15] === 33886952) return i;
+    var hit = -1, n = 0;
+    for (var i = 3; i < h.length - 60; i++) {
+      if (h[i + 7] === 73168600 && h[i + 13] === 61785848 && ok(h, i)) { hit = i; n++; }
     }
-    return -1;
+    return n === 1 ? hit : -1; // nur wenn eindeutig, sonst nichts anfassen
   }
   function apply() {
     try {
       var h = unityGame.Module.HEAP32;
-      if (addr < 0 || h[addr - 1] !== 1 || h[addr + 7] !== 73168600) addr = find(h);
+      if (addr < 0 || !ok(h, addr)) addr = find(h);
       if (addr < 0) return;
-      h[addr] = 999999999;      // Münzen
-      h[addr + 40] = 999999999; // Gems
+      h[addr] = MAX;      // Münzen
+      h[addr + 40] = MAX; // Gems
     } catch (e) {}
   }
-  addEventListener("keydown", function (e) {
-    if (e.key !== "k" && e.key !== "K") return;
+  function toggle() {
     on = !on;
     if (on) { apply(); timer = setInterval(apply, 500); } else { clearInterval(timer); }
-  });
+  }
+  window.__cheat = toggle;
+  addEventListener("keydown", function (e) {
+    if (e.code === "KeyK" || e.key === "k" || e.key === "K") toggle();
+  }, true);
 }
 const SHIM = '<script>Object.defineProperty(Document.prototype,"URL",{get(){return "' + BASE + 'index.html"},configurable:true})<\/script><script>(' + cheatShim.toString() + ')();<\/script>';
+
+// (geheim) K auch außerhalb des Spiels; ohne Tastatur: 5x schnell auf die leere Leiste oben tippen.
+function toggleCheat() { try { document.getElementById("game").contentWindow.__cheat(); } catch (e) {} }
+addEventListener("keydown", function (e) {
+  if (e.code === "KeyK" || e.key === "k" || e.key === "K") toggleCheat();
+}, true);
+(function () {
+  var taps = [];
+  document.getElementById("bar").addEventListener("click", function (e) {
+    if (e.target.id !== "bar") return;
+    var t = Date.now();
+    taps = taps.filter(function (x) { return t - x < 3000; });
+    taps.push(t);
+    if (taps.length >= 5) { taps = []; toggleCheat(); }
+  });
+})();
 fetch(BASE + "index.html")
   .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
   .then(html => {
