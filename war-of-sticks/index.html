@@ -1,0 +1,414 @@
+<!-- 1767688994188 -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+<title>War of Sticks</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+
+<meta name="generator" content="Scirra Construct">
+	<meta name="author" content="Pavlo Sich">
+	<meta name="description" content="Battle strategy">
+	<link rel="manifest" href="appmanifest.json">
+
+	<meta name="theme-color" content="#32a482">
+<link rel="stylesheet" href="style.css">
+<style>
+
+    canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        margin: auto;
+    }
+
+    html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background-color: #ffc639;
+    }
+
+    #custom-loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: rgba(255, 198, 57, 50);
+        z-index: 1000;
+        transition: opacity 0.5s; /* Add this line for a fade-out effect */
+        opacity: 1;
+    }
+
+	/* Add your new animation CSS code below this line */
+	body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
+  margin: 0;
+  padding: 0;
+  background: #357196;
+}
+.loading-bar-container {
+  position: absolute;
+  width: 70%;
+  height: 15px;
+  background-color: #24405e;
+  top: 70%;
+  left: 15%;
+  border-radius: 5px; /* Add this line to round the corners of the container */
+}
+
+.loading-bar {
+  height: 100%;
+  width: 0%;
+  background-color: #34a9ee;
+  border-radius: 5px; /* Add this line to round the corners of the loading bar */
+}
+
+    .game-characterb {
+        position: absolute;
+        transform: translate(-50%, -100%);
+        opacity: 1;
+        max-width: 50vw;
+        max-height: 50vh;
+    }
+
+    #character-s1b {
+        left: 30vw;
+        top: 70%;
+    }
+
+    #character-s2b {
+        left: 40vw;
+        top: 70%;
+    }
+
+    #character-s3b {
+        left: 50vw;
+        top: 70.7%;
+    }
+
+    #character-s4b {
+        left: 62.5vw;
+        top: 70%;
+    }
+
+    #character-s5b {
+        left: 70vw;
+        top: 70%;
+    }
+
+    .game-character {
+        position: absolute;
+        transform: translate(-50%, -100%);
+        opacity: 0;
+        max-width: 50vw;
+        max-height: 50vh;
+    }
+
+    #character-s1 {
+        left: 30vw;
+        top: 70%;
+    }
+
+    #character-s2 {
+        left: 40vw;
+        top: 70%;
+    }
+
+    #character-s3 {
+        left: 50vw;
+        top: 70.7%;
+    }
+
+    #character-s4 {
+        left: 62.5vw;
+        top: 70%;
+    }
+
+    #character-s5 {
+        left: 70vw;
+        top: 70%;
+    }
+
+
+.fade-out {
+  opacity: 1;
+  transition: opacity 0.5s ease-in-out;
+}
+
+
+
+
+
+
+    .white-rectangle {
+        position: absolute;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.8);
+        transition: opacity 0.5s linear;
+        top: 0;
+        border-radius: 5px;
+    }
+	/* Add your new animation CSS code above this line */
+</style>
+
+</head>
+<body style= "margin: 0px; padding: 0px; overflow: hidden;">
+    <div id="custom-loader">
+        <img src="S1B.png" alt="Character S1B" id="character-s1b" class="game-characterb">
+        <img src="S2B.png" alt="Character S2B" id="character-s2b" class="game-characterb">
+        <img src="S3B.png" alt="Character S3B" id="character-s3b" class="game-characterb">
+        <img src="S4B.png" alt="Character S4B" id="character-s4b" class="game-characterb">
+        <img src="S5B.png" alt="Character S5B" id="character-s5b" class="game-characterb">
+
+        <img src="S1.png" alt="Character S1" id="character-s1" class="game-character">
+        <img src="S2.png" alt="Character S2" id="character-s2" class="game-character">
+        <img src="S3.png" alt="Character S3" id="character-s3" class="game-character">
+        <img src="S4.png" alt="Character S4" id="character-s4" class="game-character">
+        <img src="S5.png" alt="Character S5" id="character-s5" class="game-character">
+
+
+        <div class="loading-bar-container">
+            <div class="loading-bar" id="loading-bar"></div>
+        </div>
+
+        <!-- Add your new animation HTML code here -->
+
+    </div>
+    <script>
+        if (location.protocol.substr(0, 4) === "file") {
+            alert("Web exports won't work until you upload them. (When running on the file: protocol, browsers block many features from working for security reasons.)");
+        }
+    </script>
+    <script src="poki-sdk.js"></script>
+    <noscript>
+        <div id="notSupportedWrap">
+            <h2 id="notSupportedTitle">This content requires JavaScript</h2>
+            <p class="notSupportedMessage">JavaScript appears to be disabled. Please enable it to view this content.</p>
+        </div>
+    </noscript>
+    <script src="scripts/supportcheck.js"></script>
+    <script src="scripts/offlineclient.js" type="module"></script>
+    <script src="scripts/main.js" type="module"></script>
+    <script src="scripts/register-sw.js" type="module"></script>
+    <script>
+        const loadingBar = document.getElementById('loading-bar');
+        // Check when the game has loaded
+        let updateFinalProgress;
+        let gameLoaded = false;
+
+       
+
+
+
+
+        const assetsToLoad = [
+            { type: 'image', src: 'images/b.png' },
+            { type: 'image', src: 'images/cloudtiled-sheet0.png' },
+            { type: 'image', src: 'images/deathunit-sheet0.png' },
+            { type: 'image', src: 'images/deathunit-sheet1.png' },
+            { type: 'image', src: 'images/deathunit-sheet2.png' },
+            { type: 'image', src: 'images/excchestcoins1-sheet0.png' },
+            { type: 'image', src: 'images/exclavatiled-sheet0.png' },
+            { type: 'image', src: 'images/excresourcesincart-sheet0.png' },
+            { type: 'image', src: 'images/excrivertiled-sheet0.png' },
+            { type: 'image', src: 'images/excroad1-sheet0.png' },
+            { type: 'image', src: 'images/excroad3-sheet0.png' },
+            { type: 'image', src: 'images/excwatertexturetiled-sheet0.png' },
+            { type: 'image', src: 'images/shared-0-sheet1.png' },
+            { type: 'image', src: 'images/shared-0-sheet2.png' },
+            { type: 'image', src: 'images/shared-0-sheet3.png' },
+            { type: 'image', src: 'images/shared-0-sheet4.png' },
+            { type: 'image', src: 'images/shared-1-sheet1.png' },
+            { type: 'image', src: 'images/shared-1-sheet2.png' },
+            { type: 'image', src: 'images/shared-1-sheet3.png' },
+            { type: 'image', src: 'images/shared-1-sheet4.png' },
+            { type: 'image', src: 'images/shared-1-sheet5.png' },
+            { type: 'image', src: 'images/shared-2-sheet1.png' },
+            { type: 'image', src: 'images/shared-2-sheet2.png' },
+            { type: 'image', src: 'images/shared-2-sheet3.png' },
+            { type: 'image', src: 'images/shared-3-sheet0.png' },
+            { type: 'image', src: 'images/shared-3-sheet1.png' },
+            { type: 'image', src: 'images/shared-3-sheet3.png' },
+            { type: 'image', src: 'images/shared-3-sheet4.png' },
+            { type: 'image', src: 'images/shared-3-sheet5.png' },
+            { type: 'image', src: 'images/shared-4-sheet0.png' },
+            { type: 'image', src: 'images/stickmanminer-sheet0.png' },
+            { type: 'image', src: 'images/stoneandgold-sheet0.png' },
+            { type: 'image', src: 'images/towerbutton-sheet0.png' },
+            { type: 'script', src: 'scripts/c3runtime.js' },
+            { type: 'script', src: 'scripts/dispatchworker.js' },
+            { type: 'script', src: 'scripts/jobworker.js' },
+            { type: 'script', src: 'scripts/main.js' },
+            { type: 'script', src: 'scripts/offlineclient.js' },
+            { type: 'script', src: 'scripts/opus.wasm.js' },
+            { type: 'script', src: 'scripts/opus.wasm.wasm' },
+            { type: 'script', src: 'scripts/register-sw.js' },
+            { type: 'script', src: 'scripts/supportcheck.js' }
+            // Add more assets as needed
+        ];
+
+        
+        let loadedAssets = 0;
+        
+        const startTime = Date.now();
+
+        function adjustCharacterSizes() {
+            const characters = document.querySelectorAll(".game-character");
+            const scale = window.innerHeight / 700; // Adjust this value based on the desired scaling factor
+
+            characters.forEach((character) => {
+                const img = new Image();
+                img.src = character.src;
+
+                img.onload = () => {
+                    character.style.height = `${img.height * scale}px`;
+                };
+            });
+        }
+
+        window.addEventListener("resize", adjustCharacterSizes);
+        adjustCharacterSizes();
+
+
+        function adjustCharacterSizesb() {
+            const characters = document.querySelectorAll(".game-characterb");
+            const scale = window.innerHeight / 700; // Adjust this value based on the desired scaling factor
+
+            characters.forEach((character) => {
+                const img = new Image();
+                img.src = character.src;
+
+                img.onload = () => {
+                    character.style.height = `${img.height * scale}px`;
+                };
+            });
+        }
+
+        window.addEventListener("resize", adjustCharacterSizesb);
+        adjustCharacterSizesb();
+
+
+        function updateLoadingBar(newProgress) {
+            const previousProgress = parseFloat(loadingBar.style.width);
+            loadingBar.style.width = `${newProgress}%`;
+
+            const whiteRectangle = document.createElement('div');
+            whiteRectangle.className = 'white-rectangle';
+            whiteRectangle.style.width = `${newProgress - previousProgress}%`;
+            whiteRectangle.style.left = `${previousProgress}%`;
+            loadingBar.parentElement.appendChild(whiteRectangle);
+
+            setTimeout(() => {
+                whiteRectangle.style.opacity = '0';
+            }, 16); // Start fading out the white rectangle
+
+            setTimeout(() => {
+                whiteRectangle.remove();
+            }, 500); // Remove the white rectangle after 200ms (the duration of the fade-out)
+            if (newProgress >= 20) {
+                document.getElementById('character-s1').style.opacity = '1';
+                document.getElementById('character-s1b').style.opacity = '0';
+            }
+            if (newProgress >= 35) {
+                document.getElementById('character-s2').style.opacity = '1';
+                document.getElementById('character-s2b').style.opacity = '0';
+            }
+            if (newProgress >= 50) {
+                document.getElementById('character-s3').style.opacity = '1';
+                document.getElementById('character-s3b').style.opacity = '0';
+            }
+            if (newProgress >= 65) {
+                document.getElementById('character-s4').style.opacity = '1';
+                document.getElementById('character-s4b').style.opacity = '0';
+            }
+            if (newProgress >= 80) {
+                document.getElementById('character-s5').style.opacity = '1';
+                document.getElementById('character-s5b').style.opacity = '0';
+            }
+        }
+
+        function onAssetLoaded() {
+            loadedAssets++;
+            const newProgress = (loadedAssets / assetsToLoad.length) * 50;
+            updateLoadingBar(newProgress);
+
+            if (loadedAssets === assetsToLoad.length) {
+                allAssetsLoaded();
+            }
+        }
+     
+        function allAssetsLoaded() {
+            const duration = (Date.now() - startTime) / 0.5;
+            const finalStartTime = Date.now();
+
+
+            updateFinalProgress = setInterval(() => {
+                const elapsedTime = Date.now() - finalStartTime;
+                const progress = 50 + (elapsedTime / duration) * 50;
+                if (progress <= 100) {
+                    updateLoadingBar(progress);
+                } else {
+                    clearInterval(updateFinalProgress);
+                    if (!gameLoaded) {
+                        loadingBar.style.width = '100%';
+                    }
+                }
+            }, 160);
+        }
+
+        function onGameLoaded() {
+
+            document.getElementById('character-s1').style.opacity = '1';
+            document.getElementById('character-s2').style.opacity = '1';
+            document.getElementById('character-s3').style.opacity = '1';
+            document.getElementById('character-s4').style.opacity = '1';
+            document.getElementById('character-s5').style.opacity = '1';
+            document.getElementById('character-s1b').style.opacity = '0';
+            document.getElementById('character-s2b').style.opacity = '0';
+            document.getElementById('character-s3b').style.opacity = '0';
+            document.getElementById('character-s4b').style.opacity = '0';
+            document.getElementById('character-s5b').style.opacity = '0';
+            // Clear the interval that updates the progress bar
+            gameLoaded = true;
+            clearInterval(updateFinalProgress);
+
+            // Set the progress bar width to 100%
+            loadingBar.style.width = '100%';
+
+            // Fade out the custom loader
+            var customLoader = document.getElementById('custom-loader');
+            customLoader.style.opacity = '0';
+
+            // Wait for the fade-out effect to complete, then hide the custom loader
+            setTimeout(() => {
+                customLoader.style.display = 'none';
+            }, 500); // Adjust the delay to match the CSS transition duration
+        }
+
+        assetsToLoad.forEach((asset) => {
+            if (asset.type === 'image') {
+                const image = new Image();
+                image.onload = onAssetLoaded;
+                image.src = asset.src;
+            } else if (asset.type === 'script') {
+                // nur vorladen (nicht ausführen): sonst laufen Spiel-Skripte doppelt und stören sich
+                fetch(asset.src).then(function (r) { return r.arrayBuffer(); }).catch(function () {}).then(onAssetLoaded);
+            }
+        });
+    </script>
+
+</body>
+</html >
