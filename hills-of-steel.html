@@ -46,8 +46,20 @@ const BASE = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@f1ad30272fd9912b2e
 // Admin-Variante: nur die StreamingAssets (Admin-Panzer: neuer Look + starke Werte) kommen aus einem eigenen Ordner.
 const ADMIN_BASE = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@5086c184a9575ae4c45e4310e1825e0dd28aa7f3/hills-of-steel-admin/";
 let rawHtml = "";
-function shimFor(root) { return '<script>Object.defineProperty(Document.prototype,"URL",{get(){return "' + root + 'index.html"},configurable:true})<\/script>'; }
-function makeDoc(admin) { return rawHtml.replace("<head>", '<head><base href="' + BASE + '">' + shimFor(admin ? ADMIN_BASE : BASE)); }
+// Dasselbe document.URL für beide Varianten, damit das Spiel denselben Speicherordner (Spielstand) benutzt.
+function shimFor(admin) {
+  let h = '<script>Object.defineProperty(Document.prototype,"URL",{get(){return "' + BASE + 'index.html"},configurable:true})<\/script>';
+  if (admin) {
+    // Admin: Katalog + die zwei geänderten Bundles (Admin-Panzer: Look + Werte) kommen aus dem Admin-Ordner.
+    h += '<script>(function(){var B="' + BASE + 'StreamingAssets/aa/",A="' + ADMIN_BASE + 'StreamingAssets/aa/";' +
+      'function fix(u){try{var t=String(u);if(t.indexOf(B)!==0)return u;var r=t.slice(B.length);' +
+      'if(/^catalog\\.json/.test(r)||/^WebGL\\/batch2_assets_all_ba02dd/.test(r)||/^WebGL\\/batch3_assets_all_53a304/.test(r))return A+r;}catch(e){}return u;}' +
+      'var o=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(m,u){arguments[1]=fix(u);return o.apply(this,arguments);};' +
+      'var f=window.fetch;window.fetch=function(u,i){if(typeof u==="string")u=fix(u);else if(u&&u.url){var n=fix(u.url);if(n!==u.url)u=new Request(n,u);}return f.call(this,u,i);};})()<\/script>';
+  }
+  return h;
+}
+function makeDoc(admin) { return rawHtml.replace("<head>", '<head><base href="' + BASE + '">' + shimFor(admin)); }
 
 // ===== Admin-Modus (geheim): 5x oben rechts tippen, dann Passwort =====
 let gameHtml = null;
@@ -107,7 +119,7 @@ function patchPrefs() {
           map.set("tankUnlockOrder", ["tankUnlockOrder", "s", prfStr(ids.join(","))]);
           setI("selectedTank", ADMIN_TANK_INDEX);       // Admin-Fahrzeug = stärkster Panzer
           v.contents = prfBuild(parsed.head, Array.from(map.values()));
-          c.update(v).onsuccess = function () { db.close(); resolve(""); };
+          c.update(v).onsuccess = function () { c.continue(); };
           return;
         }
         c.continue();
@@ -116,13 +128,40 @@ function patchPrefs() {
   });
 }
 const ADMIN_TANK_INDEX = 12; // Scorpion (legendär) ist der letzte Panzer in der Garage
+function hasAdminData() {
+  return new Promise(function (resolve) {
+    let req; try { req = indexedDB.open("/idbfs"); } catch (e) { return resolve(false); }
+    req.onerror = function () { resolve(false); };
+    req.onsuccess = function () {
+      const db = req.result;
+      if (!db.objectStoreNames.contains("FILE_DATA")) { db.close(); return resolve(false); }
+      const st = db.transaction("FILE_DATA", "readonly").objectStore("FILE_DATA");
+      st.openCursor().onsuccess = function (e) {
+        const c = e.target.result;
+        if (!c) { db.close(); return resolve(false); }
+        if (/PlayerPrefs$/.test(c.key)) {
+          let t = ""; const u = c.value.contents; for (let i = 0; i < u.length; i++) t += String.fromCharCode(u[i]);
+          db.close(); return resolve(t.indexOf("tankUnlockOrder") >= 0 && t.indexOf("gems") >= 0);
+        }
+        c.continue();
+      };
+    };
+  });
+}
 async function activateAdmin() {
   const msg = document.getElementById("adminmsg");
   msg.textContent = "Admin-Modus wird aktiviert …";
-  const old = document.getElementById("game"); if (old) old.remove();   // Spiel stoppen, damit es die Daten nicht überschreibt
-  await sleep(1500);
-  const err = await patchPrefs();
-  if (!err) gameHtml = makeDoc(true);   // Admin-Variante (Admin-Panzer) nur jetzt laden
+  const old = document.getElementById("game"); if (old) old.remove();   // Spiel stoppen
+  await sleep(4000);                                                     // altes Spiel schreibt evtl. noch letzte Daten
+  let err = "", ok = false;
+  for (let i = 0; i < 4 && !ok; i++) {
+    err = await patchPrefs();
+    if (err) break;
+    await sleep(1500);
+    ok = await hasAdminData();                                           // wirklich gespeichert?
+  }
+  if (!err && !ok) err = "Speichern hat nicht geklappt – bitte nochmal versuchen";
+  if (!err) gameHtml = makeDoc(true);                                    // Admin-Variante (Admin-Panzer) nur jetzt laden
   startGame();
   if (err) { msg.textContent = err; return false; }
   document.body.classList.add("admin");
