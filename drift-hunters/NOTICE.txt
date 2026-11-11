@@ -1,0 +1,3 @@
+Drift Hunters – Spieldaten (aus bubbls/UGS-Assets).
+Geändert: die Menü-Objekte "AppStore" und "PlayMarket" (Store-Buttons) sind in dh.data.unityweb.part* deaktiviert.
+Das Spiel enthält keine Werbe-SDKs; /cloak.js wurde aus der Seite entfernt.
