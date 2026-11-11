@@ -137,6 +137,18 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "drift-hunters",
+    title: "Drift Hunters",
+    url: "https://majestic-conkies-554239.netlify.app",
+    category: "Fahren",
+    image: "drift-hunters.jpg",
+    wide: true,
+    emoji: "🏎️",
+    colors: ["#222222", "#ffd400"],
+    description: "Drifte mit tunbaren Autos über die Strecke.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
