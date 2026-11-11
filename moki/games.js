@@ -126,6 +126,17 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "mad-skills-motocross-2",
+    title: "Mad Skills Motocross 2",
+    url: "https://extraordinary-swan-0b9692.netlify.app",
+    category: "Fahren",
+    image: "mad-skills-motocross-2.jpg",
+    emoji: "🏍️",
+    colors: ["#1b9ad6", "#f5a500"],
+    description: "Motocross-Rennen mit Sprüngen und Tricks.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
