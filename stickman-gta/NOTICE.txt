@@ -1,0 +1,3 @@
+Stickman GTA City – Spieldaten (aus bubbls/UGS-Assets), unkomprimiert abgelegt.
+Geändert: Die Menü-Objekte "FreezeNova" (Logo + Adresse) sind in game.data deaktiviert.
+Werbe-Aufrufe werden in der Startseite (stickman-gta.html) ersetzt: keine Zwischenwerbung, Belohnungen sofort.
