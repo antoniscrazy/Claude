@@ -12,10 +12,10 @@
   #game { flex: 1 1 auto; width: 100%; border: 0; display: block; min-height: 0; }
   /* Touch-Steuerung (nur auf Touch-Geräten sichtbar) */
   #touchui { display: none; position: fixed; inset: 0; z-index: 15; pointer-events: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
-  body.touch.tc-on #touchui { display: block; }
+  body.touch.tc-show #touchui { display: block; }
   #tc-toggle { display: none; margin-right: auto; align-self: center; padding: 7px 14px; border-radius: 999px; border: 1px solid #444; background: #1c2027; color: #ddd; font: 700 13px "Segoe UI", system-ui, sans-serif; cursor: pointer; }
   body.touch #tc-toggle { display: block; }
-  body.touch.tc-on #tc-toggle { background: #0f3d2e; border-color: #00e5a8; color: #aaffe6; }
+  body.touch.tc-mode-on #tc-toggle, body.touch.tc-mode-auto #tc-toggle { background: #0f3d2e; border-color: #00e5a8; color: #aaffe6; }
   .tbtn { position: absolute; pointer-events: auto; touch-action: none; display: flex; align-items: center; justify-content: center;
     border-radius: 22px; color: #fff; font: 800 30px "Segoe UI", system-ui, sans-serif; background: rgba(20,24,30,.45);
     border: 2px solid rgba(255,255,255,.55); box-shadow: 0 2px 10px rgba(0,0,0,.4); -webkit-tap-highlight-color: transparent; }
@@ -58,10 +58,32 @@ const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/1aa9534c756e
   const isTouch = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
   if (!isTouch) return;
   document.body.classList.add("touch");
-  var tcOn = true; try { tcOn = localStorage.getItem("dh-controls") !== "off"; } catch (e) {}
-  function applyTc() { document.body.classList.toggle("tc-on", tcOn); try { localStorage.setItem("dh-controls", tcOn ? "on" : "off"); } catch (e) {} }
+  var tcMode = "auto"; try { tcMode = localStorage.getItem("dh-controls-mode") || "auto"; } catch (e) {}
+  var playing = false;
+  var LABEL = { auto: "Auto", on: "An", off: "Aus" };
+  function applyTc() {
+    var show = tcMode === "on" || (tcMode === "auto" && playing);
+    document.body.classList.toggle("tc-show", show);
+    document.body.classList.toggle("tc-mode-on", tcMode === "on");
+    document.body.classList.toggle("tc-mode-auto", tcMode === "auto");
+    document.getElementById("tc-toggle").innerHTML = "&#127918; Steuerung: " + LABEL[tcMode];
+  }
   applyTc();
-  document.getElementById("tc-toggle").addEventListener("click", function () { tcOn = !tcOn; applyTc(); });
+  document.getElementById("tc-toggle").addEventListener("click", function () {
+    tcMode = tcMode === "auto" ? "on" : tcMode === "on" ? "off" : "auto";
+    try { localStorage.setItem("dh-controls-mode", tcMode); } catch (e) {}
+    applyTc();
+  });
+  // Erkennung "gerade im Rennen": das Spiel meldet die Farbe des oberen Bildrandes (Rennen = heller blauer Himmel)
+  var pos = 0, neg = 0;
+  window.addEventListener("message", function (e) {
+    var d = e.data; if (!d || d.dh !== 1) return;
+    window.__dhLast = d;
+    var race = d.blue > 8 && d.top > 125;
+    if (race) { pos++; neg = 0; } else { neg++; pos = 0; }
+    if (!playing && pos >= 3) { playing = true; applyTc(); }
+    else if (playing && neg >= 6) { playing = false; applyTc(); }
+  });
   const KEYMAP = { ArrowLeft: "ArrowLeft", ArrowRight: "ArrowRight", ArrowUp: "ArrowUp", ArrowDown: "ArrowDown" };
   function send(type, el) {
     const f = document.getElementById("game"); if (!f || !f.contentWindow) return;
@@ -88,7 +110,7 @@ fetch(BASE + "UnityLoader2019.js")
   .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
   .then(loader => {
     // Keine Werbung / keine Store-Links: window.open wird im Spiel abgeblockt.
-    const guard = 'window.open=function(){return null;};try{var _g=navigator.getGamepads?navigator.getGamepads.bind(navigator):null;navigator.getGamepads=function(){try{return _g?_g():[]}catch(e){return []}};}catch(e){}';
+    const guard = '(function(){var raf=window.requestAnimationFrame.bind(window),c2=document.createElement("canvas");c2.width=96;c2.height=54;var x=c2.getContext("2d",{willReadFrequently:true}),last=0;window.requestAnimationFrame=function(cb){return raf(function(t){cb(t);var n=performance.now();if(n-last>250){last=n;try{var g=document.querySelector("canvas");if(g&&g.width>0){x.drawImage(g,0,0,96,54);var d=x.getImageData(0,0,96,3).data,s=0,b=0,k=0;for(var i=0;i<d.length;i+=4){s+=(d[i]+d[i+1]+d[i+2])/3;b+=d[i+2]-d[i];k++}parent.postMessage({dh:1,top:s/k,blue:b/k},"*")}}catch(e){}}})}})();window.open=function(){return null;};try{var _g=navigator.getGamepads?navigator.getGamepads.bind(navigator):null;navigator.getGamepads=function(){try{return _g?_g():[]}catch(e){return []}};}catch(e){}';
     const html = '<!doctype html><html><head><meta charset="utf-8"><base href="' + BASE + '"><style>' + PAGE_CSS + '</style></head><body>' +
       '<div class="webgl-content"><div id="gameContainer"></div></div>' +
       '<script>' + guard + '<\/script><script>' + loader.replace(/<\/script>/gi, "<\\/script>") + '<\/script>' +
