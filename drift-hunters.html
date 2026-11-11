@@ -2,10 +2,10 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Drift Hunters</title>
 <style>
-  html, body { margin: 0; height: 100%; background: #111; color: #fff; font-family: sans-serif; }
+  html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text-size-adjust: 100%; margin: 0; height: 100%; background: #111; color: #fff; font-family: sans-serif; }
   body { display: flex; flex-direction: column; }
   /* Eigene Leiste über dem Spiel – der Button verdeckt dadurch nichts vom Spiel. */
   #bar { flex: 0 0 auto; display: flex; justify-content: flex-end; padding: 6px 12px; background: #111; }
@@ -106,13 +106,24 @@ const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/1aa9534c756e
   // Sicherheit: beim Verlassen der Seite alle Tasten loslassen
   window.addEventListener("blur", function () { Array.from(held.keys()).forEach(release); });
 })();
-const PAGE_CSS = "html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#111}.webgl-content,#gameContainer,#unityContainer,canvas{width:100% !important;height:100% !important}.webgl-content{position:absolute}.webgl-content *{border:0;margin:0;padding:0}.webgl-content .progress{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:18px;width:141px;margin-top:90px}";
+
+// ===== Zoom sperren (Doppeltipp, Zwei-Finger-Zoom, Safari-Gesten) =====
+(function () {
+  function stop(e) { e.preventDefault(); }
+  ["gesturestart", "gesturechange", "gestureend"].forEach(function (t) { document.addEventListener(t, stop, { passive: false }); });
+  document.addEventListener("touchmove", function (e) { if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  document.addEventListener("touchstart", function (e) { if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  var lastEnd = 0;
+  document.addEventListener("touchend", function (e) { var n = Date.now(); if (n - lastEnd < 350) e.preventDefault(); lastEnd = n; }, { passive: false });
+  document.addEventListener("dblclick", stop, { passive: false });
+})();
+const PAGE_CSS = "html,body{touch-action:manipulation;overscroll-behavior:none;margin:0;padding:0;height:100%;overflow:hidden;background:#111}.webgl-content,#gameContainer,#unityContainer,canvas{width:100% !important;height:100% !important}.webgl-content{position:absolute}.webgl-content *{border:0;margin:0;padding:0}.webgl-content .progress{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:18px;width:141px;margin-top:90px}";
 fetch(BASE + "UnityLoader2019.js")
   .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
   .then(loader => {
     // Keine Werbung / keine Store-Links: window.open wird im Spiel abgeblockt.
-    const guard = '(function(){var gc=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(t,a){if(/webgl/.test(t)){a=Object.assign({},a||{},{preserveDrawingBuffer:true});}return gc.call(this,t,a)};var c2=document.createElement("canvas");c2.width=96;c2.height=54;var x=c2.getContext("2d",{willReadFrequently:true});setInterval(function(){try{var g=document.querySelector("canvas");if(!g||g.width<50)return;var W=g.width,H=g.height,sh=Math.max(8,Math.round(H*0.055));function cnt(x0,x1,thr){var sx=Math.round(W*x0),sw=Math.round(W*(x1-x0));c2.width=sw;c2.height=sh;x.drawImage(g,sx,0,sw,sh,0,0,sw,sh);var d=x.getImageData(0,0,sw,sh).data,n=0;for(var i=0;i<d.length;i+=4){if(d[i]>=thr&&d[i+1]>=thr&&d[i+2]>=thr)n++}return n}parent.postMessage({dh:2,menu:cnt(.43,.57,240),total:cnt(.8,1,215),h:H},"*")}catch(e){}},300)})();window.open=function(){return null;};try{var _g=navigator.getGamepads?navigator.getGamepads.bind(navigator):null;navigator.getGamepads=function(){try{return _g?_g():[]}catch(e){return []}};}catch(e){}';
-    const html = '<!doctype html><html><head><meta charset="utf-8"><base href="' + BASE + '"><style>' + PAGE_CSS + '</style></head><body>' +
+    const guard = '(function(){function st(e){e.preventDefault()}[\'gesturestart\',\'gesturechange\',\'gestureend\'].forEach(function(t){document.addEventListener(t,st,{passive:false})});document.addEventListener(\'touchmove\',function(e){if(e.touches&&e.touches.length>1)e.preventDefault()},{passive:false});var le=0;document.addEventListener(\'touchend\',function(e){var n=Date.now();if(n-le<350)e.preventDefault();le=n},{passive:false});document.addEventListener(\'dblclick\',st,{passive:false})})();(function(){var gc=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(t,a){if(/webgl/.test(t)){a=Object.assign({},a||{},{preserveDrawingBuffer:true});}return gc.call(this,t,a)};var c2=document.createElement("canvas");c2.width=96;c2.height=54;var x=c2.getContext("2d",{willReadFrequently:true});setInterval(function(){try{var g=document.querySelector("canvas");if(!g||g.width<50)return;var W=g.width,H=g.height,sh=Math.max(8,Math.round(H*0.055));function cnt(x0,x1,thr){var sx=Math.round(W*x0),sw=Math.round(W*(x1-x0));c2.width=sw;c2.height=sh;x.drawImage(g,sx,0,sw,sh,0,0,sw,sh);var d=x.getImageData(0,0,sw,sh).data,n=0;for(var i=0;i<d.length;i+=4){if(d[i]>=thr&&d[i+1]>=thr&&d[i+2]>=thr)n++}return n}parent.postMessage({dh:2,menu:cnt(.43,.57,240),total:cnt(.8,1,215),h:H},"*")}catch(e){}},300)})();window.open=function(){return null;};try{var _g=navigator.getGamepads?navigator.getGamepads.bind(navigator):null;navigator.getGamepads=function(){try{return _g?_g():[]}catch(e){return []}};}catch(e){}';
+    const html = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><base href="' + BASE + '"><style>' + PAGE_CSS + '</style></head><body>' +
       '<div class="webgl-content"><div id="gameContainer"></div></div>' +
       '<script>' + guard + '<\/script><script>' + loader.replace(/<\/script>/gi, "<\\/script>") + '<\/script>' +
       '<script>var gameInstance = UnityLoader.instantiate("gameContainer", "' + BASE + 'dh.json");<\/script></body></html>';
