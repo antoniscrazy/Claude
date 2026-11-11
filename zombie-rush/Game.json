@@ -1,0 +1,2453 @@
+{
+
+"Perks" : {
+	
+	"Critical" : ["A critical hit that inflicts double damage",
+	"Un coup critique qui inflige des degats doubles",
+	"Un golpe critico que inflige el doble de dano",
+	"Um acerto critico que inflige o dobro do dano",
+	"Serangan kritis yang menimbulkan kerusakan ganda",
+	"Iki kat hasar veren kritik bir vurus"],
+	
+	"Headshot" : ["A head shot that kills the target directly",
+	"Un tir dans la tete qui tue directement la cible",
+	"Un disparo a la cabeza que mata al objetivo directamente",
+	"Um tiro na cabeca que mata o alvo diretamente",
+	"Tembakan ke arah kepala yang langsung membunuh target",
+	"Hedefi dogrudan olduren bir kafa atisi"],
+	
+	"Multishot" : ["A multiple shot that disperses bullets",
+	"Un tir multiple qui disperse les balles",
+	"Los disparos multiples dispersan las balas",
+	"Os disparos multiplos dispersam as balas",
+	"Beberapa kali tembakan menyebarkan peluru",
+	"Coklu atesleme mermileri dagitir"],
+	
+	"Piercing" : ["A piercing shot that cuts through targets",
+	"Un tir percant qui traverse les cibles",
+	"Un disparo penetrante que atraviesa los objetivos",
+	"Um tiro perfurante que atravessa os alvos",
+	"Bidikan tajam yang menembus target",
+	"Hedefleri delip gecen delici bir atis"],
+	
+	"Bounce" : ["A shot that bounces off nearby targets",
+	"Un tir qui rebondit sur les cibles les plus proches",
+	"Un disparo que rebota en objetivos cercanos",
+	"Um disparo que faz ricochete em alvos proximos",
+	"Bidikan yang memantul ke sasaran di dekatnya",
+	"Yakindaki hedeflerden seken bir atis"],
+	
+	"Rage" : ["A rage that increases shooting speed",
+	"Une rage qui augmente la vitesse de tir",
+	"Una rabia que aumenta la velocidad de disparo",
+	"Uma raiva que aumenta a velocidade de disparo",
+	"Kemarahan yang meningkatkan kecepatan pemotretan",
+	"Atis hizini artiran bir ofke"],
+	
+	"Electric" : ["An electric shot that stuns targets",
+	"Un tir electrique qui etourdit les cibles",
+	"Un disparo electrico que aturde a los objetivos",
+	"Um tiro eletrico que atordoa os alvos",
+	"Tembakan listrik yang melumpuhkan target",
+	"Hedefleri sersemleten elektrikli bir atis"],
+	
+	"Exploding" : ["An explosive shot that wounds targets",
+	"Un tir explosif qui blesse les cibles",
+	"Un disparo explosivo que hiere a los objetivos",
+	"Um tiro explosivo que fere os alvos",
+	"Tembakan eksplosif yang melukai target",
+	"Hedefleri yaralayan patlayici bir atis"],
+	
+	"Endurance" : ["A prayer that restores life every wave",
+	"Une priere qui restaure de la vie a chaque vague",
+	"Una oracion que devuelve la vida a cada ola",
+	"Uma oracao que restaura a vida a cada onda",
+	"Doa yang memulihkan kehidupan di setiap gelombang",
+	"Her dalgada yasami yeniden canlandiran bir dua"],
+	
+	"Regen" : ["A coat that restores life over time",
+	"Un manteau qui restaure de la vie sur le temps",
+	"Un abrigo que restaura la vida con el paso del tiempo",
+	"Um revestimento que restaura a vida ao longo do tempo",
+	"Mantel yang mengembalikan kehidupan dari waktu ke waktu",
+	"Zaman icinde yasami geri kazandiran bir kaplama"],
+	
+	"Vampire" : ["A vampiric shot that steals life from targets",
+	"Un tir vampirique qui vole de la vie aux cibles",
+	"Un disparo vampirico que roba la vida de los objetivos",
+	"Um tiro vampirico que rouba a vida aos alvos",
+	"Tembakan vampir yang mencuri nyawa dari target",
+	"Hedeflerden hayat calan vampirik bir atis"]
+
+},
+"PerksList" : ["Critical","Headshot","Multishot","Piercing","Bounce","Rage","Electric","Exploding","Endurance","Regen","Vampire"],
+"PerksData" : {
+
+	"Critical" : {
+		"Perks" : 	[0.02,0.04,0.06,0.1,0.14,0.2],
+		"Craft" : 	[0,0.01,0.02,0.04,0.06,0.1]
+	},
+	"Headshot" : {
+		"Perks" : 	[0.02,0.04,0.06,0.08,0.11,0.15],
+		"Craft" : 	[0,0.01,0.02,0.03,0.04,0.05]
+	},	
+	"Multishot" : {
+		"Perks" : 	[0.02,0.04,0.06,0.1,0.14,0.2],
+		"Craft" : 	[0,0.01,0.02,0.04,0.06,0.1]
+	},
+	"Piercing" : {
+		"Perks" : 	[0.03,0.06,0.1,0.14,0.19,0.25],
+		"Craft" : 	[0,0.02,0.04,0.07,0.11,0.15]
+	},
+	"Bounce" : {
+		"Perks" : 	[0.02,0.04,0.06,0.1,0.14,0.2],
+		"Craft" : 	[0,0.01,0.02,0.04,0.06,0.1]
+	},
+	"Rage" : {
+		"Perks" : 	[0.02,0.04,0.06,0.1,0.14,0.2],
+		"Craft" : 	[0,0.01,0.02,0.04,0.06,0.1]
+	},
+	"Electric" : {
+		"Perks" : 	[0.03,0.06,0.1,0.14,0.19,0.25],
+		"Craft" : 	[0,0.02,0.04,0.07,0.11,0.15]
+	},
+	"Exploding" : {
+		"Perks" : 	[0.02,0.04,0.06,0.1,0.14,0.2],
+		"Craft" : 	[0,0.01,0.02,0.04,0.06,0.1]
+	},
+	"Endurance" : {
+		"Perks" : 	[0.02,0.04,0.06,0.1,0.14,0.2],
+		"Craft" : 	[0,0.01,0.02,0.04,0.06,0.1]
+	},
+	"Regen" : {
+		"Perks" : 	[0.03,0.06,0.1,0.14,0.19,0.25],
+		"Craft" : 	[0,0.02,0.04,0.07,0.11,0.15]
+	},
+	"Vampire" : {
+		"Perks" : 	[0.02,0.04,0.06,0.1,0.14,0.2],
+		"Craft" : 	[0,0.01,0.02,0.04,0.06,0.1]
+	}
+},
+"PerksUpgradeData" : {
+	
+	"Critical" : {
+		"ResourceType" : "Meat",
+		"ResourceValue" : [4,12,36,108,324]
+	},
+	"Headshot" : {
+		"ResourceType" : "Meat",
+		"ResourceValue" : [5,15,45,135,405]
+	},
+	"Multishot" : {
+		"ResourceType" : "Meat",
+		"ResourceValue" : [5,15,45,135,405]
+	},
+	"Piercing" : {
+		"ResourceType" : "Meat",
+		"ResourceValue" : [4,12,36,108,324]
+	},
+	"Bounce" : {
+		"ResourceType" : "Meat",
+		"ResourceValue" : [4,12,36,108,324]
+	},
+	"Rage" : {
+		"ResourceType" : "Meat",
+		"ResourceValue" : [5,15,45,135,405]
+	},
+	"Electric" : {
+		"ResourceType" : "Meat",
+		"ResourceValue" : [3,9,27,81,243]
+	},
+	"Exploding" : {
+		"ResourceType" : "Meat",
+		"ResourceValue" : [4,12,36,108,324]
+	},
+	"Endurance" : {
+		"ResourceType" : "Meat",
+		"ResourceValue" : [3,9,27,81,243]
+	},
+	"Regen" : {
+		"ResourceType" : "Meat",
+		"ResourceValue" : [5,15,45,135,405]
+	},
+	"Vampire" : {
+		"ResourceType" : "Meat",
+		"ResourceValue" : [4,12,36,108,324]
+	}
+},
+
+"HeroList" : ["Kamikaze","Pyromaniac","Mage","Shotgun","Engineer","Hunter","Ninja","Nomad","Sheriff","Jester","Fisherman","Berserker","Necromancer","Shaman"],
+"HeroData" : {
+
+	"Firerate" : 0.5,
+	"Damage" : 100,
+	"Health" : 100,
+	"Speed" : 50,
+	"Range" : 100
+		
+},
+
+"Shop" : {
+
+	"Barrel" : 
+	["A barrel that attracts zombies and explodes",
+	"Un tonneau qui attire les zombies et explose",
+	"Un barril que atrae a los zombis y explota",
+	"Um barril que atrai zombies e explode",
+	"Sebuah tong yang menarik zombie dan meledak",
+	"Zombileri ceken ve patlayan bir varil"],
+	
+	"Tesla" : 
+	["A tesla that attracts and electrocutes zombies",
+	"Une tesla qui attire et electrocute les zombies",
+	"Un tesla que atrae y electrocuta zombis",
+	"Um tesla que atrai e electrocuta zombies",
+	"Tesla yang menarik dan menyetrum zombie",
+	"Zombileri ceken ve elektrik veren bir tesla"],
+	
+	"Barrier" : 
+	["A barrier that attracts zombie attention",
+	"Une barriere qui attire l'attention des zombies",
+	"Una barrera que atrae la atencion de los zombis",
+	"Uma barreira que atrai a atencao dos zombies",
+	"Penghalang yang menarik perhatian zombie",
+	"Zombilerin dikkatini ceken bir bariyer"],
+	
+	"Drone" : 
+	["A drone that hunts and shoots zombies",
+	"Un drone qui chasse et tire sur les zombies",
+	"Un dron que caza y dispara a zombis",
+	"Um drone que caca e dispara contra zombies",
+	"Drone yang berburu dan menembak zombie",
+	"Zombileri avlayan ve vuran bir drone"],
+	
+	"Turret" : 
+	["A turret that shoots zombies",
+	"Une tourelle qui tire sur les zombies",
+	"Una torreta que dispara a los zombis",
+	"Uma torre que dispara sobre os zombies",
+	"Sebuah menara yang menembak zombie",
+	"Zombileri vuran bir taret"],
+	
+	"Molotov" : 
+	["A molotov that burns the nearest zombies",
+	"Un molotov qui brule les zombies les plus proches",
+	"Una molotov que quema a los zombis mas cercanos",
+	"Um molotov que queima os zombies mais proximos",
+	"Bom molotov yang membakar zombie terdekat",
+	"En yakindaki zombileri yakan bir molotof"],
+	
+	"Grenade" : 
+	["A grenade that explodes and damages zombies",
+	"Une grenade qui explose et blesse les zombies",
+	"Una granada que explota y dana a los zombis",
+	"Uma granada que explode e causa danos aos zombies",
+	"Granat yang meledak dan merusak zombie",
+	"Patlayan ve zombilere zarar veren bir el bombasi"],
+	
+	"Missile" : 
+	["A missile that explodes and damages zombies",
+	"Un missile qui explose et blesse les zombies",
+	"Un misil que explota y hiere a los zombis",
+	"Um missil que explode e fere os zombies",
+	"Rudal yang meledak dan melukai zombie",
+	"Patlayan ve zombileri yaralayan bir fuze"],
+	
+	"Mine" : 
+	["A mine that explodes on contact with zombies",
+	"Une mine qui explose au contact des zombies",
+	"Una mina que explota al contacto con los zombis",
+	"Uma mina que explode em contacto com os zombies",
+	"Ranjau yang meledak saat bersentuhan dengan zombie",
+	"Zombilerle temas ettiginde patlayan bir mayin"],
+	
+	"Beartrap" : 
+	["A bear trap that closes on zombies",
+	"Un piege a ours qui se referme sur les zombies",
+	"Una trampa para osos que se cierra sobre zombis",
+	"Uma armadilha para ursos que se fecha aos zombies",
+	"Perangkap beruang yang menutup pada zombie",
+	"Zombilerin uzerine kapanan bir ayi kapani"],
+	
+	"Saw" : 
+	["A saw that spins and cuts through zombies",
+	"Une scie qui tourne et decoupe les zombies",
+	"Una sierra que gira y atraviesa zombis",
+	"Uma serra que gira e corta os zombies",
+	"Gergaji yang berputar dan memotong zombie",
+	"Donen ve zombileri kesen bir testere"],
+	
+	"Campfire" : 
+	["A campfire that heals in a zone",
+	"Un camp de feu qui soigne dans une zone",
+	"Una hoguera que cura en una zona",
+	"Uma fogueira que cura numa zona",
+	"Api unggun yang menyembuhkan di sebuah zona",
+	"Bir bolgede iyilestiren bir kamp atesi"],
+	
+	"Magnet" : 
+	["A magnet that attracts the nearest gems",
+	"Un aimant qui attire les gemmes les plus proches",
+	"Un iman que atrae las gemas mas cercanas",
+	"Um iman que atrai as pedras preciosas mais proximas",
+	"Magnet yang menarik permata terdekat",
+	"En yakin mucevherleri ceken bir miknatis"]
+
+
+},
+"ShopList" : ["Barrier","Barrel","Tesla","Beartrap","Mine","Saw","Grenade","Molotov","Missile","Drone","Turret","Campfire","Magnet"],
+"ShopTypeList" : ["Weapon","Grenade","Trap","Obstacle","Heal","Currency"],
+"ShopNameList" : {
+	
+		"Obstacle" : ["Barrier","Barrel","Tesla"],
+		"Trap" : ["Beartrap","Mine","Saw"],
+		"Grenade" : ["Grenade","Molotov","Missile"],
+		"Weapon" : ["Drone","Turret"],
+		"Heal" : ["Campfire"],
+		"Currency" : ["Magnet"]
+},
+"ShopConstant" : ["Saw","Drone","Turret","Magnet"],
+"ShopRegular" : ["Beartrap","Mine","Grenade","Molotov","Missile","Barrier","Barrel","Tesla","Campfire"],
+"ShopData" : {
+
+	"Barrel" : {
+		"Shop" : {
+			"Barrel" : 		[1,1,2,2,3,3],
+			"Frequency" : 	[15,14,14,13,13,12]
+			},		
+		"Craft" : {
+			"HP" : 			[25,28,28,33,33,40],
+			"Damage" : 		[25,25,35,35,50,50]
+			}
+	},
+		
+	"Barrier" : {
+		"Shop" : {
+			"Barrier" : 	[1,1,2,2,3,3],
+			"Frequency" : 	[15,14,14,13,13,12]
+			},
+		"Craft" : {
+			"HP" : 			[40,42,44,48,52,60]
+			}
+	},
+		
+	"Tesla" : {
+		"Shop" : {
+			"Tesla" : 		[1,1,2,2,3,3],
+			"Frequency" : 	[15,14,14,13,13,12]
+			},
+		"Craft" : {
+			"HP" : 			[30,32,34,38,42,50]
+			}
+	},
+		
+	"Drone" : {
+		"Shop" : {
+			"Drone" : 		[1,1,2,2,3,3],
+			"Firerate" : 	[0.5,0.46,0.46,0.4,0.4,0.3]
+			},
+		"Craft" : {
+			"Damage" : 		[10,11,12,14,16,20]
+			}
+	},
+		
+	"Turret" : {
+		"Shop" : {
+			"Turret" : 		[1,1,2,2,3,3],
+			"Firerate" :	[1,0.92,0.92,0.8,0.8,0.6]
+			},
+		"Craft" : {
+			"Damage" : 		[25,27,30,35,40,50]
+			}
+	},
+		
+	"Mine" : {
+		"Shop" : {
+			"Mine" : 		[2,2,4,4,6,6],
+			"Frequency" : 	[10,9,9,8,8,6]
+			},
+		"Craft" : {
+			"Damage" : 		[100,110,120,140,160,200]
+			}
+	},
+		
+	"Beartrap" : {
+		"Shop" : {
+			"Beartrap" : 	[2,2,4,4,6,6],
+			"Frequency" : 	[8,7,7,6,6,4]
+			},
+		"Craft" : {
+			"Damage" : 		[50,55,60,70,80,100]
+			}
+	},
+		
+	"Saw" : {
+		"Shop" : {
+			"Saw" : 		[1,1,2,2,3,3],
+			"Speed" : 		[100,110,110,125,125,150]
+			},
+		"Craft" : {
+			"Damage" : 		[10,11,12,14,16,20]
+			}
+	},
+		
+	"Molotov" : {
+		"Shop" : {
+			"Molotov" : 	[2,2,4,4,6,6],
+			"Frequency" : 	[10,9,9,8,8,6]
+			},
+		"Craft" : {
+			"Damage" : 		[25,27,30,35,40,50]
+			}
+	},
+		
+	"Grenade" : {
+		"Shop" : {
+			"Grenade" : 	[1,1,2,2,3,3],
+			"Frequency" : 	[8,7,7,6,6,4]
+			},
+		"Craft" : {
+			"Damage" : 		[100,110,120,140,160,200]
+			}
+	},
+		
+	"Missile" : {
+		"Shop" : {
+			"Missile" : 	[2,2,4,4,6,6],
+			"Frequency" : 	[10,9,9,8,8,6]
+			},
+		"Craft" : {
+			"Damage" : 		[100,110,120,140,160,200]
+			}
+	},
+		
+	"Campfire" : {
+		"Shop" : {
+			"Campfire" : 	[1,1,1,1,1,1],
+			"Frequency" : 	[30,28,28,25,25,20],
+			"Duration" : 	[8,8,11,11,15,15]
+			},
+		"Craft" : {
+			"Heal" : 		[0.01,0.02,0.03,0.05,0.07,0.1]
+			}
+	},
+		
+	"Magnet" : {
+		"Shop" : {
+			"Magnet" : 		[1,1,1,1,1,1],
+			"Range" : 		[25,28,32,37,43,50]
+			},
+		"Craft" : {
+			"Range" : 		[25,28,32,37,43,50]
+			}
+		
+	}
+
+},
+
+"DefenseList" : ["Barrier","Barrel","Tesla","Beartrap","Mine","Grenade","Molotov","Missile","Drone","Turret"],
+"DefensePrice" : {
+
+	"Barrier" : 6,
+	"Barrel" : 8,
+	"Tesla" : 7,
+	"Beartrap" : 3,
+	"Mine" : 5,
+	"Grenade" : 4,
+	"Molotov" : 3,
+	"Missile" : 5,
+	"Drone" : 35,
+	"Turret" : 40
+		
+},
+
+"Pact" : {
+
+	"Fireball" : [["A meteor shower that hurts zombies","but","which also inflicts damage on your hero"],
+	["Une pluie de meteorites qui blessent les zombies","mais","qui inflige egalement des degats a ton hero"],
+	["Una lluvia de meteoritos que hiere a los zombis","pero","que tambien inflige dano a tu heroe"],
+	["Uma chuva de meteoros que magoa os zombies","mas","que tambem inflige danos ao seu heroi"],
+	["Hujan meteor yang melukai zombie","tapi","yang juga memberikan kerusakan pada pahlawan Anda"],
+	["Zombilerin canini yakan bir meteor yagmuru","ama","kahramaniniza da hasar verir"]],
+	
+	"Acid" : [["Your hero moves faster","but","acid puddles spread and hurt your hero"],
+	["Votre hero se deplace plus rapidement","mais","des flaques d'acide se propagent et blessent ton hero"],
+	["Tu heroe se mueve mas rapido","pero","los charcos de acido se extienden y danan a tu heroe"],
+	["O seu heroi move-se mais depressa","mas","as pocas de acido espalham-se e ferem o teu heroi"],
+	["Pahlawan Anda bergerak lebih cepat","tapi","genangan asam menyebar dan melukai pahlawan Anda"],
+	["Kahramaniniz daha hizli hareket eder","ama","asit birikintileri yayilir ve kahramaniniza zarar verir"]],
+	
+	"Shadow" : [["Your hero has more health points","but","zombies appear hidden in the shadows"],
+	["Ton hero a plus de points de vie","mais","les zombies apparaissent caches dans l'ombre"],
+	["Tu heroe tiene mas puntos de vida","pero","los zombis aparecen ocultos en las sombras"],
+	["O teu heroi tem mais pontos de vida","mas","os zombies aparecem escondidos nas sombras"],
+	["Pahlawan Anda memiliki lebih banyak poin hit","tapi","zombie tampak tersembunyi dalam bayang-bayang"],
+	["Kahramaninizin daha fazla vurus puani var","ama","zombiler golgelerde gizlenmis olarak gorunur"]],
+	
+	"Highroll" : [["A chance to double the resources in a chest","but","also to have nothing at all"],
+	["Une chance d'obtenir le double de ressources dans un coffre","mais","aussi de n'avoir rien du tout"],
+	["Posibilidad de duplicar los recursos de un cofre","pero","tambien para no tener nada"],
+	["Uma hipotese de duplicar os recursos num bau","mas","tambem para nao ter nada"],
+	["Kesempatan untuk menggandakan sumber daya dalam peti","tapi","juga untuk tidak memiliki apa-apa sama sekali"],
+	["Bir sandiktaki kaynaklari iki katina cikarma sansi","ama","ayrica hicbir seye sahip olmamak"]],
+	
+	"Bruteforce" : [["Your hero does much more damage","but","he also receives much more damage"],
+	["Ton hero fait beaucoup plus de degats","mais","il recoit aussi beaucoup plus de degats"],
+	["Tu heroe hace mucho mas dano","pero","tambien recibe mucho mas dano"],
+	["O teu heroi causa muito mais danos","mas","ele tambem recebe muito mais danos"],
+	["Pahlawan Anda melakukan lebih banyak kerusakan","tapi","dia juga menerima lebih banyak kerusakan"],
+	["Kahramaniniz cok daha fazla hasar verir","ama","ayrica cok daha fazla hasar aliyor"]],
+	
+	"Sacrifice" : [["Your hero shoots much faster","but","he loses life at the start of each wave"],
+	["Ton hero tire beaucoup plus vite","mais","il perd de la vie au debut de chaque vague"],
+	["Tu heroe dispara mucho mas rapido","pero","pierde vida al comienzo de cada ola"],
+	["O seu heroi dispara muito mais depressa","mas","ele perde vida no inicio de cada onda"],
+	["Pahlawan Anda menembak lebih cepat","tapi","ia kehilangan nyawa di awal setiap gelombang"],
+	["Kahramaniniz cok daha hizli ates ediyor","ama","her dalganin basinda can kaybeder"]],
+	
+	"Avarice" : [["A chance to obtain rarer gems","but","zombie life increases sharply"],
+	["Une chance d'obtenir des gemmes plus rares","mais","la vie des zombies augmente fortement"],
+	["Posibilidad de obtener gemas mas raras","pero","la vida de los zombis aumenta considerablemente"],
+	["Uma oportunidade de obter gemas mais raras","mas","a vida dos zombies aumenta acentuadamente"],
+	["Kesempatan untuk mendapatkan permata yang lebih langka","tapi","kehidupan zombie meningkat tajam"],
+	["Daha nadir mucevherler elde etme sansi","ama","zombi omru keskin bir sekilde artar"]]
+},
+"PactList" : ["Fireball","Acid","Shadow","Highroll","Bruteforce","Sacrifice","Avarice"],
+"PactData" : {
+
+	"Fireball" : {
+		"Frequency" : 5,
+		"Number" : 10,
+		"DamageHero" : 30,
+		"DamageZombie" : 100
+		},
+		
+	"Acid" : {
+		"Frequency" : 10,
+		"Number" : 10,
+		"Damage" : 1,
+		"Hitrate" : 0.1,
+		"Duration" : 5
+		},
+		
+	"Shadow" : {
+		"Duration" : 3
+		}
+
+},
+
+"NPCList" : ["Mission","Shop","Perks","Chest","Skin"],
+"NPCGameList" : ["Pact","Shop"],
+"PortalList" : ["Adventure","Arena"],
+"GameModeList" : ["Adventure","Defense"],
+"GameDifficultyList" : ["Normal","Hard"],
+"GameDifficultyData" : {
+
+	"ZombieSpawnFrequency" : 		[0.5,0.5],
+	"ZombieSpawnRushFrequency" : 	[0.1,0.1],
+	"ZombieSpawnSprintFrequency" : 	[0.05,0.05],
+	"LootboxSpawnFrequency" : 		[120,90],
+	"InteractableSpawnFrequency" : 	[90,120],
+	"PactSpawnFrequency" : 			[[1,3],[3,6,9]]
+},
+
+"MissionList" : {
+
+	"Giant" : ["Normal","Baseball","Tnt","Slime","Grenade","Molotov","Missile","Mine","Beartrap","Barrel","Barrier","Tesla"],
+	"Reaper" : ["Brain","Poison","Ghost","Blood","Scarecrow"],
+	"Angel" : ["Priest","Funeral","Bishop","Skull","Cherubin"],
+	"Chef" : ["Waiter","Pepper","Corn","Butcher","Pizzaiolo"]
+
+},
+"MissionData" : {
+	
+	"Normal" : {
+		"Description" : 
+		["Kill basic zombies in world 1",
+		"Tue des zombies basiques dans le monde 1",
+		"Mata a los zombis basicos en el mundo 1",
+		"Matar os zombies basicos no mundo 1",
+		"Membunuh zombie dasar di dunia 1",
+		"Dunya 1'de temel zombileri oldurun"],
+		"Value" : 400,
+		"Rewards" : [[15],["Meat"]]
+		},
+	"Baseball" : {
+		"Description" : 
+		["Kill baseball zombies in world 1",
+		"Tue des zombies baseball dans le monde 1",
+		"Mata a los zombis del beisbol en el mundo 1",
+		"Matar zombies de basebol no mundo 1",
+		"Bunuh zombie bisbol di dunia 1",
+		"Dunya 1'de beyzbol zombilerini oldur"],
+		"Value" : 100,
+		"Rewards" : [[25],["Meat"]]
+		},
+	"Tnt" : {
+		"Description" : 
+		["Kill tnt zombies in world 1",
+		"Tue des zombies tnt dans le monde 1",
+		"Mata a los zombis tnt en el mundo 1",
+		"Matar tnt zombies no mundo 1",
+		"Bunuh zombie tnt di dunia 1",
+		"Dunya 1'de tnt zombilerini oldur"],
+		"Value" : 50,
+		"Rewards" : [[30],["Meat"]]
+		},
+	"Slime" : {
+		"Description" : 
+		["Kill slime zombies in world 1",
+		"Tue des zombies slimes dans le monde 1",
+		"Mata a los zombis de limo en el mundo 1",
+		"Matar zombies de lodo no mundo 1",
+		"Bunuh zombie lendir di dunia 1",
+		"Dunya 1'de sumuklu zombileri oldur"],
+		"Value" : 10,
+		"Rewards" : [[50],["Meat"]]
+		},
+	"Brain" : {
+		"Description" : 
+		["Kill brain zombies in world 2",
+		"Tue des zombies cerveaux dans le monde 2",
+		"Mata a los zombis cerebrales en el mundo 2",
+		"Matar zombies cerebrais no mundo 2",
+		"Bunuh zombie otak di dunia 2",
+		"Dunya 2'de beyin zombilerini oldur"],
+		"Value" : 400,
+		"Rewards" : [[15],["Meat"]]
+		},	
+	"Poison" : {
+		"Description" : 
+		["Kill poison zombies in world 2",
+		"Tue des zombies poisons dans le monde 2",
+		"Mata a los zombis venenosos en el mundo 2",
+		"Matar zombies venenosos no mundo 2",
+		"Bunuh zombie beracun di dunia 2",
+		"Dunya 2'de zehirli zombileri oldur"],
+		"Value" : 200,
+		"Rewards" : [[20],["Meat"]]
+		},	
+	"Ghost" : {
+		"Description" : 
+		["Kill ghost zombies in world 2",
+		"Tue des zombies fantomes dans le monde 2",
+		"Mata a los zombis fantasma en el mundo 2",
+		"Matar zombies fantasmas no mundo 2",
+		"Bunuh zombie hantu di dunia 2",
+		"Dunya 2'de hayalet zombileri oldur"],
+		"Value" : 100,
+		"Rewards" : [[25],["Meat"]]
+		},	
+	"Blood" : {
+		"Description" : 
+		["Kill blood zombies in world 2",
+		"Tue des zombies sanglants dans le monde 2",
+		"Mata a los zombis de sangre en el mundo 2",
+		"Matar zombies de sangue no mundo 2",
+		"Bunuh zombie darah di dunia 2",
+		"Dunya 2'de kanli zombileri oldur"],
+		"Value" : 50,
+		"Rewards" : [[30],["Meat"]]
+		},	
+	"Scarecrow" : {
+		"Description" : 
+		["Kill scarecrow zombies in world 2",
+		"Tue des zombies epouvantails dans le monde 2",
+		"Mata a los zombis espantapajaros en el mundo 2",
+		"Matar os zombies espantalhos no mundo 2",
+		"Bunuh zombie orang-orangan sawah di dunia 2",
+		"Dunya 2'de korkuluk zombilerini oldur"],
+		"Value" : 10,
+		"Rewards" : [[50],["Meat"]]
+		},	
+	"Priest" : {
+		"Description" : 
+		["Kill priest zombies in world 3",
+		"Tue des zombies pretres dans le monde 3",
+		"Mata a los zombis sacerdote en el mundo 3",
+		"Matar os sacerdotes zombies no mundo 3",
+		"Bunuh zombie pendeta di dunia 3",
+		"Dunya 3'te rahip zombileri oldur"],
+		"Value" : 400,
+		"Rewards" : [[15],["Meat"]]
+		},	
+	"Funeral" : {
+		"Description" : 
+		["Kill funeral zombies in world 3",
+		"Tue des zombies funeraires dans le monde 3",
+		"Mata a los zombis del funeral en el mundo 3",
+		"Matar os zombies do funeral no mundo 3",
+		"Bunuh zombie pemakaman di dunia 3",
+		"Dunya 3'te cenaze zombilerini oldur"],
+		"Value" : 200,
+		"Rewards" : [[20],["Meat"]]
+		},	
+	"Bishop" : {
+		"Description" : 
+		["Kill bishop zombies in world 3",
+		"Tue des zombies eveques dans le monde 3",
+		"Mata a los zombis Bishop en el mundo 3",
+		"Matar os zombies do bispo no mundo 3",
+		"Bunuh zombie uskup di dunia 3",
+		"Dunya 3'te piskopos zombileri oldur"],
+		"Value" : 100,
+		"Rewards" : [[25],["Meat"]]
+		},	
+	"Skull" : {
+		"Description" : 
+		["Kill skull zombies in world 3",
+		"Tue des zombies squelettes dans le monde 3",
+		"Mata a los zombis calavera en el mundo 3",
+		"Matar os zombies de caveira no mundo 3",
+		"Bunuh zombie tengkorak di dunia 3",
+		"Dunya 3'te kafatasi zombilerini oldur"],
+		"Value" : 50,
+		"Rewards" : [[30],["Meat"]]
+		},	
+	"Cherubin" : {
+		"Description" : 
+		["Kill cherubin zombies in world 3",
+		"Tue des zombies cherubins dans le monde 3",
+		"Mata a los zombis querubines en el mundo 3",
+		"Matar os zombies querubins no mundo 3",
+		"Bunuh zombie cherubin di dunia 3",
+		"Dunya 3'te cherubin zombilerini oldur"],
+		"Value" : 10,
+		"Rewards" : [[50],["Meat"]]
+		},	
+	"Waiter" : {
+		"Description" : 
+		["Kill waiter zombies in world 4",
+		"Tue des zombies serveurs dans le monde 4",
+		"Mata a los zombis camareros en el mundo 4",
+		"Matar os zombies empregados de mesa no mundo 4",
+		"Bunuh zombie pelayan di dunia 4",
+		"Dunya 4'te garson zombileri oldur"],
+		"Value" : 400,
+		"Rewards" : [[15],["Meat"]]
+		},	
+	"Pepper" : {
+		"Description" : 
+		["Kill pepper zombies in world 4",
+		"Tue des zombies piments dans le monde 4",
+		"Mata a los zombis pimienta en el mundo 4",
+		"Matar zombies de pimenta no mundo 4",
+		"Bunuh zombie lada di dunia 4",
+		"Dunya 4'te biber zombilerini oldur"],
+		"Value" : 200,
+		"Rewards" : [[20],["Meat"]]
+		},	
+	"Corn" : {
+		"Description" : 
+		["Kill corn zombies in world 4",
+		"Tue des zombies mais dans le monde 4",
+		"Mata a los zombis del maiz en el mundo 4",
+		"Matar zombies de milho no mundo 4",
+		"Bunuh zombie jagung di dunia 4",
+		"Dunya 4'te misir zombilerini oldur"],
+		"Value" : 100,
+		"Rewards" : [[25],["Meat"]]
+		},	
+	"Butcher" : {
+		"Description" : 
+		["Kill butcher zombies in world 4",
+		"Tue des zombies bouchers dans le monde 4",
+		"Mata a los zombis carniceros en el mundo 4",
+		"Matar zombies carniceiros no mundo 4",
+		"Bunuh zombie tukang daging di dunia 4",
+		"Dunya 4'te kasap zombileri oldurun"],
+		"Value" : 50,
+		"Rewards" : [[30],["Meat"]]
+		},	
+	"Pizzaiolo" : {
+		"Description" : 
+		["Kill pizzaiolo zombies in world 4",
+		"Tue des zombies pizzaiolos dans le monde 4",
+		"Mata a los zombis pizzaiolo en el mundo 4",
+		"Matar os zombies pizzaiolos no mundo 4",
+		"Bunuh zombie pizzaiolo di dunia 4",
+		"Dunya 4'te pizzaci zombileri oldur"],
+		"Value" : 10,
+		"Rewards" : [[50],["Meat"]]
+		},	
+	"Grenade" : {
+		"Description" : 
+		["Throw explosive grenades",
+		"Lance des grenades explosives",
+		"Lanza granadas explosivas",
+		"Atirar granadas explosivas",
+		"Melempar granat peledak",
+		"Patlayici el bombalari atin"],
+		"Value" : 100,
+		"Rewards" : [[20],["Metal"]]
+		},	
+	"Molotov" : {
+		"Description" : 
+		["Throw burning molotov",
+		"Lance des molotovs enflammes",
+		"Lanza molotov ardiendo",
+		"Atirar molotov em chamas",
+		"Melempar bom molotov",
+		"Yanan molotof atmak"],
+		"Value" : 200,
+		"Rewards" : [[20],["Fire"]]
+		},	
+	"Missile" : {
+		"Description" : 
+		["Fire explosive missiles",
+		"Tire des missiles explosifs",
+		"Disparar misiles explosivos",
+		"Disparar misseis explosivos",
+		"Menembakkan rudal peledak",
+		"Patlayici fuzeler atesleyin"],
+		"Value" : 200,
+		"Rewards" : [[20],["Metal"]]
+		},	
+	"Mine" : {
+		"Description" : 
+		["Drop explosive mines",
+		"Pose des mines explosives",
+		"Lanzar minas explosivas",
+		"Largar minas explosivas",
+		"Jatuhkan ranjau peledak",
+		"Patlayici mayin atma"],
+		"Value" : 200,
+		"Rewards" : [[20],["Energy"]]
+		},	
+	"Beartrap" : {
+		"Description" : 
+		["Drop beartraps",
+		"Pose des pieges a ours",
+		"Tirar trampas para osos",
+		"Largar armadilhas para ursos",
+		"Jatuhkan perangkap beruang",
+		"Ayi tuzaklari birakin"],
+		"Value" : 200,
+		"Rewards" : [[20],["Metal"]]
+		},	
+	"Barrel" : {
+		"Description" : 
+		["Drop explosive barrels",
+		"Pose des barrils explosifs",
+		"Soltar barriles explosivos",
+		"Largar barris explosivos",
+		"Jatuhkan barel bahan peledak",
+		"Patlayici variller birakin"],
+		"Value" : 50,
+		"Rewards" : [[20],["Wood"]]
+		},	
+	"Barrier" : {
+		"Description" : 
+		["Build wooden barriers",
+		"Construis des barrieres en bois",
+		"Construir barreras de madera",
+		"Construir barreiras de madeira",
+		"Membangun pembatas kayu",
+		"Ahsap bariyerler insa edin"],
+		"Value" : 50,
+		"Rewards" : [[20],["Wood"]]
+		},	
+	"Tesla" : {
+		"Description" : 
+		["Build tesla coils",
+		"Construis des bobines teslas",
+		"Construir bobinas tesla",
+		"Construir bobinas de tesla",
+		"Bangun gulungan tesla",
+		"Tesla bobinleri olusturun"],
+		"Value" : 50,
+		"Rewards" : [[20],["Energy"]]
+		}
+		
+	
+},
+
+"ZombieList" : ["Normal","Helmet","Baseball","Shield","Tnt","Slime","Brain","Poison","Blood","Skull","Scarecrow","Priest","Bishop","Funeral","Ghost","Cherubin","Waiter","Butcher","Corn","Pepper","Pizzaiolo","Giant","Reaper","Angel","Chef"],
+"ZombieBossList" : ["Giant","Reaper","Angel","Chef"],
+"ZombieEliteList" : ["Slime","Cherubin","Scarecrow","Pizzaiolo"],
+"ZombieData" : {
+
+	"Normal" : {
+	
+		"HP" : 100,
+		"Speed" : 10
+		},
+		
+	"Helmet" : {
+		
+		"HP" : 500,
+		"Speed" : 5
+		},
+		
+	"Baseball" : {
+	
+		"HP" : 300,
+		"Speed" : 15
+		},
+		
+	"Shield" : {
+	
+		"HP" : 400,
+		"Speed" : 8,
+		"ReductionDamage" : 2
+		},
+		
+	"Tnt" : {
+		
+		"HP" : 200,
+		"Speed" : 15,
+		"ExplosionDamage" : 20
+		},
+		
+	"Blob" : {
+		
+		"HP" : 200,
+		"Speed" : 30
+		},
+		
+	"Brain" : {
+		
+		"HP" : 100,
+		"Speed" : 10
+		},
+		
+	"Poison" : {
+		
+		"HP" : 300,
+		"Speed" : 15,
+		"PoisonRate" : 0.1,
+		"PoisonDamage" : 0.01,
+		"PoisonFrequency" : 2,
+		"PoisonDuration" : 10
+		},
+	
+	"Blood" : {
+		
+		"HP" : 300,
+		"Speed" : 10,
+		"BloodFirerate" : 6,
+		"BloodDamage" : 10
+		},
+		
+	"Skull" : {
+		
+		"HP" : 300,
+		"Speed" : 10,
+		"BoneFirerate" : 6,
+		"BoneDamage" : 10,
+		"BoneDuration" : 1.5
+		},
+		
+	"ReaperSkull" : {
+		
+		"HP" : 200,
+		"Speed" : 30
+		},
+		
+	"FuneralSkull" : {
+		
+		"HP" : 300,
+		"Speed" : 15
+		},
+		
+	"Priest" : {
+	
+		"HP" : 100,
+		"Speed" : 10
+		},
+		
+	"Bishop" : {
+		
+		"HP" : 300,
+		"Speed" : 15,
+		"Heal" : 0.05,
+		"HealFrequency" : 0.5
+		},
+		
+	"Funeral" : {
+		
+		"HP" : 500,
+		"Speed" : 5
+		},
+		
+	"Ghost" : {
+		
+		"HP" : 200,
+		"Speed" : 20
+		},
+	
+	"Waiter" : {
+	
+		"HP" : 100,
+		"Speed" : 10
+		},
+		
+	"Butcher" : {
+	
+		"HP" : 300,
+		"Speed" : 10,
+		"CleaverFirerate" : 6,
+		"CleaverDamage" : 10
+		},
+		
+	"Winemaker" : {
+	
+		"HP" : 100,
+		"Speed" : 15
+		},
+
+		
+	"Corn" : {
+	
+		"HP" : 200,
+		"Speed" : 15,
+		"ExplosionDamage" : 20
+		},
+		
+	"Pepper" : {
+	
+		"HP" : 200,
+		"Speed" : 20,
+		"FireFirerate" : 1,
+		"FireDuration" : 3,
+		"FireDamage" : 1,
+		"FireHitrate" : 0.1
+		},
+		
+	"Melon" : {
+	
+		"HP" : 300,
+		"Speed" : 15
+		}
+},
+"ZombieDataGlobal" : {
+		
+		"Damage" : 1,
+		"Hitrate" : 0.2,
+		"AnimationSpeed" : 20
+},
+"ZombieBossData" : {
+
+	"Slime" : {
+	
+		"HP" : 2500,
+		"Speed" : 20,
+		"SkillNumber" : 1,
+		"SkillFrequency" : 8,
+		"BulletDamage" : 20,
+		"BulletNumberMini" : 4,
+		"BulletDamageMini" : 10,
+		"BulletDuration" : 1,
+		"AnimationSkill_1" : 1,
+		"AnimationSkill_2" : 1
+		},
+		
+	"Scarecrow" : {
+	
+		"HP" : 2500,
+		"Speed" : 20,
+		"SkillNumber" : 1,
+		"SkillFrequency" : 8,
+		"AnimationSkill_1" : 1,
+		"BulletNumber" : 4,
+		"BulletDamage" : 10
+		},
+		
+	"Cherubin" : {
+	
+		"HP" : 2500,
+		"Speed" : 20,
+		"SkillNumber" : 1,
+		"SkillFrequency" : 8,
+		"AnimationSkill_1" : 1,
+		"ArrowNumber" : 3,
+		"ArrowDamage" : 10
+		},
+		
+	"Pizzaiolo" : {
+	
+		"HP" : 2500,
+		"Speed" : 20,
+		"SkillNumber" : 1,
+		"SkillFrequency" : 8,
+		"AnimationSkill_1" : 1,
+		"PizzaDamage" : 20,
+		"PizzaDuration" : 0.75
+		},
+	
+	"Giant" : {
+	
+		"HP" : 10000,
+		"Speed" : 30,
+		"SkillNumber" : 3,
+		"SkillFrequency" : 8,
+		"EliteName" : "Slime",
+		"EliteNumber" : 1,
+		"AnimationSkill_1" : 1,
+		"AnimationSkill_2" : 2,
+		"AnimationSkill_3" : 2,
+		"RockNumber" : 80,
+		"RockDamage" : 30,
+		"BlobNumber" : 10
+		},
+		
+	"Reaper" : {
+	
+		"HP" : 10000,
+		"Speed" : 30,
+		"SkillNumber" : 3,
+		"SkillFrequency" : 8,
+		"EliteName" : "Scarecrow",
+		"EliteNumber" : 1,
+		"SkullNumber" : 10,
+		"AnimationSkill_1" : 1,
+		"AnimationSkill_2" : 2,
+		"AnimationSkill_3" : 2,
+		"TornadoNumber" : 10,
+		"TornadoDamage" : 3,
+		"TornadoHitrate" : 0.1
+		},
+		
+	"Angel" : {
+	
+		"HP" : 10000,
+		"Speed" : 30,
+		"SkillNumber" : 3,
+		"SkillFrequency" : 8,
+		"EliteName" : "Cherubin",
+		"EliteNumber" : 1,
+		"FuneralSkullNumber" : 10,
+		"AnimationSkill_1" : 1,
+		"AnimationSkill_2" : 1,
+		"AnimationSkill_3" : 1,
+		"PrismNumber" : 80,
+		"HaloDamage" : 30,
+		"HealValue" : 0.05
+		},
+		
+	"Chef" : {
+	
+		"HP" : 10000,
+		"Speed" : 30,
+		"SkillNumber" : 3,
+		"SkillFrequency" : 8,
+		"EliteName" : "Pizzaiolo",
+		"EliteNumber" : 1,
+		"VeggieNumber" : 10,
+		"AnimationSkill_1" : 1,
+		"AnimationSkill_2" : 1,
+		"AnimationSkill_3" : 1,
+		"FireballNumber" : 6,
+		"FireballDamage" : 30,
+		"HealValue" : 0.05
+		}
+},
+"ZombieBossDataGlobal" : {
+		
+		"Damage" : 5,
+		"Hitrate" : 0.2
+},
+"ZombieWave" : {
+
+	"Giant_0" : [
+		
+		{},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,1],["Normal"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.97],["Normal"]],
+		[[0.97,1],["Helmet"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.94],["Normal"]],
+		[[0.94,1],["Helmet"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.91],["Normal"]],
+		[[0.91,0.999],["Helmet"]],
+		[[0.999,1],["Slime"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.88],["Normal"]],
+		[[0.88,0.999],["Helmet"]],
+		[[0.999,1],["Slime"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.83],["Normal"]],
+		[[0.83,0.98],["Helmet"]],
+		[[0.98,0.999],["Baseball"]],
+		[[0.999,1],["Slime"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.78],["Normal"]],
+		[[0.78,0.96],["Helmet"]],
+		[[0.96,0.999],["Baseball"]],
+		[[0.999,1],["Slime"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.71],["Normal"]],
+		[[0.71,0.92],["Helmet"]],
+		[[0.92,0.98],["Baseball"]],
+		[[0.98,0.999],["Tnt"]],
+		[[0.999,1],["Slime"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.64],["Normal"]],
+		[[0.64,0.88],["Helmet"]],
+		[[0.88,0.96],["Baseball"]],
+		[[0.96,0.999],["Tnt"]],
+		[[0.999,1],["Slime"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.57],["Normal"]],
+		[[0.57,0.84],["Helmet"]],
+		[[0.84,0.94],["Baseball"]],
+		[[0.94,0.999],["Tnt"]],
+		[[0.999,1],["Slime"]]
+		]}
+		],
+	"Giant_1" : [
+		
+		{},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,1],["Normal"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.94],["Normal"]],
+		[[0.94,1],["Helmet"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.88],["Normal"]],
+		[[0.88,1],["Helmet"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.82],["Normal"]],
+		[[0.82,0.998],["Helmet"]],
+		[[0.998,1],["Slime"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.76],["Normal"]],
+		[[0.76,0.998],["Helmet"]],
+		[[0.998,1],["Slime"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.66],["Normal"]],
+		[[0.66,0.96],["Helmet"]],
+		[[0.96,0.998],["Baseball"]],
+		[[0.998,1],["Slime"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.56],["Normal"]],
+		[[0.56,0.92],["Helmet"]],
+		[[0.92,0.998],["Baseball"]],
+		[[0.998,1],["Slime"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.42],["Normal"]],
+		[[0.42,0.84],["Helmet"]],
+		[[0.84,0.96],["Baseball"]],
+		[[0.96,0.998],["Tnt"]],
+		[[0.998,1],["Slime"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.28],["Normal"]],
+		[[0.28,0.76],["Helmet"]],
+		[[0.76,0.92],["Baseball"]],
+		[[0.92,0.998],["Tnt"]],
+		[[0.998,1],["Slime"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.14],["Normal"]],
+		[[0.14,0.68],["Helmet"]],
+		[[0.68,0.88],["Baseball"]],
+		[[0.88,0.998],["Tnt"]],
+		[[0.998,1],["Slime"]]
+		]}
+		],
+		
+	"Reaper_0" : [
+		
+		{},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,1],["Brain"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.97],["Brain"]],
+		[[0.97,1],["Poison"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.94],["Brain"]],
+		[[0.94,1],["Poison"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.91],["Brain"]],
+		[[0.91,0.999],["Poison"]],
+		[[0.999,1],["Scarecrow"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.88],["Brain"]],
+		[[0.88,0.999],["Poison"]],
+		[[0.999,1],["Scarecrow"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.83],["Brain"]],
+		[[0.83,0.98],["Poison"]],
+		[[0.98,0.999],["Ghost"]],
+		[[0.999,1],["Scarecrow"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.78],["Brain"]],
+		[[0.78,0.96],["Poison"]],
+		[[0.96,0.999],["Ghost"]],
+		[[0.999,1],["Scarecrow"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.71],["Brain"]],
+		[[0.71,0.92],["Poison"]],
+		[[0.92,0.98],["Ghost"]],
+		[[0.98,0.999],["Blood"]],
+		[[0.999,1],["Scarecrow"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.64],["Brain"]],
+		[[0.64,0.88],["Poison"]],
+		[[0.88,0.96],["Ghost"]],
+		[[0.96,0.999],["Blood"]],
+		[[0.999,1],["Scarecrow"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.57],["Brain"]],
+		[[0.57,0.84],["Poison"]],
+		[[0.84,0.94],["Ghost"]],
+		[[0.94,0.999],["Blood"]],
+		[[0.999,1],["Scarecrow"]]
+		]}
+		],
+	"Reaper_1" : [
+		
+		{},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,1],["Brain"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.94],["Brain"]],
+		[[0.94,1],["Poison"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.88],["Brain"]],
+		[[0.88,1],["Poison"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.82],["Brain"]],
+		[[0.82,0.998],["Poison"]],
+		[[0.998,1],["Scarecrow"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.76],["Brain"]],
+		[[0.76,0.998],["Poison"]],
+		[[0.998,1],["Scarecrow"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.66],["Brain"]],
+		[[0.66,0.96],["Poison"]],
+		[[0.96,0.998],["Ghost"]],
+		[[0.998,1],["Scarecrow"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.56],["Brain"]],
+		[[0.56,0.92],["Poison"]],
+		[[0.92,0.998],["Ghost"]],
+		[[0.998,1],["Scarecrow"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.42],["Brain"]],
+		[[0.42,0.84],["Poison"]],
+		[[0.84,0.96],["Ghost"]],
+		[[0.96,0.998],["Blood"]],
+		[[0.998,1],["Scarecrow"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.28],["Brain"]],
+		[[0.28,0.76],["Poison"]],
+		[[0.76,0.92],["Ghost"]],
+		[[0.92,0.998],["Blood"]],
+		[[0.998,1],["Scarecrow"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.14],["Brain"]],
+		[[0.14,0.68],["Poison"]],
+		[[0.68,0.88],["Ghost"]],
+		[[0.88,0.998],["Blood"]],
+		[[0.998,1],["Scarecrow"]]
+		]}
+		],
+		
+	"Angel_0" : [
+		
+		{},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,1],["Priest"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.97],["Priest"]],
+		[[0.97,1],["Funeral"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.94],["Priest"]],
+		[[0.94,1],["Funeral"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.91],["Priest"]],
+		[[0.91,0.999],["Funeral"]],
+		[[0.999,1],["Cherubin"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.88],["Priest"]],
+		[[0.88,0.999],["Funeral"]],
+		[[0.999,1],["Cherubin"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.83],["Priest"]],
+		[[0.83,0.98],["Funeral"]],
+		[[0.98,0.999],["Bishop"]],
+		[[0.999,1],["Cherubin"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.78],["Priest"]],
+		[[0.78,0.96],["Funeral"]],
+		[[0.96,0.999],["Bishop"]],
+		[[0.999,1],["Cherubin"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.71],["Priest"]],
+		[[0.71,0.92],["Funeral"]],
+		[[0.92,0.98],["Bishop"]],
+		[[0.98,0.999],["Skull"]],
+		[[0.999,1],["Cherubin"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.64],["Priest"]],
+		[[0.64,0.88],["Funeral"]],
+		[[0.88,0.96],["Bishop"]],
+		[[0.96,0.999],["Skull"]],
+		[[0.999,1],["Cherubin"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.57],["Priest"]],
+		[[0.57,0.84],["Funeral"]],
+		[[0.84,0.94],["Bishop"]],
+		[[0.94,0.999],["Skull"]],
+		[[0.999,1],["Cherubin"]]
+		]}
+		],
+	"Angel_1" : [
+		
+		{},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,1],["Priest"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.94],["Priest"]],
+		[[0.94,1],["Funeral"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.88],["Priest"]],
+		[[0.88,1],["Funeral"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.82],["Priest"]],
+		[[0.82,0.998],["Funeral"]],
+		[[0.998,1],["Cherubin"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.76],["Priest"]],
+		[[0.76,0.998],["Funeral"]],
+		[[0.998,1],["Cherubin"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.66],["Priest"]],
+		[[0.66,0.96],["Funeral"]],
+		[[0.96,0.998],["Bishop"]],
+		[[0.998,1],["Cherubin"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.56],["Priest"]],
+		[[0.56,0.92],["Funeral"]],
+		[[0.92,0.998],["Bishop"]],
+		[[0.998,1],["Cherubin"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.42],["Priest"]],
+		[[0.42,0.84],["Funeral"]],
+		[[0.84,0.96],["Bishop"]],
+		[[0.96,0.998],["Skull"]],
+		[[0.998,1],["Cherubin"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.28],["Priest"]],
+		[[0.28,0.76],["Funeral"]],
+		[[0.76,0.92],["Bishop"]],
+		[[0.92,0.998],["Skull"]],
+		[[0.998,1],["Cherubin"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.14],["Priest"]],
+		[[0.14,0.68],["Funeral"]],
+		[[0.68,0.88],["Bishop"]],
+		[[0.88,0.998],["Skull"]],
+		[[0.998,1],["Cherubin"]]
+		]}
+		],
+		
+	"Chef_0" : [
+		
+		{},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,1],["Waiter"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.97],["Waiter"]],
+		[[0.97,1],["Pepper"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.94],["Waiter"]],
+		[[0.94,1],["Pepper"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.91],["Waiter"]],
+		[[0.91,0.999],["Pepper"]],
+		[[0.999,1],["Pizzaiolo"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.88],["Waiter"]],
+		[[0.88,0.999],["Pepper"]],
+		[[0.999,1],["Pizzaiolo"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.83],["Waiter"]],
+		[[0.83,0.98],["Pepper"]],
+		[[0.98,0.999],["Corn"]],
+		[[0.999,1],["Pizzaiolo"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.78],["Waiter"]],
+		[[0.78,0.96],["Pepper"]],
+		[[0.96,0.999],["Corn"]],
+		[[0.999,1],["Pizzaiolo"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.71],["Waiter"]],
+		[[0.71,0.92],["Pepper"]],
+		[[0.92,0.98],["Corn"]],
+		[[0.98,0.999],["Butcher"]],
+		[[0.999,1],["Pizzaiolo"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.64],["Waiter"]],
+		[[0.64,0.88],["Pepper"]],
+		[[0.88,0.96],["Corn"]],
+		[[0.96,0.999],["Butcher"]],
+		[[0.999,1],["Pizzaiolo"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.57],["Waiter"]],
+		[[0.57,0.84],["Pepper"]],
+		[[0.84,0.94],["Corn"]],
+		[[0.94,0.999],["Butcher"]],
+		[[0.999,1],["Pizzaiolo"]]
+		]}
+		],
+	"Chef_1" : [
+		
+		{},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,1],["Waiter"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.94],["Waiter"]],
+		[[0.94,1],["Pepper"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.88],["Waiter"]],
+		[[0.88,1],["Pepper"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.82],["Waiter"]],
+		[[0.82,0.998],["Pepper"]],
+		[[0.998,1],["Pizzaiolo"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.76],["Waiter"]],
+		[[0.76,0.998],["Pepper"]],
+		[[0.998,1],["Pizzaiolo"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.66],["Waiter"]],
+		[[0.66,0.96],["Pepper"]],
+		[[0.96,0.998],["Corn"]],
+		[[0.998,1],["Pizzaiolo"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.56],["Waiter"]],
+		[[0.56,0.92],["Pepper"]],
+		[[0.92,0.998],["Corn"]],
+		[[0.998,1],["Pizzaiolo"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.42],["Waiter"]],
+		[[0.42,0.84],["Pepper"]],
+		[[0.84,0.96],["Corn"]],
+		[[0.96,0.998],["Butcher"]],
+		[[0.998,1],["Pizzaiolo"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.28],["Waiter"]],
+		[[0.28,0.76],["Pepper"]],
+		[[0.76,0.92],["Corn"]],
+		[[0.92,0.998],["Butcher"]],
+		[[0.998,1],["Pizzaiolo"]]
+		]},
+		
+		{"Duration" : 90, "Zombie" : [
+		[[0,0.14],["Waiter"]],
+		[[0.14,0.68],["Pepper"]],
+		[[0.68,0.88],["Corn"]],
+		[[0.88,0.998],["Butcher"]],
+		[[0.998,1],["Pizzaiolo"]]
+		]}
+		]
+		
+},
+"ZombieIntroduction" : {
+
+	"Normal" : ["This basic zombie has no ability",
+	"Ce zombie basique n'a aucune capacite",
+	"Este zombi basico no tiene ninguna habilidad",
+	"Este zombie basico nao tem nenhuma habilidade",
+	"Zombie dasar ini tidak memiliki kemampuan",
+	"Bu basit zombinin hicbir yetenegi yok"],
+	
+	"Helmet" : ["This helmet zombie cannot take headshots",
+	"Ce zombie casque bloque les tirs dans la tete",
+	"Este zombi con casco no puede disparar a la cabeza",
+	"Este zombie com capacete nao pode levar tiros na cabeca",
+	"Zombie helm ini tidak bisa menerima tembakan di kepala",
+	"Bu kaskli zombi kafasindan vurulamaz"],
+	
+	"Baseball" : ["This baseball zombie does more damage to obstacles",
+	"Ce zombie baseball fait plus de degats aux obstacles",
+	"Este zombi beisbol hace mas dano a los obstaculos",
+	"Este zombie de basebol causa mais danos aos obstaculos",
+	"Zombie bisbol ini melakukan lebih banyak kerusakan pada rintangan",
+	"Bu beyzbol zombisi engellere daha fazla hasar veriyor"],
+	
+	"Shield" : ["This shield zombie takes reduced damage",
+	"Ce zombie bouclier reduit les degats qu'il subit",
+	"Este zombi con escudo recibe menos dano",
+	"Este zombie com escudo sofre dano reduzido",
+	"Zombie perisai ini menerima kerusakan yang berkurang",
+	"Bu kalkan zombi daha az hasar alir"],
+	
+	"Tnt" : ["This tnt zombie sets off his explosives as he dies",
+	"Ce zombie tnt declenche ses explosifs a sa mort",
+	"Este zombie tnt detona sus explosivos al morir",
+	"Este zombie da tnt ativa os seus explosivos enquanto morre",
+	"Zombie tnt ini meledakkan bahan peledaknya saat dia mati",
+	"Bu tnt zombi olurken patlayicilarini patlatiyor"],
+	
+	"Brain" : ["This brain zombie is in bad shape but still alive",
+	"Ce zombie cerveau est en mauvais etat mais toujours vivant",
+	"Este zombi cerebro esta en mal estado pero sigue vivo",
+	"Este zombie com cerebro esta em mau estado mas ainda esta vivo",
+	"Zombie otak ini dalam kondisi buruk tetapi masih hidup",
+	"Bu beyin zombisi kotu durumda ama hala hayatta"],
+	
+	"Poison" : ["This poison zombie can infect you",
+	"Ce zombie poison peut infecter le hero",
+	"Este zombi venenoso puede infectarte",
+	"Este zombie venenoso pode infetar-te",
+	"Zombie racun ini dapat menginfeksi Anda",
+	"Bu zehirli zombi size bulasabilir"],
+	
+	"Blood" : ["This bloody zombie sends out blood balls",
+	"Ce zombie sanglant envoie des boules de sang",
+	"Este zombie sangriento envia bolas de sangre",
+	"Este maldito zombie envia bolas de sangue",
+	"Zombie berdarah ini mengeluarkan bola-bola darah",
+	"Bu kanli zombi kan toplari gonderiyor"],
+	
+	"Skull" : ["This skeleton zombie throws bones like boomerangs",
+	"Ce zombie squelette lance des os comme des boomerangs",
+	"Este esqueleto zombi lanza huesos como bumeranes",
+	"Este esqueleto zombie atira ossos como bumerangues",
+	"Zombie kerangka ini melempar tulang seperti bumerang",
+	"Bu iskelet zombi kemikleri bumerang gibi firlatiyor"],
+	
+	"Priest" : ["This priest zombie is just here for mass",
+	"Ce zombie pretre zombie est juste la pour la messe",
+	"Este sacerdote zombi solo esta aqui para la misa",
+	"Este padre zombie so esta aqui para a missa",
+	"Pendeta zombie ini baru saja datang untuk misa",
+	"Bu zombi rahip sadece ayin icin burada"],
+	
+	"Funeral" : ["This funeral zombie can get out of his coffin",
+	"Ce zombie funeraire peut ressortir de son cercueil",
+	"Este zombi funerario puede salir de su ataud",
+	"Este zombie funerario consegue sair do seu caixao",
+	"Zombie pemakaman ini bisa keluar dari peti matinya",
+	"Bu cenaze zombisi tabutundan cikabilir"],
+	
+	"Bishop" : ["This bishop zombie heals other zombies around",
+	"Ce zombie eveque soigne les zombies aux alentours",
+	"Este zombie obispo cura a otros zombies alrededor",
+	"Este zombie bispo cura os outros zombies a volta",
+	"Zombie uskup ini menyembuhkan zombie lain di sekitarnya",
+	"Bu piskopos zombi etraftaki diger zombileri iyilestiriyor"],
+	
+	"Ghost" : ["This ghost zombie ignores obstacles",
+	"Ce zombie fantome ignore les obstacles",
+	"Este zombi fantasma ignora los obstaculos",
+	"Este zombie fantasma ignora os obstaculos",
+	"Zombie hantu ini mengabaikan rintangan",
+	"Bu hayalet zombi engelleri gormezden geliyor"],
+	
+	"Waiter" : ["This waiter zombie just serves the food",
+	"Ce zombie serveur fait juste le service des plats",
+	"Este camarero zombie solo sirve la comida",
+	"Este empregado de mesa zombie so serve a comida",
+	"Pelayan zombie ini hanya menyajikan makanan",
+	"Bu zombi garson sadece yemek servisi yapiyor"],
+	
+	"Butcher" : ["This butcher zombie often throws his machete",
+	"Ce zombie boucher lance souvent sa machette",
+	"Este zombie carnicero a menudo lanza su machete",
+	"Este zombie carniceiro atira frequentemente o seu machete",
+	"Zombie tukang daging ini sering melempar parangnya",
+	"Bu kasap zombi sik sik palasini firlatir"],
+	
+	"Corn" : ["This zombie corn explodes like popcorn when he dies",
+	"Ce zombie mais explose comme du pop corn a sa mort",
+	"Este zombi del maiz revienta sus granos de palomitas",
+	"Este zombie do milho rebenta os seus graos de pipocas",
+	"Zombie jagung ini mengeluarkan biji popcorn-nya",
+	"Bu misir zombisi patlamis misir tanelerini patlatiyor"],
+	
+	"Pepper" : ["This pepper zombie leaves a spicy trail behind him",
+	"Ce zombie piment laisse une trace pimentee derriere lui",
+	"Este maiz zombi explota como palomitas cuando muere",
+	"Este milho zombie explode como pipocas quando morre",
+	"Jagung zombie ini meledak seperti popcorn ketika dia mati",
+	"Bu zombi misir oldugunde patlamis misir gibi patliyor"],
+	
+	"Slime" : ["This slime zombie sends out multiple acid balls",
+	"Ce zombie slime envoie de multiples boules d'acide",
+	"Este zombi baboso lanza multiples bolas de acido",
+	"Este zombie de lodo envia varias bolas de acido",
+	"Zombie lendir ini mengirimkan beberapa bola asam",
+	"Bu sumuksu zombi birden fazla asit topu gonderiyor"],
+	
+	"Scarecrow" : ["This scarecrow zombie sends crows on the hunt",
+	"Ce zombie epouvantail envoie des corbeaux en chasse",
+	"Este espantapajaros zombi da caza a los cuervos",
+	"Este espantalho zombie manda os corvos a caca",
+	"Zombie orang-orangan sawah ini mengirim burung gagak untuk berburua",
+	"Bu korkuluk zombi kargalari ava gonderiyor"],
+	
+	"Cherubin" : ["This cherubin zombie shoots arrows with his bow",
+	"Ce zombie cherubin lance des fleches avec son arc",
+	"Este zombie querubin dispara flechas con su arco",
+	"Este querubim zombie dispara flechas com o seu arco",
+	"Zombie kerubin ini menembakkan anak panah dengan busurnya",
+	"Bu melek zombi yayiyla ok atiyorr"],
+	
+	"Pizzaiolo" : ["This pizzaiolo zombie throws homemade pizzas",
+	"Ce zombie pizzaiolo jete des pizzas faites maison",
+	"Este pizzaiolo zombie lanza pizzas caseras",
+	"Este pizzaiolo zombie atira pizzas caseiras",
+	"Zombie pizzaiolo ini melempar pizza buatan sendiri",
+	"Bu pizzaci zombi ev yapimi pizza firlatiyor"],
+	
+	"Giant" : ["This giant zombie drops rocks from the sky",
+	"Ce zombie geant fait tomber des rochers du ciel",
+	"Este zombi gigante deja caer rocas del cielo",
+	"Este zombie gigante deixa cair pedras do ceu",
+	"Zombie raksasa ini menjatuhkan batu dari langit",
+	"Bu dev zombi gokten tas yagdiriyor"],
+	
+	"Reaper" : ["This reaper zombie unleashes hurricanes from hell",
+	"Ce zombie faucheur dechaine des ouragans des enfers",
+	"Este zombi segador desata huracanes del infierno",
+	"Este zombie ceifeiro liberta furacões do inferno",
+	"Zombie penuai ini melepaskan angin topan dari neraka",
+	"Bu Azrail zombi cehennemden gelen kasirgalari serbest birakiyor"],
+	
+	"Angel" : ["This angel zombie deploys powerful light prisms",
+	"Ce zombie ange invoque de puissants prismes de lumiere",
+	"Este zombi angel despliega potentes prismas de luz",
+	"Este anjo zombie lanca poderosos prismas de luz",
+	"Malaikat zombie ini menyebarkan prisma cahaya yang kuat",
+	"Bu zombi melek guclu isik prizmalari kullaniyor"],
+	
+	"Chef" : ["This chef zombie cooks with very aggressive ingredients",
+	"Ce zombie chef cuisine avec des ingredients tres agressifs",
+	"Este chef zombie cocina con ingredientes muy agresivos",
+	"Este chef zombie cozinha com ingredientes muito agressivos",
+	"Zombie koki ini memasak dengan bahan-bahan yang sangat agresif",
+	"Bu sef zombi cok agresif malzemelerle yemek yapiyor"]
+},
+"ZombieRecap" : {
+
+
+	"Giant" : ["Normal","Helmet","Baseball","Tnt","Slime"],
+	"Reaper" : ["Brain","Poison","Ghost","Blood","Scarecrow"],
+	"Angel" : ["Priest","Funeral","Bishop","Skull","Cherubin"],
+	"Chef" : ["Waiter","Pepper","Corn","Butcher","Pizzaiolo"]
+
+},
+
+"ChestList" : ["Common","Uncommon","Rare"],
+"ChestData" : {
+	
+	"Perksbox" : {
+		"UnlockDuration" : 5
+	},
+	
+	"Shopbox" : {
+		"UnlockDuration" : 5
+	},
+	
+	"Lootbox" : {
+		"RewardNumber" : 10,
+		"UnlockDuration" : 3
+	},
+	
+	"Common" : {
+		"RewardNumber" : 1,
+		"RewardDroprate" : 
+		[[[0,0.9],[1]],
+		[[0.9,1],[2]]]
+	},
+	
+	"Uncommon" : {
+		"RewardNumber" : 2,
+		"RewardDroprate" : 
+		[[[0,0.9],[1]],
+		[[0.9,1],[2]]]
+	},
+	
+	"Rare" : {
+		"RewardNumber" : 2,
+		"RewardDroprate" : 
+		[[[0,0.7],[1]],
+		[[0.7,0.95],[2]],
+		[[0.95,1],[3]]]
+	},
+	
+	
+	"Epic" : {
+		"RewardNumber" : 3,
+		"UnlockDuration" : 5,
+		"RewardDroprate" : 
+		[[[0,0.7],[1]],
+		[[0.7,0.95],[2]],
+		[[0.95,1],[3]]]
+	}
+
+},
+
+"ItemData" : {
+	
+	"Barrel" : {
+		"ItemType" : "Obstacle",
+		"ResourceType" : "Wood",
+		"ResourceValue" : [5,15,45,135,405]
+	},
+	"Barrier" : {
+		"ItemType" : "Obstacle",
+		"ResourceType" : "Wood",
+		"ResourceValue" : [3,9,27,81,243]
+	},
+	"Tesla" : {
+		"ItemType" : "Obstacle",
+		"ResourceType" : "Energy",
+		"ResourceValue" : [4,12,36,108,324]
+	},
+	"Drone" : {
+		"ItemType" : "Weapon",
+		"ResourceType" : "Energy",
+		"ResourceValue" : [5,15,45,135,405]
+	},
+	"Turret" : {
+		"ItemType" : "Weapon",
+		"ResourceType" : "Energy",
+		"ResourceValue" : [4,12,36,108,324]
+	},
+	"Mine" : {
+		"ItemType" : "Trap",
+		"ResourceType" : "Energy",
+		"ResourceValue" : [5,15,45,135,405]
+	},
+	"Beartrap" : {
+		"ItemType" : "Trap",
+		"ResourceType" : "Metal",
+		"ResourceValue" : [3,9,27,81,243]
+	},
+	"Saw" : {
+		"ItemType" : "Trap",
+		"ResourceType" : "Metal",
+		"ResourceValue" : [4,12,36,108,324]
+	},
+	"Molotov" : {
+		"ItemType" : "Grenade",
+		"ResourceType" : "Fire",
+		"ResourceValue" : [3,9,27,81,243]
+	},
+	"Grenade" : {
+		"ItemType" : "Grenade",
+		"ResourceType" : "Metal",
+		"ResourceValue" : [4,12,36,108,324]
+	},
+	"Missile" : {
+		"ItemType" : "Grenade",
+		"ResourceType" : "Fire",
+		"ResourceValue" : [5,15,45,135,405]
+	},
+	"Campfire" : {
+		"ItemType" : "Heal",
+		"ResourceType" : "Fire",
+		"ResourceValue" : [5,15,45,135,405]
+	},
+	"Magnet" : {
+		"ItemType" : "Currency",
+		"ResourceType" : "Metal",
+		"ResourceValue" : [3,9,27,81,243]
+	}
+},
+"ItemUpgradeData" : {
+	
+	"UpgradeItem" : {
+	
+		"UpgradeInitialValue" : [10,20,30,40,50,60],
+		"UpgradeValue" : [5,5,5,5,5,5],
+		"MaxLevel" : [10,15,20,25,30,35],
+		"UpgradePrice" : [1,2,3,4,5,6]
+	}
+
+},
+
+"ResourceList" : ["Meat","Wood","Metal","Fire","Energy","Key_Common","Key_Uncommon","Key_Rare"],
+"ResourceData" : {
+	
+	"ResourceDroprate" : {
+	
+		"Giant" :
+		[[[0,0.35],["Wood"]],
+		[[0.35,0.7],["Metal"]],
+		[[0.7,0.98],["Meat"]],
+		[[0.98,0.99],["Key_Common"]],
+		[[0.99,0.9975],["Key_Uncommon"]],
+		[[0.9975,1],["Key_Rare"]]
+		],
+		
+		"Reaper" :
+		[[[0,0.35],["Metal"]],
+		[[0.35,0.7],["Fire"]],
+		[[0.7,0.98],["Meat"]],
+		[[0.98,0.99],["Key_Common"]],
+		[[0.99,0.9975],["Key_Uncommon"]],
+		[[0.9975,1],["Key_Rare"]]
+		],
+		
+		"Angel" :
+		[[[0,0.35],["Fire"]],
+		[[0.35,0.7],["Energy"]],
+		[[0.7,0.98],["Meat"]],
+		[[0.98,0.99],["Key_Common"]],
+		[[0.99,0.9975],["Key_Uncommon"]],
+		[[0.9975,1],["Key_Rare"]]
+		],
+		
+		"Chef" :
+		[[[0,0.35],["Energy"]],
+		[[0.35,0.7],["Wood"]],
+		[[0.7,0.98],["Meat"]],
+		[[0.98,0.99],["Key_Common"]],
+		[[0.99,0.9975],["Key_Uncommon"]],
+		[[0.9975,1],["Key_Rare"]]
+		]
+		
+	}
+
+},
+
+"RarityShop" : 5,
+"RarityItem" : 6,
+"MergeItem" : 3,
+"CameraShake" : {
+
+	"Bullet" : 1,
+	"Wall" : 2,
+	"Small" : 4,
+	"Big" : 6
+	
+},
+"InventoryIndex" : {
+
+	"ItemType" : 0,
+	"ItemName" : 1,
+	"ItemRarity" : 2,
+	"ItemLevel" : 3
+},
+"EquipmentIndex" : {
+
+	"Weapon" : 0,
+	"Grenade" : 1,
+	"Trap" : 2,
+	"Obstacle" : 3,
+	"Heal" : 4,
+	"Currency" : 5
+},
+
+"MusicList" : ["Music1","Music2"],
+"SoundData" : {
+
+	"Introduction" : -15,
+	"ZombieDeath" : 0,
+	"ZombieBossDeath" : 0,
+	"ZombieHeal" : -30,
+	"ZombieRitual" : 0,
+	"ZombieReaper2" : 0,
+	"ZombieReaper3" : 0,
+	"ZombieGiantCry" : -10,
+	"ZombieGiantRock" : -15,
+	"ZombieAngel1" : 0,
+	"ZombieAngel2" : 0,
+	"ZombieAngel3" : 0,
+	"ZombieChefPotion" : 0,
+	"ZombieChefPan" : 0,
+	"ZombieChefBell" : 0,
+	"ZombieChef3" : 0,
+	"ZombieAngelHalo" : -20,
+	"ZombieGroundHit" : 0,
+	"ZombieBlood" : 0,
+	"ZombieRanger" : -10,
+	"ZombieSkull" : -5,
+	"ZombieHit" : -10,
+	"ZombieScarecrow" : 0,
+	"HeroStep" : 0,
+	"BulletKamikaze" : -5,
+	"BulletDrone" : -30,
+	"BulletTurret" : -30,
+	"BulletHunter" : -15,
+	"BulletEngineer" : -20,
+	"BulletPyromaniac" : -15,
+	"BulletShaman" : -10,
+	"BulletMage" : -10,
+	"HeroThrow" : -20,
+	"HeroBuff" : -5,
+	"HeroHit" : -20,
+	"HeroHeal" : -10,
+	"HeroDeath" : -10,
+	"HeroRevive" : -10,
+	"HeroGrenade" : 0,
+	"HeroMolotov" : 0,
+	"HeroBeartrap" : -15,
+	"HeroHuntingDog" : -20,
+	"HeroTotemFire" : -15,
+	"HeroTotemHeal" : -15,
+	"HeroTotemBuff" : -15,
+	"HeroExhaust" : -10,
+	"HeroScrollFire" : -15,
+	"HeroScrollThunder" : -15,
+	"HeroTesla" : -20,
+	"HeroMissile" : 0,
+	"HeroHeadshot" : -5,
+	"HeroCritical" : -10,
+	"ButtonClicked" : -10,
+	"ButtonHold" : -10,
+	"ArrowClicked" : -10,
+	"ItemSpawn" : -30,
+	"TargetHit" : -25,
+	"ShopPurchased" : -10,
+	"ShopOpened" : 0,
+	"PerksPurchased" : -10,
+	"Music1" : -10,
+	"Music2" : -10,
+	"MusicBoss" : -10,
+	"MusicMenu" : -5,
+	"GemCollected" : -15,
+	"PortalOpen" : -10,
+	"PortalClose" : -10,
+	"PortalEnter" : -20,
+	"PactFireball" : -20,
+	"PactAcid" : 0,
+	"ObjectBuff" : -10,
+	"LevelVictory" : -10,
+	"LevelDefeat" : -10,
+	"ElectricEffect" : -10,
+	"IceEffect" : -10,
+	"DefeatTimer" : 0,
+	"RushAlert" : -10,
+	"WaveAlert" : 0,
+	"ChestOpen" : 0,
+	"ChestReward" : 0,
+	"Notification" : 0,
+	"ChestResource" : 0,
+	"ResourceCollected" : 0,
+	"Craft" : 0
+
+},
+
+"Language" : {
+
+	"en" : 0,
+	"fr" : 1,
+	"es" : 2,
+	"pt" : 3,
+	"id" : 4,
+	"tr" : 5
+	
+},
+"Translation" : {
+
+	"Home" : ["Home","Menu","Menu","Menu","Menu","Menu"],
+	"Resume" : ["Resume","Reprendre","Reanudar","Retomar","Melanjutkan","Ozgecmis"],
+	"Play" : ["Play","Jouer","Jugar","Jogar","Bermain","Oyun"],
+	"HUD_CloseButtonText" : ["Close","Fermer","Cerrar","Fechar","Tutup","Kapat"],
+	"Choose" : ["Choose","Choisir","Elija","Selecionar","Memilih","Secin"],
+	"Chosen" : ["Chosen","Choisi","Elegir","Escolher","Dipilih","Seciniz"],
+	"Perks" : ["Perks","Bonus","Bono","Bonus","Bonus","Bonus"],
+	"Shop" : ["Shop","Magasin","Tienda","Loja","Belanja","Alisveris"],
+	"Pact" : ["Pact","Pacte","Pacto","Pacto","Pakta","Pakt"],
+	"Score" : ["Score","Score","Puntuacion","Pontuacao","Skor","Skor"],
+	"ScoreCurrent" : ["Current","Actuel","Actual","Atual","Saat ini","Guncel"],
+	"ScoreBest" : ["Best","Meilleur","Mejor","Melhor","Terbaik","En iyisi"],
+	"Pause" : ["Pause","Pause","Pausa","Pausa","Jeda","Duraklat"],
+	"Settings" : ["Settings","Reglage","Ajustes","Definicoes","Pengaturan","Ayarlar"],
+	"Language" : ["Language","Langue","Idioma","Lingua","Bahasa","Dil"],
+	"Sound" : ["Sound","Son","Sonido","Som","Suara","Ses"],
+	"Hero" : ["Hero","Hero","Heroe","Heroi","Pahlawanp","Kahramank"],
+	"Skin" : ["Skin","Costume","Vestuario","Traje","Kostum","Kostum"],
+	"Inventory" : ["Inventory","Inventaire","Inventario","Inventario","Persediaan","Envanter"],
+	"Chest" : ["Chest","Coffre","Cofre","Bau","Aman","Guvenli"],
+	"Player" : ["Player","Joueur","Jugador","Jogador","Pemain","Oyuncu"],
+	"Difficulty" : ["Difficulty","Difficulte","Dificultad","Dificuldade","Kesulitan","Zorluk"],
+	"DifficultyInfo" : {
+		"0" : 
+		[["Zombie: [color=#00ff00]Few",
+		"Zombie: [color=#00ff00]Peu",
+		"Zombie: [color=#00ff00]Pocos",
+		"Zombie: [color=#00ff00]Poucos",
+		"Zombie: [color=#00ff00]Sedikit",
+		"Zombi: [color=#00ff00]Cok az"],
+		
+		["Zombie: Moderate",
+		"Zombie: Modere",
+		"Zombie: Moderado",
+		"Zombie: Moderado",
+		"Zombie: Sedang",
+		"Zombi: Orta"],
+		
+		["Zombie: [color=#ff0000]Many",
+		"Zombie: [color=#ff0000]Beaucoup",
+		"Zombie: [color=#ff0000]Muchos",
+		"Zombie: [color=#ff0000]Muitos",
+		"Zombie: [color=#ff0000]Banyak",
+		"Zombi: [color=#ff0000]Bircok"]],
+		
+		"1" : 
+		[["Loot: [color=#ff0000]Few",
+		"Butin: [color=#ff0000]Peu",
+		"Botin: [color=#ff0000]Pocos",
+		"Saque: [color=#ff0000]Poucos",
+		"Menjarah: [color=#ff0000]Sedikit",
+		"Yagma: [color=#ff0000]Cok az"],
+		
+		["Loot: Moderate",
+		"Butin: Modere",
+		"Botin: Moderado",
+		"Saque: Moderado",
+		"Menjarah: Sedang",
+		"Zombi: Orta"],
+		
+		["Loot: [color=#00ff00]Many",
+		"Butin: [color=#00ff00]Beaucoup",
+		"Botin: [color=#00ff00]Muchos",
+		"Saque: [color=#00ff00]Muitos",
+		"Menjarah: [color=#00ff00]Banyak",
+		"Yagma: [color=#00ff00]Bircok"]]
+	},
+	"Easy" : ["Easy","Facile","Facil","Facil","Mudah","Kolay"],
+	"Normal" : ["Normal","Normal","Normal","Normal","Normal","Normal"],
+	"Hard" : ["Hard","Difficile","Duro","Dificil","Keras","Sert"],
+	"Mode" : ["Mode","Mode","Modo","Modo","Mode","Mod"],
+	"Mission" : ["Mission","Mission","Mision","Missao","Misi","Gorev"],
+	"Map" : ["Map","Carte","Mapa","Mapa","Peta","Harita"],
+	"Summary" : ["Summary","Resume","Resumen","Resumo","Ikhtisar","Ozet"],
+	"Defeat" : ["Defeat","Defaite","Derrota","Derrota","Kekalahan","Yenilgi"],
+	"Victory" : ["Victory","Victoire","Victoria","Vitoria","Kemenangan","Zafer"],
+	"Death" : ["Death","Mort","Muerte","Morte","Kematian","Olum"],
+	"HP" : ["Health","Vie","Salud","Saude","Kesehatan","Saglik"],
+	"Damage" : ["Damage","Degats","Danos","Dano","Kerusakan","Hasar"],
+	"Barrel" : ["Barrel","Baril","Barril","Barril","Laras","Varil"],
+	"Barrier" : ["Barrier","Barriere","Barrera","Barreira","Penghalang","Bariyer"],
+	"Tesla" : ["Tesla","Tesla","Tesla","Tesla","Tesla","Tesla"],
+	"Drone" : ["Drone","Drone","Drone","Drone","Drone","Drone"],
+	"Turret" : ["Turret","Tourelle","Torreta","Torreta","Menara","Taret"],
+	"Molotov" : ["Molotov","Molotov","Molotov","Molotov","Molotov","Molotof"],
+	"Grenade" : ["Grenade","Grenade","Granada","Granada","Granat","Bomba"],
+	"Mine" : ["Mine","Mine","Mina","Mina","Tambang","Maden"],
+	"Beartrap" : ["Beartrap","Piege","Trampa","Armadilha","Perangkap","Tuzak"],
+	"Missile" : ["Missile","Missile","Misil","Missil","Rudal","Fuze"],
+	"Campfire" : ["Campfire","Feu","Fogata","Fogueira","Api unggun","Kamp Atesi"],
+	"Magnet" : ["Magnet","Aimant","Iman","Iman","Magnet","Miknatis"],
+	"Saw" : ["Saw","Scie","Sierra","Serra","Melihat","Testere"],
+	"Firerate" : ["Firerate","Vitesse de tir","Velocidad de disparo","Taxa de fogo","Kecepatan pemotretan","Cekim hizi"],
+	"Hitrate" : ["Hitrate","Vitesse d'attaque","Velocidad de ataque","Velocidade de ataque","Kecepatan serangan","Saldiri hizi"],
+	"Range" : ["Range","Portee","Alcance","Alcance","Jangkauan","Menzil"],
+	"Speed" : ["Speed","Vitesse","Velocidad","Velocidade","Kecepatan","Hiz"],
+	"Reload" : ["Reload","Recharge","Recarga","Recarga","Muat Ulang","Yeniden Yukle"],
+	"Frequency" : ["Frequency","Frequence","Frecuencia","Frequencia","Frekuensi","Frekans"],
+	"Duration" : ["Duration","Duree","Duracion","Duracao","Durasi","Sure"],
+	"Health" : ["Health","Vie","Salud","Saude","Kesehatan","Saglik"],
+	"Critical" : ["Critical","Critique","Critico","Critico","Kritis","Kritik"],
+	"Headshot" : ["Headshot","Tir dans la tete","Disparo a la cabeza","Tiro na cabeca","Tembakan di kepala","Kafa vurusu"],
+	"Multishot" : ["Multishot","Tir multiple","Tiro multiple","Disparo multiplo","Beberapa pemotretan","Coklu cekim"],
+	"Piercing" : ["Piercing","Penetration","Perforacion","Perfuracao","Menusuk","Penetrasyon"],
+	"Bounce" : ["Bounce","Rebond","Rebote","Ressalto","Memantul","Sicrama"],
+	"Electric" : ["Electric","Electrique","Electrico","Eletrico","Listrik","Elektrik"],
+	"Rage" : ["Rage","Rage","Furia","Raiva","Kemarahan","Ofke"],
+	"Exploding" : ["Exploding","Explosion","Explosion","Explosao","Meledak","Patlama"],
+	"Endurance" : ["Endurance","Endurance","Resistencia","Resistencia","Daya tahan","Dayaniklilik"],
+	"Regen" : ["Regen","Regeneration","Regeneracion","Regeneracao","Regenerasi","Rejenerasyon"],
+	"Vampire" : ["Vampire","Vampire","Vampiro","Vampiro","Vampir","Vampir"],
+	"Gem" : ["Gem","Gemme","Gema","Gema","Permata","Mucevher"],
+	"Burn" : ["Burn","Brulure","Quemar","Queimar","Membakar","Yanmak"],
+	"Wave" : ["Wave","Vague","Onda","Onda","Gelombang","Dalga"],
+	"Stunned" : ["Stunned","Etourdi","Noqueado","Nocauteado","Pingsan","Bayiltildi"],
+	"GemIntroduction" : 
+	["Collect gems to fill the bar and access the shop",
+	"Collecte les gemmes pour remplir la barre et acceder au magasin",
+	"Recoge gemas para llenar la barra y acceder a la tienda",
+	"Recolha pedras preciosas para encher a barra e aceder a loja",
+	"Kumpulkan permata untuk mengisi bar dan mengakses toko",
+	"Bari doldurmak ve magazaya erismek icin mucevherleri toplayin"],
+	"LootboxIntroduction" : 
+	["Open the chest to obtain resources and craft items",
+	"Ouvre le coffre pour obtenir des ressources et fabriquer des items",
+	"Abre el cofre para obtener recursos y objetos artesanales",
+	"Abra o bau para obter recursos e objectos de artesanato",
+	"Buka peti untuk mendapatkan sumber daya dan item kerajinan",
+	"Sandigi acarak kaynak ve zanaat urunleri elde edin"],
+	"MasteryIntroduction" : 
+	["Welcome adventurer! I'm the village elder, you can come and see me to improve your masteries",
+	"Bienvenue aventurier! Je suis le vieux sage du village, tu peux venir me voir pour ameliorer tes maitrises",
+	"Bienvenido aventurero. Soy el anciano del pueblo, puedes venir a verme para mejorar tus maestrias",
+	"Bem-vindo aventureiro! Sou o anciao da aldeia, podes vir ver-me para melhorar as tuas habilidades",
+	"Selamat datang petualang! Saya adalah tetua desa, Anda bisa datang dan menemui saya untuk meningkatkan kemampuan Anda",
+	"Hos geldiniz maceraci! Ben koyun buyuguyum, ustaliklarini gelistirmek icin gelip beni gorebilirsin"],
+	"ChestIntroduction" : 
+	["Hello boy, I'm the lone pirate. If you find some keys, I'll let you open my chests!",
+	"Salut garcon, je suis le pirate solitaire. Si tu trouves des clefs, je te laisse ouvrir mes coffres!",
+	"Hola chico, soy el pirata solitario. Si encuentras algunas llaves, te dejare abrir mis cofres",
+	"Ola rapaz, eu sou o pirata solitario. Se encontrares algumas chaves, deixo-te abrir os meus cofres!",
+	"Halo, aku bajak laut tunggal. Jika kau menemukan beberapa kunci, aku akan membiarkanmu membuka brankasku!",
+	"Merhaba evlat, ben yalniz korsanim. Eger anahtar bulursan, kasalarimi acmana izin veririm!"],
+	"SkinIntroduction" : 
+	["Hi there, I'm the local model. Don't hesitate to come if you want to change your skin!",
+	"Salut toi, je suis le mannequin du coin. N'hesite pas a venir me voir si tu veux changer d'apparence!",
+	"Hola, soy la modelo local. No dudes en venir si quieres cambiarte de ropa",
+	"Ola, sou a modelo local. Nao hesitem em vir se quiserem mudar de roupa!",
+	"Hai, saya adalah model lokal. Jangan ragu untuk datang jika Anda ingin berganti pakaian!",
+	"Merhaba, ben yerel modelim. Kiyafetlerinizi degistirmek isterseniz gelmekten cekinmeyin!"],
+	"CraftIntroduction" : 
+	["Greetings friend, I'm the blacksmith! Bring me resources so I can craft you some items",
+	"Salutations l'ami, moi je suis le forgeron! Apporte moi des ressources pour que je te fabrique des objets",
+	"Saludos amigo, soy el herrero. Traeme recursos para que pueda fabricarte algunos objetos",
+	"Saudacoes amigo, eu sou o ferreiro! Tragam-me recursos para que eu possa criar alguns objectos para voces",
+	"Salam teman, saya pandai besi! Bawakan aku sumber daya agar aku bisa membuatkanmu beberapa barang",
+	"Selamlar dostum, ben demirciyim! Bana kaynak getir ki sana bazi esyalar yapabileyim"],
+	"InventoryIntroduction" : 
+	["Hello newbie, I'm an adventurer too! Come and see me and I'll help you equip yourself",
+	"Bonjour le nouveau, moi aussi je suis un aventurier! Passe me voir et je t'aiderai a t'equiper",
+	"Hola novato, yo tambien soy un aventurero. Ven a verme y te ayudare a equiparte",
+	"Ola novato, eu tambem sou um aventureiro! Vem ter comigo e eu ajudo-te a equipares-te",
+	"Halo pemula, saya juga seorang petualang! Datang dan temui saya dan saya akan membantu Anda melengkapi diri Anda",
+	"Merhaba acemi, ben de bir maceraciyim! Gel ve beni gor, kendini donatmana yardim edeyim"],
+	"AdventureIntroduction" : 
+	["This portal will take you to distant worlds. Be careful if you venture there!",
+	"Ce portail te menera dans des mondes lointains. Sois prudent si tu t'y aventures!",
+	"Este portal te llevara a mundos lejanos. Ten cuidado si te aventuras alli",
+	"Este portal levar-vos-a a mundos distantes. Tem cuidado se te aventurares por la!",
+	"Portal ini akan membawa Anda ke dunia yang jauh. Berhati-hatilah jika Anda menjelajah ke sana!",
+	"Bu portal sizi uzak dunyalara goturecek. Oraya girerseniz dikkatli olun!"],
+	"ControlIntroduction" : 
+	["Play using",
+	"Joue en utilisant",
+	"Jugar con",
+	"Jogar utilizando",
+	"Bermain menggunakan",
+	"Kullanarak oynayin"],
+	"ControlMobileIntroduction" : 
+	["Play using the joystick",
+	"Joue en utilisant le joystick",
+	"Juega con el joystick",
+	"Jogar com o joystick",
+	"Bermain menggunakan joystick",
+	"Kumanda kolunu kullanarak oynayin"],
+	"CoopReviveIntroduction" : 
+	["You can revive your ally by staying on his body for a while",
+	"Tu peux faire revivre ton allie en restant un moment sur son corps",
+	"Puedes revivir a tu aliado permaneciendo en su cuerpo durante un tiempo",
+	"Pode reanimar o seu aliado permanecendo no seu corpo durante algum tempo",
+	"Anda dapat menghidupkan kembali sekutu Anda dengan tetap berada di tubuhnya",
+	"Muttefikinizin vucudunda bir sure kalarak onu canlandirabilirsiniz"],
+	"ModeDefenseIntroduction" : 
+	["You can't move. Use your gems to buy cards and protect the drill",
+	"Tu ne peux pas bouger. Achete des cartes avec tes gemmes pour defendre la foreuse",
+	"No puedes moverte. Usa tus gemas para comprar cartas y proteger el taladro",
+	"Nao te podes mexer. Usa as tuas pedras preciosas para comprar cartas e proteger a broca",
+	"Anda tidak bisa bergerak. Gunakan permata Anda untuk membeli kartu dan melindungi bor",
+	"Hareket edemezsiniz. Mucevherlerinizi kart satin almak ve matkabi korumak icin kullanin"],
+	"Skip" : ["Skip","Passer","Saltar","Saltar","Lewati","Atla"],
+	"ShopEmpty" : 
+	["This is empty, you have already taken all the items!",
+	"C'est vide, tu as deja tout selectionne!",
+	"Esto esta vacio, ¡ya te has llevado todos los objetos!",
+	"Isto esta vazio, ja levaram todos os objectos!",
+	"Ini kosong, Anda telah mengambil semua item!",
+	"Bu bos, zaten tum esyalari aldiniz!"],
+	"InventoryEmpty" : 
+	["The inventory is empty, you have to craft items to fill it!",
+	"L'inventaire est vide, il faut fabriquer des objets pour le remplir !",
+	"El inventario esta vacio, ¡tienes que crear objetos para llenarlo!",
+	"O inventario esta vazio, e preciso criar objetos para o preencher!",
+	"Persediaan kosong, Anda harus membuat item untuk mengisinya!",
+	"Envanter bos, doldurmak icin esya uretmeniz gerekiyor!"],
+	"Or" : ["Or","Ou","O","Ou","Atau","Veya"],
+	"Heal" : ["Heal","Soin","Cura","Curar","Perawatan","Bakim"],
+	"Rate" : ["Rate","Chance","Chance","Chance","Chance","Sans"],
+	"Antidote" : ["Antidote","Antidote","Antidoto","Antidoto","Penangkal","Panzehir"],
+	"Protection" : ["Protection","Protection","Proteccion","Protecao","Perlindungan","Koruma"],
+	"World" : ["World","Monde","Mundo","Mundo","Dunia","Dunya"],
+	"WorldLocked" : ["Finish world","Finir monde","Termina mundo","Terminar mundo","Selesaikan dunia","Dunyayi bitir"],
+	"Equip" : ["Equip","Equiper","Equipar","Equipar","Melengkapi","Ekipman"],
+	"Remove" : ["Remove","Retirer","Eliminar","Remover","Menghapus","Kaldirmak"],
+	"Boost" : ["Boost","Booster","Aumentar","Impulso","Tingkatkan","Yukseltme"],
+	"Open" : ["Open","Ouvrir","Abrir","Aberto","Buka","Acik"],
+	"Maximum" : ["Maximum","Maximum","Maximo","Maximo","Maksimum","Maksimum"],
+	"Adventure" : ["Adventure","Aventure","Aventura","Aventura","Petualangan","Macera"],
+	"Defense" : ["Defense","Defense","Defensa","Defesa","Pertahanan","Savunma"],
+	"Deck" : ["Deck","Deck","Deck","Deck","Deck","Deck"],
+	"DeckInfo" : ["Choose cards","Choisis des cartes","Elegir tarjetas","Escolher cartoes","Pilih kartu","Kartlari secin"],
+	"Zombie" : ["Zombie","Zombie","Zombie","Zombie","Zombie","Zombi"],
+	"Resource" : ["Resource","Ressource","Recursos","Recursos","Sumberdaya","Kaynak"],
+	"RV_Perks" : ["Take all","Avoir tout","Toma todo","Tomar tudo","Ambil","Hepsini al"],
+	"RV_Shop" : ["Take all","Avoir tout","Toma todo","Tomar tudo","Ambil","Hepsini al"],
+	"RV_Revive" : ["Revive","Revivre","Revivir","Reviver","Bangkit","Diriltmek"],
+	"RV_Hero" : ["Buy","Acheter","Comprar","Comprar","Membeli","Satin Al"],
+	"RV_Mission" : ["Rotate","Changer","Cambia","Alterar","Perubahan","Degisim"],
+	"RV_Chest" : ["Open","Ouvrir","Abrir","Aberto","Buka","Acik"],
+	"Craft" : ["Craft","Fabrique","Fabrica","Fabrica","Pabrik","Fabrika"],
+	"Merge" : ["Merge","Fusion","Fusion","Fundir","Gabung","Birlestir"],
+	"Mastery" : ["Mastery","Maitrise","Maestria","Mestria","Menguasai","Ustalik"],
+	"PVE" : ["PVE","PVE","PVE","PVE","PVE","PVE"],
+	"PVP" : ["PVP","PVP","PVP","PVP","PVP","PVP"],
+	"Wood" : ["Wood","Bois","Madera","Madeira","Kayu","Ahsap"],
+	"Meat" : ["Meat","Viande","Carne","Carne","Daging","Et"],
+	"Metal" : ["Metal","Metal","Metal","Metal","Logam","Metal"],
+	"Fire" : ["Fire","Feu","Fuego","Fogo","Api","Yangin"],
+	"Energy" : ["Energy","Energie","Energia","Energia","Energi","Enerji"],
+	"ChestInfo" : ["items with rarity of","objet de rarete","objetos con rareza","objectos de raridade","benda langka","nadir nesne"],
+	"Common" : ["Common","Commun","Comun","Comum","Umum","Ortak"],
+	"Uncommon" : ["Normal","Normal","Normal","Normal","Normal","Normal"],
+	"Rare" : ["Rare","Rare","Raro","Raro","Langka","Nadir"],
+	"Rotation" : ["Rotation","Rotation","Rotacion","Rotacao","Rotasi","Rotasyon"],
+	"Level" : ["Level","Niveau","Nivel","Nivel","Tingkat","Seviye"]
+	
+	
+	
+	
+}
+	
+}
