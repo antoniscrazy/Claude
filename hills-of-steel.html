@@ -10,6 +10,20 @@
   /* Eigene Leiste über dem Spiel – der Button verdeckt dadurch nichts vom Spiel. */
   #bar { flex: 0 0 auto; display: flex; justify-content: flex-end; padding: 6px 12px; background: #111; }
   #game { flex: 1 1 auto; width: 100%; border: 0; display: block; min-height: 0; }
+  /* Admin-Modus (geheim) */
+  #adminzone { position: fixed; top: 52px; right: 0; width: 84px; height: 72px; z-index: 20; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  #adminmodal { position: fixed; inset: 0; z-index: 30; background: rgba(0,0,0,.72); display: none; align-items: center; justify-content: center; }
+  #adminmodal.show { display: flex; }
+  #adminbox { background: #16181d; border: 2px solid #ffd23f; border-radius: 14px; padding: 22px 26px; text-align: center; min-width: 260px; box-shadow: 0 0 40px rgba(255,210,63,.35); }
+  #adminbox h3 { margin: 0 0 12px; font: 800 18px "Segoe UI", system-ui, sans-serif; color: #ffd23f; letter-spacing: .5px; }
+  #adminbox input { width: 140px; text-align: center; font: 700 22px monospace; letter-spacing: 6px; padding: 8px; border-radius: 8px; border: 1px solid #555; background: #0c0d10; color: #fff; }
+  #adminbox button { margin: 12px 4px 0; padding: 9px 18px; border: 0; border-radius: 999px; font: 800 14px "Segoe UI", system-ui, sans-serif; cursor: pointer; background: linear-gradient(90deg, #00e5a8, #ffd23f); color: #04201a; }
+  #adminbox button.alt { background: #333; color: #ddd; }
+  #adminmsg { margin-top: 10px; font: 13px sans-serif; color: #ffd23f; min-height: 16px; }
+  #adminbadge { display: none; margin-right: auto; align-self: center; padding: 4px 12px; border-radius: 999px; font: 900 12px "Segoe UI", system-ui, sans-serif; letter-spacing: 2px; color: #1a1200; background: linear-gradient(90deg, #ffd23f, #ff9d00, #ffd23f); background-size: 200% 100%; animation: adminshine 2.2s linear infinite; box-shadow: 0 0 14px rgba(255,190,0,.7); }
+  body.admin #adminbadge { display: block; }
+  body.admin #game { box-shadow: inset 0 0 0 3px #ffd23f, 0 0 26px rgba(255,190,0,.55); }
+  @keyframes adminshine { to { background-position: -200% 0; } }
   /* Moki: Back-Button */
   #moki-back {
     padding: 9px 16px; border-radius: 999px;
@@ -21,18 +35,116 @@
 </style>
 </head>
 <body>
-<div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
+<div id="bar"><span id="adminbadge">ADMIN</span><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
+<div id="adminzone"></div>
+<div id="adminmodal"><div id="adminbox"><h3>ADMIN</h3><input id="adminpw" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="••••"><div><button id="adminok">OK</button><button id="admincancel" class="alt">Abbrechen</button></div><div id="adminmsg"></div></div></div>
 <iframe id="game" allow="autoplay *; fullscreen *; gamepad *; clipboard-write *" allowfullscreen></iframe>
 <script>
 // Lädt das Spiel direkt aus dem GitHub-Repo (über jsDelivr, mit Commit-Version fest verdrahtet).
 // Kein lokaler Server nötig – die Datei funktioniert auch per Doppelklick.
 const BASE = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@f1ad30272fd9912b2eac68856b2dfeeec261dc55/hills-of-steel/";
 const SHIM = '<script>Object.defineProperty(Document.prototype,"URL",{get(){return "' + BASE + 'index.html"},configurable:true})<\/script>';
+
+// ===== Admin-Modus (geheim): 5x oben rechts tippen, dann Passwort =====
+let gameHtml = null;
+function startGame() {
+  const old = document.getElementById("game");
+  const f = document.createElement("iframe");
+  f.id = "game"; f.allowFullscreen = true;
+  f.setAttribute("allow", "autoplay *; fullscreen *; gamepad *; clipboard-write *");
+  f.srcdoc = gameHtml;
+  if (old) old.replaceWith(f); else document.body.appendChild(f);
+}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+// UnityPrf-Datei lesen/schreiben (PlayerPrefs des Spiels, liegt in IndexedDB)
+function prfParse(u) {
+  const out = []; let q = 16;
+  while (q < u.length) {
+    const kl = u[q]; const key = String.fromCharCode.apply(null, u.slice(q + 1, q + 1 + kl)); q += 1 + kl;
+    const t = u[q]; q++;
+    if (t === 0xfe || t === 0xfd) { out.push([key, t, u.slice(q, q + 4)]); q += 4; }
+    else { out.push([key, "s", u.slice(q, q + t)]); q += t; }
+  }
+  return { head: u.slice(0, 16), out: out };
+}
+function prfBuild(head, ents) {
+  const parts = [head];
+  ents.forEach(function (e) {
+    const kb = Array.from(e[0]).map(function (c) { return c.charCodeAt(0); });
+    parts.push(Uint8Array.from([kb.length].concat(kb)));
+    if (e[1] === "s") { parts.push(Uint8Array.from([e[2].length])); parts.push(Uint8Array.from(e[2])); }
+    else { parts.push(Uint8Array.from([e[1]])); parts.push(e[2]); }
+  });
+  let n = 0; parts.forEach(function (x) { n += x.length; });
+  const o = new Uint8Array(n); let q = 0; parts.forEach(function (x) { o.set(x, q); q += x.length; });
+  return o;
+}
+function prfInt(v) { const a = new Uint8Array(4); new DataView(a.buffer).setInt32(0, v, true); return a; }
+function prfStr(s) { return Uint8Array.from(Array.from(s).map(function (c) { return c.charCodeAt(0); })); }
+function patchPrefs() {
+  return new Promise(function (resolve) {
+    let req; try { req = indexedDB.open("/idbfs"); } catch (e) { return resolve("Speicher nicht erreichbar"); }
+    req.onerror = function () { resolve("Speicher nicht erreichbar"); };
+    req.onsuccess = function () {
+      const db = req.result;
+      if (!db.objectStoreNames.contains("FILE_DATA")) { db.close(); return resolve("Bitte erst das Spiel komplett laden lassen"); }
+      const st = db.transaction("FILE_DATA", "readwrite").objectStore("FILE_DATA");
+      let found = false;
+      st.openCursor().onsuccess = function (e) {
+        const c = e.target.result;
+        if (!c) { db.close(); return resolve(found ? "" : "Bitte erst das Spiel komplett laden lassen"); }
+        if (/PlayerPrefs$/.test(c.key)) {
+          found = true;
+          const v = c.value, parsed = prfParse(v.contents), map = new Map(parsed.out.map(function (x) { return [x[0], x]; }));
+          const setI = function (k, n) { map.set(k, [k, 0xfe, prfInt(n)]); };
+          setI("gems", 1000000000);                      // unendlich Gems
+          const ids = [];
+          for (let i = 0; i <= 30; i++) { ids.push("tank" + i); setI("tank" + i + "Cards", 2550); setI("tank" + i + "Level", 10); setI("tank" + i + "_unlocked", 1); }
+          map.set("tankUnlockOrder", ["tankUnlockOrder", "s", prfStr(ids.join(","))]);
+          setI("selectedTank", ADMIN_TANK_INDEX);       // Admin-Fahrzeug = stärkster Panzer
+          v.contents = prfBuild(parsed.head, Array.from(map.values()));
+          c.update(v).onsuccess = function () { db.close(); resolve(""); };
+          return;
+        }
+        c.continue();
+      };
+    };
+  });
+}
+const ADMIN_TANK_INDEX = 12; // Scorpion (legendär) ist der letzte Panzer in der Garage
+async function activateAdmin() {
+  const msg = document.getElementById("adminmsg");
+  msg.textContent = "Admin-Modus wird aktiviert …";
+  const old = document.getElementById("game"); if (old) old.remove();   // Spiel stoppen, damit es die Daten nicht überschreibt
+  await sleep(1500);
+  const err = await patchPrefs();
+  startGame();
+  if (err) { msg.textContent = err; return false; }
+  document.body.classList.add("admin");
+  document.getElementById("adminmodal").classList.remove("show");
+  return true;
+}
+(function () {
+  const zone = document.getElementById("adminzone"), modal = document.getElementById("adminmodal"), pw = document.getElementById("adminpw"), msg = document.getElementById("adminmsg");
+  let taps = [];
+  function hit() {
+    const t = Date.now(); taps = taps.filter(function (x) { return t - x < 4000; }); taps.push(t);
+    if (taps.length >= 5) { taps = []; msg.textContent = ""; pw.value = ""; modal.classList.add("show"); setTimeout(function () { pw.focus(); }, 50); }
+  }
+  if (window.PointerEvent) zone.addEventListener("pointerdown", hit); else { zone.addEventListener("touchstart", hit); zone.addEventListener("mousedown", hit); }
+  document.getElementById("admincancel").onclick = function () { modal.classList.remove("show"); };
+  async function submit() {
+    if (pw.value === "2908") { document.getElementById("adminok").disabled = true; await activateAdmin(); document.getElementById("adminok").disabled = false; }
+    else { msg.textContent = "Falsches Passwort"; pw.value = ""; }
+  }
+  document.getElementById("adminok").onclick = submit;
+  pw.addEventListener("keydown", function (e) { if (e.key === "Enter") submit(); });
+})();
 fetch(BASE + "index.html")
   .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
   .then(html => {
     html = html.replace("<head>", '<head><base href="' + BASE + '">' + SHIM);
-    document.getElementById("game").srcdoc = html;
+    gameHtml = html; startGame();
   })
   .catch(e => { document.body.append("Fehler beim Laden: " + e.message); });
 </script>
