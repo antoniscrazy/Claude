@@ -149,6 +149,17 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "zombie-rush",
+    title: "Zombie Rush",
+    url: "https://papaya-gingersnap-c86667.netlify.app",
+    category: "Action",
+    image: "zombie-rush.jpg",
+    emoji: "🧟",
+    colors: ["#f5a500", "#c0392b"],
+    description: "Wehre Zombie-Horden mit deinem Team ab.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
