@@ -1,34 +1,44 @@
 const games = window.MOKI_GAMES;
 const sites = window.MOKI_SITES || [];
 const app = document.getElementById("app");
+const side = document.getElementById("side");
 const search = document.getElementById("q");
+const ICONS = { Alle: "🏠", Fahren: "🏎️", Rhythmus: "🎵", Action: "💥", Simulation: "🏨", Abenteuer: "🧭" };
 let category = "Alle";
 
-const tile = g => `<a class="tile${g.wide ? " wide" : ""}" href="${g.url}" data-id="${g.id}" style="background:linear-gradient(135deg,${g.colors[0]},${g.colors[1]})">${g.image ? `<img src="${g.image}" alt="">` : `<span class="em">${g.emoji}</span>`}<span class="name">${g.title}</span></a>`;
-const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const tile = g => `<a class="tile${g.wide ? " wide" : ""}" href="${g.url}" data-id="${g.id}" aria-label="${esc(g.title)}" title="${esc(g.title)}" style="background:linear-gradient(135deg,${g.colors[0]},${g.colors[1]})">${g.image ? `<img src="${g.image}" alt="" loading="lazy">` : `<span class="em">${g.emoji}</span>`}<span class="name">${esc(g.title)}</span></a>`;
+
+function renderSide() {
+  const cats = ["Alle", ...new Set(games.map(g => g.category))];
+  side.innerHTML = `<h3>Kategorien</h3>` + cats.map(c => {
+    const n = c === "Alle" ? games.length : games.filter(g => g.category === c).length;
+    return `<button class="cat ${c === category ? "on" : ""}" data-c="${esc(c)}"><span class="ic">${ICONS[c] || "🎮"}</span>${esc(c)}<span class="n">${n}</span></button>`;
+  }).join("");
+  side.querySelectorAll(".cat").forEach(b => b.onclick = () => { category = b.dataset.c; home(); });
+}
 
 function home() {
   const q = search.value.trim().toLowerCase();
-  const cats = ["Alle", ...new Set(games.map(g => g.category))];
-  let list = games.filter(g => (category === "Alle" || g.category === category) && g.title.toLowerCase().includes(q));
-  const feat = games.filter(g => g.featured);
+  const list = games.filter(g => (category === "Alle" || g.category === category) && g.title.toLowerCase().includes(q));
+  renderSide();
+  const title = category === "Alle" ? "Alle Spiele" : category;
   app.innerHTML = `
-    ${!q && category === "Alle" && feat.length ? `<h2>⭐ Empfohlen</h2><div class="hero">${feat.map(g => tile(g, true)).join("")}</div>` : ""}
-    <h2>Alle Spiele</h2>
-    <div class="chips">${cats.map(c => `<button class="chip ${c === category ? "on" : ""}" data-c="${esc(c)}">${esc(c)}</button>`).join("")}</div>
-    <div style="height:16px"></div>
-    ${list.length ? `<div class="grid">${list.map(g => tile(g)).join("")}</div>` : `<p class="empty">Kein Spiel gefunden.</p>`}
-    ${!q && category === "Alle" && sites.length ? `<h2>🌐 Weitere Seiten</h2><p class="warn">⚠️ Achtung: Auf diesen Seiten funktionieren nicht alle Spiele. Wenn eins nicht lädt, probier ein anderes.</p><div class="grid">${sites.map(g => tile(g)).join("")}</div>` : ""}`;
-  app.querySelectorAll(".chip").forEach(b => b.onclick = () => { category = b.dataset.c; home(); });
+    <section>
+      <h2>${esc(title)}</h2>
+      <p class="sub">${list.length} ${list.length === 1 ? "Spiel" : "Spiele"}</p>
+      ${list.length ? `<div class="grid">${list.map(tile).join("")}</div>` : `<p class="empty">Kein Spiel gefunden.</p>`}
+    </section>
+    ${!q && category === "Alle" && sites.length ? `<section>
+      <h2>🌐 Weitere Seiten</h2>
+      <p class="warn">⚠️ Achtung: Auf diesen Seiten funktionieren nicht alle Spiele. Wenn eins nicht lädt, probier ein anderes.</p>
+      <div class="grid">${sites.map(tile).join("")}</div>
+    </section>` : ""}`;
 }
 
-function route() {
-  document.title = "Moki – Spiele";
-  home();
-}
-search.addEventListener("input", () => { home(); });
-addEventListener("hashchange", route);
-route();
+search.addEventListener("input", home);
+document.title = "Moki – Spiele";
+home();
 
 // Popup-Warnung vor Spielen mit "warning" in games.js
 function warnDialog(g) {

@@ -6,53 +6,68 @@
 <meta name="robots" content="noindex,nofollow">
 <title>Moki – Spiele</title>
 <style>
-:root{--bg:#0b1033;--panel:#141a4a;--panel2:#1c2360;--text:#fff;--muted:#9aa3d6;--accent:#00e5a8;--accent2:#ffd23f;--r:18px}
+:root{--bg:#0a0d2b;--panel:#141a4a;--panel2:#1d2566;--text:#fff;--muted:#a3abe0;--accent:#00e5a8;--accent2:#ffd23f;--r:22px;--gap:18px}
 *{box-sizing:border-box;margin:0}
-body{background:var(--bg);color:var(--text);font-family:"Segoe UI",system-ui,sans-serif;min-height:100vh}
+html{scroll-behavior:smooth}
+body{background:radial-gradient(1200px 600px at 80% -10%,#23307a55,transparent 60%),radial-gradient(900px 500px at -10% 30%,#0a7a7a33,transparent 60%),var(--bg);background-attachment:fixed;color:var(--text);font-family:"Segoe UI",system-ui,sans-serif;min-height:100vh}
 a{color:inherit;text-decoration:none}
-header{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;padding:12px 20px;background:rgba(11,16,51,.92);backdrop-filter:blur(8px);border-bottom:1px solid #ffffff14}
-.logo{font-weight:900;font-size:28px;letter-spacing:-1px;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
-.search{flex:1;max-width:520px;margin:0 auto}
-.search input{width:100%;padding:11px 18px;border-radius:999px;border:2px solid transparent;background:var(--panel);color:var(--text);font-size:15px;outline:none}
+/* Kopfzeile */
+header{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:20px;padding:14px 28px;background:rgba(10,13,43,.85);backdrop-filter:blur(10px);border-bottom:1px solid #ffffff12}
+.logo{font-weight:900;font-size:34px;letter-spacing:-1.5px;line-height:1;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.search{flex:1;max-width:560px;margin:0 auto}
+.search input{width:100%;padding:13px 22px;border-radius:999px;border:2px solid transparent;background:var(--panel);color:var(--text);font-size:16px;outline:none;transition:border-color .15s}
 .search input:focus{border-color:var(--accent)}
-.badge{font-size:12px;color:var(--muted);border:1px solid #ffffff22;padding:4px 10px;border-radius:999px}
-main{max-width:1200px;margin:0 auto;padding:24px 20px 60px}
-h2{font-size:22px;margin:28px 0 14px}
-.chips{display:flex;gap:8px;flex-wrap:wrap}
-.chip{padding:8px 16px;border-radius:999px;background:var(--panel);color:var(--muted);border:0;font-size:14px;cursor:pointer;font-weight:600}
-.chip.on,.chip:hover{background:var(--accent);color:#04201a}
-.grid{display:flex;flex-wrap:wrap;gap:16px}
-.tile{position:relative;height:200px;width:200px;flex:0 0 auto;border-radius:var(--r);overflow:hidden;display:flex;align-items:flex-end;transition:transform .15s,box-shadow .15s;box-shadow:0 4px 14px #0006}
-.tile:hover{transform:scale(1.06);box-shadow:0 10px 28px #000a}
-.tile .em{position:absolute;inset:0;display:grid;place-items:center;font-size:64px;filter:drop-shadow(0 4px 6px #0006)}
-.tile .name{position:relative;width:100%;padding:28px 12px 10px;font-weight:800;background:linear-gradient(transparent,#000b)}
-.hero{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,300px));gap:16px}
-.hero .tile .em{font-size:110px}
-.hero .tile .name{font-size:24px}
-.empty{color:var(--muted);padding:30px 0}
-/* Spielseite */
-.play{display:grid;grid-template-columns:1fr 300px;gap:20px}
-.frame{background:#000;border-radius:var(--r);overflow:hidden;aspect-ratio:16/10;position:relative;box-shadow:0 8px 30px #0008}
-.frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
-.bar{display:flex;align-items:center;gap:12px;margin-top:12px}
-.bar h1{font-size:24px;flex:1}
-.btn{background:var(--panel2);color:var(--text);border:0;padding:10px 18px;border-radius:999px;font-weight:700;cursor:pointer;font-size:14px}
-.btn:hover{background:var(--accent);color:#04201a}
-.side{background:var(--panel);border-radius:var(--r);padding:18px}
-.side p{color:var(--muted);line-height:1.5;margin-top:8px}
-.back{display:inline-block;margin-bottom:14px;color:var(--muted);font-weight:600}
-.back:hover{color:var(--accent)}
-@media(max-width:850px){.hero,.play{grid-template-columns:1fr}.badge{display:none}.frame{aspect-ratio:4/3}}
-.tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.hero .tile img{object-position:center}
-.tile.wide{width:356px;max-width:100%}
-.warn{background:#3a2e08;border:1px solid #ffd23f66;color:#ffe9a0;padding:10px 14px;border-radius:12px;font-size:14px;line-height:1.4;margin-bottom:14px;max-width:760px}
+.badge{font-size:13px;color:var(--muted);border:1px solid #ffffff22;padding:6px 12px;border-radius:999px;white-space:nowrap}
+/* Aufbau: Seitenleiste + Inhalt */
+.layout{display:grid;grid-template-columns:230px 1fr;gap:34px;max-width:1500px;margin:0 auto;padding:30px 28px 80px}
+#side{position:sticky;top:96px;align-self:start;display:flex;flex-direction:column;gap:6px}
+#side h3{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 8px 14px}
+.cat{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:16px;border:0;background:transparent;color:var(--muted);font:700 16px "Segoe UI",system-ui,sans-serif;cursor:pointer;text-align:left;transition:background .15s,color .15s}
+.cat .ic{font-size:20px;width:26px;text-align:center}
+.cat .n{margin-left:auto;font-size:13px;opacity:.7}
+.cat:hover{background:var(--panel);color:var(--text)}
+.cat.on{background:linear-gradient(90deg,var(--accent),#2fe0c0);color:#04201a}
+main{min-width:0}
+h2{font-size:26px;font-weight:800;margin:0 0 6px}
+.sub{color:var(--muted);margin-bottom:22px}
+section+section{margin-top:56px}
+/* Raster: gleichmäßig über die volle Breite, ohne Lücken */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:var(--gap);grid-auto-flow:dense}
+.tile{position:relative;display:block;border-radius:var(--r);overflow:hidden;background:var(--panel);box-shadow:0 6px 18px #0007;transition:transform .18s cubic-bezier(.2,.8,.2,1),box-shadow .18s}
+.tile::before{content:"";display:block;padding-bottom:100%}
+.tile.wide{grid-column:span 2}
+.tile.wide::before{padding-bottom:calc(50% - var(--gap) / 2)}
+.tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .35s}
+.tile .em{position:absolute;inset:0;display:grid;place-items:center;font-size:64px}
+.tile .name{position:absolute;left:0;right:0;bottom:0;padding:34px 14px 13px;font-weight:800;font-size:16px;line-height:1.2;background:linear-gradient(transparent,#000d);transform:translateY(101%);transition:transform .2s}
+.tile:hover,.tile:focus-visible{transform:translateY(-5px) scale(1.03);box-shadow:0 16px 34px #000a,0 0 0 3px var(--accent);outline:none}
+.tile:hover img{transform:scale(1.07)}
+.tile:hover .name,.tile:focus-visible .name{transform:none}
+@media (hover:none){.tile .name{transform:none;font-size:14px;padding-top:26px}}
+.empty{color:var(--muted);padding:30px 0;font-size:18px}
+/* Weitere Seiten */
+.warn{background:#3a2e08;border:1px solid #ffd23f66;color:#ffe9a0;padding:12px 16px;border-radius:14px;font-size:15px;line-height:1.45;margin-bottom:20px}
+/* Popup */
 .modal{position:fixed;inset:0;z-index:100;background:#000a;display:grid;place-items:center;padding:16px}
-.modal .box{background:var(--panel);border:1px solid #ffd23f66;border-radius:var(--r);padding:24px;max-width:420px;box-shadow:0 12px 40px #000c}
-.modal h3{font-size:20px;margin-bottom:10px;color:var(--accent2)}
+.modal .box{background:var(--panel);border:1px solid #ffd23f66;border-radius:var(--r);padding:26px;max-width:440px;box-shadow:0 12px 40px #000c}
+.modal h3{font-size:21px;margin-bottom:10px;color:var(--accent2)}
 .modal p{color:#dfe3ff;line-height:1.5}
-.modal .acts{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+.modal .acts{display:flex;gap:10px;justify-content:flex-end;margin-top:22px}
+.btn{background:var(--panel2);color:var(--text);border:0;padding:11px 20px;border-radius:999px;font-weight:700;cursor:pointer;font-size:15px;font-family:inherit}
+.btn:hover{filter:brightness(1.2)}
 .modal .go{background:var(--accent);color:#04201a}
+/* Handy / schmal: Kategorien oben als Leiste */
+@media(max-width:900px){
+  header{padding:12px 16px;gap:12px}.logo{font-size:28px}.badge{display:none}
+  .layout{grid-template-columns:1fr;gap:18px;padding:18px 16px 60px}
+  #side{position:static;flex-direction:row;overflow-x:auto;gap:8px;padding-bottom:4px;scrollbar-width:none}
+  #side h3{display:none}
+  .cat{flex:0 0 auto;padding:9px 16px;background:var(--panel);font-size:14px}.cat .n{display:none}.cat .ic{font-size:16px;width:auto}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+  :root{--gap:12px}
+  h2{font-size:22px}
+}
+@media(max-width:340px){.tile.wide{grid-column:span 1}.tile.wide::before{padding-bottom:100%}}
 
 </style>
 </head>
@@ -62,7 +77,10 @@ h2{font-size:22px;margin:28px 0 14px}
   <div class="search"><input id="q" type="search" placeholder="Spiele suchen…" autocomplete="off"></div>
   <span class="badge">🔒 privat</span>
 </header>
-<main id="app"></main>
+<div class="layout">
+  <nav id="side" aria-label="Kategorien"></nav>
+  <main id="app"></main>
+</div>
 <script>
 // Neues Spiel hinzufügen: einfach einen Eintrag in diese Liste kopieren.
 window.MOKI_GAMES = [
@@ -255,34 +273,44 @@ window.MOKI_SITES = [
 const games = window.MOKI_GAMES;
 const sites = window.MOKI_SITES || [];
 const app = document.getElementById("app");
+const side = document.getElementById("side");
 const search = document.getElementById("q");
+const ICONS = { Alle: "🏠", Fahren: "🏎️", Rhythmus: "🎵", Action: "💥", Simulation: "🏨", Abenteuer: "🧭" };
 let category = "Alle";
 
-const tile = g => `<a class="tile${g.wide ? " wide" : ""}" href="${g.url}" data-id="${g.id}" style="background:linear-gradient(135deg,${g.colors[0]},${g.colors[1]})">${g.image ? `<img src="${g.image}" alt="">` : `<span class="em">${g.emoji}</span>`}<span class="name">${g.title}</span></a>`;
-const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const tile = g => `<a class="tile${g.wide ? " wide" : ""}" href="${g.url}" data-id="${g.id}" aria-label="${esc(g.title)}" title="${esc(g.title)}" style="background:linear-gradient(135deg,${g.colors[0]},${g.colors[1]})">${g.image ? `<img src="${g.image}" alt="" loading="lazy">` : `<span class="em">${g.emoji}</span>`}<span class="name">${esc(g.title)}</span></a>`;
+
+function renderSide() {
+  const cats = ["Alle", ...new Set(games.map(g => g.category))];
+  side.innerHTML = `<h3>Kategorien</h3>` + cats.map(c => {
+    const n = c === "Alle" ? games.length : games.filter(g => g.category === c).length;
+    return `<button class="cat ${c === category ? "on" : ""}" data-c="${esc(c)}"><span class="ic">${ICONS[c] || "🎮"}</span>${esc(c)}<span class="n">${n}</span></button>`;
+  }).join("");
+  side.querySelectorAll(".cat").forEach(b => b.onclick = () => { category = b.dataset.c; home(); });
+}
 
 function home() {
   const q = search.value.trim().toLowerCase();
-  const cats = ["Alle", ...new Set(games.map(g => g.category))];
-  let list = games.filter(g => (category === "Alle" || g.category === category) && g.title.toLowerCase().includes(q));
-  const feat = games.filter(g => g.featured);
+  const list = games.filter(g => (category === "Alle" || g.category === category) && g.title.toLowerCase().includes(q));
+  renderSide();
+  const title = category === "Alle" ? "Alle Spiele" : category;
   app.innerHTML = `
-    ${!q && category === "Alle" && feat.length ? `<h2>⭐ Empfohlen</h2><div class="hero">${feat.map(g => tile(g, true)).join("")}</div>` : ""}
-    <h2>Alle Spiele</h2>
-    <div class="chips">${cats.map(c => `<button class="chip ${c === category ? "on" : ""}" data-c="${esc(c)}">${esc(c)}</button>`).join("")}</div>
-    <div style="height:16px"></div>
-    ${list.length ? `<div class="grid">${list.map(g => tile(g)).join("")}</div>` : `<p class="empty">Kein Spiel gefunden.</p>`}
-    ${!q && category === "Alle" && sites.length ? `<h2>🌐 Weitere Seiten</h2><p class="warn">⚠️ Achtung: Auf diesen Seiten funktionieren nicht alle Spiele. Wenn eins nicht lädt, probier ein anderes.</p><div class="grid">${sites.map(g => tile(g)).join("")}</div>` : ""}`;
-  app.querySelectorAll(".chip").forEach(b => b.onclick = () => { category = b.dataset.c; home(); });
+    <section>
+      <h2>${esc(title)}</h2>
+      <p class="sub">${list.length} ${list.length === 1 ? "Spiel" : "Spiele"}</p>
+      ${list.length ? `<div class="grid">${list.map(tile).join("")}</div>` : `<p class="empty">Kein Spiel gefunden.</p>`}
+    </section>
+    ${!q && category === "Alle" && sites.length ? `<section>
+      <h2>🌐 Weitere Seiten</h2>
+      <p class="warn">⚠️ Achtung: Auf diesen Seiten funktionieren nicht alle Spiele. Wenn eins nicht lädt, probier ein anderes.</p>
+      <div class="grid">${sites.map(tile).join("")}</div>
+    </section>` : ""}`;
 }
 
-function route() {
-  document.title = "Moki – Spiele";
-  home();
-}
-search.addEventListener("input", () => { home(); });
-addEventListener("hashchange", route);
-route();
+search.addEventListener("input", home);
+document.title = "Moki – Spiele";
+home();
 
 // Popup-Warnung vor Spielen mit "warning" in games.js
 function warnDialog(g) {
