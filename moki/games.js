@@ -160,6 +160,17 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "stickman-gta",
+    title: "Stickman GTA City",
+    url: "https://zingy-boba-cfd1ee.netlify.app",
+    category: "Action",
+    image: "stickman-gta.jpg",
+    emoji: "🚗",
+    colors: ["#2b5fa8", "#f5a500"],
+    description: "Stickman in der offenen Stadt.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
