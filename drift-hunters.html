@@ -10,6 +10,20 @@
   /* Eigene Leiste über dem Spiel – der Button verdeckt dadurch nichts vom Spiel. */
   #bar { flex: 0 0 auto; display: flex; justify-content: flex-end; padding: 6px 12px; background: #111; }
   #game { flex: 1 1 auto; width: 100%; border: 0; display: block; min-height: 0; }
+  /* Touch-Steuerung (nur auf Touch-Geräten sichtbar) */
+  #touchui { display: none; position: fixed; inset: 0; z-index: 15; pointer-events: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+  body.touch #touchui { display: block; }
+  .tbtn { position: absolute; pointer-events: auto; touch-action: none; display: flex; align-items: center; justify-content: center;
+    border-radius: 22px; color: #fff; font: 800 30px "Segoe UI", system-ui, sans-serif; background: rgba(20,24,30,.45);
+    border: 2px solid rgba(255,255,255,.55); box-shadow: 0 2px 10px rgba(0,0,0,.4); -webkit-tap-highlight-color: transparent; }
+  .tbtn.on { background: rgba(255,210,63,.75); color: #1a1200; transform: scale(.94); }
+  .tbtn small { font-size: 12px; font-weight: 800; display: block; letter-spacing: .5px; }
+  #t-left  { left: 18px;  bottom: 22px; width: 92px; height: 92px; }
+  #t-right { left: 124px; bottom: 22px; width: 92px; height: 92px; }
+  #t-gas   { right: 18px; bottom: 132px; width: 104px; height: 104px; background: rgba(0,200,120,.5); }
+  #t-brake { right: 18px; bottom: 22px;  width: 104px; height: 104px; background: rgba(230,60,60,.5); flex-direction: column; }
+  #t-hand  { right: 136px; bottom: 22px; width: 84px; height: 84px; font-size: 16px; text-align: center; }
+  #t-cam   { right: 136px; bottom: 116px; width: 56px; height: 56px; border-radius: 16px; font-size: 22px; }
   /* Moki: Back-Button */
   #moki-back {
     padding: 9px 16px; border-radius: 999px;
@@ -22,11 +36,46 @@
 </head>
 <body>
 <div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
+<div id="touchui">
+  <div class="tbtn" id="t-left"  data-key="ArrowLeft"  data-kc="37">&#9664;</div>
+  <div class="tbtn" id="t-right" data-key="ArrowRight" data-kc="39">&#9654;</div>
+  <div class="tbtn" id="t-gas"   data-key="ArrowUp"    data-kc="38">&#9650;</div>
+  <div class="tbtn" id="t-brake" data-key="ArrowDown"  data-kc="40">&#9660;<small>BREMSE / R&Uuml;CKW.</small></div>
+  <div class="tbtn" id="t-hand"  data-key=" "          data-kc="32" data-code="Space">HAND-<br>BREMSE</div>
+  <div class="tbtn" id="t-cam"   data-key="c"          data-kc="67" data-code="KeyC" data-tap="1">&#128247;</div>
+</div>
 <iframe id="game" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe>
 <script>
 // Lädt das Spiel direkt aus dem GitHub-Repo (über jsDelivr, mit Commit-Version fest verdrahtet).
 // Kein lokaler Server nötig – die Datei funktioniert auch per Doppelklick.
 const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/1aa9534c756ed0d247ea49a3f1203695035e0684/drift-hunters/";
+
+// ===== Touch-Steuerung: schickt Tastendrücke an das Spiel im Rahmen =====
+(function () {
+  const isTouch = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
+  if (!isTouch) return;
+  document.body.classList.add("touch");
+  const KEYMAP = { ArrowLeft: "ArrowLeft", ArrowRight: "ArrowRight", ArrowUp: "ArrowUp", ArrowDown: "ArrowDown" };
+  function send(type, el) {
+    const f = document.getElementById("game"); if (!f || !f.contentWindow) return;
+    let w, d; try { w = f.contentWindow; d = w.document; } catch (e) { return; }
+    const key = el.dataset.key, kc = +el.dataset.kc, code = el.dataset.code || key;
+    const target = d.querySelector("canvas") || d;
+    const ev = new w.KeyboardEvent(type, { key: key, code: code, bubbles: true, cancelable: true, location: 0 });
+    try { Object.defineProperty(ev, "keyCode", { get: function () { return kc; } }); Object.defineProperty(ev, "which", { get: function () { return kc; } }); } catch (e) {}
+    target.dispatchEvent(ev);
+  }
+  const held = new Map();                      // pointerId -> Element
+  function press(el, id) { if (held.has(id)) return; held.set(id, el); el.classList.add("on"); send("keydown", el); if (el.dataset.tap) setTimeout(function () { release(id); }, 90); }
+  function release(id) { const el = held.get(id); if (!el) return; held.delete(id); el.classList.remove("on"); send("keyup", el); }
+  document.querySelectorAll(".tbtn").forEach(function (el) {
+    el.addEventListener("pointerdown", function (e) { e.preventDefault(); try { el.setPointerCapture(e.pointerId); } catch (x) {} press(el, e.pointerId); });
+    ["pointerup", "pointercancel", "lostpointercapture"].forEach(function (t) { el.addEventListener(t, function (e) { release(e.pointerId); }); });
+    el.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  });
+  // Sicherheit: beim Verlassen der Seite alle Tasten loslassen
+  window.addEventListener("blur", function () { Array.from(held.keys()).forEach(release); });
+})();
 const PAGE_CSS = "html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#111}.webgl-content,#gameContainer,#unityContainer,canvas{width:100% !important;height:100% !important}.webgl-content{position:absolute}.webgl-content *{border:0;margin:0;padding:0}.webgl-content .progress{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:18px;width:141px;margin-top:90px}";
 fetch(BASE + "UnityLoader2019.js")
   .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
