@@ -81,7 +81,10 @@ async function merged(name, n) {
     const inst = await createUnityInstance(document.getElementById("c"), {
       dataUrl, codeUrl, frameworkUrl: URL.createObjectURL(fwTxt),
       streamingAssetsUrl: BASE + "../StreamingAssets",
-      companyName: "Hammergames", productName: "Rogue Sergeant The Final Operation", productVersion: "1.0"
+      companyName: "Hammergames", productName: "Rogue Sergeant The Final Operation", productVersion: "1.0",
+      // iPad: Bäume flackerten weiß (MSAA + Laub-Shader) -> Kantenglättung aus, Auflösung begrenzen (schneller)
+      devicePixelRatio: Math.min(window.devicePixelRatio || 1, 1.5),
+      webglContextAttributes: { antialias: false, powerPreference: "high-performance" }
     }, p => { pf.style.width = (60 + p * 40) + "%"; });
     window.unityGame = inst;
     document.getElementById("ld").remove();
