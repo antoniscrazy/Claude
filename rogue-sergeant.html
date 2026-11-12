@@ -59,6 +59,14 @@
 <div id="ld"><div id="tx">Lade Spiel …</div><div id="pb"><div id="pf"></div></div></div></div>
 <script>
 // Lädt das Spiel direkt aus dem GitHub-Repo (raw.githubusercontent.com, Commit fest verdrahtet). Kein Server, keine Werbung.
+// iPad: Shader laufen sonst mit halber Genauigkeit (mediump) -> Laub/Wind rechnet falsch (weiße, flackernde Bäume). Auf highp umstellen.
+(function () {
+  for (const C of [window.WebGLRenderingContext, window.WebGL2RenderingContext]) {
+    if (!C) continue;
+    const o = C.prototype.shaderSource;
+    C.prototype.shaderSource = function (sh, src) { return o.call(this, sh, String(src).replace(/\bmediump\b/g, "highp")); };
+  }
+})();
 // iPad (ProMotion 120 Hz): Spiel animiert pro Bild -> alles lief zu schnell. Auf max. 60 Bilder/s begrenzen.
 (function () {
   const raf = window.requestAnimationFrame.bind(window); let last = -1e9;
