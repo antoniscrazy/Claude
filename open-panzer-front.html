@@ -24,11 +24,12 @@
 <iframe id="game" allow="autoplay *; fullscreen *; gamepad *; pointer-lock *; clipboard-write *" allowfullscreen></iframe>
 <script>
 // Lädt das Spiel direkt aus deinem GitHub-Repo (raw.githubusercontent.com, Commit fest verdrahtet). Kein Server, keine Werbung.
-const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/27ba516ce3d1ceb6faa16edb53d84932acfd8132/open-panzer-front/";
+const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/e57557252a665849714c07a0b7bbe384c26a524b/open-panzer-front/";
 const esc = t => t.replace(/<\/script/gi, "<\\/script");
-Promise.all([fetch(BASE + "game.js").then(r => { if (!r.ok) throw new Error(r.status); return r.text(); }), fetch(BASE + "game.css").then(r => r.text())])
-.then(([js, css]) => {
-  const html = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base href="' + BASE + '"><title>Open Panzer Front</title><style>' + css + '</style></head><body><div id="root"></div><script type="module">' + esc(js) + '<\/script></body></html>';
+const TOUCH = (navigator.maxTouchPoints > 0 && matchMedia("(pointer:coarse)").matches) || location.hash === "#touch";
+Promise.all([fetch(BASE + "game.js").then(r => { if (!r.ok) throw new Error(r.status); return r.text(); }), fetch(BASE + "game.css").then(r => r.text()), TOUCH ? fetch(BASE + "touch.js").then(r => r.text()) : Promise.resolve("")])
+.then(([js, css, touch]) => {
+  const html = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base href="' + BASE + '"><title>Open Panzer Front</title><style>' + css + '</style></head><body><div id="root"></div><script type="module">' + esc(js) + '<\/script>' + (touch ? '<script>window.__FORCE_TOUCH=true;' + esc(touch) + '<\/script>' : '') + '</body></html>';
   document.getElementById("game").srcdoc = html;
 }).catch(e => { document.body.append("Fehler beim Laden: " + e.message); });
 </script>
