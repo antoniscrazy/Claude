@@ -215,6 +215,18 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "tank-stars",
+    title: "Tank Stars",
+    url: "https://musical-pastelito-cd2ae0.netlify.app",
+    category: "Action",
+    image: "tank-stars.jpg",
+    wide: true,
+    emoji: "🪖",
+    colors: ["#1b6fb0", "#2e9c2e"],
+    description: "Duelliere dich mit Panzern und Waffen.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
