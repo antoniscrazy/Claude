@@ -193,6 +193,17 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "rogue-sergeant",
+    title: "Rogue Sergeant",
+    url: "https://hilarious-wisp-aa726f.netlify.app",
+    category: "Action",
+    image: "rogue-sergeant.jpg",
+    emoji: "🪖",
+    colors: ["#8a5a3a", "#2b2b2b"],
+    description: "Rogue Sergeant: The Final Operation.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
