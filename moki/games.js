@@ -204,6 +204,17 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "ultimate-car-driving",
+    title: "Ultimate Car Driving",
+    url: "https://verdant-seahorse-941e1c.netlify.app",
+    category: "Fahren",
+    image: "ultimate-car-driving.jpg",
+    emoji: "🚘",
+    colors: ["#d62828", "#5a6a7a"],
+    description: "Fahre Sportwagen frei durch die Stadt.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
