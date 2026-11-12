@@ -59,6 +59,13 @@
 <div id="ld"><div id="tx">Lade Spiel …</div><div id="pb"><div id="pf"></div></div></div></div>
 <script>
 // Lädt das Spiel direkt aus dem GitHub-Repo (raw.githubusercontent.com, Commit fest verdrahtet). Kein Server, keine Werbung.
+// iPad (ProMotion 120 Hz): Spiel animiert pro Bild -> alles lief zu schnell. Auf max. 60 Bilder/s begrenzen.
+(function () {
+  const raf = window.requestAnimationFrame.bind(window); let last = -1e9;
+  window.requestAnimationFrame = cb => raf(function f(t) {
+    if (t === last || t - last >= 15) { last = t; cb(t); } else raf(f);
+  });
+})();
 const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/526aceb6195c443da45a62070d1e5e8fcd73e110/rogue-sergeant/Build/";
 const FILES = { data: ["New folder.data", 8], wasm: ["New folder.wasm", 2] };
 const tx = document.getElementById("tx"), pf = document.getElementById("pf");
