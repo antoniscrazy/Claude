@@ -182,6 +182,17 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "johnny-trigger",
+    title: "Johnny Trigger",
+    url: "https://joyful-creponne-358186.netlify.app",
+    category: "Action",
+    image: "johnny-trigger.jpg",
+    emoji: "🎯",
+    colors: ["#1b9ad6", "#0a2a5e"],
+    description: "Schieße dich als Agent durch die Level.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
