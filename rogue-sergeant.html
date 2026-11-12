@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Rogue Sergeant</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #111; color: #fff; font-family: sans-serif; overflow: hidden; }
+  body { display: flex; flex-direction: column; }
+  #bar { flex: 0 0 auto; display: flex; justify-content: flex-end; padding: 6px 12px; background: #111; }
+  #wrap { flex: 1 1 auto; position: relative; min-height: 0; }
+  #c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; background: #000; outline: none; }
+  #ld { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); text-align: center; width: 70%; max-width: 360px; }
+  #pb { height: 10px; border-radius: 5px; background: rgba(255,255,255,.15); overflow: hidden; margin-top: 8px; }
+  #pf { height: 100%; width: 0; background: #00e5a8; }
+  /* Moki: Back-Button */
+  #moki-back {
+    padding: 9px 16px; border-radius: 999px;
+    background: linear-gradient(90deg, #00e5a8, #ffd23f);
+    color: #04201a; font: 800 14px "Segoe UI", system-ui, sans-serif;
+    text-decoration: none; box-shadow: 0 3px 12px rgba(0, 0, 0, .5); opacity: .92;
+  }
+  #moki-back:hover { opacity: 1; transform: scale(1.05); }
+</style>
+</head>
+<body>
+<div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
+<div id="wrap"><canvas id="c" tabindex="-1"></canvas><div id="ld"><div id="tx">Lade Spiel …</div><div id="pb"><div id="pf"></div></div></div></div>
+<script>
+// Lädt das Spiel direkt aus dem GitHub-Repo (raw.githubusercontent.com, Commit fest verdrahtet). Kein Server, keine Werbung.
+const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/526aceb6195c443da45a62070d1e5e8fcd73e110/rogue-sergeant/Build/";
+const FILES = { data: ["New folder.data", 8], wasm: ["New folder.wasm", 2] };
+const tx = document.getElementById("tx"), pf = document.getElementById("pf");
+let doneParts = 0, totalParts = 10;
+function bump() { doneParts++; pf.style.width = (doneParts / totalParts * 60) + "%"; }
+async function merged(name, n) {
+  const bufs = await Promise.all(Array.from({length: n}, (_, i) =>
+    fetch(BASE + encodeURIComponent(name + ".part" + (i + 1))).then(r => { if (!r.ok) throw new Error(name + " Teil " + (i + 1) + ": " + r.status); return r.arrayBuffer(); }).then(b => { bump(); return b; })));
+  return URL.createObjectURL(new Blob(bufs));
+}
+(async () => {
+  try {
+    const [dataUrl, codeUrl, loaderTxt, fwTxt] = await Promise.all([
+      merged(...FILES.data), merged(...FILES.wasm),
+      fetch(BASE + encodeURIComponent("New folder.loader.js")).then(r => r.text()),
+      fetch(BASE + encodeURIComponent("New folder.framework.js")).then(r => r.blob())
+    ]);
+    const s = document.createElement("script"); s.textContent = loaderTxt; document.body.appendChild(s);
+    tx.textContent = "Starte …";
+    const inst = await createUnityInstance(document.getElementById("c"), {
+      dataUrl, codeUrl, frameworkUrl: URL.createObjectURL(fwTxt),
+      streamingAssetsUrl: BASE + "../StreamingAssets",
+      companyName: "Hammergames", productName: "Rogue Sergeant The Final Operation", productVersion: "1.0"
+    }, p => { pf.style.width = (60 + p * 40) + "%"; });
+    window.unityGame = inst;
+    document.getElementById("ld").remove();
+  } catch (e) { tx.textContent = "Fehler beim Laden: " + (e.message || e); }
+})();
+window.open = () => null;
+</script>
+</body>
+</html>
