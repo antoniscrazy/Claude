@@ -24,7 +24,7 @@
 <iframe id="game" allow="autoplay *; fullscreen *; gamepad *; pointer-lock *; clipboard-write *" allowfullscreen></iframe>
 <script>
 // Lädt das Spiel direkt aus deinem GitHub-Repo (raw.githubusercontent.com, Commit fest verdrahtet). Kein Server, keine Werbung.
-const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/e57557252a665849714c07a0b7bbe384c26a524b/open-panzer-front/";
+const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/93c9d8ff9fdd723e4921e024ed4b8bbcdaf6fe64/open-panzer-front/";
 const esc = t => t.replace(/<\/script/gi, "<\\/script");
 const TOUCH = (navigator.maxTouchPoints > 0 && matchMedia("(pointer:coarse)").matches) || location.hash === "#touch";
 Promise.all([fetch(BASE + "game.js").then(r => { if (!r.ok) throw new Error(r.status); return r.text(); }), fetch(BASE + "game.css").then(r => r.text()), TOUCH ? fetch(BASE + "touch.js").then(r => r.text()) : Promise.resolve("")])
