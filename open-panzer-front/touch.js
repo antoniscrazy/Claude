@@ -41,14 +41,14 @@
     "#tz-knob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:rgba(255,255,255,.4)}" +
     ".tzb{position:absolute;pointer-events:auto;touch-action:none;display:flex;align-items:center;justify-content:center;text-align:center;border-radius:50%;background:rgba(20,28,20,.55);border:2px solid rgba(220,200,120,.7);color:#f3e7b3;font:700 12px system-ui,sans-serif;line-height:1.1}" +
     ".tzb.act{background:rgba(200,170,60,.7)}" +
-    "#tzb-fire{right:22px;bottom:34px;width:104px;height:104px;font-size:17px;background:rgba(160,40,30,.6);border-color:#ff9a8a}" +
-    "#tzb-ammo{right:140px;bottom:30px;width:66px;height:66px}" +
-    "#tzb-sight{right:140px;bottom:104px;width:66px;height:66px}" +
-    "#tzb-map{right:22px;bottom:152px;width:66px;height:66px}" +
-    "#tzb-zin{right:96px;bottom:178px;width:50px;height:50px}" +
-    "#tzb-zout{right:96px;bottom:232px;width:50px;height:50px}" +
-    "#tzb-dup{right:22px;bottom:228px;width:50px;height:50px}" +
-    "#tzb-ddn{right:22px;bottom:282px;width:50px;height:50px}" +
+    "#tzb-fire{right:22px;bottom:84px;width:104px;height:104px;font-size:17px;background:rgba(160,40,30,.6);border-color:#ff9a8a}" +
+    "#tzb-ammo{right:140px;bottom:84px;width:66px;height:66px}" +
+    "#tzb-sight{right:140px;bottom:158px;width:66px;height:66px}" +
+    "#tzb-map{right:22px;bottom:200px;width:66px;height:66px}" +
+    "#tzb-zin{left:24px;bottom:calc(60% + 66px);width:46px;height:46px}" +
+    "#tzb-zout{left:76px;bottom:calc(60% + 66px);width:46px;height:46px}" +
+    "#tzb-dup{left:128px;bottom:calc(60% + 66px);width:46px;height:46px}" +
+    "#tzb-ddn{left:180px;bottom:calc(60% + 66px);width:46px;height:46px}" +
     "#tzb-al{left:24px;bottom:calc(60% + 12px);width:46px;height:46px}" +
     "#tzb-au{left:76px;bottom:calc(60% + 12px);width:46px;height:46px}" +
     "#tzb-ad{left:128px;bottom:calc(60% + 12px);width:46px;height:46px}" +
