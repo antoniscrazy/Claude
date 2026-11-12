@@ -30,11 +30,16 @@ const esc = t => t.replace(/<\/script/gi, "<\\/script");
 const SHIM = `
 // raw.githubusercontent liefert Skripte als text/plain -> das Lade-Skript des Spiels direkt ausführen.
 (function () {
+  Object.defineProperty(Document.prototype, "URL", { get: function () { return "${BASE}index.html"; }, configurable: true });
   var d = Object.getOwnPropertyDescriptor(HTMLScriptElement.prototype, "src");
   Object.defineProperty(HTMLScriptElement.prototype, "src", { get: d.get, configurable: true, set: function (v) {
     var s = this;
     if (/game\\.loader\\.js(\\?|$)/.test(String(v))) {
-      fetch(v).then(function (r) { return r.text(); }).then(function (t) { (0, eval)(t); if (s.onload) s.onload(new Event("load")); }).catch(function (e) { console.error(e); if (s.onerror) s.onerror(e); });
+      fetch(v).then(function (r) { return r.text(); }).then(function (t) { (0, eval)(t); s.dispatchEvent(new Event("load")); }).catch(function (e) { console.error(e); s.dispatchEvent(new Event("error")); });
+      return;
+    }
+    if (/\\.js(\\?|$)/.test(String(v)) && String(v).indexOf("${BASE}") === 0 || /^Build\\//.test(String(v))) {
+      fetch(v).then(function (r) { return r.blob(); }).then(function (b) { d.set.call(s, URL.createObjectURL(new Blob([b], { type: "application/javascript" }))); }).catch(function () { s.dispatchEvent(new Event("error")); });
       return;
     }
     d.set.call(s, v);
