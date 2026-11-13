@@ -36,8 +36,8 @@ body.admin #adminpanel{display:block}
 <div id="adminzone"></div>
 <div id="adminmodal"><div class="abox"><div>Admin-Passwort</div><input id="adminpw" type="password" inputmode="numeric"><button id="adminok">OK</button><button id="admincancel" style="background:#555;color:#fff">Abbrechen</button><div id="adminmsg"></div></div></div>
 <div id="adminpanel"><b>Admin</b>
-<button data-m="UnlockGuns" data-n="Alle Waffen freigeschaltet">Alle Waffen freischalten</button>
-<button data-m="UnlockNextGun" data-n="Nächste Waffe freigeschaltet">Nächste Waffe freischalten</button>
+<button data-m="UnlockGuns" data-then="ShowInventory" data-n="Alle Waffen freigeschaltet – Inventar öffnet sich">Alle Waffen freischalten</button>
+<button data-m="UnlockNextGun" data-then="ShowInventory" data-n="Nächste Waffe freigeschaltet – Inventar öffnet sich">Nächste Waffe freischalten</button>
 <button data-m="UnlockSkins" data-n="Skins freigeschaltet">Skins freischalten</button>
 <button data-m="AddMoney" data-n="Geld hinzugefügt">Geld hinzufügen</button>
 <button id="aauto">Unendlich Geld: AUS</button>
@@ -60,7 +60,7 @@ function call(m){
   try{w.unityGame.SendMessage("Debugger",m);return true}catch(e){return false}
 }
 Array.prototype.forEach.call(document.querySelectorAll("#adminpanel button[data-m]"),function(b){
-  b.onclick=function(){say(call(b.dataset.m)?b.dataset.n:"Spiel ist noch nicht bereit")};
+  b.onclick=function(){var ok=call(b.dataset.m);say(ok?b.dataset.n:"Spiel ist noch nicht bereit");if(ok&&b.dataset.then)setTimeout(function(){call(b.dataset.then)},700)};
 });
 document.getElementById("aauto").onclick=function(){
   var btn=this;
