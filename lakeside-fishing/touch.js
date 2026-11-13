@@ -6,7 +6,7 @@
   if (!document.exitPointerLock) document.exitPointerLock = function () {};
 
   var canvas = document.getElementById("scene");
-  var KEYS = { KeyW: 87, KeyA: 65, KeyS: 83, KeyD: 68, Space: 32, ShiftLeft: 16, KeyE: 69, KeyQ: 81, KeyB: 66, KeyM: 77, KeyV: 86, KeyU: 85, Escape: 27 };
+  var KEYS = { KeyW: 87, KeyA: 65, KeyS: 83, KeyD: 68, Space: 32, ShiftLeft: 16, KeyE: 69, KeyQ: 81, KeyB: 66, KeyM: 77, KeyV: 86, KeyU: 85, KeyC: 67, Escape: 27 };
   var down = {};
   function key(code, isDown) {
     if (!!down[code] === isDown) return;
@@ -51,7 +51,7 @@
     '<div class="zone" id="tz-look"></div>' +
     '<div class="zone" id="tz-joyz"><div id="tz-joy"><div id="tz-knob"></div></div></div>' +
     '<div class="tzb" id="tzb-act">WURF /<br>ZIEHEN</div><div class="tzb" id="tzb-rig">TIEFE<br>(E)</div><div class="tzb" id="tzb-run">RENNEN</div>' +
-    '<div id="tz-menu"><div class="tzb" id="tzb-shop">SHOP</div><div class="tzb" id="tzb-jour">BUCH</div><div class="tzb" id="tzb-map">KARTE</div><div class="tzb" id="tzb-uw">UNTER<br>WASSER</div><div class="tzb" id="tzb-pause">MENÜ</div></div>';
+    '<div id="tz-menu"><div class="tzb" id="tzb-shop">SHOP</div><div class="tzb" id="tzb-jour">BUCH</div><div class="tzb" id="tzb-map">KARTE</div><div class="tzb" id="tzb-uw">UNTER<br>WASSER</div><div class="tzb" id="tzb-view">ANSICHT</div><div class="tzb" id="tzb-pause">MENÜ</div></div>';
   document.body.appendChild(root);
 
   function btn(id, onDown, onUp) {
@@ -67,6 +67,7 @@
   btn("tzb-jour", function () { tapKey("KeyQ"); });
   btn("tzb-map", function () { tapKey("KeyM"); });
   btn("tzb-uw", function () { tapKey("KeyV"); });
+  btn("tzb-view", function () { tapKey("KeyC"); });
   btn("tzb-pause", function () { tapKey("Escape"); });
   var run = false;
   btn("tzb-run", function (el) { run = !run; key("ShiftLeft", run); el.style.outline = run ? "3px solid #7df" : ""; });
