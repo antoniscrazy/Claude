@@ -36,12 +36,14 @@ body.admin #adminpanel{display:block}
 <div id="adminzone"></div>
 <div id="adminmodal"><div class="abox"><div>Admin-Passwort</div><input id="adminpw" type="password" inputmode="numeric"><button id="adminok">OK</button><button id="admincancel" style="background:#555;color:#fff">Abbrechen</button><div id="adminmsg"></div></div></div>
 <div id="adminpanel"><b>Admin</b>
-<button data-k="KeyG" data-c="71" data-n="Alle Waffen freigeschaltet">Alle Waffen freischalten</button>
-<button data-k="KeyN" data-c="78" data-n="Nächste Waffe freigeschaltet">Nächste Waffe freischalten</button>
-<button data-k="KeyM" data-c="77" data-n="Geld hinzugefügt">Geld hinzufügen</button>
-<button data-k="KeyI" data-c="73" data-n="Inventar geöffnet">Inventar öffnen</button>
-<button data-k="KeyO" data-c="79" data-n="Truhenraum geöffnet">Truhenraum öffnen</button>
-<button data-k="KeyF" data-c="70" data-n="Level gewonnen">Level sofort gewinnen</button>
+<button data-m="UnlockGuns" data-n="Alle Waffen freigeschaltet">Alle Waffen freischalten</button>
+<button data-m="UnlockNextGun" data-n="Nächste Waffe freigeschaltet">Nächste Waffe freischalten</button>
+<button data-m="UnlockSkins" data-n="Skins freigeschaltet">Skins freischalten</button>
+<button data-m="AddMoney" data-n="Geld hinzugefügt">Geld hinzufügen</button>
+<button id="aauto">Unendlich Geld: AUS</button>
+<button data-m="ShowInventory" data-n="Inventar geöffnet">Inventar öffnen</button>
+<button data-m="ShowChestRoom" data-n="Truhenraum geöffnet">Truhenraum öffnen</button>
+<button data-m="WinGame" data-n="Level gewonnen">Level sofort gewinnen</button>
 <div id="ast"></div></div>
 <iframe id="game" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe>
 <script>
@@ -50,21 +52,21 @@ body.admin #adminpanel{display:block}
 const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/9de11ed9d946862f4ddbd144909a6c213b7b02ed/johnny-trigger-sniper/";
 
 (function(){
-var fr=document.getElementById("game"),st=document.getElementById("ast");
+var fr=document.getElementById("game"),st=document.getElementById("ast"),auto=null;
 function say(t){st.textContent=t}
-// Tastendruck an das Spiel schicken: das Spiel hat einen eingebauten Entwickler-Debugger (hier eingeschaltet)
-function sendKey(code,kc){
-  var w=fr.contentWindow,d=w&&w.document; if(!d||!w.unityGame) return false;
-  var tgt=d.getElementById("unity-canvas")||d;
-  ["keydown","keyup"].forEach(function(type,i){setTimeout(function(){
-    var e=new w.KeyboardEvent(type,{code:code,key:code.slice(3).toLowerCase(),bubbles:true,cancelable:true});
-    Object.defineProperty(e,"keyCode",{get:function(){return kc}});Object.defineProperty(e,"which",{get:function(){return kc}});
-    tgt.dispatchEvent(e);},i*150)});
-  return true;
+// Das Spiel hat einen eingebauten Debugger (Objekt "Debugger"): dessen Funktionen rufen wir direkt auf.
+function call(m){
+  var w=fr.contentWindow; if(!w||!w.unityGame) return false;
+  try{w.unityGame.SendMessage("Debugger",m);return true}catch(e){return false}
 }
-Array.prototype.forEach.call(document.querySelectorAll("#adminpanel button"),function(b){
-  b.onclick=function(){say(sendKey(b.dataset.k,+b.dataset.c)?b.dataset.n+" – siehe Spiel":"Spiel ist noch nicht bereit")};
+Array.prototype.forEach.call(document.querySelectorAll("#adminpanel button[data-m]"),function(b){
+  b.onclick=function(){say(call(b.dataset.m)?b.dataset.n:"Spiel ist noch nicht bereit")};
 });
+document.getElementById("aauto").onclick=function(){
+  var btn=this;
+  if(auto){clearInterval(auto);auto=null;btn.textContent="Unendlich Geld: AUS";return say("Aus")}
+  auto=setInterval(function(){call("AddMoney")},800);btn.textContent="Unendlich Geld: AN";say("Geld wird laufend hinzugefügt");
+};
 var z=document.getElementById("adminzone"),m=document.getElementById("adminmodal"),n=0,t0=0;
 function tap(e){e.preventDefault();var now=Date.now();if(now-t0>4000)n=0;t0=now;if(++n>=5){n=0;m.style.display="flex";document.getElementById("adminpw").value="";document.getElementById("adminmsg").textContent=""}}
 z.addEventListener("click",tap);z.addEventListener("touchend",tap);
