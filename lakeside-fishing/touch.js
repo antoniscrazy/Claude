@@ -41,7 +41,7 @@
     "#tzb-act{right:26px;bottom:34px;width:110px;height:110px;font-size:16px;background:rgba(20,120,170,.6)}" +
     "#tzb-rig{right:154px;bottom:34px;width:64px;height:64px}" +
     "#tzb-run{left:26px;bottom:calc(58% + 10px);width:64px;height:64px}" +
-    "#tz-menu{position:absolute;right:14px;top:78px;display:flex;flex-direction:column;gap:10px;pointer-events:none}" +
+    "#tz-menu{position:absolute;left:50%;top:12px;transform:translateX(-50%);display:flex;flex-direction:row;gap:10px;pointer-events:none}" +
     "#tz-menu .tzb{position:relative;width:52px;height:52px;pointer-events:auto}";
   document.head.appendChild(css);
 
