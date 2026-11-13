@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Lakeside Fishing</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #111; color: #fff; font-family: sans-serif; }
+  body { display: flex; flex-direction: column; }
+  /* Eigene Leiste über dem Spiel – der Button verdeckt dadurch nichts vom Spiel. */
+  #bar { flex: 0 0 auto; display: flex; justify-content: flex-end; padding: 6px 12px; background: #111; }
+  #game { flex: 1 1 auto; width: 100%; border: 0; display: block; min-height: 0; }
+  /* Moki: Back-Button */
+  #moki-back {
+    padding: 9px 16px; border-radius: 999px;
+    background: linear-gradient(90deg, #00e5a8, #ffd23f);
+    color: #04201a; font: 800 14px "Segoe UI", system-ui, sans-serif;
+    text-decoration: none; box-shadow: 0 3px 12px rgba(0, 0, 0, .5); opacity: .92;
+  }
+  #moki-back:hover { opacity: 1; transform: scale(1.05); }
+</style>
+</head>
+<body>
+<div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
+<iframe id="game" allow="autoplay *; fullscreen *; pointer-lock *" allowfullscreen></iframe>
+<script>
+// Lädt das Spiel direkt aus deinem GitHub-Repo (raw.githubusercontent.com, Commit fest verdrahtet). Einzelspieler, kein Server.
+const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/48f01045ceb83f76c89ad66936a6fa2eb87d2cff/lakeside-fishing/";
+const esc = t => t.replace(/<\/script/gi, "<\\/script");
+const TOUCH = (navigator.maxTouchPoints > 0 && matchMedia("(pointer:coarse)").matches) || location.hash === "#touch";
+const get = (f) => fetch(BASE + f).then(r => { if (!r.ok) throw new Error(f + ": " + r.status); return r.text(); });
+Promise.all([get("index.html"), get("css/style.css"), get("game.js"), TOUCH ? get("touch.js") : Promise.resolve("")])
+.then(([html, css, js, touch]) => {
+  html = html.replace(/<script type="importmap">[\s\S]*?<\/script>/, "");
+  html = html.replace('<link rel="stylesheet" href="./css/style.css" />', () => "<style>" + css + "</style>");
+  html = html.replace(/<script type="module" src="[^"]*"><\/script>/, () => "<script>" + esc(js) + "<\/script>" + (touch ? "<script>window.__FORCE_TOUCH=true;" + esc(touch) + "<\/script>" : ""));
+  html = html.replace("<head>", () => '<head><base href="' + BASE + '">');
+  document.getElementById("game").srcdoc = html;
+}).catch(e => { document.body.append("Fehler beim Laden: " + e.message); });
+</script>
+</body>
+</html>
