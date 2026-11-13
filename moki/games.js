@@ -227,6 +227,17 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "open-panzer-front",
+    title: "Open Panzer Front",
+    url: "https://hilarious-meringue-cdb547.netlify.app",
+    category: "Action",
+    image: "open-panzer-front.jpg",
+    emoji: "🪖",
+    colors: ["#b8863b", "#3a3a2a"],
+    description: "Panzergefechte im Zweiten Weltkrieg.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
