@@ -11,16 +11,24 @@
   #bar { flex: 0 0 auto; display: flex; justify-content: flex-end; padding: 6px 12px; background: #111; }
   #game { flex: 1 1 auto; width: 100%; border: 0; display: block; min-height: 0; }
   
-/* Admin */
-#adminzone{position:fixed;left:0;top:0;width:96px;height:46px;z-index:50}
-#adminmodal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:60;align-items:center;justify-content:center}
-.abox{background:#1b1b22;border-radius:14px;padding:18px;color:#fff;font:14px system-ui,sans-serif;min-width:240px}
-.abox input,.abox select,.abox button{font-size:16px;padding:8px;margin:4px 0;border-radius:8px;border:0;width:100%;box-sizing:border-box}
-.abox button{background:#00e5a8;color:#04201a;font-weight:800}
-#adminpanel{display:none;position:fixed;left:8px;top:52px;z-index:55;background:rgba(27,27,34,.95);border-radius:12px;padding:10px;color:#fff;font:13px system-ui,sans-serif;width:230px}
-#adminpanel input,#adminpanel select,#adminpanel button{font-size:15px;padding:6px;margin:3px 0;width:100%;box-sizing:border-box;border-radius:8px;border:0}
-#adminpanel button{background:#ffd23f;color:#222;font-weight:700}
-body.admin #adminpanel{display:block}
+/* Admin-Panel im Stil von Johnny Trigger: orange Karte, lila Titelleiste, dicke Knöpfe */
+#admtab{position:fixed;left:12px;bottom:12px;z-index:70;display:flex;align-items:center;gap:8px;padding:10px 16px 10px 12px;border:3px solid #4b1d8f;border-radius:999px;background:linear-gradient(#ffb64a,#ff8a00);color:#fff;font:900 15px/1 "Arial Rounded MT Bold","Trebuchet MS",system-ui,sans-serif;letter-spacing:.5px;text-shadow:0 2px 0 rgba(75,29,143,.9),0 0 3px rgba(75,29,143,.9);box-shadow:0 4px 0 #4b1d8f,0 8px 16px rgba(0,0,0,.35);cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none}
+#admtab:active{transform:translateY(3px);box-shadow:0 1px 0 #4b1d8f}
+#admtab .dot{width:12px;height:12px;border-radius:50%;background:#7CFF4B;box-shadow:0 0 0 2px #4b1d8f}
+#admpanel{position:fixed;left:12px;bottom:68px;z-index:69;width:min(360px,calc(100vw - 24px));max-height:calc(100vh - 150px);display:flex;flex-direction:column;border:3px solid #4b1d8f;border-radius:20px;overflow:hidden;background:linear-gradient(#ffc15f,#ff9a1a);box-shadow:0 6px 0 #4b1d8f,0 16px 36px rgba(0,0,0,.45);font-family:"Arial Rounded MT Bold","Trebuchet MS",system-ui,sans-serif;transform-origin:left bottom;transform:scale(.85) translateY(14px);opacity:0;pointer-events:none;transition:transform .18s ease,opacity .18s ease}
+#admpanel.open{transform:none;opacity:1;pointer-events:auto}
+#admpanel .hd{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:linear-gradient(#8a4fe0,#6a30c4);color:#fff;font-weight:900;font-size:17px;letter-spacing:1px;text-shadow:0 2px 0 rgba(0,0,0,.35)}
+#admpanel .hd button{width:30px;height:30px;border:0;border-radius:50%;background:#fff;color:#6a30c4;font:900 16px/1 inherit;cursor:pointer}
+#admpanel .bd{padding:10px 12px 12px;overflow:auto;-webkit-overflow-scrolling:touch}
+#admpanel .sec{margin:6px 0 4px;color:#5a2a00;font-weight:900;font-size:12px;letter-spacing:1.5px;text-transform:uppercase}
+#admpanel .row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px}
+#admpanel .row.one{grid-template-columns:1fr}
+.admb{display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;border:3px solid rgba(0,0,0,.28);border-bottom-width:5px;border-radius:14px;color:#fff;font:900 13px/1.1 "Arial Rounded MT Bold","Trebuchet MS",system-ui,sans-serif;text-align:center;text-shadow:0 2px 0 rgba(0,0,0,.3);cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none}
+.admb:active{transform:translateY(2px);border-bottom-width:3px}
+.admb.g{background:linear-gradient(#7CFF4B,#2fbf1d)}.admb.b{background:linear-gradient(#5cc8ff,#1f8fe0)}.admb.y{background:linear-gradient(#ffe45c,#f0b400);color:#5a3a00;text-shadow:0 1px 0 rgba(255,255,255,.5)}.admb.p{background:linear-gradient(#c58cff,#8a4fe0)}.admb.r{background:linear-gradient(#ff8a7a,#e0301f)}
+.admb.on{background:linear-gradient(#ff8a7a,#e0301f)}
+#admst{margin-top:6px;min-height:20px;padding:7px 10px;border-radius:12px;background:rgba(75,29,143,.88);color:#fff;font-weight:800;font-size:12.5px;text-align:center}
+@media (max-height:520px){#admpanel{max-height:calc(100vh - 90px)}}
 /* Moki: Back-Button */
   #moki-back {
     padding: 9px 16px; border-radius: 999px;
@@ -33,18 +41,32 @@ body.admin #adminpanel{display:block}
 </head>
 <body>
 <div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
-<div id="adminzone"></div>
-<div id="adminmodal"><div class="abox"><div>Admin-Passwort</div><input id="adminpw" type="password" inputmode="numeric"><button id="adminok">OK</button><button id="admincancel" style="background:#555;color:#fff">Abbrechen</button><div id="adminmsg"></div></div></div>
-<div id="adminpanel"><b>Admin</b>
-<button data-m="UnlockGuns" data-then="ShowInventory" data-n="Alle Waffen freigeschaltet – Inventar öffnet sich">Alle Waffen freischalten</button>
-<button data-m="UnlockNextGun" data-then="ShowInventory" data-n="Nächste Waffe freigeschaltet – Inventar öffnet sich">Nächste Waffe freischalten</button>
-<button data-m="UnlockSkins" data-n="Skins freigeschaltet">Skins freischalten</button>
-<button data-m="AddMoney" data-n="Geld hinzugefügt">Geld hinzufügen</button>
-<button id="aauto">Unendlich Geld: AUS</button>
-<button data-m="ShowInventory" data-n="Inventar geöffnet">Inventar öffnen</button>
-<button data-m="ShowChestRoom" data-n="Truhenraum geöffnet">Truhenraum öffnen</button>
-<button data-m="WinGame" data-n="Level gewonnen">Level sofort gewinnen</button>
-<div id="ast"></div></div>
+<div id="admtab"><span class="dot"></span>ADMIN PANEL</div>
+<div id="admpanel" aria-hidden="true">
+  <div class="hd"><span>ADMIN PANEL</span><button id="admclose" aria-label="Schließen">✕</button></div>
+  <div class="bd">
+    <div class="sec">Waffen</div>
+    <div class="row">
+      <button class="admb g" data-m="UnlockGuns" data-then="ShowInventory" data-n="Alle Waffen freigeschaltet">🔫 Alle Waffen</button>
+      <button class="admb g" data-m="UnlockNextGun" data-then="ShowInventory" data-n="Nächste Waffe freigeschaltet">➕ Nächste Waffe</button>
+    </div>
+    <div class="sec">Skins</div>
+    <div class="row one"><button class="admb b" data-m="UnlockSkins" data-n="Skins freigeschaltet">🎨 Alle Skins freischalten</button></div>
+    <div class="sec">Geld</div>
+    <div class="row">
+      <button class="admb y" data-m="AddMoney" data-n="Geld hinzugefügt">💰 Geld +</button>
+      <button class="admb y" id="admauto">♾ Unendlich: AUS</button>
+    </div>
+    <div class="sec">Spiel</div>
+    <div class="row">
+      <button class="admb p" data-m="ShowInventory" data-n="Inventar geöffnet">🎒 Inventar</button>
+      <button class="admb p" data-m="ShowChestRoom" data-n="Truhenraum geöffnet">📦 Truhenraum</button>
+      <button class="admb p" data-m="ShowDrone" data-n="Drohne gerufen">🚁 Drohne</button>
+      <button class="admb r" data-m="WinGame" data-n="Level gewonnen">🏆 Level gewinnen</button>
+    </div>
+    <div id="admst">Bereit</div>
+  </div>
+</div>
 <iframe id="game" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe>
 <script>
 // Lädt das Spiel direkt aus dem GitHub-Repo (über jsDelivr, mit Commit-Version fest verdrahtet).
@@ -52,26 +74,22 @@ body.admin #adminpanel{display:block}
 const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/9de11ed9d946862f4ddbd144909a6c213b7b02ed/johnny-trigger-sniper/";
 
 (function(){
-var fr=document.getElementById("game"),st=document.getElementById("ast"),auto=null;
-function say(t){st.textContent=t}
+var fr=document.getElementById("game"),st=document.getElementById("admst"),pn=document.getElementById("admpanel"),auto=null,tm=null;
+function say(t){st.textContent=t;clearTimeout(tm);tm=setTimeout(function(){st.textContent="Bereit"},3500)}
 // Das Spiel hat einen eingebauten Debugger (Objekt "Debugger"): dessen Funktionen rufen wir direkt auf.
-function call(m){
-  var w=fr.contentWindow; if(!w||!w.unityGame) return false;
-  try{w.unityGame.SendMessage("Debugger",m);return true}catch(e){return false}
-}
-Array.prototype.forEach.call(document.querySelectorAll("#adminpanel button[data-m]"),function(b){
-  b.onclick=function(){var ok=call(b.dataset.m);say(ok?b.dataset.n:"Spiel ist noch nicht bereit");if(ok&&b.dataset.then)setTimeout(function(){call(b.dataset.then)},700)};
+function call(m){var w=fr.contentWindow;if(!w||!w.unityGame)return false;try{w.unityGame.SendMessage("Debugger",m);return true}catch(e){return false}}
+function toggle(o){var on=o===undefined?!pn.classList.contains("open"):o;pn.classList.toggle("open",on);pn.setAttribute("aria-hidden",on?"false":"true")}
+document.getElementById("admtab").onclick=function(){toggle()};
+document.getElementById("admclose").onclick=function(){toggle(false)};
+Array.prototype.forEach.call(pn.querySelectorAll("button[data-m]"),function(b){
+  b.onclick=function(){var ok=call(b.dataset.m);say(ok?"✔ "+b.dataset.n:"Spiel ist noch nicht bereit");if(ok&&b.dataset.then)setTimeout(function(){call(b.dataset.then)},700)};
 });
-document.getElementById("aauto").onclick=function(){
+document.getElementById("admauto").onclick=function(){
   var btn=this;
-  if(auto){clearInterval(auto);auto=null;btn.textContent="Unendlich Geld: AUS";return say("Aus")}
-  auto=setInterval(function(){call("AddMoney")},800);btn.textContent="Unendlich Geld: AN";say("Geld wird laufend hinzugefügt");
+  if(auto){clearInterval(auto);auto=null;btn.classList.remove("on");btn.textContent="♾ Unendlich: AUS";return say("Unendlich Geld aus")}
+  if(!call("AddMoney"))return say("Spiel ist noch nicht bereit");
+  auto=setInterval(function(){call("AddMoney")},800);btn.classList.add("on");btn.textContent="♾ Unendlich: AN";say("✔ Geld wird laufend hinzugefügt");
 };
-var z=document.getElementById("adminzone"),m=document.getElementById("adminmodal"),n=0,t0=0;
-function tap(e){e.preventDefault();var now=Date.now();if(now-t0>4000)n=0;t0=now;if(++n>=5){n=0;m.style.display="flex";document.getElementById("adminpw").value="";document.getElementById("adminmsg").textContent=""}}
-z.addEventListener("click",tap);z.addEventListener("touchend",tap);
-document.getElementById("admincancel").onclick=function(){m.style.display="none"};
-document.getElementById("adminok").onclick=function(){if(document.getElementById("adminpw").value==="2908"){document.body.classList.add("admin");m.style.display="none"}else document.getElementById("adminmsg").textContent="Falsch"};
 })();
 
 const ADS_JS = "// Keine Werbung: Zwischenwerbung entf\u00e4llt, Belohnungen (Rewarded Ads) gelten sofort als angesehen.\n(function () {\n  var ok = function () { return Promise.resolve(); };\n  var base = {\n    init: ok, initWithVideoHB: ok, commercialBreak: ok, rewardedBreak: function () { return Promise.resolve(true); },\n    displayAd: function () {}, destroyAd: function () {}, isAdBlocked: function () { return false; },\n    getURLParam: function () { return \"\"; }, getLanguage: function () { return \"en\"; }, shareableURL: function () { return Promise.resolve(\"\"); },\n    getLeaderboard: ok, sendHighscore: function () {}, captureError: function () {}, setDebug: function () {}, measure: function () {}\n  };\n  window.PokiSDK = new Proxy(base, { get: function (t, k) { return k in t ? t[k] : function () { return Promise.resolve(); }; } });\n  window.adBridge = undefined;\n})();\ntry { var _g = navigator.getGamepads ? navigator.getGamepads.bind(navigator) : null; navigator.getGamepads = function () { try { return _g ? _g() : []; } catch (e) { return []; } }; } catch (e) {}\nwindow.open = function () { return null; };\n\n// Poki-Br\u00fccke des Spiels: meldet \"ready\", Werbung sofort fertig, Belohnung sofort true.\n(function () {\n  var bridge = null;\n  function unity() { return window.unityGame; }\n  window.initPokiBridge = function (name) {\n    bridge = name;\n    (function wait() { if (unity()) { try { unity().SendMessage(name, \"ready\"); } catch (e) {} } else setTimeout(wait, 100); })();\n  };\n  window.commercialBreak = function () {\n    setTimeout(function () { try { unity().SendMessage(bridge, \"commercialBreakCompleted\"); } catch (e) {} }, 150);\n  };\n  window.rewardedBreak = function () {\n    setTimeout(function () { try { unity().SendMessage(bridge, \"rewardedBreakCompleted\", \"true\"); } catch (e) {} }, 300);\n  };\n})();\n";
