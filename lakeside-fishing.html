@@ -25,7 +25,7 @@
 <iframe id="game" allow="autoplay *; fullscreen *; pointer-lock *" allowfullscreen></iframe>
 <script>
 // Lädt das Spiel direkt aus deinem GitHub-Repo (raw.githubusercontent.com, Commit fest verdrahtet). Einzelspieler, kein Server.
-const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/ba32fc4a1dab4acd4519d8582f47cebec79282ba/lakeside-fishing/";
+const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/7d950c77bbea24e382e1bc0e992eb6c0e48a91f8/lakeside-fishing/";
 const esc = t => t.replace(/<\/script/gi, "<\\/script");
 const TOUCH = (navigator.maxTouchPoints > 0 && matchMedia("(pointer:coarse)").matches) || location.hash === "#touch";
 const get = (f) => fetch(BASE + f).then(r => { if (!r.ok) throw new Error(f + ": " + r.status); return r.text(); });
