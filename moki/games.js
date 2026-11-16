@@ -350,6 +350,18 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "robo-cleaner-simulator",
+    title: "Robo Cleaner Simulator",
+    url: "https://dreamy-nasturtium-0d121e.netlify.app",
+    category: "Simulation",
+    image: "robo-cleaner-simulator.jpg",
+    emoji: "🤖",
+    colors: ["#f5a623", "#6b4a2e"],
+    description: "Steuere einen Saugroboter durch ein Haus und reinige den Boden.",
+    added: "2026-11-16",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
