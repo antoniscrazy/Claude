@@ -338,6 +338,18 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "eggy-car",
+    title: "Eggy Car",
+    url: "https://jovial-nasturtium-a88a4c.netlify.app",
+    category: "Fahren",
+    image: "eggy-car.jpg",
+    emoji: "🥚",
+    colors: ["#3ba7f5", "#f5a500"],
+    description: "Fahre ein Auto mit einem Ei auf dem Dach über Hügel, ohne dass das Ei herunterfällt.",
+    added: "2026-11-16",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
