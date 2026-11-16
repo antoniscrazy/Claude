@@ -78,7 +78,7 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
       get("Build/Build.data", "blob").then(x => { bump(); return x; }),
       get("Build/Build.wasm", "blob").then(x => { bump(); return x; })
     ]);
-    const s = document.createElement("script"); s.textContent = loaderTxt; document.body.appendChild(s);
+    await new Promise((res, rej) => { const s = document.createElement("script"); s.src = URL.createObjectURL(new Blob([loaderTxt], { type: "text/javascript" })); s.onload = res; s.onerror = () => rej(new Error("Loader")); document.head.appendChild(s); });
     tx.textContent = "Starte …";
     const inst = await createUnityInstance(document.getElementById("c"), {
       dataUrl: URL.createObjectURL(dataBlob),
