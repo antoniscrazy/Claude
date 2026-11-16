@@ -5,6 +5,7 @@ h=r("index.html").replace('<link rel="stylesheet" href="style.css">',"<style>\n"
 g=r("games.js")
 g=re.sub(r'"([\w-]+\.jpg)"',lambda m:'"data:image/jpeg;base64,'+base64.b64encode(open(m.group(1),"rb").read()).decode()+'"',g)
 h=h.replace('<script src="games.js"></script>',"<script>\n"+g+"\n</script>").replace('<script src="app.js"></script>',"<script>\n"+r("app.js")+"\n</script>").replace('<script src="intro.js"></script>',"<script>\n"+r("intro.js")+"\n</script>").replace('<script src="creations.js"></script>',"<script>\n"+r("creations.js")+"\n</script>").replace('<script src="config.js"></script>',"<script>\n"+r("config.js")+"\nwindow.MOKI_ENGINE = "+json.dumps(r("motifs.js")+"\n"+r("engine.js")).replace("<","\\u003c")+";\n</script>")
+i=h.rindex("</body>");h=h[:i]+"<script>\n"+r("nf.js")+"\n</script>\n"+h[i:]
 open("moki.html","w",encoding="utf-8").write(h)
 
 
@@ -17,5 +18,5 @@ logo=r("logo/moki-logo.svg").replace('id="mg"','id="slg"').replace('url(#mg)','u
 eng=json.dumps(r("motifs.js")+"\n"+r("engine.js")).replace("<","\\u003c")
 studio=studio.replace("<!--ICON-->",links).replace("<!--LOGO-->",logo).replace("/*CSS*/",r("studio.css"))
 studio=studio.replace("/*CONFIG*/",r("config.js")+"\nwindow.MOKI_ENGINE = "+eng+";")
-studio=studio.replace("/*JS*/",r("motifs.js")+"\n"+r("studio-icons.js")+"\n"+r("studio-core.js")+"\n"+r("studio-model.js")+"\n"+r("studio-builder.js")+"\n"+r("studio-main.js")+"\n"+r("studio-extras.js"))
+studio=studio.replace("/*JS*/",r("motifs.js")+"\n"+r("studio-icons.js")+"\n"+r("studio-core.js")+"\n"+r("studio-model.js")+"\n"+r("studio-builder.js")+"\n"+r("studio-main.js")+"\n"+r("studio-extras.js")+"\nwindow.MOKI_NF_STUDIO=true;\n"+r("nf.js"))
 open("studio.html","w",encoding="utf-8").write(studio)
