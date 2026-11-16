@@ -23,8 +23,8 @@
 <iframe id="game" allow="autoplay *; fullscreen *; gamepad *" allowfullscreen></iframe>
 <script>
 // Spiel aus deinem GitHub-Repo: index.html + grosse Dateien ueber raw.githubusercontent.com, Loader/Framework ueber jsDelivr (Skripte). Commit fest.
-const RAW = "https://raw.githubusercontent.com/antoniscrazy/Claude/7cada8296e4cb5072cd14cc8c1bc6498962c57d6/solar-smash/";
-const JSD = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@67096f74f04bb0b3ff059aefbf4a0a9a52e9449f/solar-smash/";
+const RAW = "https://raw.githubusercontent.com/antoniscrazy/Claude/47d7546bdb6b9f4e07a45d66c342f90347114651/solar-smash/";
+const JSD = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@a403b636f4218eb1207a92ecf661003bfb53d643/solar-smash/";
 const PRE = '<base href="' + JSD + '"><script>window.__RAW=' + JSON.stringify(RAW) + ';(function(){var OK=[' + JSON.stringify(new URL(RAW).origin) + ',"https://cdn.jsdelivr.net"];function ok(u){try{var x=new URL(String(u),location.href);return x.protocol==="blob:"||x.protocol==="data:"||x.protocol==="about:"||OK.indexOf(x.origin)>=0}catch(e){return true}}var o=XMLHttpRequest.prototype.open,s=XMLHttpRequest.prototype.send;XMLHttpRequest.prototype.open=function(m,u){this._b=!ok(u);return o.apply(this,arguments)};XMLHttpRequest.prototype.send=function(){if(!this._b)return s.apply(this,arguments);var x=this;setTimeout(function(){x.dispatchEvent(new ProgressEvent("error"));x.dispatchEvent(new ProgressEvent("loadend"))},0)};var f=window.fetch;window.fetch=function(r){return ok(r&&r.url||r)?f.apply(this,arguments):Promise.reject(new TypeError("Failed to fetch"))};if(navigator.sendBeacon)navigator.sendBeacon=function(){return false};window.open=function(){return null}})()<\/script>';
 fetch(RAW + "index.html")
   .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
