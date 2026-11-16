@@ -315,7 +315,7 @@
     let isWrapperFullscreen = false;
     window.RuntimeInterface = class RuntimeInterface {
         constructor(opts) {
-            this._useWorker = opts.useWorker;
+            this._useWorker = false; // Moki: immer im DOM laufen lassen (Worker-Modus laedt Texte auf iPad nicht)
             this._messageChannelPort = null;
             this._runtimeBaseUrl = "";
             this._scriptFolder = opts.scriptFolder;
