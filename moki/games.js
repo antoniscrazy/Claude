@@ -284,6 +284,17 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "cookie-clicker",
+    title: "Cookie Clicker",
+    url: "https://candid-banoffee-c39448.netlify.app",
+    category: "Simulation",
+    image: "cookie-clicker.jpg",
+    emoji: "🍪",
+    colors: ["#2a6ab0", "#b06a2a"],
+    description: "Klicke Kekse und baue dein Keks-Imperium auf.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
