@@ -7,7 +7,29 @@ const ICONS = { Alle: "🏠", Fahren: "🏎️", Action: "💥", Simulation: "�
 let category = "Alle";
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const tile = g => `<a class="tile${g.wide ? " wide" : ""}" href="${g.url}" data-id="${g.id}" aria-label="${esc(g.title)}" title="${esc(g.title)}" style="background:linear-gradient(135deg,${g.colors[0]},${g.colors[1]})">${g.image ? `<img src="${g.image}" alt="" loading="lazy">` : `<span class="em">${g.emoji}</span>`}<span class="name">${esc(g.title)}</span></a>`;
+const tile = g => `<a class="tile${g.wide ? " wide" : ""}" href="${g.url}" data-id="${g.id}" aria-label="${esc(g.title)}" title="${esc(g.title)}" style="background:linear-gradient(135deg,${g.colors[0]},${g.colors[1]})">${g.image ? `<img src="${g.image}" alt="" loading="lazy">` : `<span class="em">${g.emoji}</span>`}<span class="name">${esc(g.title)}</span>${g.neu ? `<span class="new">NEU</span>` : ""}</a>`;
+
+// ---- Spiel des Tages: wechselt jeden Tag um Mitternacht (deutsche Zeit), für alle gleich ----
+function berlinDay() {
+  const [y, m, d] = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()).split("-").map(Number);
+  return Math.floor(Date.UTC(y, m - 1, d) / 86400000);
+}
+function hashId(s) { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+// Feste, gemischte Reihenfolge: jedes Spiel kommt einmal pro Runde dran, zwei Tage hintereinander nie dasselbe.
+function gameOfTheDay(day = berlinDay()) {
+  const pool = games.filter(g => g.daily !== false && g.image).sort((a, b) => hashId(a.id) - hashId(b.id));
+  return pool[day % pool.length];
+}
+function heroHtml() {
+  const g = gameOfTheDay();
+  const date = new Date().toLocaleDateString("de-DE", { timeZone: "Europe/Berlin", weekday: "long", day: "numeric", month: "long" });
+  return `<a class="hero${g.wide ? "" : " sq"}" href="${g.url}" data-id="${g.id}" aria-label="Spiel des Tages: ${esc(g.title)}">
+    <div class="hbg" style="background-image:url(${g.image})"></div>
+    <div class="htxt"><span class="chip">🔥 Spiel des Tages</span><span class="hdate">${esc(date)}</span>
+      <h1>${esc(g.title)}</h1><p>${esc(g.description)}</p><span class="play">▶ Jetzt spielen</span></div>
+    <img src="${g.image}" alt="">
+  </a>`;
+}
 
 function renderSide() {
   const cats = ["Alle", ...new Set(games.map(g => g.category))];
@@ -24,6 +46,7 @@ function home() {
   renderSide();
   const title = category === "Alle" ? "Alle Spiele" : category;
   app.innerHTML = `
+    ${!q && category === "Alle" ? heroHtml() : ""}
     <section>
       <h2>${esc(title)}</h2>
       <p class="sub">${list.length} ${list.length === 1 ? "Spiel" : "Spiele"}</p>
@@ -53,7 +76,7 @@ function warnDialog(g) {
   o.querySelector(".go").focus();
 }
 document.addEventListener("click", e => {
-  const t = e.target.closest("a.tile[data-id]");
+  const t = e.target.closest("a[data-id]");
   if (!t || e.ctrlKey || e.metaKey || e.shiftKey) return;
   const g = [...games, ...sites].find(x => x.id === t.dataset.id);
   if (g && g.warning) { e.preventDefault(); warnDialog(g); }

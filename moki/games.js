@@ -8,7 +8,7 @@ window.MOKI_GAMES = [
     image: "drive-mad.jpg",
     emoji: "🚗",
     colors: ["#ff7a18", "#af002d"],
-    description: "Fahre durch verrückte Level, überwinde Hindernisse und erreiche das Ziel, ohne dein Auto zu zerstören.",
+    description: "Fahre dein Auto durch knifflige Level voller Rampen und Hindernisse und erreiche die Ziellinie.",
     featured: false
   },
   {
@@ -19,7 +19,7 @@ window.MOKI_GAMES = [
     image: "geometry-dash.jpg",
     emoji: "🟨",
     colors: ["#f5a500", "#1b9ad6"],
-    description: "Rhythmus-Runner: springe über Hindernisse im Takt.",
+    description: "Springe im Takt der Musik über Stacheln und Hindernisse, ohne anzustoßen.",
     featured: false
   },
   {
@@ -30,7 +30,7 @@ window.MOKI_GAMES = [
     image: "ragdoll-hit.jpg",
     emoji: "🪓",
     colors: ["#4a4a4a", "#f5a500"],
-    description: "Ragdoll-Kämpfe.",
+    description: "Kampfspiel mit Ragdoll-Figuren.",
     featured: false
   },
   {
@@ -41,7 +41,7 @@ window.MOKI_GAMES = [
     image: "hills-of-steel.jpg",
     emoji: "🪖",
     colors: ["#2e9c2e", "#e08a1e"],
-    description: "Panzer-Kämpfe auf Hügeln.",
+    description: "Fahre deinen Panzer über Hügel, besiege gegnerische Panzer und rüste auf.",
     featured: false
   },
   {
@@ -52,7 +52,7 @@ window.MOKI_GAMES = [
     image: "my-perfect-hotel.jpg",
     emoji: "🏨",
     colors: ["#6a4cff", "#e0723a"],
-    description: "Baue und führe dein eigenes Hotel.",
+    description: "Baue dein eigenes Hotel aus: Gäste empfangen, Zimmer ausbauen und Personal einstellen.",
     featured: false
   },
   {
@@ -63,7 +63,7 @@ window.MOKI_GAMES = [
     image: "level-devil.jpg",
     emoji: "😈",
     colors: ["#ffcc33", "#111111"],
-    description: "Plattformer mit fiesen Fallen.",
+    description: "Ein Plattformer, der dich austrickst: Böden brechen weg und Fallen tauchen aus dem Nichts auf.",
     featured: false
   },
   {
@@ -74,7 +74,7 @@ window.MOKI_GAMES = [
     image: "fruit-ninja.jpg",
     emoji: "🍉",
     colors: ["#2e9c2e", "#d93a2b"],
-    description: "Schneide Früchte in Scheiben.",
+    description: "Schneide Früchte mit einem Wisch durch, aber triff keine Bomben.",
     featured: false
   },
   {
@@ -86,7 +86,7 @@ window.MOKI_GAMES = [
     wide: true,
     emoji: "🔪",
     colors: ["#2b9cf0", "#ffd400"],
-    description: "Schneide Türme in Scheiben.",
+    description: "Schneide Türme aus bunten Blöcken in Scheiben. Das Spiel lädt lange.",
     // Popup vor dem Öffnen (weglassen = kein Popup)
     warning: "Dieses Spiel ist experimentell. Es lädt möglicherweise nicht oder dauert sehr lange.",
     featured: false
@@ -100,7 +100,7 @@ window.MOKI_GAMES = [
     wide: true,
     emoji: "🐦",
     colors: ["#d62828", "#2b9cf0"],
-    description: "Schleudere Vögel auf die Schweine.",
+    description: "Schleudere die Vögel mit der Schleuder auf die Schweine und ihre Bauten.",
     featured: false
   },
   {
@@ -111,7 +111,7 @@ window.MOKI_GAMES = [
     image: "subway-surfers.jpg",
     emoji: "🛹",
     colors: ["#2b9cf0", "#e0723a"],
-    description: "Renne durch die U-Bahn und weiche Zügen aus.",
+    description: "Renne über die Gleise, weiche Zügen aus und sammle Münzen.",
     featured: false
   },
   {
@@ -122,7 +122,7 @@ window.MOKI_GAMES = [
     image: "kick-the-buddy.jpg",
     emoji: "🥊",
     colors: ["#9acd1a", "#2b6fd6"],
-    description: "Lass deinen Frust an Buddy aus.",
+    description: "Probiere Waffen und Werkzeuge an der Puppe Buddy aus.",
     featured: false
   },
   {
@@ -133,7 +133,7 @@ window.MOKI_GAMES = [
     image: "mad-skills-motocross-2.jpg",
     emoji: "🏍️",
     colors: ["#1b9ad6", "#f5a500"],
-    description: "Motocross-Rennen mit Sprüngen und Tricks.",
+    description: "Rase mit dem Motorrad über Hindernisstrecken und jage die Bestzeit.",
     featured: false
   },
   {
@@ -145,7 +145,7 @@ window.MOKI_GAMES = [
     wide: true,
     emoji: "🏎️",
     colors: ["#222222", "#ffd400"],
-    description: "Drifte mit tunbaren Autos über die Strecke.",
+    description: "Drifte mit Autos über Rennstrecken und sammle Punkte.",
     featured: false
   },
   {
@@ -156,7 +156,7 @@ window.MOKI_GAMES = [
     image: "zombie-rush.jpg",
     emoji: "🧟",
     colors: ["#f5a500", "#c0392b"],
-    description: "Wehre Zombie-Horden mit deinem Team ab.",
+    description: "Zombie-Spiel mit Pixel-Soldaten.",
     featured: false
   },
   {
@@ -167,7 +167,7 @@ window.MOKI_GAMES = [
     image: "stickman-gta.jpg",
     emoji: "🚗",
     colors: ["#2b5fa8", "#f5a500"],
-    description: "Stickman in der offenen Stadt.",
+    description: "Stickman-Spiel in einer offenen Stadt mit Autos.",
     featured: false
   },
   {
@@ -178,7 +178,7 @@ window.MOKI_GAMES = [
     image: "war-of-sticks.jpg",
     emoji: "⚔️",
     colors: ["#ffe600", "#1b9ad6"],
-    description: "Führe deine Strichmännchen-Armee in die Schlacht.",
+    description: "Strategiespiel mit Strichmännchen-Armeen.",
     featured: false
   },
   {
@@ -189,7 +189,7 @@ window.MOKI_GAMES = [
     image: "johnny-trigger.jpg",
     emoji: "🎯",
     colors: ["#1b9ad6", "#0a2a5e"],
-    description: "Schieße dich als Agent durch die Level.",
+    description: "Sniper-Spiel: Ziele und schalte die Gegner in jedem Level aus.",
     featured: false
   },
   {
@@ -200,7 +200,7 @@ window.MOKI_GAMES = [
     image: "rogue-sergeant.jpg",
     emoji: "🪖",
     colors: ["#8a5a3a", "#2b2b2b"],
-    description: "Rogue Sergeant: The Final Operation.",
+    description: "Ein Shooter: Zielen, schießen, nachladen und Waffen aufnehmen.",
     featured: false
   },
   {
@@ -211,7 +211,7 @@ window.MOKI_GAMES = [
     image: "ultimate-car-driving.jpg",
     emoji: "🚘",
     colors: ["#d62828", "#5a6a7a"],
-    description: "Fahre Sportwagen frei durch die Stadt.",
+    description: "Fahre Sportwagen frei durch die Stadt, mit Handbremse, Boost und wechselnder Kamera.",
     featured: false
   },
   {
@@ -223,7 +223,7 @@ window.MOKI_GAMES = [
     wide: true,
     emoji: "🪖",
     colors: ["#1b6fb0", "#2e9c2e"],
-    description: "Duelliere dich mit Panzern und Waffen.",
+    description: "Duelliere dich rundenweise mit Panzern: Winkel und Kraft einstellen und den Gegner treffen.",
     featured: false
   },
   {
@@ -234,7 +234,7 @@ window.MOKI_GAMES = [
     image: "open-panzer-front.jpg",
     emoji: "🪖",
     colors: ["#b8863b", "#3a3a2a"],
-    description: "Panzergefechte im Zweiten Weltkrieg.",
+    description: "Panzerspiel im Zweiten Weltkrieg.",
     featured: false
   },
   {
@@ -245,7 +245,8 @@ window.MOKI_GAMES = [
     image: "neon-swing.jpg",
     emoji: "⚡",
     colors: ["#2a0a3a", "#ff2d7a"],
-    description: "Schwinge dich durch neonbeleuchtete Level.",
+    description: "Schwinge dich mit einem Seil durch neonbeleuchtete Level.",
+    neu: true,
     featured: false
   },
   {
@@ -258,6 +259,7 @@ window.MOKI_GAMES = [
     emoji: "⛳",
     colors: ["#1fa89a", "#12304a"],
     description: "Golf auf kleinen Planeten im Weltall.",
+    neu: true,
     featured: false
   },
   {
@@ -269,7 +271,8 @@ window.MOKI_GAMES = [
     wide: true,
     emoji: "🏹",
     colors: ["#1b2a6b", "#e03a2f"],
-    description: "Duelle mit Pfeil und Bogen gegen verrückte Gegner.",
+    description: "Ziele und schieße mit Pfeil, Speer und anderen Waffen auf deinen Gegner.",
+    neu: true,
     featured: false
   },
   {
@@ -280,7 +283,8 @@ window.MOKI_GAMES = [
     image: "crossy-road.jpg",
     emoji: "🐔",
     colors: ["#69cbec", "#ffffff"],
-    description: "Überquere Straßen und Flüsse, ohne zu verunglücken.",
+    description: "Hüpfe über Straßen, Gleise und Flüsse, ohne überfahren zu werden.",
+    neu: true,
     featured: false
   },
   {
@@ -291,7 +295,8 @@ window.MOKI_GAMES = [
     image: "cookie-clicker.jpg",
     emoji: "🍪",
     colors: ["#2a6ab0", "#b06a2a"],
-    description: "Klicke Kekse und baue dein Keks-Imperium auf.",
+    description: "Klicke auf den Keks, kaufe Verbesserungen und baue ein Keks-Imperium auf.",
+    neu: true,
     featured: false
   },
   {
@@ -302,7 +307,8 @@ window.MOKI_GAMES = [
     image: "solar-smash.jpg",
     emoji: "🌍",
     colors: ["#0a1030", "#ff5a1f"],
-    description: "Zerstöre Planeten mit Waffen und Katastrophen.",
+    description: "Zerstöre Planeten mit Waffen, Raketen und Katastrophen.",
+    neu: true,
     featured: false
   },
   {
@@ -314,7 +320,8 @@ window.MOKI_GAMES = [
     wide: true,
     emoji: "🗡️",
     colors: ["#2b6fd6", "#2e9c2e"],
-    description: "Baue eine Strichmännchen-Armee und erobere die Welt.",
+    description: "Baue Minen, trainiere Einheiten und zerstöre die gegnerische Statue.",
+    neu: true,
     featured: false
   },
   {
@@ -326,7 +333,7 @@ window.MOKI_GAMES = [
     wide: true,
     emoji: "⛏️",
     colors: ["#3d8c2f", "#6b4423"],
-    description: "Minecraft im Browser.",
+    description: "Ein Minecraft-ähnliches Spiel aus Blöcken: abbauen, bauen und die Welt erkunden.",
     featured: false
   }
 ];
