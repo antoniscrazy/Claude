@@ -390,6 +390,18 @@ window.MOKI_GAMES = [
 // Weitere Seiten (erscheinen als eigener Bereich unter den Spielen)
 window.MOKI_SITES = [
   {
+    id: "doodle-jump",
+    title: "Doodle Jump",
+    url: "https://effortless-cat-739e33.netlify.app",
+    category: "Geschicklichkeit",
+    image: "doodle-jump.jpg",
+    emoji: "🦘",
+    colors: ["#9acd32", "#f5a500"],
+    description: "Hüpfe mit dem Doodler von Plattform zu Plattform immer höher hinaus und weiche Monstern aus.",
+    added: "2026-11-16",
+    featured: false
+  },
+  {
     id: "poki",
     title: "Poki",
     url: "https://poki-proxy-us.onrender.com",
