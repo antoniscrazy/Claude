@@ -362,6 +362,18 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "harvest-simulator",
+    title: "Harvest Simulator",
+    url: "https://dapper-pika-23b279.netlify.app",
+    category: "Simulation",
+    image: "harvest-simulator.jpg",
+    emoji: "🌾",
+    colors: ["#5fb83a", "#d9542b"],
+    description: "Fahre einen Mähdrescher über die Felder, ernte Sonnenblumen und Co. und kaufe mit dem Geld Verbesserungen.",
+    added: "2026-11-16",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
