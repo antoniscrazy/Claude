@@ -6,25 +6,27 @@ const SHAPE_OPTS = MOKI_SHAPE_NAMES;
 const IMAGE_OPTS = MOKI_MOTIFS.filter(m => m.id !== 'star' && m.id !== 'heart').map(m => [m.id, m.name]);
 const CONTROLS = [['none', 'Keine'], ['keys', 'Tasten und Finger'], ['mouse', 'Maus und Finger']];
 const AXES = [['xy', 'Alle Richtungen'], ['x', 'Nur links/rechts'], ['y', 'Nur hoch/runter']];
-const MOTIONS = [['none', 'Bleibt stehen'], ['fall', 'Fällt nach unten'], ['rise', 'Steigt nach oben'], ['left', 'Fliegt nach links'], ['right', 'Fliegt nach rechts'], ['bounce', 'Springt umher (prallt ab)'], ['follow', 'Verfolgt den Spieler']];
-const PHYSICS = [['none', 'Keine'], ['platformer', 'Schwerkraft (Hüpfen)'], ['topdown', 'Von oben (stößt an Wände)']];
+const MOTIONS = [['none', 'Bleibt stehen'], ['fall', 'Fällt nach unten'], ['rise', 'Steigt nach oben'], ['left', 'Fliegt nach links'], ['right', 'Fliegt nach rechts'], ['bounce', 'Springt umher (prallt ab)'], ['follow', 'Verfolgt den Spieler'], ['patrol', 'Läuft hin und her (bis zur Wand)'], ['wander', 'Streift zufällig umher'], ['orbit', 'Kreist um den Startpunkt'], ['sine', 'Fliegt in Wellen nach links']];
+const PHYSICS = [['none', 'Keine'], ['platformer', 'Schwerkraft (Hüpfen)'], ['topdown', 'Von oben (stößt an Wände)'], ['body', 'Ball-Physik (rollt, prallt, stößt andere)']];
 const PATTERNS = [['none', 'Kein Muster'], ['stars', 'Sterne'], ['grid', 'Gitter'], ['dots', 'Punkte']];
 const KEYS = [['SPACE', 'Leertaste'], ['LEFT', 'Pfeil links'], ['RIGHT', 'Pfeil rechts'], ['UP', 'Pfeil hoch'], ['DOWN', 'Pfeil runter'], ['ENTER', 'Enter']].concat('ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(c => [c, 'Taste ' + c]));
 const DIRS = [['up', 'nach oben'], ['down', 'nach unten'], ['left', 'nach links'], ['right', 'nach rechts'], ['pointer', 'zur Maus / zum Finger']];
 const SCREEN_OPS = [['==', 'ist'], ['!=', 'ist nicht']];
-const SOUND_OPTS = [['coin', 'Münze'], ['hit', 'Treffer'], ['jump', 'Sprung'], ['shoot', 'Schuss'], ['pop', 'Plopp'], ['powerup', 'Power-up'], ['explosion', 'Explosion'], ['win', 'Sieg'], ['lose', 'Niederlage']];
-const EFFECT_OPTS = [['sparks', 'Funken an einer Figur'], ['boom', 'Explosion an einer Figur'], ['shake', 'Bildschirm wackeln'], ['flash', 'Bildschirm blitzt']];
+const SOUND_OPTS = [['coin', 'Münze'], ['hit', 'Treffer'], ['jump', 'Sprung'], ['shoot', 'Schuss'], ['pop', 'Plopp'], ['powerup', 'Power-up'], ['explosion', 'Explosion'], ['laser', 'Laser'], ['blip', 'Piep'], ['win', 'Sieg'], ['lose', 'Niederlage']];
+const EFFECT_OPTS = [['sparks', 'Funken an einer Figur'], ['boom', 'Explosion an einer Figur'], ['shake', 'Bildschirm wackeln'], ['flash', 'Bildschirm blitzt'], ['confetti', 'Konfetti an einer Figur'], ['fire', 'Feuer an einer Figur'], ['smoke', 'Rauch an einer Figur']];
+const MUSIC_OPTS = [['', 'Keine Musik'], ['retro', 'Retro'], ['chill', 'Entspannt'], ['action', 'Action'], ['space', 'Weltraum']];
+const HIT_OPTS = [['box', 'Eckig'], ['circle', 'Rund']];
 const OPS = [['>=', 'mindestens'], ['<=', 'höchstens'], ['==', 'genau'], ['>', 'mehr als'], ['<', 'weniger als'], ['!=', 'nicht']];
-const EVENTS = [['start', 'Das Spiel startet'], ['touch', 'Zwei Figuren berühren sich'], ['key', 'Eine Taste wird gedrückt'], ['hold', 'Eine Taste wird gehalten'], ['tap', 'Irgendwo getippt oder geklickt'], ['click', 'Eine Figur wird angetippt'], ['edge', 'Eine Figur verlässt den Bildschirm'], ['destroyed', 'Eine Figur wird zerstört'], ['every', 'Alle paar Sekunden'], ['after', 'Nach einer Wartezeit (einmal)'], ['stat', 'Ein Wert erreicht eine Zahl'], ['score', 'Die Punkte erreichen eine Zahl'], ['screen', 'Ein Bildschirm (Menü) wird geöffnet']];
+const EVENTS = [['start', 'Das Spiel startet'], ['frame', 'Jedes Bild (dauernd)'], ['release', 'Eine Taste wird losgelassen'], ['touch', 'Zwei Figuren berühren sich'], ['key', 'Eine Taste wird gedrückt'], ['hold', 'Eine Taste wird gehalten'], ['tap', 'Irgendwo getippt oder geklickt'], ['click', 'Eine Figur wird angetippt'], ['edge', 'Eine Figur verlässt den Bildschirm'], ['destroyed', 'Eine Figur wird zerstört'], ['every', 'Alle paar Sekunden'], ['after', 'Nach einer Wartezeit (einmal)'], ['stat', 'Ein Wert erreicht eine Zahl'], ['score', 'Die Punkte erreichen eine Zahl'], ['screen', 'Ein Bildschirm (Menü) wird geöffnet']];
 const ACTIONS = [['score', 'Punkte ändern'], ['life', 'Leben ändern'], ['setvar', 'Variable setzen'], ['addvar', 'Variable ändern'],
   ['respawn', 'Figur oben/am Rand neu starten'], ['scatter', 'Figur zufällig platzieren'], ['place', 'Figur an einen Ort setzen'], ['destroy', 'Figur entfernen'], ['spawn', 'Neue Figur erzeugen'],
   ['fly', 'Figur fliegen lassen'], ['stop', 'Figur anhalten'], ['move', 'Figur schieben (bei „Taste gehalten“)'], ['jump', 'Figur springen lassen'], ['shoot', 'Figur schießt'], ['hurt', 'Figur nimmt Schaden'], ['bounce', 'Figur prallt ab'],
   ['speed', 'Tempo ändern'], ['grow', 'Größe ändern'], ['color', 'Farbe ändern'], ['show', 'Figur zeigen / verstecken'],
-  ['sound', 'Ton abspielen'], ['effect', 'Effekt zeigen'], ['say', 'Nachricht zeigen'], ['win', 'Spiel gewonnen'], ['lose', 'Spiel verloren'], ['go', 'Zu einem Bildschirm (Menü) wechseln'], ['restart', 'Spiel neu starten']];
+  ['sound', 'Ton abspielen'], ['music', 'Musik an / aus'], ['timescale', 'Zeitlupe / Tempo der Welt'], ['zoom', 'Kamera zoomen'], ['clone', 'Figur kopieren'], ['face', 'Figur dreht sich zu einer anderen'], ['tween', 'Figur weich vergrößern oder bewegen'], ['effect', 'Effekt zeigen'], ['say', 'Nachricht zeigen'], ['win', 'Spiel gewonnen'], ['lose', 'Spiel verloren'], ['go', 'Zu einem Bildschirm (Menü) wechseln'], ['restart', 'Spiel neu starten']];
 
 // ---------- Standardwerte und Aufräumen alter Modelle ----------
-const SPR_DEF = { shape: 'circle', color: '#00e5a8', size: 50, stretch: 1, x: 50, y: 50, angle: 0, spin: 0, opacity: 1, control: 'none', axis: 'xy', motion: 'none', speed: 200, physics: 'none', solid: false, screen: '', hp: 1, wrap: false, openBottom: false, jump: 640, label: '', rows: 1, cols: 1, gapX: 8, gapY: 8 };
-const SET_DEF = { bg: '#0d1240', bg2: '', pattern: 'none', lives: 0, time: 0, timeMode: 'win', showScore: true, gravity: 1400, help: '' };
+const SPR_DEF = { shape: 'circle', color: '#00e5a8', size: 50, stretch: 1, x: 50, y: 50, angle: 0, spin: 0, opacity: 1, control: 'none', axis: 'xy', motion: 'none', speed: 200, physics: 'none', solid: false, screen: '', hp: 1, wrap: false, openBottom: false, jump: 640, label: '', glow: '', outline: '', hitbox: 'box', bounciness: 0.6, z: 0, fixed: false, radius: 80, amp: 60,  rows: 1, cols: 1, gapX: 8, gapY: 8 };
+const SET_DEF = { bg: '#0d1240', bg2: '', pattern: 'none', lives: 0, time: 0, timeMode: 'win', showScore: true, gravity: 1400, help: '', worldW: 1, worldH: 1, camera: '', zoom: 1, music: '', showBest: false };
 function normalizeModel(M) {
   M = M || {}; M.v = 2;
   M.settings = Object.assign({}, SET_DEF, M.settings || {});
@@ -235,6 +237,10 @@ function genCode(M) {
   g.push(`lives: ${num(S.lives) | 0}`, `time: ${num(S.time)}`, `timeMode: ${q(S.timeMode)}`, `showScore: ${!!S.showScore}`);
   if (num(S.gravity) !== 1400) g.push(`gravity: ${num(S.gravity)}`);
   if (S.help) g.push(`help: ${q(S.help)}`);
+  if (num(S.worldW) > 1) g.push(`worldWidth: ${Math.round(num(S.worldW) * 800)}`);
+  if (num(S.worldH) > 1) g.push(`worldHeight: ${Math.round(num(S.worldH) * 500)}`);
+  if (num(S.zoom) && num(S.zoom) !== 1) g.push(`zoom: ${num(S.zoom)}`);
+  if (S.showBest) g.push('showBest: true');
   L.push(`const game = Moki.game({ ${g.join(', ')} });`);
   if (M.vars.length) { L.push(''); M.vars.forEach(v => L.push(`game.set(${q(v.name)}, ${num(v.value)});`)); }
   if (M.sprites.length) L.push('');
@@ -253,6 +259,14 @@ function genCode(M) {
     const scn = M.screens.find(c => c.id === s.screen); if (scn) o.push(`screen: ${q(scn.name)}`);
     if (num(s.hp) !== 1) o.push(`hp: ${num(s.hp)}`);
     if (s.wrap) o.push('wrap: true');
+    if (s.glow) o.push(`glow: ${q(s.glow)}`);
+    if (s.outline) o.push(`outline: ${q(s.outline)}`);
+    if (s.hitbox === 'circle') o.push("hitbox: 'circle'");
+    if (num(s.z)) o.push(`z: ${num(s.z)}`);
+    if (s.fixed) o.push('fixed: true');
+    if (s.physics === 'body' && num(s.bounciness) !== 0.6) o.push(`bounciness: ${num(s.bounciness)}`);
+    if (s.motion === 'orbit') o.push(`radius: ${num(s.radius)}`);
+    if (s.motion === 'sine') o.push(`amp: ${num(s.amp)}`);
     if (s.openBottom && s.motion === 'bounce') o.push('openBottom: true');
     if (s.label) o.push(`label: ${q(s.label)}`);
     if (num(s.cols) > 1 || num(s.rows) > 1) o.push(`cols: ${num(s.cols) || 1}`, `rows: ${num(s.rows) || 1}`, `gapX: ${num(s.gapX)}`, `gapY: ${num(s.gapY)}`);
@@ -309,7 +323,16 @@ function genCode(M) {
       case 'effect':
         if (a.kind === 'shake') return [P + 'game.shake(300);'];
         if (a.kind === 'flash') return [P + 'game.flash("#ffffff");'];
+        if (a.kind === 'confetti') return onT(v => `game.emit(${v}.x, ${v}.y, { count: 40, color: ['#ff4d6d', '#ffd23f', '#00e5a8', '#4cc9f0'], speed: 380, life: 1 });`);
+        if (a.kind === 'fire') return onT(v => `game.emit(${v}.x, ${v}.y, { count: 30, color: ['#ff9f1c', '#ffd23f', '#ff4d6d'], angle: -90, spread: 70, gravity: -200, life: 0.7 });`);
+        if (a.kind === 'smoke') return onT(v => `game.emit(${v}.x, ${v}.y, { count: 20, color: ['#8890b8', '#5b6395'], angle: -90, spread: 50, gravity: -60, size: 9, life: 1.2, shape: 'circle' });`);
         return onT(v => (a.kind === 'boom' ? `{ ${v}.burst(null, 30); game.shake(200); }` : `${v}.burst();`));
+      case 'music': return [P + `game.music(${a.on === false ? 'null' : q(a.music || 'retro')});`];
+      case 'timescale': return [P + `game.timeScale = ${num(a.f) || 1};`];
+      case 'zoom': return [P + `game.tween(game.camera, { zoom: ${num(a.f) || 1} }, ${num(a.sec) || 0.5}, 'out');`];
+      case 'clone': return onT(v => `${v}.clone();`);
+      case 'face': { const o = other(); return o ? onT(v => `${v}.face(${o});`) : [P + '// (Figur fehlt: face)']; }
+      case 'tween': return onT(v => `${v}.tween({ size: ${v}.size * ${num(a.f) || 1} }, ${num(a.sec) || 0.5}, 'back');`);
       case 'say': return [P + `game.say(${q(a.text || '')}, 2);`];
       case 'win': return [P + `game.win(${q(a.text || 'Gewonnen!')});`];
       case 'lose': return [P + `game.lose(${q(a.text || 'Verloren')});`];
@@ -323,6 +346,8 @@ function genCode(M) {
     if (w.type === 'start') head = 'game.onStart(() => {';
     else if (w.type === 'key') head = `game.onKey(${q(w.key || 'SPACE')}, () => {`;
     else if (w.type === 'hold') head = `game.onKeyHold(${q(w.key || 'SPACE')}, (dt) => {`;
+    else if (w.type === 'frame') head = 'game.onUpdate((dt) => {';
+    else if (w.type === 'release') head = `game.onKeyUp(${q(w.key || 'SPACE')}, () => {`;
     else if (w.type === 'tap') head = 'game.onPointer(() => {';
     else if (w.type === 'touch') head = nameOf(w.a) && nameOf(w.b) ? `game.onTouch(${q(nameOf(w.a))}, ${q(nameOf(w.b))}, (a, b) => {` : null;
     else if (w.type === 'edge') head = nameOf(w.a) ? `game.onEdge(${q(nameOf(w.a))}, (a) => {` : null;
@@ -343,6 +368,8 @@ function genCode(M) {
     if (conds.length) L.push('  }');
     L.push('});');
   });
+  if (S.camera && nameOf(S.camera)) L.push('', `game.camera.follow(game.find(${q(nameOf(S.camera))}));`);
+  if (S.music) L.push(`game.onStart(() => game.music(${q(S.music)}));`);
   L.push(''); L.push('game.start();');
   return L.join('\n') + '\n';
 }

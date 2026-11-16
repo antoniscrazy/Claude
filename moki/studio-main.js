@@ -1,8 +1,16 @@
 // ====================================================================
 // Vorschau (geschützte Box: sandbox ohne same-origin)
 // ====================================================================
+const isHtmlCode = c => /^\s*(<!doctype|<html|<head|<body)/i.test(String(c));
+function getSave() { try { return JSON.parse(localStorage.getItem('moki_studio_save') || '{}'); } catch (e) { return {}; } }
 function buildSrcdoc(code, title) {
-  const pre = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><script>window.MOKI_TITLE=' + JSON.stringify(title).replace(/</g, '\\u003c') + ';<\/script><script>' + window.MOKI_ENGINE + '<\/script><script>\n';
+  const inj = '<script>window.MOKI_TITLE=' + JSON.stringify(title).replace(/</g, '\\u003c') + ';window.MOKI_SAVE=' + JSON.stringify(getSave()).replace(/</g, '\\u003c') + ';<\/script><script>' + window.MOKI_ENGINE + '<\/script>';
+  if (isHtmlCode(code)) {   // ganze HTML-Seite
+    let html = String(code), m = /<head[^>]*>/i.exec(html) || /<html[^>]*>/i.exec(html) || /<!doctype[^>]*>/i.exec(html), at = m ? m.index + m[0].length : 0;
+    html = html.slice(0, at) + inj + html.slice(at);
+    return { html, offset: html.slice(0, at).split('\n').length + inj.split('\n').length - 1 };
+  }
+  const pre = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>' + inj + '<script>\n';
   return { html: pre + String(code).replace(/<\/script/gi, '<\\/script') + '\n<\/script></body></html>', offset: pre.split('\n').length };
 }
 let prevOffset = 1, runTimer = 0;
@@ -32,6 +40,7 @@ addEventListener('message', e => {
     consAdd('e', (line ? 'Zeile ' + line + ': ' : '') + String(m.text).slice(0, 1000));
     if (line) setGutterError(line);
   } else if (m.type === 'restart') runPreview();
+  else if (m.type === 'save') { const sv = getSave(); sv[String(m.key).slice(0, 60)] = m.value; try { localStorage.setItem('moki_studio_save', JSON.stringify(sv).slice(0, 200000)); } catch (e) {} }
 });
 
 // ====================================================================
@@ -145,7 +154,13 @@ BEISPIEL (ein komplettes, funktionierendes Spiel)
 \`\`\`javascript
 ${STARTER_CODE}\`\`\`
 
-Wenn dir etwas fehlt, baue es mit diesen Funktionen nach. Das ist mein Wunsch:`;
+Wenn dir etwas fehlt, baue es mit diesen Funktionen nach. Das ist mein Wunsch:
+FORTGESCHRITTEN (nur bei Bedarf benutzen)
+- game.sprite hat auch: motion 'patrol','wander','orbit'(radius),'sine'(amp,freq),'drift'; physics 'body' (bounciness); glow, outline, z, fixed, hitbox:'circle', image:'https://…'; world: Moki.game({worldWidth, worldHeight}) und game.camera.follow(figur).
+- game.level(zeilen, legende, zellgroesse) baut ein Level aus Text. game.art(name, zeilen, palette) erzeugt Pixel-Art, danach shape:name.
+- game.onDraw(ctx=>…), game.onDrawBack, game.onDrawHud zum selbst Zeichnen. game.emit(x,y,{count,color,speed,angle,spread,gravity,life}) für Partikel. s.tween({size:90},0.4,'bounce'). await game.wait(sek).
+- game.music('retro'|'chill'|'action'|'space'), game.tone(freq,dauer,typ), game.save(key,wert), game.load(key,standard), game.best, game.timeScale, game.math.lerp/clamp/dist/noise/choose.
+`;
 const aiPrompt = req => AI_INTRO + ' ' + (req || '').trim();
 function extractCode(text) {
   const t = String(text || '').replace(/\r/g, '');
@@ -282,6 +297,17 @@ Steuerung: 'keys' oder 'mouse' · Bewegung: fall, rise, left, right, bounce, fol
 <h4>Menüs und Bildschirme</h4><p><code>Moki.game({ screens:[{ name:'Hauptmenü', menu:true }, { name:'Spiel', menu:false }] })</code> · Figur mit <code>screen:'Spiel'</code> erscheint nur dort · <code>game.go('Spiel')</code> wechselt · <code>game.onScreen('Spiel', () => {})</code><br>
 Ein Knopf ist <code>shape:'button'</code> mit <code>label:'Spielen'</code>, dazu <code>game.onClick('Knopfname', () => game.go('Spiel'))</code>. Bildschirme namens <code>Gewonnen</code> und <code>Verloren</code> öffnen sich automatisch; <code>{message}</code> zeigt den Text an.</p>
 <h4>Texte anzeigen</h4><p>Eine Figur mit <code>shape:'text'</code> und <code>label:'Punkte: {score} Leben: {lives}'</code> zeigt Werte live an. Auch <code>{Schlüssel}</code> für eigene Variablen.</p>
+<h4>Mehr Möglichkeiten (Engine 3)</h4><p><b>Große Welt und Kamera:</b> <code>Moki.game({ worldWidth:2400, worldHeight:1000, zoom:1 })</code> · <code>game.camera.follow(figur, 0.1)</code> · <code>game.camera.zoom = 1.5</code> · <code>game.camera.center(x, y)</code> · <code>fixed:true</code> bei einer Figur lässt sie am Bildschirm kleben (Anzeigen, Knöpfe) · <code>scroll:0.5</code> für Parallax.<br>
+<b>Level aus Text:</b> <code>game.level(['#####','#  o#','#####'], { '#': {shape:'square', solid:true}, 'o': {shape:'star', name:'Stern'} }, 40)</code> baut ein ganzes Level. Außerdem <code>copies:[[x%,y%],…]</code> und <code>at:[pixelX, pixelY]</code> bei <code>game.sprite</code>.<br>
+<b>Eigene Bilder:</b> <code>game.art('Männchen', ['..00..','.0000.','..00..'], ['#222','#fc0'])</code> zeichnet Pixel-Art (Zeichen = Farbnummer 0-9 a-f, Punkt = leer; mehrere Bilder als Liste ergeben eine Animation). Danach <code>shape:'Männchen'</code>. Mit <code>image:'https://…'</code> klappt auch ein Bild aus dem Netz.<br>
+<b>Bewegung:</b> <code>motion</code> auch 'patrol', 'wander', 'orbit' (<code>radius</code>), 'sine' (<code>amp</code>, <code>freq</code>), 'drift' · <code>physics:'body'</code> = Ball-Physik (<code>bounciness</code>, <code>drag</code>) · <code>s.follow(ziel, tempo, dt)</code> · <code>s.face(ziel)</code> · <code>s.distanceTo(ziel)</code> · <code>s.angleTo(ziel)</code> · <code>s.tween({ size: 90 }, 0.4, 'bounce')</code> (easing: linear, in, out, inout, back, bounce, elastic) · <code>game.tween(obj, props, sek)</code> · <code>await game.wait(1.5)</code>.<br>
+<b>Aussehen:</b> <code>glow</code>, <code>outline</code>, <code>outlineWidth</code>, <code>flipX</code>, <code>z</code> (Ebene), <code>visible</code>, <code>hitbox:'circle'</code> · Partikel: <code>game.emit(x, y, { count, color:[…], speed, angle, spread, gravity, life, size })</code>.<br>
+<b>Selbst zeichnen:</b> <code>game.onDrawBack(ctx => …)</code> (hinter den Figuren), <code>game.onDraw(ctx => …)</code> (in der Welt), <code>game.onDrawHud(ctx => …)</code> (über allem) mit dem normalen Canvas-<code>ctx</code>. Helfer: <code>game.ui.text / rect / circle / line / bar</code>.<br>
+<b>Eingabe:</b> <code>game.key('A')</code> · <code>game.pointer.x/.y/.down</code> · <code>game.onKeyUp</code> · <code>game.onPointerMove</code> · <code>game.onPointerUp</code> · <code>game.onWheel</code> · <code>game.gamepad(0)</code> · <code>game.onDestroy</code>.<br>
+<b>Ton:</b> <code>game.music('retro' | 'chill' | 'action' | 'space')</code> (<code>null</code> = aus) · <code>game.tone(440, 0.2, 'square')</code> · <code>game.sweep(900, 200, 0.3)</code> · <code>game.noise(0.3)</code> · <code>game.volume(0.5)</code> · Taste M schaltet den Ton aus.<br>
+<b>Speichern:</b> <code>game.save('level', 3)</code> und <code>game.load('level', 1)</code> bleiben auf dem Gerät erhalten · <code>game.best</code> ist der Rekord (mit <code>showBest:true</code> sichtbar).<br>
+<b>Zeit:</b> <code>game.timeScale = 0.3</code> (Zeitlupe) · <code>game.pause()</code> · <code>game.resume()</code> · <code>game.math.lerp / clamp / dist / angle / map / noise / choose / shuffle / randInt</code>.</p>
+<h4>Ganze HTML-Seite (alles ist erlaubt)</h4><p>Beginnt dein Code mit <code>&lt;!doctype html&gt;</code>, wird er als <b>komplette Webseite</b> ausgeführt. Dann kannst du eigenes HTML, CSS, Canvas, WebGL, Web Audio, SVG und eigene Skripte benutzen, ganz ohne Moki-Engine. Die Engine (<code>Moki.game</code>) ist trotzdem verfügbar, wenn du sie brauchst. Aus Sicherheitsgründen läuft alles in einer geschützten Box: kein Zugriff auf Moki, Cookies oder Speicher der Seite, keine Formulare, keine neuen Fenster.</p>
 <h4>Tipp</h4><p>Mit <code>console.log(...)</code> schreibst du in die Konsole unter der Vorschau. Fehler zeigen die Zeile an.</p>`;
 function hl(src) {
   const e = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

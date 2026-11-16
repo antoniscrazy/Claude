@@ -22,9 +22,12 @@ const MURL = {};
 const motifUrl = id => MURL[id] || (MURL[id] = svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="200" height="200"><g stroke="#0d1240" stroke-width="3.4" stroke-linejoin="round" stroke-linecap="round">${(MOKI_MOTIFS.find(m => m.id === id) || { svg: '' }).svg}</g></svg>`));
 
 // ---------- Spielfeld (SVG) ----------
+const WD = () => { const S = App.g.model.settings; return [800 * Math.max(1, Math.min(6, num(S.worldW) || 1)), 500 * Math.max(1, Math.min(6, num(S.worldH) || 1))]; };
+const DIM = s => s.fixed ? [800, 500] : WD();
 function sceneCells(s) {
+  const d = DIM(s);
   const w = num(s.size) * (num(s.stretch) || 1), h = num(s.size), cols = Math.max(1, num(s.cols) | 0), rows = Math.max(1, num(s.rows) | 0), out = [];
-  for (let j = 0; j < Math.min(rows, 40); j++) for (let i = 0; i < Math.min(cols, 40); i++) out.push({ cx: num(s.x) / 100 * 800 + i * (w + num(s.gapX)), cy: num(s.y) / 100 * 500 + j * (h + num(s.gapY)), w, h });
+  for (let j = 0; j < Math.min(rows, 40); j++) for (let i = 0; i < Math.min(cols, 40); i++) out.push({ cx: num(s.x) / 100 * d[0] + i * (w + num(s.gapX)), cy: num(s.y) / 100 * d[1] + j * (h + num(s.gapY)), w, h });
   return out;
 }
 function sceneShape(s, c) {
@@ -37,10 +40,11 @@ function sceneShape(s, c) {
   return `<path transform="${tr} translate(${-c.w / 2} ${-c.h / 2}) scale(${c.w / 100} ${c.h / 100})" d="${MOKI_SHAPES[s.shape] || MOKI_SHAPES.circle}" fill-rule="${s.shape === 'ring' ? 'evenodd' : 'nonzero'}"${st}/>`;
 }
 function sceneInner(M) {
-  const S = M.settings; let h = `<defs><linearGradient id="sgbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${esc(S.bg)}"/><stop offset="1" stop-color="${esc(S.bg2 || S.bg)}"/></linearGradient></defs><rect width="800" height="500" fill="url(#sgbg)"/>`;
-  for (let x = 100; x < 800; x += 100) h += `<line x1="${x}" y1="0" x2="${x}" y2="500" stroke="#fff" stroke-opacity=".06"/>`;
-  for (let y = 100; y < 500; y += 100) h += `<line x1="0" y1="${y}" x2="800" y2="${y}" stroke="#fff" stroke-opacity=".06"/>`;
-  h += '<rect x="0.5" y="0.5" width="799" height="499" fill="none" stroke="#fff" stroke-opacity=".25"/>';
+  const S = M.settings; let h = `<defs><linearGradient id="sgbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${esc(S.bg)}"/><stop offset="1" stop-color="${esc(S.bg2 || S.bg)}"/></linearGradient></defs><rect width="${WD()[0]}" height="${WD()[1]}" fill="url(#sgbg)"/>`;
+  for (let x = 100; x < WD()[0]; x += 100) h += `<line x1="${x}" y1="0" x2="${x}" y2="${WD()[1]}" stroke="#fff" stroke-opacity=".06"/>`;
+  for (let y = 100; y < WD()[1]; y += 100) h += `<line x1="0" y1="${y}" x2="${WD()[0]}" y2="${y}" stroke="#fff" stroke-opacity=".06"/>`;
+  h += `<rect x="0.5" y="0.5" width="${WD()[0] - 1}" height="${WD()[1] - 1}" fill="none" stroke="#fff" stroke-opacity=".25"/>`;
+  if (WD()[0] > 800 || WD()[1] > 500) h += '<rect x="0.5" y="0.5" width="799" height="499" fill="none" stroke="#00e5a8" stroke-opacity=".5" stroke-dasharray="8 6"/>';
   const vis = s => !App.scr || !s.screen || s.screen === App.scr;
   M.sprites.filter(vis).forEach(s => { const cells = sceneCells(s); h += `<g data-sid="${esc(s.id)}" style="cursor:grab">${cells.map(c => sceneShape(s, c)).join('')}</g>`; });
   const sel = M.sprites.find(s => s.id === App.sel && vis(s));
@@ -53,7 +57,7 @@ function sceneInner(M) {
   }
   return h;
 }
-function drawScene() { const s = $('#scene'); if (s && App.g) s.innerHTML = sceneInner(App.g.model); }
+function drawScene() { const s = $('#scene'); if (s && App.g) { s.setAttribute('viewBox', '0 0 ' + WD()[0] + ' ' + WD()[1]); s.innerHTML = sceneInner(App.g.model); } }
 let drag = null;
 function scenePoint(e) { const svg = $('#scene'), pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; const p = pt.matrixTransform(svg.getScreenCTM().inverse()); return { x: p.x, y: p.y }; }
 function markSelected() { $$('#pane-builder .cardx.sprite').forEach(c => c.classList.toggle('sel', c.dataset.sid === App.sel)); }
@@ -63,7 +67,7 @@ document.addEventListener('pointerdown', e => {
   if (handle) { const s = M.sprites.find(x => x.id === handle.dataset.handle); drag = { mode: 'size', s }; }
   else if (g) {
     const s = M.sprites.find(x => x.id === g.dataset.sid); App.sel = s.id;
-    drag = { mode: 'move', s, ox: p.x - num(s.x) / 100 * 800, oy: p.y - num(s.y) / 100 * 500, moved: false };
+    drag = { mode: 'move', s, ox: p.x - num(s.x) / 100 * DIM(s)[0], oy: p.y - num(s.y) / 100 * DIM(s)[1], moved: false };
     markSelected();
   } else { App.sel = null; markSelected(); }
   if (drag) { try { svg.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); }
@@ -73,9 +77,9 @@ document.addEventListener('pointermove', e => {
   if (!drag) return;
   const p = scenePoint(e), s = drag.s;
   if (drag.mode === 'move') {
-    s.x = Math.round((p.x - drag.ox) / 800 * 100 * 2) / 2; s.y = Math.round((p.y - drag.oy) / 500 * 100 * 2) / 2; drag.moved = true;
+    s.x = Math.round((p.x - drag.ox) / DIM(s)[0] * 100 * 2) / 2; s.y = Math.round((p.y - drag.oy) / DIM(s)[1] * 100 * 2) / 2; drag.moved = true;
   } else {
-    const cx = num(s.x) / 100 * 800, cy = num(s.y) / 100 * 500, st = num(s.stretch) || 1;
+    const cx = num(s.x) / 100 * DIM(s)[0], cy = num(s.y) / 100 * DIM(s)[1], st = num(s.stretch) || 1;
     s.size = clamp(Math.round(Math.max(Math.abs(p.x - cx) * 2 / st, Math.abs(p.y - cy) * 2) / 2) * 2, 8, 600); drag.moved = true;
   }
   drawScene();
@@ -120,7 +124,13 @@ function spriteCard(M, s, i) {
       ${sl('Dauerdrehung', 'spin', -360, 360, 10, '°/s')}
       ${sl('Deckkraft', 'opacity', 0.1, 1, 0.05)}
       <label>Physik<select data-p="${P}physics" data-re="1">${opt(PHYSICS, s.physics)}</select></label>
-      ${s.physics === 'platformer' ? sl('Sprungkraft', 'jump', 200, 1100, 10) : '<span></span>'}
+      ${s.physics === 'platformer' ? sl('Sprungkraft', 'jump', 200, 1100, 10) : s.physics === 'body' ? sl('Abprallen', 'bounciness', 0, 1.2, 0.05) : '<span></span>'}
+      ${s.motion === 'orbit' ? sl('Kreisradius', 'radius', 10, 400, 5) : s.motion === 'sine' ? sl('Wellenhöhe', 'amp', 5, 250, 5) : '<span></span>'}
+      <label>Treffer-Form<select data-p="${P}hitbox">${opt(HIT_OPTS, s.hitbox)}</select></label>
+      ${sl('Ebene (vorne/hinten)', 'z', -5, 5, 1)}
+      <label>Leuchten<span style="display:flex;gap:6px"><input type="color" data-p="${P}glow" value="${esc(s.glow || '#ffffff')}" style="flex:1"><button class="btn sm ghost" data-act="clr" data-f="glow" data-i="${i}" type="button">aus</button></span></label>
+      <label>Rand<span style="display:flex;gap:6px"><input type="color" data-p="${P}outline" value="${esc(s.outline || '#ffffff')}" style="flex:1"><button class="btn sm ghost" data-act="clr" data-f="outline" data-i="${i}" type="button">aus</button></span></label>
+      <label class="ck"><input type="checkbox" data-p="${P}fixed"${s.fixed ? ' checked' : ''}>Bleibt am Bildschirm (Anzeige / Knopf, ohne Kamera)</label>
       ${sl('Leben der Figur', 'hp', 1, 99, 1)}
       <span></span>
       <label class="ck"><input type="checkbox" data-p="${P}solid"${s.solid ? ' checked' : ''}>Fest (Boden / Wand / Plattform)</label>
@@ -136,6 +146,7 @@ function whenParams(M, w, P) {
   switch (w.type) {
     case 'touch': return `<select data-p="${P}a">${spOpts(M, w.a, '— Figur A —')}</select><span>und</span><select data-p="${P}b" data-re="1">${spOpts(M, w.b, '— Figur B —')}</select><span>sich berühren</span>`;
     case 'key': return `<select data-p="${P}key">${opt(KEYS, w.key)}</select><span>gedrückt wird</span>`;
+    case 'release': return `<select data-p="${P}key">${opt(KEYS, w.key)}</select><span>losgelassen wird</span>`;
     case 'hold': return `<select data-p="${P}key">${opt(KEYS, w.key)}</select><span>gehalten wird (jedes Bild)</span>`;
     case 'tap': return '<span>irgendwo getippt oder geklickt wird</span>';
     case 'edge': return `<select data-p="${P}a">${spOpts(M, w.a)}</select><span>den Bildschirm verlässt</span>`;
@@ -172,8 +183,14 @@ function actParams(M, w, a, P) {
     case 'show': return T() + `<select data-p="${P}visible" data-bool="1"><option value="true"${a.visible !== false ? ' selected' : ''}>zeigen</option><option value="false"${a.visible === false ? ' selected' : ''}>verstecken</option></select>`;
     case 'spawn': return `<select data-p="${P}sprite">${spOpts(M, a.sprite)}</select><span>neu erzeugen</span><select data-p="${P}where" data-re="1">${opt([['auto', 'am Rand (wie gewohnt)'], ['random', 'zufällig'], ['xy', 'an einem Ort']].concat(hasA(w) ? [['at@a', 'bei Figur A']] : []).concat(w.type === 'touch' ? [['at@b', 'bei Figur B']] : []), a.where || 'auto')}</select>` + (a.where === 'xy' ? `<span>X</span>${N('x', 1, 0)}<span>% Y</span>${N('y', 1, 0)}<span>%</span>` : '');
     case 'go': return `<span>zu</span><select data-p="${P}screen">${scrOpts(M, a.screen)}</select><span>wechseln</span>`;
+    case 'music': return `<select data-p="${P}music">${opt(MUSIC_OPTS.slice(1), a.music || 'retro')}</select><select data-p="${P}on" data-bool="1"><option value="true"${a.on !== false ? ' selected' : ''}>an</option><option value="false"${a.on === false ? ' selected' : ''}>aus</option></select>`;
+    case 'timescale': return `<span>Tempo der Welt</span>${N('f', 0.05, 0)}<span>(1 normal, 0.3 Zeitlupe)</span>`;
+    case 'zoom': return `<span>Zoom auf</span>${N('f', 0.1, 0)}<span>in</span>${N('sec', 0.1, 0)}<span>Sek.</span>`;
+    case 'clone': return T();
+    case 'face': return T() + `<span>dreht sich zu</span><select data-p="${P}other">${targetOpts(M, w, a.other)}</select>`;
+    case 'tween': return T() + `<span>Größe mal</span>${N('f', 0.05, 0)}<span>in</span>${N('sec', 0.1, 0)}<span>Sek.</span>`;
     case 'sound': return `<select data-p="${P}sound">${opt(SOUND_OPTS, a.sound)}</select>`;
-    case 'effect': return `<select data-p="${P}kind" data-re="1">${opt(EFFECT_OPTS, a.kind)}</select>` + (a.kind === 'sparks' || a.kind === 'boom' ? T() : '');
+    case 'effect': return `<select data-p="${P}kind" data-re="1">${opt(EFFECT_OPTS, a.kind)}</select>` + (['sparks', 'boom', 'confetti', 'fire', 'smoke'].includes(a.kind) ? T() : '');
     case 'say': return `<input type="text" data-p="${P}text" value="${esc(a.text || '')}" maxlength="60" placeholder="Text">`;
     case 'win': case 'lose': return `<input type="text" data-p="${P}text" value="${esc(a.text || '')}" maxlength="40" placeholder="Text (optional)">`;
   } return '';
@@ -198,7 +215,7 @@ function renderBuilder() {
   ${g.mode === 'code' ? `<div class="tonote">Dieses Spiel besteht aus eigenem Code. Der Baukasten zeigt hier den alten Stand. Wenn du hier etwas änderst, wird der Code <b>ersetzt</b>, sobald du „Aus dem Baukasten übernehmen“ wählst.<div style="margin-top:10px"><button class="btn sm warn" data-act="from-builder" type="button">Aus dem Baukasten übernehmen</button></div></div>` : ''}
   <details class="bx" open><summary>${ic('game')} Spielfeld <span class="cnt">ziehen zum Verschieben</span></summary><div class="in-b">
     ${M.screens.length ? `<div class="scrtabs"><button class="tab${!App.scr ? ' on' : ''}" data-act="scr-tab" data-sid="" type="button">Alle</button>${M.screens.map(c => `<button class="tab${App.scr === c.id ? ' on' : ''}" data-act="scr-tab" data-sid="${esc(c.id)}" type="button">${esc(c.name)}</button>`).join('')}</div>` : ''}
-    <svg id="scene" viewBox="0 0 800 500" role="img" aria-label="Spielfeld: Figuren zum Verschieben ziehen">${sceneInner(M)}</svg>
+    <svg id="scene" viewBox="0 0 ${WD()[0]} ${WD()[1]}" role="img" aria-label="Spielfeld: Figuren zum Verschieben ziehen">${sceneInner(M)}</svg>
     <p class="hint">So sieht das Spielfeld beim Start aus. Zieh eine Figur zum Verschieben, die grüne Kugel unten rechts vergrößert sie. Doppelklick öffnet die Einstellungen.</p>
   </div></details>
   <details class="bx" open><summary>${ic('pen')} Spiel</summary><div class="in-b"><div class="g2">
@@ -209,6 +226,12 @@ function renderBuilder() {
     <label>Zeit in Sekunden (0 = keine)<input type="number" min="0" max="600" data-p="settings.time" value="${num(S.time)}"></label>
     <label>Wenn die Zeit abläuft<select data-p="settings.timeMode"><option value="win"${S.timeMode === 'win' ? ' selected' : ''}>hast du gewonnen</option><option value="lose"${S.timeMode === 'lose' ? ' selected' : ''}>hast du verloren</option></select></label>
     <label><span class="lt">Schwerkraft<b>${num(S.gravity)}</b></span><input type="range" min="200" max="3000" step="50" data-p="settings.gravity" value="${num(S.gravity)}"></label>
+    <label><span class="lt">Welt breit (Bildschirme)<b>${num(S.worldW)}</b></span><input type="range" min="1" max="6" step="1" data-p="settings.worldW" value="${num(S.worldW)}"></label>
+    <label><span class="lt">Welt hoch (Bildschirme)<b>${num(S.worldH)}</b></span><input type="range" min="1" max="6" step="1" data-p="settings.worldH" value="${num(S.worldH)}"></label>
+    <label>Kamera folgt<select data-p="settings.camera"><option value="">Niemandem (fest)</option>${M.sprites.map(x => `<option value="${esc(x.id)}"${x.id === S.camera ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>
+    <label><span class="lt">Zoom<b>${num(S.zoom)}</b></span><input type="range" min="0.5" max="2" step="0.1" data-p="settings.zoom" value="${num(S.zoom)}"></label>
+    <label>Hintergrundmusik<select data-p="settings.music">${opt(MUSIC_OPTS, S.music)}</select></label>
+    <label class="ck"><input type="checkbox" data-p="settings.showBest"${S.showBest ? ' checked' : ''}>Rekord anzeigen (wird gespeichert)</label>
     <label class="ck"><input type="checkbox" data-p="settings.showScore"${S.showScore ? ' checked' : ''}>Punkte anzeigen</label>
     <label style="grid-column:1/-1">Anleitung auf dem Startbildschirm<input type="text" data-p="settings.help" value="${esc(S.help)}" maxlength="70" placeholder="z. B. Pfeiltasten bewegen den Spieler"></label>
   </div></div></details>
@@ -241,7 +264,7 @@ function fixWhen(M, r) {
   const w = r.when, s = M.sprites;
   if (w.type === 'touch') { w.a = w.a || (s[0] && s[0].id) || ''; w.b = w.b || (s[1] && s[1].id) || (s[0] && s[0].id) || ''; }
   else if (['edge', 'click', 'destroyed'].includes(w.type)) w.a = w.a || (s[0] && s[0].id) || '';
-  else if (w.type === 'key' || w.type === 'hold') w.key = w.key || 'SPACE';
+  else if (w.type === 'key' || w.type === 'hold' || w.type === 'release') w.key = w.key || 'SPACE';
   else if (w.type === 'every') w.n = w.n || 2; else if (w.type === 'after') w.n = w.n || 3;
   else if (w.type === 'score') w.n = w.n || 10;
   else if (w.type === 'screen') w.screen = w.screen || (M.screens[0] && M.screens[0].id) || '';
@@ -253,13 +276,14 @@ function fixWhen(M, r) {
     if (a.where === 'at@b' && w.type !== 'touch') a.where = 'auto'; if (a.where === 'at@a' && !hasA(w)) a.where = 'auto';
   });
 }
-const NEEDS_T = ['respawn', 'scatter', 'destroy', 'place', 'fly', 'stop', 'move', 'jump', 'shoot', 'hurt', 'bounce', 'speed', 'grow', 'color', 'show'];
+const NEEDS_T = ['respawn', 'scatter', 'destroy', 'place', 'fly', 'stop', 'move', 'jump', 'shoot', 'hurt', 'bounce', 'speed', 'grow', 'color', 'show', 'clone', 'face', 'tween'];
 function fixAction(M, r, a) {
-  const s = M.sprites, d = { score: { n: 1 }, life: { n: -1 }, setvar: { n: 0 }, addvar: { n: 1 }, place: { x: 50, y: 50 }, fly: { dir: 'up', speed: 300 }, move: { dir: 'right', speed: 200 }, jump: { power: 640 }, shoot: { dir: 'up', speed: 520 }, hurt: { n: 1 }, speed: { f: 1.2 }, grow: { f: 1.2 }, color: { color: '#ff4d6d' }, spawn: { where: 'auto' }, sound: { sound: 'coin' }, effect: { kind: 'sparks' }, say: { text: 'Hallo!' } }[a.type];
+  const s = M.sprites, d = { timescale: { f: 0.4 }, zoom: { f: 1.3, sec: 0.5 }, tween: { f: 1.5, sec: 0.4 }, music: { music: 'retro' }, score: { n: 1 }, life: { n: -1 }, setvar: { n: 0 }, addvar: { n: 1 }, place: { x: 50, y: 50 }, fly: { dir: 'up', speed: 300 }, move: { dir: 'right', speed: 200 }, jump: { power: 640 }, shoot: { dir: 'up', speed: 520 }, hurt: { n: 1 }, speed: { f: 1.2 }, grow: { f: 1.2 }, color: { color: '#ff4d6d' }, spawn: { where: 'auto' }, sound: { sound: 'coin' }, effect: { kind: 'sparks' }, say: { text: 'Hallo!' } }[a.type];
   if (d) for (const k in d) if (a[k] == null) a[k] = d[k];
   const defT = r.when.type === 'touch' ? '@b' : (hasA(r.when) ? '@a' : (s[0] && s[0].id) || '');
   if ((NEEDS_T.includes(a.type) || (a.type === 'effect' && (a.kind === 'sparks' || a.kind === 'boom'))) && !a.target) a.target = (a.type === 'jump' || a.type === 'shoot' || a.type === 'fly' || a.type === 'move' || a.type === 'stop') ? ((hasA(r.when) ? '@a' : (s[0] && s[0].id)) || '') : defT;
   if (a.type === 'go' && !a.screen) a.screen = (M.screens[0] && M.screens[0].id) || '';
+  if (a.type === 'face' && !a.other) a.other = r.when.type === 'touch' ? '@b' : '';
   if (a.type === 'bounce' && !a.other) a.other = r.when.type === 'touch' ? '@b' : '';
   if (a.type === 'bounce' && r.when.type === 'touch') a.target = a.target || '@a';
   if (['spawn', 'shoot'].includes(a.type) && !a.sprite) a.sprite = (s[0] && s[0].id) || '';
@@ -316,6 +340,7 @@ $('#pane-builder').addEventListener('click', e => {
   else if (a === 'add-var') { let n = 'Zahl', k = 2; while (M.vars.some(v => v.name === n)) n = 'Zahl ' + k++; M.vars.push({ id: uid('v'), name: n, value: 0 }); }
   else if (a === 'del-var') { const id = M.vars[i].id; M.vars.splice(i, 1); M.rules.forEach(r => { if (r.when.stat === 'var:' + id) r.when.stat = 'score'; (r.conds || []).forEach(c => { if (c.stat === 'var:' + id) c.stat = 'score'; }); (r.then || []).forEach(x => { if (x.var === id) x.var = ''; }); }); }
   else if (a === 'clear-bg2') M.settings.bg2 = '';
+  else if (a === 'clr') { M.sprites[+b.dataset.i][b.dataset.f] = ''; }
   else if (a === 'scr-tab') App.scr = b.dataset.sid;
   else if (a === 'add-screen') { let n = 'Bildschirm', k = 2; while (M.screens.some(c => c.name === n)) n = 'Bildschirm ' + k++; const c = { id: uid('c'), name: n, menu: true }; M.screens.push(c); App.scr = c.id; }
   else if (a === 'add-menus') { addMenus(M, g.title); App.scr = M.screens[0].id; toast('Menüs hinzugefügt: Hauptmenü, Pause, Gewonnen und Verloren', 'ok'); }

@@ -54,10 +54,16 @@
 
   // ---------- Spiel-Seite ----------
   let play = null;   // { slug, el, html, token }
-  function srcdoc(code, title) {
-    return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><script>window.MOKI_TITLE=' +
-      JSON.stringify(title).replace(/</g, "\\u003c") + ';<\/script><script>' + window.MOKI_ENGINE + '<\/script><script>\n' +
-      String(code).replace(/<\/script/gi, "<\\/script") + '\n<\/script></body></html>';
+  function saveKey(slug) { return "moki_save_" + slug; }
+  function getSave(slug) { try { return JSON.parse(localStorage.getItem(saveKey(slug)) || "{}"); } catch (e) { return {}; } }
+  function srcdoc(code, title, slug) {
+    const inj = "<script>window.MOKI_TITLE=" + JSON.stringify(title).replace(/</g, "\\u003c") + ";window.MOKI_SAVE=" + JSON.stringify(getSave(slug)).replace(/</g, "\\u003c") + ";<\/script><script>" + window.MOKI_ENGINE + "<\/script>";
+    code = String(code);
+    if (/^\s*(<!doctype|<html|<head|<body)/i.test(code)) {
+      const m = /<head[^>]*>/i.exec(code) || /<html[^>]*>/i.exec(code) || /<!doctype[^>]*>/i.exec(code), at = m ? m.index + m[0].length : 0;
+      return code.slice(0, at) + inj + code.slice(at);
+    }
+    return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>' + inj + "<script>\n" + code.replace(/<\/script/gi, "<\\/script") + "\n<\/script></body></html>";
   }
   function mountFrame(stage, html) {
     const old = stage.querySelector("iframe"); if (old) old.remove();
@@ -88,7 +94,7 @@
     el.querySelector(".pinfo b").textContent = g.title;
     el.querySelector(".pinfo span").textContent = "von " + g.creator;
     stage.innerHTML = "";
-    me.html = srcdoc(g.code, g.title);
+    me.code = g.code; me.title = g.title; me.html = srcdoc(g.code, g.title, slug);
     mountFrame(stage, me.html);   // lädt schon im Hintergrund. Gestartet wird erst durch Tippen im Spiel.
     // Moki-Animation mit "Made by ..."
     const sp = document.createElement("div");
@@ -121,7 +127,8 @@
   addEventListener("message", e => {
     const d = e.data; if (!d || d.moki !== 1 || !play || !play.html) return;
     const f = play.el.querySelector("iframe"); if (!f || e.source !== f.contentWindow) return;
-    if (d.type === "restart") { const st = play.el.querySelector(".pstage"); mountFrame(st, play.html).focus(); }
+    if (d.type === "save" && play) { const sv = getSave(play.slug); sv[String(d.key).slice(0, 60)] = d.value; try { localStorage.setItem(saveKey(play.slug), JSON.stringify(sv).slice(0, 100000)); } catch (x) {} return; }
+    if (d.type === "restart") { const st = play.el.querySelector(".pstage"); play.html = srcdoc(play.code, play.title, play.slug); mountFrame(st, play.html).focus(); }
   });
   addEventListener("keydown", e => { if (e.key === "Escape" && play && !document.querySelector("#upd.open")) location.hash = "#/"; });
   const sb = document.getElementById("studio"); if (sb && CFGM.studioUrl) sb.href = CFGM.studioUrl;
