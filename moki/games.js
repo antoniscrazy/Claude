@@ -306,6 +306,18 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "stick-war-legacy",
+    title: "Stick War Legacy",
+    url: "https://peppy-donut-3fac2d.netlify.app",
+    category: "Strategie",
+    image: "stick-war-legacy.jpg",
+    wide: true,
+    emoji: "🗡️",
+    colors: ["#2b6fd6", "#2e9c2e"],
+    description: "Baue eine Strichmännchen-Armee und erobere die Welt.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
