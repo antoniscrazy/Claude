@@ -26,7 +26,7 @@
 <script>
 // Lädt das Spiel direkt aus dem GitHub-Repo (über jsDelivr, mit Commit-Version fest verdrahtet).
 // Kein lokaler Server nötig – die Datei funktioniert auch per Doppelklick.
-const BASE = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@54131047f12d164cefadd3399b36ffad53a363ba/eggy-car/";
+const BASE = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@889669ee4bff3015facd08d25295b737c9971990/eggy-car/";
 const NETBLOCK = '<script>(function(){var d=Object.getOwnPropertyDescriptor(HTMLImageElement.prototype,"src");Object.defineProperty(HTMLImageElement.prototype,"src",{get:d.get,set:function(v){try{if(/^https?:/.test(String(v)))this.crossOrigin="anonymous"}catch(e){}d.set.call(this,v)},configurable:true})})();(function(){var B=new URL("' + BASE + '").origin;function ok(u){try{var x=new URL(String(u),"' + BASE + '");return x.protocol==="blob:"||x.protocol==="data:"||x.protocol==="about:"||x.origin===B}catch(e){return true}}var o=XMLHttpRequest.prototype.open,s=XMLHttpRequest.prototype.send;XMLHttpRequest.prototype.open=function(m,u){this._b=!ok(u);return o.apply(this,arguments)};XMLHttpRequest.prototype.send=function(){if(!this._b)return s.apply(this,arguments);var x=this;setTimeout(function(){x.dispatchEvent(new ProgressEvent("error"));x.dispatchEvent(new ProgressEvent("loadend"))},0)};var f=window.fetch;window.fetch=function(r){return ok(r&&r.url||r)?f.apply(this,arguments):Promise.reject(new TypeError("Failed to fetch"))};if(navigator.sendBeacon)navigator.sendBeacon=function(){return false}})()<\/script>';
 const SHIM = '<script>Object.defineProperty(Document.prototype,"URL",{get(){return "' + BASE + 'index.html"},configurable:true})<\/script>';
 fetch(BASE + "index.html")
