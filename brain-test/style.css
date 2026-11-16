@@ -64,11 +64,11 @@ html, body, canvas {
 
 @font-face {
 	font-family: 'kaboulege';
-	src: url('fonts/kaboulege.otf') format('opentype');
+	src: url('fonts/kaboulege.otf') format('truetype');
 }
 
 @font-face {
 	font-family: 'partofme';
-	src: url('fonts/partofme.otf') format('opentype');
+	src: url('fonts/partofme.otf') format('truetype');
 }
 

@@ -24,7 +24,7 @@ for root, _, names in os.walk(game):
 
 MIME = {".wasm": "application/wasm", ".js": "text/javascript", ".json": "application/json", ".png": "image/png",
         ".jpg": "image/jpeg", ".webp": "image/webp", ".mp3": "audio/mpeg", ".ogg": "audio/ogg", ".wav": "audio/wav",
-        ".otf": "font/otf", ".ttf": "font/ttf", ".woff": "font/woff", ".woff2": "font/woff2", ".m4a": "audio/mp4"}
+        ".otf": "font/ttf", ".ttf": "font/ttf", ".woff": "font/woff", ".woff2": "font/woff2", ".m4a": "audio/mp4"}
 mime = {k: MIME.get(os.path.splitext(k)[1].lower(), "application/octet-stream") for k in files}
 
 main_js = rd("scripts/main.js")
