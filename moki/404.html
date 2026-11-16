@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>404 – Seite nicht gefunden</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjggMTI4IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9Ik1va2kiPgo8ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImlnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjMDBlNWE4Ii8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjZmZkMjNmIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+CjxyZWN0IHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiByeD0iMzAiIGZpbGw9IiMwYTBkMmIiLz4KPGNpcmNsZSBjeD0iNjQiIGN5PSI2NCIgcj0iMzQiIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNpZykiIHN0cm9rZS13aWR0aD0iMjAiLz4KPHBhdGggZD0iTTU1IDQ5TDc5IDY0TDU1IDc5WiIgZmlsbD0iI2ZmZiIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjciIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+">
+<style>
+  :root{--bg:#0a0d2b;--text:#fff;--muted:#a3abe0;--accent:#00e5a8;--accent2:#ffd23f}
+  *{box-sizing:border-box;margin:0}
+  html,body{height:100%}
+  body{display:grid;place-items:center;padding:24px;overflow:hidden;color:var(--text);font-family:"Segoe UI",system-ui,sans-serif;
+    background:radial-gradient(900px 500px at 80% -10%,#23307a66,transparent 60%),radial-gradient(800px 500px at -10% 90%,#0a7a7a44,transparent 60%),var(--bg)}
+  #fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+  .wrap{position:relative;text-align:center;max-width:560px;transition:transform .15s ease-out}
+  .num{display:flex;justify-content:center;align-items:center;gap:clamp(4px,1.5vw,14px);font-weight:900;font-size:clamp(96px,24vw,190px);line-height:1;letter-spacing:-.04em}
+  .d{display:inline-block;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;opacity:0;transform:translateY(-60px) scale(.7);animation:drop .7s cubic-bezier(.3,1.6,.5,1) forwards}
+  .d.l{animation-delay:.1s}.d.r{animation-delay:.35s}
+  @keyframes drop{to{opacity:1;transform:none}}
+  .ring{width:.82em;height:.82em;cursor:pointer;animation:roll .9s .25s cubic-bezier(.3,1.4,.5,1) both;filter:drop-shadow(0 8px 24px #00e5a855);-webkit-tap-highlight-color:transparent}
+  .ring svg{width:100%;height:100%;display:block;overflow:visible}
+  .ring .spin{transform-origin:64px 64px;animation:spin 9s linear infinite}
+  .ring.hop{animation:hop .6s ease-out}
+  @keyframes roll{from{opacity:0;transform:scale(.2) rotate(-360deg)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes hop{30%{transform:translateY(-50px) scale(1.1,.9)}60%{transform:translateY(0) scale(.92,1.08)}100%{transform:none}}
+  h1{font-size:clamp(22px,4.4vw,30px);margin-top:6px;opacity:0;animation:up .6s .8s forwards}
+  p{color:var(--muted);margin-top:10px;font-size:clamp(15px,2.6vw,17px);line-height:1.5;opacity:0;animation:up .6s 1s forwards}
+  .btn{display:inline-flex;align-items:center;gap:8px;margin-top:26px;padding:14px 26px;border-radius:999px;font-weight:800;font-size:16px;color:#04201a;text-decoration:none;background:linear-gradient(135deg,var(--accent),#2fe0c0);box-shadow:0 10px 30px #00e5a844;opacity:0;animation:up .6s 1.2s forwards;transition:transform .15s}
+  .btn:hover{transform:translateY(-3px) scale(1.03)}
+  .hint{font-size:13px;margin-top:22px;animation-delay:1.6s}
+  .path{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom;color:var(--accent2);font-family:ui-monospace,monospace;font-size:.92em}
+  @keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .glitch{animation:gl 5s 2s infinite}
+  @keyframes gl{0%,92%,100%{transform:none;filter:none}93%{transform:translateX(-6px) skewX(-6deg);filter:hue-rotate(60deg)}95%{transform:translateX(7px) skewX(5deg)}97%{transform:none}}
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;animation-delay:0s!important;animation-iteration-count:1!important}}
+</style>
+</head>
+<body>
+<canvas id="fx" aria-hidden="true"></canvas>
+<main class="wrap" id="wrap">
+  <div class="num glitch" aria-label="404">
+    <span class="d l">4</span>
+    <span class="ring" id="ring" title="Tipp mich an" role="img" aria-label="Moki-Logo"><svg viewBox="0 0 128 128"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00e5a8"/><stop offset="1" stop-color="#ffd23f"/></linearGradient></defs><circle class="spin" cx="64" cy="64" r="44" fill="none" stroke="url(#g)" stroke-width="22" stroke-dasharray="190 86" stroke-linecap="round"/><path d="M55 47L84 64L55 81Z" fill="#fff" stroke="#fff" stroke-width="7" stroke-linejoin="round"/></svg></span>
+    <span class="d r">4</span>
+  </div>
+  <h1>Hier ist leider kein Spiel</h1>
+  <p id="msg">Die Seite <span class="path" id="path"></span> gibt es nicht. Vielleicht ein Tippfehler oder sie wurde verschoben.</p>
+  <a class="btn" id="home" href="/"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg><span id="homet">Zurück zu Moki</span></a>
+  <p class="hint">Tipp: Tippe auf die Null in der Mitte.</p>
+</main>
+<script>
+(function(){
+  var path=decodeURIComponent(location.pathname+location.search).slice(0,60);
+  document.getElementById('path').textContent=path||'/';
+  if(/studio/i.test(location.hostname)) document.getElementById('homet').textContent='Zurück zum Studio';
+  var c=document.getElementById('fx'),x=c.getContext('2d'),W,H,dpr=Math.min(devicePixelRatio||1,2),st=[],ps=[],mx=0,my=0;
+  function fit(){W=innerWidth;H=innerHeight;c.width=W*dpr;c.height=H*dpr;x.setTransform(dpr,0,0,dpr,0,0);}
+  addEventListener('resize',fit);fit();
+  for(var i=0;i<90;i++)st.push({x:Math.random(),y:Math.random(),r:Math.random()*1.8+.3,s:Math.random()*.0004+.0001,p:Math.random()*6});
+  var cols=['#00e5a8','#ffd23f','#ff4d6d','#4cc9f0','#ffffff'];
+  function burst(px,py){for(var i=0;i<46;i++){var a=Math.random()*6.283,v=Math.random()*7+2;ps.push({x:px,y:py,vx:Math.cos(a)*v,vy:Math.sin(a)*v-3,l:1,c:cols[i%5],s:Math.random()*5+3});}}
+  var ring=document.getElementById('ring'),w=document.getElementById('wrap');
+  ring.addEventListener('click',function(){var r=ring.getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2);ring.classList.remove('hop');void ring.offsetWidth;ring.classList.add('hop');});
+  addEventListener('pointermove',function(e){mx=e.clientX/W-.5;my=e.clientY/H-.5;w.style.transform='translate('+(-mx*14)+'px,'+(-my*14)+'px)';});
+  setTimeout(function(){var r=ring.getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2);},1100);
+  var t0=0;
+  (function f(t){
+    x.clearRect(0,0,W,H);
+    for(var i=0;i<st.length;i++){var s=st[i];x.globalAlpha=.35+.35*Math.sin(t*.002+s.p);x.fillStyle='#fff';x.beginPath();x.arc(((s.x+t*s.s)%1)*W-mx*s.r*14,s.y*H-my*s.r*14,s.r,0,7);x.fill();}
+    for(var j=ps.length-1;j>=0;j--){var p=ps[j];p.x+=p.vx;p.y+=p.vy;p.vy+=.22;p.l-=.014;if(p.l<=0){ps.splice(j,1);continue}x.globalAlpha=p.l;x.fillStyle=p.c;x.fillRect(p.x,p.y,p.s,p.s);}
+    x.globalAlpha=1;requestAnimationFrame(f);
+  })(0);
+})();
+</script>
+</body>
+</html>
