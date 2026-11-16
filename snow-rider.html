@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Snow Rider 3D</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #111; color: #fff; font-family: sans-serif; }
+  body { display: flex; flex-direction: column; }
+  /* Eigene Leiste über dem Spiel – der Button verdeckt nichts vom Spiel. */
+  #bar { flex: 0 0 auto; display: flex; justify-content: flex-end; padding: 6px 12px; background: #111; }
+  #game { flex: 1 1 auto; width: 100%; border: 0; display: block; min-height: 0; background:#000; }
+  #moki-back {
+    padding: 9px 16px; border-radius: 999px;
+    background: linear-gradient(90deg, #00e5a8, #ffd23f);
+    color: #04201a; font: 800 14px "Segoe UI", system-ui, sans-serif;
+    text-decoration: none; box-shadow: 0 3px 12px rgba(0, 0, 0, .5); opacity: .92;
+  }
+  #moki-back:hover { opacity: 1; transform: scale(1.05); }
+  #msg { position:fixed; left:0; right:0; top:60px; text-align:center; color:#aaa; pointer-events:none; }
+</style>
+</head>
+<body>
+<div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
+<iframe id="game" allow="autoplay *; fullscreen *; gamepad *; clipboard-write *; accelerometer *; gyroscope *" allowfullscreen></iframe>
+<div id="msg">Lade …</div>
+<script>
+// Lädt das Spiel direkt aus dem GitHub-Repo (jsDelivr, fester Commit). Kein lokaler Server nötig.
+const CFG = {"base": "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@0feb18d60493215e47a3cda0583d8a4603b6ec34/snow-rider/", "entry": "index.html", "strip": [], "repl": []};
+const BASE = CFG.base;
+// Netz-Sperre + Zusatzcode, läuft im Spiel-Frame vor allem anderen.
+const GUARD = '<script>(function(){var A=["cdn.jsdelivr.net","raw.githubusercontent.com"];' +
+ 'function ok(u){try{var x=new URL(u,document.baseURI);return x.protocol==="blob:"||x.protocol==="data:"||x.protocol==="about:"||A.indexOf(x.hostname)>-1}catch(e){return true}}' +
+ 'var f=window.fetch;window.fetch=function(u){var s=(u&&u.url)||u;if(ok(s))return f.apply(this,arguments);console.warn("BLOCKED "+s);return Promise.reject(new TypeError("blocked"))};' +
+ 'var o=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(m,u){if(!ok(u)){this.__b=1;arguments[1]="data:text/plain,"}return o.apply(this,arguments)};' +
+ 'navigator.sendBeacon=function(){return true};' +
+ 'var W=window.WebSocket;window.WebSocket=function(u){if(!ok(u))throw new Error("blocked");return new W(u)};' +
+ 'var d=Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype,"src");if(d&&d.set)Object.defineProperty(HTMLIFrameElement.prototype,"src",{get:d.get,set:function(v){d.set.call(this,ok(v)?v:"about:blank")},configurable:true});' +
+ 'var sa=Element.prototype.setAttribute;Element.prototype.setAttribute=function(n,v){if(this.tagName==="IFRAME"&&String(n).toLowerCase()==="src"&&!ok(v))v="about:blank";return sa.call(this,n,v)};' +
+ 'window.open=function(){return null};' +
+ 'var OW=window.Worker;window.Worker=function(u,o){var s=String(u);try{var x=new URL(s,document.baseURI);if(x.origin!==location.origin&&x.protocol==="https:"){if(A.indexOf(x.hostname)<0)throw new Error("blocked");var b=new Blob(["importScripts("+JSON.stringify(x.href)+");"],{type:"text/javascript"});s=URL.createObjectURL(b);if(o&&o.type==="module")o=Object.assign({},o,{type:"classic"})}}catch(e){if(/blocked/.test(e.message))throw e}return new OW(s,o)};window.Worker.prototype=OW.prototype;' +
+ '})();<\/script>';
+const SHIM = '<script>window.__GAME_BASE="' + BASE + '";<\/script><script>Object.defineProperty(Document.prototype,"URL",{get(){return "' + BASE + CFG.entry + '"},configurable:true})<\/script>';
+const INJECT = `<script>window.__TOUCH={"left":[["ArrowLeft","◀"],["ArrowRight","▶"]],"right":[["ArrowUp","▲"]]}<\/script><script>
+/* Touch-Steuerung (nur auf Touch-Geraeten). Konfig: window.__TOUCH = {left:[[taste,beschriftung],...], right:[...]} */
+(function(){
+  var C=window.__TOUCH; if(!C) return;
+  if(!(('ontouchstart' in window)||navigator.maxTouchPoints>0)) return;
+  var KC={ArrowLeft:37,ArrowUp:38,ArrowRight:39,ArrowDown:40,Space:32,Enter:13,Escape:27,KeyA:65,KeyD:68,KeyW:87,KeyS:83,KeyZ:90,KeyX:88,KeyC:67,KeyE:69,KeyQ:81,KeyR:82,KeyF:70,KeyJ:74,KeyK:75,KeyL:76,KeyP:80,KeyM:77,KeyV:86,KeyB:66,KeyN:78,KeyG:71,KeyH:72,KeyT:84,ShiftLeft:16,Digit1:49,Digit2:50,Digit3:51,Digit4:52};
+  function key(code){var k=code.replace(/^Key/,'').replace(/^Digit/,''); if(code==='Space')k=' '; if(code==='ShiftLeft')k='Shift'; return k.length===1&&/[A-Z]/.test(k)?k.toLowerCase():k}
+  function fire(type,code){
+    var e=new KeyboardEvent(type,{key:key(code),code:code,bubbles:true,cancelable:true});
+    var kc=KC[code]||0; try{Object.defineProperty(e,'keyCode',{get:function(){return kc}});Object.defineProperty(e,'which',{get:function(){return kc}})}catch(x){}
+    var t=document.activeElement&&document.activeElement!==document.documentElement?document.activeElement:document.body;
+    t.dispatchEvent(e);
+  }
+  var st=document.createElement('style');
+  st.textContent='.tz{position:fixed;z-index:2147483000;display:flex;gap:10px;bottom:14px;touch-action:none;-webkit-user-select:none;user-select:none}.tz.l{left:14px}.tz.r{right:14px}.tz b{min-width:64px;height:64px;padding:0 8px;box-sizing:border-box;border-radius:50%;background:rgba(255,255,255,.22);border:2px solid rgba(255,255,255,.55);color:#fff;font:700 18px sans-serif;display:flex;align-items:center;justify-content:center;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.tz b.on{background:rgba(0,229,168,.55)}#tzt{position:fixed;z-index:2147483001;left:50%;bottom:6px;transform:translateX(-50%);padding:3px 12px;border-radius:12px;background:rgba(0,0,0,.45);color:#fff;font:12px sans-serif;touch-action:none}';
+  function build(){
+    document.head.appendChild(st);
+    var zones=[];
+    ['left','right'].forEach(function(side){
+      if(!C[side]) return;
+      var z=document.createElement('div'); z.className='tz '+(side==='left'?'l':'r'); zones.push(z);
+      C[side].forEach(function(d){
+        var b=document.createElement('b'); b.textContent=d[1]; var down=false;
+        function dn(ev){ev.preventDefault();ev.stopPropagation();if(down)return;down=true;b.classList.add('on');fire('keydown',d[0])}
+        function up(ev){ev.preventDefault();ev.stopPropagation();if(!down)return;down=false;b.classList.remove('on');fire('keyup',d[0])}
+        b.addEventListener('pointerdown',dn);b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);b.addEventListener('pointerleave',up);
+        b.addEventListener('contextmenu',function(e){e.preventDefault()});
+        z.appendChild(b);
+      });
+      document.body.appendChild(z);
+    });
+    var t=document.createElement('div'); t.id='tzt'; t.textContent='Tasten ausblenden'; var vis=true;
+    t.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();vis=!vis;zones.forEach(function(z){z.style.display=vis?'flex':'none'});t.textContent=vis?'Tasten ausblenden':'Tasten einblenden'});
+    document.body.appendChild(t);
+  }
+  if(document.body) build(); else document.addEventListener('DOMContentLoaded',build);
+})();
+<\/script>
+`;
+fetch(BASE + CFG.entry)
+  .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+  .then(html => {
+    html = html.replace(/<script[^>]*\ssrc=["'](?:https?:)?\/\/(?!cdn\.jsdelivr\.net|raw\.githubusercontent\.com)[^"']*["'][^>]*>\s*<\/script>/gi, "");
+    CFG.strip.forEach(re => { html = html.replace(new RegExp(re, "gi"), ""); });
+    CFG.repl.forEach(p => { html = html.split(p[0]).join(p[1]); });
+    const head = '<base href="' + BASE + '">' + GUARD + SHIM + INJECT;
+    html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, m => m + head) : head + html;
+    document.getElementById("game").srcdoc = html;
+    document.getElementById("msg").remove();
+  })
+  .catch(e => { document.getElementById("msg").textContent = "Fehler beim Laden: " + e.message; });
+</script>
+</body>
+</html>
