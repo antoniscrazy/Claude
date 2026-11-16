@@ -32,7 +32,7 @@ const ORIGIN = new URL(BASE).origin;
 
 // Netz-Sperre: nur dein Repo, blob: und data: erlaubt.
 (function () {
-  function ok(u) { try { var x = new URL(String(u), location.href); return x.protocol === "blob:" || x.protocol === "data:" || x.protocol === "about:" || x.origin === ORIGIN; } catch (e) { return true; } }
+  function ok(u) { try { var x = new URL(String(u), location.href); return x.protocol === "blob:" || x.protocol === "data:" || x.protocol === "about:" || x.origin === ORIGIN || x.origin === "https://cdn.jsdelivr.net"; } catch (e) { return true; } }
   var open = XMLHttpRequest.prototype.open, send = XMLHttpRequest.prototype.send;
   XMLHttpRequest.prototype.open = function (m, u) { this._blocked = !ok(u); return open.apply(this, arguments); };
   XMLHttpRequest.prototype.send = function () {
@@ -74,16 +74,16 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
     let done = 0; const bump = () => { done++; pf.style.width = (done / 4 * 70) + "%"; };
     const [loaderTxt, fw, dataBlob, wasmBlob] = await Promise.all([
       Promise.resolve(null),
-      get("Build/Build.framework.js", "blob").then(x => { bump(); return x; }),
+      Promise.resolve(null),
       get("Build/Build.data", "blob").then(x => { bump(); return x; }),
       get("Build/Build.wasm", "blob").then(x => { bump(); return x; })
     ]);
-    await new Promise((res, rej) => { const s = document.createElement("script"); s.src = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@fc7a1d46ac537cbe9e17a9700a09f33296be3691/solar-smash/Build/Build.loader.js"; s.onload = res; s.onerror = () => rej(new Error("Loader")); document.head.appendChild(s); });
+    await new Promise((res, rej) => { const s = document.createElement("script"); s.src = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@67096f74f04bb0b3ff059aefbf4a0a9a52e9449f/solar-smash/Build/Build.loader.js"; s.onload = res; s.onerror = () => rej(new Error("Loader")); document.head.appendChild(s); });
     tx.textContent = "Starte …";
     const inst = await createUnityInstance(document.getElementById("unity-canvas"), {
-      dataUrl: URL.createObjectURL(dataBlob),
+      dataUrl: URL.createObjectURL(new Blob([dataBlob], { type: "application/octet-stream" })),
       codeUrl: URL.createObjectURL(new Blob([wasmBlob], { type: "application/wasm" })),
-      frameworkUrl: URL.createObjectURL(new Blob([fw], { type: "text/javascript" })),
+      frameworkUrl: "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@67096f74f04bb0b3ff059aefbf4a0a9a52e9449f/solar-smash/Build/Build.framework.js",
       streamingAssetsUrl: BASE + "StreamingAssets",
       companyName: "Paradyme Games", productName: "Live - Solar Smash YouTube", productVersion: "0.1.0"
     }, p => { pf.style.width = (70 + p * 30) + "%"; });
