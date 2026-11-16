@@ -273,6 +273,17 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "crossy-road",
+    title: "Crossy Road",
+    url: "https://curious-beijinho-be5348.netlify.app",
+    category: "Action",
+    image: "crossy-road.jpg",
+    emoji: "🐔",
+    colors: ["#69cbec", "#ffffff"],
+    description: "Überquere Straßen und Flüsse, ohne zu verunglücken.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
