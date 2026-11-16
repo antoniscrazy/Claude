@@ -1,0 +1,3 @@
+# Optional: schöne Spiel-Adressen ohne "#", z. B. mokiorg.netlify.app/spiel/mein-spiel-ab12c
+# Nur wirksam, wenn diese Datei zusammen mit index.html (= moki.html) in denselben Netlify-Ordner hochgeladen wird.
+/spiel/*  /index.html  200

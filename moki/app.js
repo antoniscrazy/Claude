@@ -23,12 +23,21 @@ const SVG = {
   shuffle: '<path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4"/><path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2"/><path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8"/><path d="m18 14 4 4-4 4"/>',
   target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
   crosshair: '<circle cx="12" cy="12" r="10"/><path d="M22 12h-4M6 12H2M12 6V2M12 22v-4"/>',
+  sparkles: '<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/>',
+  pen: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
   globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>'
 };
 const icon = n => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${SVG[n] || SVG.spiel}</svg>`;
-const CATICON = { Alle: "alle", __fav: "star", Fahren: "fahren", Geschicklichkeit: "target", "Kampf & Schießen": "crosshair", Simulation: "simulation", Strategie: "strategie", Sport: "sport", Abenteuer: "abenteuer" };
+const CATICON = { Alle: "alle", __fav: "star", __cre: "sparkles", Fahren: "fahren", Geschicklichkeit: "target", "Kampf & Schießen": "crosshair", Simulation: "simulation", Strategie: "strategie", Sport: "sport", Abenteuer: "abenteuer" };
 const CATORDER = ["Fahren", "Geschicklichkeit", "Kampf & Schießen", "Simulation", "Strategie", "Sport", "Abenteuer"];
-const CATLABEL = { Alle: "Alle", __fav: "Favoriten" };
+const CATLABEL = { Alle: "Alle", __fav: "Favoriten", __cre: "Kreationen" };
+
+// ---- Kreationen (Spiele aus dem Studio). Wird von creations.js befüllt. ----
+const CRE = window.MOKI_CRE = { list: [], loaded: false, error: false };
+const studioUrl = () => (window.MOKI_CFG && window.MOKI_CFG.studioUrl) || "studio.html";
+const creTile = c => `<a class="tile cre" href="#/spiel/${esc(c.slug)}" data-cre="${esc(c.slug)}" aria-label="${esc(c.title)} von ${esc(c.creator)}" title="${esc(c.title)} von ${esc(c.creator)}">${c.icon ? `<img src="${esc(c.icon)}" alt="" loading="lazy">` : ""}<span class="name">${esc(c.title)}<small class="by">von ${esc(c.creator)}</small></span></a>`;
+const studioTile = () => `<a class="tile studio" href="${esc(studioUrl())}" aria-label="Im Studio ein eigenes Spiel bauen"><span class="stin">${icon("plus")}<b>Dein Spiel</b><small>Im Studio bauen</small></span></a>`;
 
 // ---- Favoriten und "Zuletzt gespielt" (nur in diesem Browser gespeichert) ----
 const store = {
@@ -84,10 +93,10 @@ function heroHtml() {
 
 function renderSide() {
   const used = [...new Set(games.map(g => g.category))];
-  const cats = ["Alle", "__fav", ...CATORDER.filter(c => used.includes(c)), ...used.filter(c => !CATORDER.includes(c))];
+  const cats = ["Alle", "__fav", "__cre", ...CATORDER.filter(c => used.includes(c)), ...used.filter(c => !CATORDER.includes(c))];
   const collapsed = document.body.classList.contains("side-collapsed");
   side.innerHTML = `<div class="sidehead"><h3>Kategorien</h3><button class="toggle" type="button" aria-label="${collapsed ? "Seitenleiste ausklappen" : "Seitenleiste einklappen"}" aria-expanded="${!collapsed}" title="${collapsed ? "Ausklappen" : "Einklappen"}">${icon("panel")}</button></div>` + cats.map(c => {
-    const n = c === "Alle" ? games.length : c === "__fav" ? favs.size : games.filter(g => g.category === c).length;
+    const n = c === "Alle" ? games.length : c === "__fav" ? favs.size : c === "__cre" ? CRE.list.length : games.filter(g => g.category === c).length;
     const label = CATLABEL[c] || c;
     return `<button class="cat ${c === category ? "on" : ""}" data-c="${esc(c)}" title="${esc(label)} (${n})" aria-label="${esc(label)}, ${n} Spiele">${icon(CATICON[c])}<span class="lbl">${esc(label)}</span><span class="n">${n}</span></button>`;
   }).join("");
@@ -99,14 +108,36 @@ function renderSide() {
   };
 }
 
+const creMatches = q => CRE.list.filter(c => !q || c.title.toLowerCase().includes(q) || c.creator.toLowerCase().includes(q));
+
+function homeCre(q) {
+  const cm = creMatches(q);
+  app.innerHTML = `<section>
+    <h2>${icon("sparkles")}Kreationen</h2>
+    <p class="sub">${cm.length} ${cm.length === 1 ? "Spiel" : "Spiele"} · selbstgemacht im Moki Studio</p>
+    <div class="grid">${cm.map(creTile).join("")}${q ? "" : studioTile()}</div>
+    ${cm.length ? "" : `<p class="empty">${!CRE.loaded ? "Lade Kreationen …" : CRE.error ? "Kreationen konnten gerade nicht geladen werden." : q ? "Kein Spiel gefunden." : "Hier ist noch nichts. Sei der Erste: Bau dein Spiel im Studio."}</p>`}
+  </section>`;
+}
+
 function home() {
   const q = search.value.trim().toLowerCase();
+  renderSide();
+  if (category === "__cre") return homeCre(q);
   const inCat = g => category === "Alle" || (category === "__fav" ? favs.has(g.id) : g.category === category);
   const list = games.filter(g => inCat(g) && g.title.toLowerCase().includes(q));
-  renderSide();
   const title = category === "Alle" ? "Alle Spiele" : (CATLABEL[category] || category);
   const rec = recent.map(id => games.find(g => g.id === id)).filter(Boolean).slice(0, 6);
   const emptyMsg = category === "__fav" && !q ? `Noch keine Favoriten. Tippe bei einem Spiel auf den Stern, dann erscheint es hier.` : "Kein Spiel gefunden.";
+  const cm = category === "Alle" ? creMatches(q) : [];
+  const creSec = category !== "Alle" ? "" : q
+    ? (cm.length ? `<section><h2>${icon("sparkles")}Kreationen</h2><div class="grid">${cm.map(creTile).join("")}</div></section>` : "")
+    : `<section>
+      <h2>${icon("sparkles")}Kreationen</h2>
+      <p class="sub">Selbstgemachte Spiele aus dem Moki Studio</p>
+      <div class="grid">${cm.slice(0, 5).map(creTile).join("")}${studioTile()}</div>
+      ${cm.length > 5 ? `<button class="btn more" data-cat="__cre" type="button">Alle ${cm.length} Kreationen ansehen</button>` : ""}
+    </section>`;
   app.innerHTML = `
     ${!q && category === "Alle" ? heroHtml() : ""}
     ${!q && category === "Alle" && rec.length ? `<section>
@@ -118,12 +149,17 @@ function home() {
       <p class="sub">${list.length} ${list.length === 1 ? "Spiel" : "Spiele"}</p>
       ${list.length ? `<div class="grid">${list.map(tile).join("")}</div>` : `<p class="empty">${emptyMsg}</p>`}
     </section>
+    ${creSec}
     ${!q && category === "Alle" && sites.length ? `<section>
       <h2>Weitere Seiten</h2>
       <p class="warn">${icon("alert")}<span>Achtung: Auf diesen Seiten funktionieren nicht alle Spiele. Wenn eins nicht lädt, probier ein anderes.</span></p>
       <div class="grid">${sites.map(tile).join("")}</div>
     </section>` : ""}`;
 }
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-cat]");
+  if (b) { category = b.dataset.cat; home(); window.scrollTo(0, 0); }
+});
 
 search.addEventListener("input", home);
 document.title = "Moki – Spiele";

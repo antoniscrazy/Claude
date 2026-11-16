@@ -15,6 +15,7 @@
   try { seen = localStorage.getItem(K) === "1"; } catch (e) {}
   if (!seen) { try { seen = document.cookie.indexOf(K + "=1") > -1; } catch (e) {} }
   if (/[?&]intro(=1)?(&|$)/.test(q)) seen = false;   // zum Testen: moki.html?intro
+  if (/^#\/spiel\//.test(location.hash)) seen = true;   // Spiel-Link von Freunden: kein Intro davor
   if (!seen) document.documentElement.classList.add("intro-on");
 })();
 </script>
@@ -145,9 +146,9 @@ html.intro-on body,html.upd-open body{overflow:hidden}
   transition:opacity .9s ease,transform .9s cubic-bezier(.7,0,.3,1),filter .9s ease}
 #intro.out{opacity:0;transform:scale(1.55);filter:blur(10px);pointer-events:none}
 #intro.out.fast{transition-duration:.35s}
-#fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}
-#flash{position:absolute;inset:0;pointer-events:none;z-index:4;opacity:0;background:radial-gradient(circle at 50% 50%,#fff 0,#b8fff0 30%,transparent 70%)}
-#flash.go{animation:flash .9s ease-out}
+.fxc{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}
+.flash{position:absolute;inset:0;pointer-events:none;z-index:4;opacity:0;background:radial-gradient(circle at 50% 50%,#fff 0,#b8fff0 30%,transparent 70%)}
+.flash.go{animation:flash .9s ease-out}
 @keyframes flash{0%{opacity:.95}100%{opacity:0}}
 .st{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:18px;padding:24px;text-align:center;opacity:0;visibility:hidden;transform:scale(.96);transition:opacity .5s,transform .5s,visibility .5s}
 .st.on{opacity:1;visibility:visible;transform:none}
@@ -184,22 +185,22 @@ html.intro-on body,html.upd-open body{overflow:hidden}
 .biglogo{position:relative;z-index:2;width:min(86vw,680px)}
 .biglogo svg{width:100%;height:auto;display:block;filter:drop-shadow(0 0 30px #00e5a855)}
 .btag{position:relative;z-index:2;font-size:clamp(18px,3.4vw,26px);font-weight:800;letter-spacing:.04em;opacity:0;transform:translateY(14px)}
-#st-boom.on .btag{animation:rise .7s ease 1.5s forwards}
+.boom.on .btag{animation:rise .7s ease 1.5s forwards}
 @keyframes rise{to{opacity:1;transform:none}}
-#st-boom .lg>*{opacity:0}
-#st-boom.on .lg>*{stroke-dasharray:1;animation:draw .85s cubic-bezier(.6,0,.2,1) both}
-#st-boom.on .lg>:nth-child(1){animation-delay:.15s}#st-boom.on .lg>:nth-child(2){animation-delay:.3s}
-#st-boom.on .lg>:nth-child(3){animation-delay:.45s}#st-boom.on .lg>:nth-child(4){animation-delay:.6s}
-#st-boom.on .lg>:nth-child(5){animation-delay:.75s}#st-boom.on .lg>:nth-child(6){animation-delay:.85s}
-#st-boom.on .lg>:nth-child(7){animation-delay:.95s}
+.boom .lg>*{opacity:0}
+.boom.on .lg>*{stroke-dasharray:1;animation:draw .85s cubic-bezier(.6,0,.2,1) both}
+.boom.on .lg>:nth-child(1){animation-delay:.15s}.boom.on .lg>:nth-child(2){animation-delay:.3s}
+.boom.on .lg>:nth-child(3){animation-delay:.45s}.boom.on .lg>:nth-child(4){animation-delay:.6s}
+.boom.on .lg>:nth-child(5){animation-delay:.75s}.boom.on .lg>:nth-child(6){animation-delay:.85s}
+.boom.on .lg>:nth-child(7){animation-delay:.95s}
 @keyframes draw{0%{stroke-dashoffset:1;opacity:0}3%{opacity:1}100%{stroke-dashoffset:0;opacity:1}}
 .biglogo .dot,.biglogo .tri{transform-box:fill-box;transform-origin:center;transform:scale(0)}
-#st-boom.on .dot{animation:popin .5s cubic-bezier(.3,1.7,.5,1) 1.1s forwards}
-#st-boom.on .tri{animation:popin .5s cubic-bezier(.3,1.7,.5,1) 1.25s forwards}
+.boom.on .dot{animation:popin .5s cubic-bezier(.3,1.7,.5,1) 1.1s forwards}
+.boom.on .tri{animation:popin .5s cubic-bezier(.3,1.7,.5,1) 1.25s forwards}
 @keyframes popin{to{transform:scale(1)}}
 .wave{position:absolute;left:50%;top:50%;width:160px;height:160px;margin:-80px 0 0 -80px;border-radius:50%;border:4px solid var(--accent);opacity:0;pointer-events:none}
-#st-boom.on .wave{animation:wave 1.6s cubic-bezier(.1,.7,.3,1) forwards}
-#st-boom.on .w2{animation-delay:.2s;border-color:var(--accent2)}#st-boom.on .w3{animation-delay:.4s;border-color:#fff}
+.boom.on .wave{animation:wave 1.6s cubic-bezier(.1,.7,.3,1) forwards}
+.boom.on .w2{animation-delay:.2s;border-color:var(--accent2)}.boom.on .w3{animation-delay:.4s;border-color:#fff}
 @keyframes wave{0%{transform:scale(.2);opacity:.9}100%{transform:scale(11);opacity:0}}
 #skip{position:absolute;right:20px;bottom:20px;z-index:5;padding:9px 16px;border:1px solid #ffffff2a;border-radius:999px;background:#ffffff10;color:var(--muted);font:600 13px "Segoe UI",system-ui,sans-serif;cursor:pointer;transition:background .15s,color .15s}
 #skip:hover{background:#ffffff22;color:#fff}
@@ -235,12 +236,42 @@ html.site-in body>header,html.site-in .layout{animation:siteIn 1s ease backwards
 .ubody section+section{margin-top:0}
 .uhead{display:block}
 
+/* Kreationen (Studio-Spiele) */
+.tile.cre{background:linear-gradient(135deg,#1d2566,#0f1440)}
+.tile .name small.by{display:block;font-weight:600;font-size:12px;opacity:.8;margin-top:2px}
+.tile.studio{background:transparent;border:2px dashed #ffffff33;box-shadow:none}
+.tile.studio .stin{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--muted);text-align:center;transition:color .15s}
+.tile.studio .stin .i{width:34px;height:34px}.tile.studio .stin b{color:#fff;font-size:16px}.tile.studio .stin small{font-size:13px}
+.tile.studio:hover{border-color:var(--accent);box-shadow:none}.tile.studio:hover .stin{color:var(--accent)}
+.btn.more{margin-top:16px}
+/* Spielseite in Moki */
+html.playing body{overflow:hidden}
+#play{position:fixed;inset:0;z-index:800;display:flex;flex-direction:column;background:#000}
+.pbar{flex:none;height:44px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 12px;background:#000;border-bottom:1px solid #ffffff14}
+.pinfo{min-width:0;display:flex;align-items:baseline;gap:10px;color:#fff;font-weight:800;overflow:hidden;white-space:nowrap}
+.pinfo b{overflow:hidden;text-overflow:ellipsis}.pinfo span{color:var(--muted);font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis}
+.pback{flex:none;padding:6px 16px;border-radius:999px;background:linear-gradient(90deg,#00e5a8,#ffd23f);color:#04201a;font:800 13px "Segoe UI",system-ui,sans-serif;white-space:nowrap}
+.pback:hover{filter:brightness(1.1)}
+.pstage{position:relative;flex:1;min-height:0;background:#000}
+.pstage iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}
+.pmsg{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:16px;text-align:center;color:var(--muted);padding:24px;font-size:18px;line-height:1.5}
+.pmsg b{color:#fff;font-size:24px}
+.splash{position:absolute;inset:0;z-index:5;display:grid;place-items:center;overflow:hidden;color:#fff;cursor:pointer;
+  background:radial-gradient(900px 500px at 80% -10%,#23307a77,transparent 60%),radial-gradient(800px 500px at -10% 95%,#0a7a7a55,transparent 60%),#0a0d2b;
+  transition:opacity .9s ease,transform .9s cubic-bezier(.7,0,.3,1),filter .9s ease}
+.splash.out{opacity:0;transform:scale(1.55);filter:blur(10px);pointer-events:none}
+.splash::before,.splash::after{content:"";position:absolute;border-radius:50%;filter:blur(80px);opacity:.3;pointer-events:none;animation:drift 12s ease-in-out infinite}
+.splash::before{width:340px;height:340px;background:#00e5a8;left:-90px;top:12%}
+.splash::after{width:300px;height:300px;background:#ffd23f;right:-70px;bottom:8%;animation-delay:-5s}
+.splash .btag{font-size:clamp(20px,3.6vw,30px)}
+@media(prefers-reduced-motion:reduce){.splash.out{transform:none;filter:none}}
+
 </style>
 </head>
 <body>
 <div id="intro" role="dialog" aria-label="Moki Update">
-  <canvas id="fx" aria-hidden="true"></canvas>
-  <div id="flash" aria-hidden="true"></div>
+  <canvas id="fx" class="fxc" aria-hidden="true"></canvas>
+  <div id="flash" class="flash" aria-hidden="true"></div>
 
   <section id="st-wait" class="st on">
     <div class="wcard">
@@ -265,7 +296,7 @@ html.site-in body>header,html.site-in .layout{animation:siteIn 1s ease backwards
     <p class="cdbot">Sekunden</p>
   </section>
 
-  <section id="st-boom" class="st">
+  <section id="st-boom" class="st boom">
     <i class="wave w1"></i><i class="wave w2"></i><i class="wave w3"></i>
     <div class="biglogo" data-logo="bl" data-draw></div>
     <p class="btag">Das große Update ist da</p>
@@ -286,12 +317,26 @@ html.site-in body>header,html.site-in .layout{animation:siteIn 1s ease backwards
 <path d="M183 66L207 82L183 98Z" fill="#fff" stroke="#fff" stroke-width="7" stroke-linejoin="round"/></svg></a>
   <div class="search"><input id="q" type="search" placeholder="Spiele suchen…" autocomplete="off"></div>
   <button id="rnd" class="rndbtn" type="button" title="Zufälliges Spiel öffnen"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4"/><path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2"/><path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8"/><path d="m18 14 4 4-4 4"/></svg><span>Zufall</span></button>
+  <a id="studio" class="rndbtn" href="studio.html" title="Eigene Spiele bauen"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Studio</span></a>
   <span class="badge"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>privat</span>
 </header>
 <div class="layout">
   <nav id="side" aria-label="Kategorien"></nav>
   <main id="app"></main>
 </div>
+<script>
+// Gemeinsame Einstellungen für Moki und das Studio.
+// Der Schlüssel ist der ÖFFENTLICHE (anon) Schlüssel von Supabase. Er darf im Browser stehen,
+// weil die Datenbank nur über geprüfte Funktionen erreichbar ist (siehe Migration moki_studio_creations).
+window.MOKI_CFG = {
+  sbUrl: "https://lgztiptcaqjxufbmvpcv.supabase.co",
+  sbKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxnenRpcHRjYXFqeHVmYm12cGN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgxOTAxNzUsImV4cCI6MjEwMzc2NjE3NX0.eKyv1VjyR57eYyWSoOf2AG1xO7QZq3KvbQ6cqTbjBuQ",
+  mokiUrl: "https://mokiorg.netlify.app/",
+  studioUrl: "https://mokiorg.netlify.app/studio.html"
+};
+
+window.MOKI_ENGINE = "// Moki Engine: kleine 2D-Spiele-Engine. L\u00e4uft IM Spiel-Frame (Studio-Vorschau und Moki-Spielseite).\n// Koordinaten: Spielfeld ist 800 x 500. Beim Anlegen sind x/y in PROZENT (0-100), zur Laufzeit sind s.x/s.y in PIXELN.\n(function () {\n  'use strict';\n  var W = 800, H = 500, MAXS = 300;\n  function send(o) { try { o.moki = 1; window.parent.postMessage(o, '*'); } catch (e) {} }\n\n  // Konsole und Fehler an das Studio weiterreichen\n  ['log', 'info', 'warn', 'error'].forEach(function (k) {\n    var orig = console[k];\n    console[k] = function () {\n      var t = Array.prototype.map.call(arguments, function (a) {\n        if (typeof a === 'string') return a;\n        try { return JSON.stringify(a); } catch (e) { return String(a); }\n      }).join(' ');\n      send({ type: 'log', level: k, text: t });\n      try { orig.apply(console, arguments); } catch (e) {}\n    };\n  });\n  window.addEventListener('error', function (e) { send({ type: 'error', text: e.message, line: e.lineno || 0 }); });\n  window.addEventListener('unhandledrejection', function (e) {\n    var r = e.reason; send({ type: 'error', text: String((r && r.message) || r), line: 0 });\n  });\n\n  function rr(c, x, y, w, h, r) {\n    c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);\n    c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();\n  }\n  var PATH = {\n    circle: function (c, s) { c.arc(0, 0, s / 2, 0, 7); },\n    square: function (c, s) { rr(c, -s / 2, -s / 2, s, s, s * 0.18); },\n    triangle: function (c, s) { c.moveTo(0, -s / 2); c.lineTo(s / 2, s / 2); c.lineTo(-s / 2, s / 2); c.closePath(); },\n    diamond: function (c, s) { c.moveTo(0, -s / 2); c.lineTo(s / 2, 0); c.lineTo(0, s / 2); c.lineTo(-s / 2, 0); c.closePath(); },\n    star: function (c, s) {\n      for (var i = 0; i \u003c 10; i++) {\n        var r = i % 2 ? s * 0.22 : s * 0.5, a = -Math.PI / 2 + i * Math.PI / 5;\n        i ? c.lineTo(Math.cos(a) * r, Math.sin(a) * r) : c.moveTo(Math.cos(a) * r, Math.sin(a) * r);\n      }\n      c.closePath();\n    },\n    heart: function (c, s) {\n      var u = s / 2;\n      c.moveTo(0, u * 0.9); c.bezierCurveTo(-u * 1.6, -u * 0.1, -u * 0.8, -u * 1.1, 0, -u * 0.35);\n      c.bezierCurveTo(u * 0.8, -u * 1.1, u * 1.6, -u * 0.1, 0, u * 0.9); c.closePath();\n    }\n  };\n  function rand(a, b) { return a + Math.random() * (b - a); }\n  function keyName(e) {\n    var c = e.code || '';\n    if (c === 'Space') return 'SPACE';\n    if (c.indexOf('Arrow') === 0) return c.slice(5).toUpperCase();\n    if (c.indexOf('Key') === 0) return c.slice(3).toUpperCase();\n    if (c === 'Enter') return 'ENTER';\n    return String(e.key || '').toUpperCase();\n  }\n\n  function createGame(o) {\n    o = o || {};\n    var G = {\n      score: 0, lives: o.lives | 0, time: 0, state: 'ready', width: W, height: H,\n      background: o.background || '#0d1240', title: o.title || window.MOKI_TITLE || 'Spiel',\n      timeLimit: +o.time || 0, timeMode: o.timeMode === 'lose' ? 'lose' : 'win', showScore: o.showScore !== false\n    };\n    var sprites = [], defs = {}, nextId = 1, touching = {}, timers = [], scoreCbs = [], msg = null, endMsg = '';\n    var h = { start: [], update: [], key: {}, touch: [], edge: [], click: [] };\n    var down = {}, pointer = { x: W / 2, y: H / 2, down: false, seen: false };\n\n    var cv = document.createElement('canvas');\n    var ctx = cv.getContext('2d');\n    document.body.appendChild(cv);\n    var css = document.createElement('style');\n    css.textContent = 'html,body{margin:0;height:100%;background:#000;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}' +\n      'canvas{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(100vw,160vh);height:min(62.5vw,100vh);display:block;outline:none}';\n    document.head.appendChild(css);\n    var dpr = 1;\n    function fit() {\n      var r = cv.getBoundingClientRect(); dpr = Math.min(window.devicePixelRatio || 1, 2);\n      cv.width = Math.max(1, Math.round(r.width * dpr)); cv.height = Math.max(1, Math.round(r.height * dpr));\n    }\n    addEventListener('resize', fit); fit();\n    cv.tabIndex = 0;\n\n    // ---------- Figuren ----------\n    function Sprite(opt, isClone) {\n      this.id = nextId++;\n      this.name = String(opt.name || 'Figur');\n      this.shape = PATH[opt.shape] ? opt.shape : 'circle';\n      this.color = opt.color || '#00e5a8';\n      this.size = +opt.size || 40;\n      this.control = opt.control || 'none';       // 'keys' | 'mouse' | 'none'\n      this.axis = opt.axis || 'xy';               // 'x' | 'y' | 'xy'\n      this.motion = opt.motion || 'none';         // none fall rise left right bounce follow\n      this.speed = opt.speed != null ? +opt.speed : 200;\n      this.autoRespawn = opt.autoRespawn !== false;\n      this.label = opt.label || '';\n      this.visible = true; this.alive = true; this.out = false; this.vx = 0; this.vy = 0;\n      this.x = (opt.x != null ? +opt.x : 50) / 100 * W;\n      this.y = (opt.y != null ? +opt.y : 50) / 100 * H;\n      this._opt = opt;\n      if (this.motion === 'bounce') { var a = rand(0.4, 1.2) * (Math.random() \u003c .5 ? 1 : -1); this.vx = Math.cos(a) * this.speed * (Math.random() \u003c .5 ? 1 : -1); this.vy = Math.abs(Math.sin(a)) * this.speed * (Math.random() \u003c .5 ? 1 : -1); }\n    }\n    Sprite.prototype.place = function (xp, yp) { this.x = xp / 100 * W; this.y = yp / 100 * H; this.out = false; return this; };\n    Sprite.prototype.destroy = function () { this.alive = false; };\n    Sprite.prototype.clone = function () { return add(new Sprite(this._opt)); };\n    Sprite.prototype.touches = function (o) { return hit(this, o); };\n    Sprite.prototype.respawn = function () {\n      var s = this.size, m = this.motion;\n      if (m === 'fall') { this.x = rand(s / 2, W - s / 2); this.y = -s / 2; }\n      else if (m === 'rise') { this.x = rand(s / 2, W - s / 2); this.y = H + s / 2; }\n      else if (m === 'left') { this.x = W + s / 2; this.y = rand(s / 2, H - s / 2); }\n      else if (m === 'right') { this.x = -s / 2; this.y = rand(s / 2, H - s / 2); }\n      else { this.x = rand(s, W - s); this.y = rand(s, H - s); }\n      this.out = false; return this;\n    };\n    function add(s) { if (sprites.length \u003c MAXS) sprites.push(s); else s.alive = false; return s; }\n    G.sprite = function (opt) {\n      opt = opt || {};\n      var s = add(new Sprite(opt));\n      if (!defs[s.name]) defs[s.name] = opt;\n      return s;\n    };\n    G.spawn = function (name) {\n      var d = defs[name]; if (!d) return null;\n      var s = add(new Sprite(d)); s.respawn(); return s;\n    };\n    G.find = function (name) { for (var i = 0; i \u003c sprites.length; i++) if (sprites[i].alive && sprites[i].name === name) return sprites[i]; return null; };\n    G.all = function (name) { return sprites.filter(function (s) { return s.alive && (!name || s.name === name); }); };\n    function nm(x) { return typeof x === 'string' ? x : (x && x.name); }\n\n    function ext(s) { return (s.shape === 'square' ? 0.45 : 0.4) * s.size; }\n    function hit(a, b) { var ea = ext(a), eb = ext(b); return Math.abs(a.x - b.x) \u003c ea + eb && Math.abs(a.y - b.y) \u003c ea + eb; }\n\n    // ---------- Ereignisse ----------\n    G.onStart = function (f) { h.start.push(f); };\n    G.onUpdate = function (f) { h.update.push(f); };\n    G.onKey = function (k, f) { k = String(k).toUpperCase(); (h.key[k] = h.key[k] || []).push(f); };\n    G.onTouch = function (a, b, f) { h.touch.push({ a: nm(a), b: nm(b), f: f }); };\n    G.onEdge = function (a, f) { h.edge.push({ a: nm(a), f: f }); };\n    G.onClick = function (a, f) { h.click.push({ a: nm(a), f: f }); };\n    G.every = function (sec, f) { timers.push({ t: 0, every: Math.max(0.05, +sec || 1), f: f }); };\n    G.onScore = function (n, f) { scoreCbs.push({ n: +n, f: f, done: false }); };\n\n    // ---------- Aktionen ----------\n    G.addScore = function (n) { G.score += (+n || 0); };\n    G.addLife = function (n) { G.lives = Math.max(0, G.lives + (+n || 0)); if (G.lives === 0 && n \u003c 0 && G.state === 'play' && o.lives > 0) G.lose('Keine Leben mehr'); };\n    G.say = function (t, sec) { msg = { t: String(t), left: sec == null ? 2 : +sec }; };\n    G.win = function (m) { if (G.state === 'play') { G.state = 'won'; endMsg = m || 'Gewonnen!'; } };\n    G.lose = function (m) { if (G.state === 'play') { G.state = 'lost'; endMsg = m || 'Verloren'; } };\n    G.random = rand;\n    G.start = function () { loopStart(); };\n\n    function startPlay() {\n      if (G.state !== 'ready') return;\n      G.state = 'play'; cv.focus();\n      h.start.forEach(function (f) { safe(f); });\n    }\n    function restart() {\n      if (window.parent !== window) send({ type: 'restart' }); else location.reload();\n    }\n    function safe(f, a, b) { try { f(a, b); } catch (e) { console.error(e && e.message ? e.message : String(e)); } }\n\n    // ---------- Eingabe ----------\n    function setPointer(e) {\n      var r = cv.getBoundingClientRect();\n      pointer.x = (e.clientX - r.left) / r.width * W; pointer.y = (e.clientY - r.top) / r.height * H; pointer.seen = true;\n    }\n    cv.addEventListener('pointermove', setPointer);\n    cv.addEventListener('pointerdown', function (e) {\n      setPointer(e); pointer.down = true;\n      try { cv.setPointerCapture(e.pointerId); } catch (x) {}\n      if (G.state === 'ready') { startPlay(); return; }\n      if (G.state === 'won' || G.state === 'lost') { restart(); return; }\n      for (var i = sprites.length - 1; i >= 0; i--) {\n        var s = sprites[i]; if (!s.alive) continue;\n        if (Math.abs(pointer.x - s.x) \u003c s.size / 2 + 6 && Math.abs(pointer.y - s.y) \u003c s.size / 2 + 6) {\n          h.click.forEach(function (c) { if (c.a === s.name) safe(c.f, s); });\n          break;\n        }\n      }\n    });\n    cv.addEventListener('pointerup', function () { pointer.down = false; });\n    cv.addEventListener('pointercancel', function () { pointer.down = false; });\n    addEventListener('keydown', function (e) {\n      var k = keyName(e);\n      if (['SPACE', 'LEFT', 'RIGHT', 'UP', 'DOWN'].indexOf(k) > -1) e.preventDefault();\n      if (G.state === 'ready' && !e.repeat) { startPlay(); return; }\n      if ((G.state === 'won' || G.state === 'lost') && (k === 'SPACE' || k === 'ENTER') && !e.repeat) { restart(); return; }\n      if (!down[k] && G.state === 'play' && h.key[k]) h.key[k].forEach(function (f) { safe(f); });\n      down[k] = true;\n    });\n    addEventListener('keyup', function (e) { down[keyName(e)] = false; });\n    addEventListener('blur', function () { down = {}; pointer.down = false; });\n    function pressed(a, b) { return down[a] || down[b]; }\n\n    // ---------- Update ----------\n    function update(dt) {\n      G.time += dt;\n      if (msg) { msg.left -= dt; if (msg.left \u003c= 0) msg = null; }\n      var i, s;\n      for (i = 0; i \u003c sprites.length; i++) {\n        s = sprites[i]; if (!s.alive) continue;\n        var half = s.size / 2;\n        if (s.control === 'keys') {\n          var dx = 0, dy = 0;\n          if (s.axis !== 'y') dx = (pressed('RIGHT', 'D') ? 1 : 0) - (pressed('LEFT', 'A') ? 1 : 0);\n          if (s.axis !== 'x') dy = (pressed('DOWN', 'S') ? 1 : 0) - (pressed('UP', 'W') ? 1 : 0);\n          if (pointer.down) {   // Touch: Richtung zum Finger\n            if (s.axis !== 'y' && Math.abs(pointer.x - s.x) > 6) dx = pointer.x > s.x ? 1 : -1;\n            if (s.axis !== 'x' && Math.abs(pointer.y - s.y) > 6) dy = pointer.y > s.y ? 1 : -1;\n          }\n          var l = Math.sqrt(dx * dx + dy * dy) || 1;\n          s.x += dx / l * s.speed * dt; s.y += dy / l * s.speed * dt;\n        } else if (s.control === 'mouse' && pointer.seen) {\n          if (s.axis !== 'y') s.x = pointer.x;\n          if (s.axis !== 'x') s.y = pointer.y;\n        }\n        if (s.control !== 'none') { s.x = Math.max(half, Math.min(W - half, s.x)); s.y = Math.max(half, Math.min(H - half, s.y)); }\n        var m = s.motion;\n        if (m === 'fall') s.y += s.speed * dt;\n        else if (m === 'rise') s.y -= s.speed * dt;\n        else if (m === 'left') s.x -= s.speed * dt;\n        else if (m === 'right') s.x += s.speed * dt;\n        else if (m === 'bounce') {\n          s.x += s.vx * dt; s.y += s.vy * dt;\n          if (s.x \u003c half) { s.x = half; s.vx = Math.abs(s.vx); } if (s.x > W - half) { s.x = W - half; s.vx = -Math.abs(s.vx); }\n          if (s.y \u003c half) { s.y = half; s.vy = Math.abs(s.vy); } if (s.y > H - half) { s.y = H - half; s.vy = -Math.abs(s.vy); }\n        } else if (m === 'follow') {\n          var t = null; for (var j = 0; j \u003c sprites.length; j++) if (sprites[j].alive && sprites[j].control !== 'none') { t = sprites[j]; break; }\n          if (t) { var ax = t.x - s.x, ay = t.y - s.y, d = Math.sqrt(ax * ax + ay * ay) || 1; s.x += ax / d * s.speed * dt; s.y += ay / d * s.speed * dt; }\n        }\n        // Rand\n        var outNow = s.x \u003c -half || s.x > W + half || s.y \u003c -half || s.y > H + half;\n        if (outNow && !s.out) {\n          s.out = true;\n          var sp = s;\n          h.edge.forEach(function (e) { if (e.a === sp.name) safe(e.f, sp); });\n          if (s.alive && s.autoRespawn && (m === 'fall' || m === 'rise' || m === 'left' || m === 'right')) s.respawn();\n        } else if (!outNow) s.out = false;\n      }\n      // Ber\u00fchrungen (nur beim Beginn der Ber\u00fchrung)\n      h.touch.forEach(function (tc) {\n        var A = G.all(tc.a), B = G.all(tc.b);\n        A.forEach(function (a) { B.forEach(function (b) {\n          if (a === b) return;\n          var key = tc.a + '|' + tc.b + '|' + a.id + '|' + b.id, inx = hit(a, b);\n          if (inx && !touching[key]) { touching[key] = 1; safe(tc.f, a, b); } else if (!inx) delete touching[key];\n        }); });\n      });\n      timers.forEach(function (t) { t.t += dt; while (t.t >= t.every) { t.t -= t.every; safe(t.f); } });\n      scoreCbs.forEach(function (c) { if (!c.done && G.score >= c.n) { c.done = true; safe(c.f); } });\n      h.update.forEach(function (f) { safe(f, dt); });\n      sprites = sprites.filter(function (s) { return s.alive; });\n      if (G.timeLimit > 0 && G.time >= G.timeLimit && G.state === 'play') { G.time = G.timeLimit; G.timeMode === 'win' ? G.win('Geschafft!') : G.lose('Zeit abgelaufen'); }\n    }\n\n    // ---------- Zeichnen ----------\n    function text(t, x, y, size, color, align, weight) {\n      ctx.font = (weight || 800) + ' ' + size + 'px \"Segoe UI\",system-ui,sans-serif';\n      ctx.textAlign = align || 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = color || '#fff'; ctx.fillText(t, x, y);\n    }\n    function overlay(a) { ctx.fillStyle = 'rgba(8,10,35,' + a + ')'; ctx.fillRect(0, 0, W, H); }\n    function draw() {\n      var k = cv.width / W;\n      ctx.setTransform(k, 0, 0, k, 0, 0);\n      ctx.fillStyle = G.background; ctx.fillRect(0, 0, W, H);\n      for (var i = 0; i \u003c sprites.length; i++) {\n        var s = sprites[i]; if (!s.alive || !s.visible) continue;\n        ctx.save(); ctx.translate(s.x, s.y);\n        ctx.beginPath(); PATH[s.shape](ctx, s.size);\n        ctx.fillStyle = s.color; ctx.fill();\n        ctx.lineWidth = Math.max(2, s.size * 0.06); ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.stroke();\n        if (s.label) text(s.label, 0, 0, Math.max(12, s.size * 0.4), '#0a0d2b');\n        ctx.restore();\n      }\n      if (G.state !== 'ready') {\n        if (G.showScore) text('Punkte  ' + G.score, 20, 28, 24, '#fff', 'left');\n        if (o.lives > 0) { for (var l = 0; l \u003c G.lives; l++) { ctx.save(); ctx.translate(W - 30 - l * 34, 28); ctx.beginPath(); PATH.heart(ctx, 24); ctx.fillStyle = '#ff4d6d'; ctx.fill(); ctx.restore(); } }\n        if (G.timeLimit > 0) text(String(Math.max(0, Math.ceil(G.timeLimit - G.time))), W / 2, 28, 28, '#ffd23f');\n      }\n      if (msg && G.state === 'play') { text(msg.t, W / 2, 80, 30, '#ffd23f'); }\n      if (G.state === 'ready') {\n        overlay(0.72); text(G.title, W / 2, H / 2 - 26, 46, '#fff'); text('Tippen oder Taste dr\u00fccken zum Starten', W / 2, H / 2 + 34, 20, '#a3abe0', 'center', 600);\n      } else if (G.state === 'won' || G.state === 'lost') {\n        overlay(0.7); text(endMsg, W / 2, H / 2 - 40, 52, G.state === 'won' ? '#00e5a8' : '#ff6b81');\n        text('Punkte  ' + G.score, W / 2, H / 2 + 14, 26, '#fff');\n        text('Tippen f\u00fcr noch einmal', W / 2, H / 2 + 62, 19, '#a3abe0', 'center', 600);\n      }\n    }\n\n    var last = 0, running = false;\n    function frame(t) {\n      var dt = Math.min(0.05, (t - last) / 1000 || 0); last = t;\n      if (G.state === 'play' && !document.hidden) { try { update(dt); } catch (e) { console.error(e.message); } }\n      draw(); requestAnimationFrame(frame);\n    }\n    function loopStart() { if (running) return; running = true; requestAnimationFrame(function (t) { last = t; frame(t); }); }\n    send({ type: 'ready' });\n    return G;\n  }\n\n  window.Moki = { version: 1, game: createGame };\n})();\n";
+</script>
 <script>
 // Neues Spiel hinzufügen: einfach einen Eintrag in diese Liste kopieren.
 // added: "JJJJ-MM-TT" = Datum, an dem das Spiel dazukam. 7 Tage lang trägt die Kachel das NEU-Schild, danach verschwindet es automatisch.
@@ -731,12 +776,21 @@ const SVG = {
   shuffle: '<path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4"/><path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2"/><path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8"/><path d="m18 14 4 4-4 4"/>',
   target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
   crosshair: '<circle cx="12" cy="12" r="10"/><path d="M22 12h-4M6 12H2M12 6V2M12 22v-4"/>',
+  sparkles: '<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/>',
+  pen: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
   globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>'
 };
 const icon = n => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${SVG[n] || SVG.spiel}</svg>`;
-const CATICON = { Alle: "alle", __fav: "star", Fahren: "fahren", Geschicklichkeit: "target", "Kampf & Schießen": "crosshair", Simulation: "simulation", Strategie: "strategie", Sport: "sport", Abenteuer: "abenteuer" };
+const CATICON = { Alle: "alle", __fav: "star", __cre: "sparkles", Fahren: "fahren", Geschicklichkeit: "target", "Kampf & Schießen": "crosshair", Simulation: "simulation", Strategie: "strategie", Sport: "sport", Abenteuer: "abenteuer" };
 const CATORDER = ["Fahren", "Geschicklichkeit", "Kampf & Schießen", "Simulation", "Strategie", "Sport", "Abenteuer"];
-const CATLABEL = { Alle: "Alle", __fav: "Favoriten" };
+const CATLABEL = { Alle: "Alle", __fav: "Favoriten", __cre: "Kreationen" };
+
+// ---- Kreationen (Spiele aus dem Studio). Wird von creations.js befüllt. ----
+const CRE = window.MOKI_CRE = { list: [], loaded: false, error: false };
+const studioUrl = () => (window.MOKI_CFG && window.MOKI_CFG.studioUrl) || "studio.html";
+const creTile = c => `<a class="tile cre" href="#/spiel/${esc(c.slug)}" data-cre="${esc(c.slug)}" aria-label="${esc(c.title)} von ${esc(c.creator)}" title="${esc(c.title)} von ${esc(c.creator)}">${c.icon ? `<img src="${esc(c.icon)}" alt="" loading="lazy">` : ""}<span class="name">${esc(c.title)}<small class="by">von ${esc(c.creator)}</small></span></a>`;
+const studioTile = () => `<a class="tile studio" href="${esc(studioUrl())}" aria-label="Im Studio ein eigenes Spiel bauen"><span class="stin">${icon("plus")}<b>Dein Spiel</b><small>Im Studio bauen</small></span></a>`;
 
 // ---- Favoriten und "Zuletzt gespielt" (nur in diesem Browser gespeichert) ----
 const store = {
@@ -792,10 +846,10 @@ function heroHtml() {
 
 function renderSide() {
   const used = [...new Set(games.map(g => g.category))];
-  const cats = ["Alle", "__fav", ...CATORDER.filter(c => used.includes(c)), ...used.filter(c => !CATORDER.includes(c))];
+  const cats = ["Alle", "__fav", "__cre", ...CATORDER.filter(c => used.includes(c)), ...used.filter(c => !CATORDER.includes(c))];
   const collapsed = document.body.classList.contains("side-collapsed");
   side.innerHTML = `<div class="sidehead"><h3>Kategorien</h3><button class="toggle" type="button" aria-label="${collapsed ? "Seitenleiste ausklappen" : "Seitenleiste einklappen"}" aria-expanded="${!collapsed}" title="${collapsed ? "Ausklappen" : "Einklappen"}">${icon("panel")}</button></div>` + cats.map(c => {
-    const n = c === "Alle" ? games.length : c === "__fav" ? favs.size : games.filter(g => g.category === c).length;
+    const n = c === "Alle" ? games.length : c === "__fav" ? favs.size : c === "__cre" ? CRE.list.length : games.filter(g => g.category === c).length;
     const label = CATLABEL[c] || c;
     return `<button class="cat ${c === category ? "on" : ""}" data-c="${esc(c)}" title="${esc(label)} (${n})" aria-label="${esc(label)}, ${n} Spiele">${icon(CATICON[c])}<span class="lbl">${esc(label)}</span><span class="n">${n}</span></button>`;
   }).join("");
@@ -807,14 +861,36 @@ function renderSide() {
   };
 }
 
+const creMatches = q => CRE.list.filter(c => !q || c.title.toLowerCase().includes(q) || c.creator.toLowerCase().includes(q));
+
+function homeCre(q) {
+  const cm = creMatches(q);
+  app.innerHTML = `<section>
+    <h2>${icon("sparkles")}Kreationen</h2>
+    <p class="sub">${cm.length} ${cm.length === 1 ? "Spiel" : "Spiele"} · selbstgemacht im Moki Studio</p>
+    <div class="grid">${cm.map(creTile).join("")}${q ? "" : studioTile()}</div>
+    ${cm.length ? "" : `<p class="empty">${!CRE.loaded ? "Lade Kreationen …" : CRE.error ? "Kreationen konnten gerade nicht geladen werden." : q ? "Kein Spiel gefunden." : "Hier ist noch nichts. Sei der Erste: Bau dein Spiel im Studio."}</p>`}
+  </section>`;
+}
+
 function home() {
   const q = search.value.trim().toLowerCase();
+  renderSide();
+  if (category === "__cre") return homeCre(q);
   const inCat = g => category === "Alle" || (category === "__fav" ? favs.has(g.id) : g.category === category);
   const list = games.filter(g => inCat(g) && g.title.toLowerCase().includes(q));
-  renderSide();
   const title = category === "Alle" ? "Alle Spiele" : (CATLABEL[category] || category);
   const rec = recent.map(id => games.find(g => g.id === id)).filter(Boolean).slice(0, 6);
   const emptyMsg = category === "__fav" && !q ? `Noch keine Favoriten. Tippe bei einem Spiel auf den Stern, dann erscheint es hier.` : "Kein Spiel gefunden.";
+  const cm = category === "Alle" ? creMatches(q) : [];
+  const creSec = category !== "Alle" ? "" : q
+    ? (cm.length ? `<section><h2>${icon("sparkles")}Kreationen</h2><div class="grid">${cm.map(creTile).join("")}</div></section>` : "")
+    : `<section>
+      <h2>${icon("sparkles")}Kreationen</h2>
+      <p class="sub">Selbstgemachte Spiele aus dem Moki Studio</p>
+      <div class="grid">${cm.slice(0, 5).map(creTile).join("")}${studioTile()}</div>
+      ${cm.length > 5 ? `<button class="btn more" data-cat="__cre" type="button">Alle ${cm.length} Kreationen ansehen</button>` : ""}
+    </section>`;
   app.innerHTML = `
     ${!q && category === "Alle" ? heroHtml() : ""}
     ${!q && category === "Alle" && rec.length ? `<section>
@@ -826,12 +902,17 @@ function home() {
       <p class="sub">${list.length} ${list.length === 1 ? "Spiel" : "Spiele"}</p>
       ${list.length ? `<div class="grid">${list.map(tile).join("")}</div>` : `<p class="empty">${emptyMsg}</p>`}
     </section>
+    ${creSec}
     ${!q && category === "Alle" && sites.length ? `<section>
       <h2>Weitere Seiten</h2>
       <p class="warn">${icon("alert")}<span>Achtung: Auf diesen Seiten funktionieren nicht alle Spiele. Wenn eins nicht lädt, probier ein anderes.</span></p>
       <div class="grid">${sites.map(tile).join("")}</div>
     </section>` : ""}`;
 }
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-cat]");
+  if (b) { category = b.dataset.cat; home(); window.scrollTo(0, 0); }
+});
 
 search.addEventListener("input", home);
 document.title = "Moki – Spiele";
@@ -995,6 +1076,7 @@ addEventListener("pageshow", e => { if (e.persisted) { recent = store.get("moki-
       ["shuffle", "Zufall", "Der Knopf „Zufall“ öffnet ein zufälliges Spiel."],
       ["alle", "Bessere Kategorien", "Neu sortiert, zum Beispiel Geschicklichkeit sowie Kampf & Schießen."],
       ["tag", "NEU-Schilder", "Neue Spiele tragen 7 Tage lang ein NEU-Schild."],
+      ["pen", "Studio", "Baue eigene Spiele im Studio, mit Baukasten oder Code, und veröffentliche sie unter „Kreationen“."],
       ["alert", "Hinweise", "Experimentelle Spiele und die Zusatzseiten warnen dich vorher."]
     ];
     upd.innerHTML = `<div class="ubox">
@@ -1066,6 +1148,138 @@ addEventListener("pageshow", e => { if (e.persisted) { recent = store.get("moki-
     openUpdate();
   }
   run();
+})();
+
+</script>
+<script>
+// Kreationen: Spiele aus dem Moki Studio. Liste laden und Spiele IN Moki öffnen (mit Moki-Animation und "Made by").
+(function () {
+  const CFGM = window.MOKI_CFG;
+  if (!CFGM || !window.MOKI_CRE) return;
+  const root = document.documentElement;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+  async function rpc(fn, args) {
+    const r = await fetch(CFGM.sbUrl + "/rest/v1/rpc/" + fn, {
+      method: "POST", headers: { "Content-Type": "application/json", apikey: CFGM.sbKey, Authorization: "Bearer " + CFGM.sbKey }, body: JSON.stringify(args || {})
+    });
+    if (!r.ok) throw new Error("Fehler " + r.status);
+    return r.json();
+  }
+
+  // ---------- Liste der veröffentlichten Spiele ----------
+  rpc("moki_list_published").then(l => { CRE.list = Array.isArray(l) ? l : []; }).catch(() => { CRE.error = true; })
+    .finally(() => { CRE.loaded = true; home(); });
+
+  // ---------- Logo-Animation (gleich wie beim Update-Intro) ----------
+  const LOGO = id => `<svg viewBox="-14 -20 392 170" aria-hidden="true"><defs><linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="362" y2="0"><stop offset="0" stop-color="#00e5a8"/><stop offset="1" stop-color="#ffd23f"/></linearGradient></defs>
+<g class="lg" fill="none" stroke="url(#${id})" stroke-width="24" stroke-linecap="round" stroke-linejoin="round">
+<path pathLength="1" d="M12 120V70C12 52 22 44 38 44S64 52 64 70V120"/>
+<path pathLength="1" d="M64 70C64 52 74 44 90 44S116 52 116 70V120"/>
+<circle pathLength="1" cx="192" cy="82" r="38"/>
+<path pathLength="1" d="M268 12V120"/><path pathLength="1" d="M268 90L304 48"/><path pathLength="1" d="M286 74L310 120"/>
+<path pathLength="1" d="M350 44V120"/></g>
+<circle class="dot" cx="350" cy="6" r="14" fill="url(#${id})"/>
+<path class="tri" d="M183 66L207 82L183 98Z" fill="#fff" stroke="#fff" stroke-width="7" stroke-linejoin="round"/></svg>`;
+
+  function burst(cv, stop) {
+    if (reduce) return;
+    const ctx = cv.getContext("2d"), dpr = Math.min(devicePixelRatio || 1, 2), r = cv.getBoundingClientRect();
+    const W = (cv.width = Math.max(1, r.width * dpr)), H = (cv.height = Math.max(1, r.height * dpr));
+    const cols = ["#00e5a8", "#2fe0c0", "#ffd23f", "#ffffff", "#2b6fd6"], ps = [];
+    for (let i = 0; i < 220; i++) {
+      const a = Math.random() * Math.PI * 2, sp = (3 + Math.random() * 14) * dpr;
+      ps.push({ x: W / 2, y: H / 2, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 3 * dpr, s: (4 + Math.random() * 7) * dpr, r: Math.random() * 6, vr: (Math.random() - .5) * .4, c: cols[i % cols.length], round: i % 3 === 0 });
+    }
+    const t0 = performance.now();
+    (function frame(t) {
+      ctx.clearRect(0, 0, W, H); let alive = 0;
+      for (const p of ps) {
+        p.vx *= .985; p.vy = p.vy * .985 + .22 * dpr; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+        const life = Math.max(0, 1 - (t - t0) / 3600); if (life <= 0) continue; alive++;
+        ctx.save(); ctx.globalAlpha = Math.min(1, life * 1.6); ctx.fillStyle = p.c; ctx.translate(p.x, p.y); ctx.rotate(p.r);
+        if (p.round) { ctx.beginPath(); ctx.arc(0, 0, p.s / 2, 0, 7); ctx.fill(); } else ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2);
+        ctx.restore();
+      }
+      if (alive && !stop()) requestAnimationFrame(frame); else ctx.clearRect(0, 0, W, H);
+    })(t0);
+  }
+
+  // ---------- Spiel-Seite ----------
+  let play = null;   // { slug, el, html, token }
+  function srcdoc(code, title) {
+    return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><script>window.MOKI_TITLE=' +
+      JSON.stringify(title).replace(/</g, "\\u003c") + ';<\/script><script>' + window.MOKI_ENGINE + '<\/script><script>\n' +
+      String(code).replace(/<\/script/gi, "<\\/script") + '\n<\/script></body></html>';
+  }
+  function mountFrame(stage, html) {
+    const old = stage.querySelector("iframe"); if (old) old.remove();
+    const f = document.createElement("iframe");
+    f.setAttribute("sandbox", "allow-scripts");   // geschützte Box: kein Zugriff auf Moki
+    f.title = "Spiel"; f.srcdoc = html;
+    stage.insertBefore(f, stage.firstChild);
+    return f;
+  }
+  async function openPlay(slug) {
+    if (play && play.slug === slug) return;
+    closePlay(true);
+    const el = document.createElement("div");
+    el.id = "play"; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", "Spiel");
+    el.innerHTML = `<div class="pbar"><div class="pinfo"><b>Lade …</b><span></span></div><a class="pback" href="#/">&larr; Back to Moki</a></div><div class="pstage"><div class="pmsg"><span>Lade Spiel …</span></div></div>`;
+    document.body.appendChild(el); root.classList.add("playing");
+    const me = (play = { slug, el });
+    let g = null, err = "";
+    try { g = await rpc("moki_get_published", { p_slug: slug }); } catch (e) { err = "Das Spiel konnte nicht geladen werden. Prüfe dein Internet."; }
+    if (play !== me) return;   // inzwischen woanders hin
+    const stage = el.querySelector(".pstage");
+    if (!g) {
+      el.querySelector(".pinfo b").textContent = "Spiel nicht gefunden";
+      stage.innerHTML = `<div class="pmsg"><b>${esc(err ? "Fehler" : "Dieses Spiel gibt es nicht (mehr)")}</b><span>${esc(err || "Vielleicht wurde es zurückgezogen oder gelöscht.")}</span></div>`;
+      return;
+    }
+    document.title = g.title + " – Moki";
+    el.querySelector(".pinfo b").textContent = g.title;
+    el.querySelector(".pinfo span").textContent = "von " + g.creator;
+    stage.innerHTML = "";
+    me.html = srcdoc(g.code, g.title);
+    mountFrame(stage, me.html);   // lädt schon im Hintergrund. Gestartet wird erst durch Tippen im Spiel.
+    // Moki-Animation mit "Made by ..."
+    const sp = document.createElement("div");
+    sp.className = "splash"; sp.setAttribute("aria-label", "Moki: Made by " + g.creator);
+    sp.innerHTML = `<canvas class="fxc" aria-hidden="true"></canvas><div class="flash go" aria-hidden="true"></div>
+      <section class="st boom on"><i class="wave w1"></i><i class="wave w2"></i><i class="wave w3"></i>
+      <div class="biglogo">${LOGO("slg" + Date.now().toString(36))}</div><p class="btag">Made by ${esc(g.creator)}</p></section>`;
+    stage.appendChild(sp);
+    let skipped = false;
+    const finish = () => {
+      if (skipped) return; skipped = true; sp.classList.add("out");
+      setTimeout(() => { sp.remove(); const f = stage.querySelector("iframe"); if (f) f.focus(); }, reduce ? 50 : 900);
+    };
+    sp.addEventListener("click", finish);
+    burst(sp.querySelector(".fxc"), () => skipped || play !== me);
+    await sleep(reduce ? 1400 : 3400);
+    if (play === me) finish();
+  }
+  function closePlay(silent) {
+    if (!play) return;
+    play.el.remove(); play = null; root.classList.remove("playing");
+    document.title = "Moki – Spiele";
+  }
+  function route() {
+    const m = /^#\/spiel\/([a-z0-9-]{1,80})\/?$/i.exec(location.hash) || /^\/spiel\/([a-z0-9-]{1,80})\/?$/i.exec(location.pathname);
+    if (m) openPlay(m[1].toLowerCase()); else closePlay();
+  }
+  addEventListener("hashchange", route);
+  // "Nochmal spielen" im Spiel
+  addEventListener("message", e => {
+    const d = e.data; if (!d || d.moki !== 1 || !play || !play.html) return;
+    const f = play.el.querySelector("iframe"); if (!f || e.source !== f.contentWindow) return;
+    if (d.type === "restart") { const st = play.el.querySelector(".pstage"); mountFrame(st, play.html).focus(); }
+  });
+  addEventListener("keydown", e => { if (e.key === "Escape" && play && !document.querySelector("#upd.open")) location.hash = "#/"; });
+  const sb = document.getElementById("studio"); if (sb && CFGM.studioUrl) sb.href = CFGM.studioUrl;
+  route();
 })();
 
 </script>

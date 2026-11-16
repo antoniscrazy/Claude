@@ -97,6 +97,7 @@
       ["shuffle", "Zufall", "Der Knopf „Zufall“ öffnet ein zufälliges Spiel."],
       ["alle", "Bessere Kategorien", "Neu sortiert, zum Beispiel Geschicklichkeit sowie Kampf & Schießen."],
       ["tag", "NEU-Schilder", "Neue Spiele tragen 7 Tage lang ein NEU-Schild."],
+      ["pen", "Studio", "Baue eigene Spiele im Studio, mit Baukasten oder Code, und veröffentliche sie unter „Kreationen“."],
       ["alert", "Hinweise", "Experimentelle Spiele und die Zusatzseiten warnen dich vorher."]
     ];
     upd.innerHTML = `<div class="ubox">
