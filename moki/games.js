@@ -384,11 +384,7 @@ window.MOKI_GAMES = [
     colors: ["#3d8c2f", "#6b4423"],
     description: "Ein Minecraft-ähnliches Spiel aus Blöcken: abbauen, bauen und die Welt erkunden.",
     featured: false
-  }
-];
-
-// Weitere Seiten (erscheinen als eigener Bereich unter den Spielen)
-window.MOKI_SITES = [
+  },
   {
     id: "doodle-jump",
     title: "Doodle Jump",
@@ -412,7 +408,11 @@ window.MOKI_SITES = [
     description: "Führe einen Supermarkt als Affe: Ernte Obst und Gemüse, fülle die Regale und bediene die Kunden.",
     added: "2026-11-16",
     featured: false
-  },
+  }
+];
+
+// Weitere Seiten (erscheinen als eigener Bereich unter den Spielen)
+window.MOKI_SITES = [
   {
     id: "poki",
     title: "Poki",
