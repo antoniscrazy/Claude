@@ -3,7 +3,25 @@ const sites = window.MOKI_SITES || [];
 const app = document.getElementById("app");
 const side = document.getElementById("side");
 const search = document.getElementById("q");
-const ICONS = { Alle: "🏠", Fahren: "🏎️", Action: "💥", Simulation: "🏨", Abenteuer: "🧭", Strategie: "⚔️", Sport: "⛳" };
+try { if (localStorage.getItem("moki-side") === "1") document.body.classList.add("side-collapsed"); } catch (e) {}
+// Linien-Symbole (SVG) statt Emojis
+const SVG = {
+  alle: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+  fahren: '<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/>',
+  action: '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>',
+  simulation: '<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/>',
+  strategie: '<path d="M14.5 17.5 3 6V3h3l11.5 11.5"/><path d="M13 19l6-6M16 16l4 4M19 21l2-2"/><path d="M14.5 6.5 18 3h3v3l-3.5 3.5"/><path d="M5 14l4 4M7 17l-3 3M3 19l2 2"/>',
+  sport: '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-1.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98 1.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
+  abenteuer: '<circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>',
+  spiel: '<path d="M6 12h4M8 10v4"/><path d="M15 13h.01M18 11h.01"/><rect width="20" height="12" x="2" y="6" rx="2"/>',
+  panel: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>',
+  flame: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+  alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/>',
+  play: '<polygon points="6 3 20 12 6 21 6 3" fill="currentColor"/>',
+  globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>'
+};
+const icon = n => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${SVG[n] || SVG.spiel}</svg>`;
+const CATICON = { Alle: "alle", Fahren: "fahren", Action: "action", Simulation: "simulation", Strategie: "strategie", Sport: "sport", Abenteuer: "abenteuer" };
 let category = "Alle";
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -25,19 +43,25 @@ function heroHtml() {
   const date = new Date().toLocaleDateString("de-DE", { timeZone: "Europe/Berlin", weekday: "long", day: "numeric", month: "long" });
   return `<a class="hero${g.wide ? "" : " sq"}" href="${g.url}" data-id="${g.id}" aria-label="Spiel des Tages: ${esc(g.title)}">
     <div class="hbg" style="background-image:url(${g.image})"></div>
-    <div class="htxt"><span class="chip">🔥 Spiel des Tages</span><span class="hdate">${esc(date)}</span>
-      <h1>${esc(g.title)}</h1><p>${esc(g.description)}</p><span class="play">▶ Jetzt spielen</span></div>
+    <div class="htxt"><span class="chip">${icon("flame")}Spiel des Tages</span><span class="hdate">${esc(date)}</span>
+      <h1>${esc(g.title)}</h1><p>${esc(g.description)}</p><span class="play">${icon("play")}Jetzt spielen</span></div>
     <img src="${g.image}" alt="">
   </a>`;
 }
 
 function renderSide() {
   const cats = ["Alle", ...new Set(games.map(g => g.category))];
-  side.innerHTML = `<h3>Kategorien</h3>` + cats.map(c => {
+  const collapsed = document.body.classList.contains("side-collapsed");
+  side.innerHTML = `<div class="sidehead"><h3>Kategorien</h3><button class="toggle" type="button" aria-label="${collapsed ? "Seitenleiste ausklappen" : "Seitenleiste einklappen"}" aria-expanded="${!collapsed}" title="${collapsed ? "Ausklappen" : "Einklappen"}">${icon("panel")}</button></div>` + cats.map(c => {
     const n = c === "Alle" ? games.length : games.filter(g => g.category === c).length;
-    return `<button class="cat ${c === category ? "on" : ""}" data-c="${esc(c)}"><span class="ic">${ICONS[c] || "🎮"}</span>${esc(c)}<span class="n">${n}</span></button>`;
+    return `<button class="cat ${c === category ? "on" : ""}" data-c="${esc(c)}" title="${esc(c)} (${n})" aria-label="${esc(c)}, ${n} Spiele">${icon(CATICON[c])}<span class="lbl">${esc(c)}</span><span class="n">${n}</span></button>`;
   }).join("");
   side.querySelectorAll(".cat").forEach(b => b.onclick = () => { category = b.dataset.c; home(); });
+  side.querySelector(".toggle").onclick = () => {
+    const now = document.body.classList.toggle("side-collapsed");
+    try { localStorage.setItem("moki-side", now ? "1" : "0"); } catch (e) {}
+    renderSide();
+  };
 }
 
 function home() {
@@ -53,8 +77,8 @@ function home() {
       ${list.length ? `<div class="grid">${list.map(tile).join("")}</div>` : `<p class="empty">Kein Spiel gefunden.</p>`}
     </section>
     ${!q && category === "Alle" && sites.length ? `<section>
-      <h2>🌐 Weitere Seiten</h2>
-      <p class="warn">⚠️ Achtung: Auf diesen Seiten funktionieren nicht alle Spiele. Wenn eins nicht lädt, probier ein anderes.</p>
+      <h2>Weitere Seiten</h2>
+      <p class="warn">${icon("alert")}<span>Achtung: Auf diesen Seiten funktionieren nicht alle Spiele. Wenn eins nicht lädt, probier ein anderes.</span></p>
       <div class="grid">${sites.map(tile).join("")}</div>
     </section>` : ""}`;
 }
@@ -67,7 +91,7 @@ home();
 function warnDialog(g) {
   const o = document.createElement("div");
   o.className = "modal";
-  o.innerHTML = `<div class="box" role="dialog" aria-modal="true"><h3>⚠️ Experimentell</h3><p>${esc(g.warning)}</p>
+  o.innerHTML = `<div class="box" role="dialog" aria-modal="true"><h3>${icon("alert")}Experimentell</h3><p>${esc(g.warning)}</p>
     <div class="acts"><button class="btn" data-a="no">Abbrechen</button><a class="btn go" href="${g.url}">Trotzdem öffnen</a></div></div>`;
   const close = () => o.remove();
   o.addEventListener("click", e => { if (e.target === o || e.target.dataset.a === "no") close(); });
