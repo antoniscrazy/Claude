@@ -33,7 +33,7 @@
 Playwright/Chromium im Container: Argumente `--use-angle=swiftshader --use-gl=angle --enable-unsafe-swiftshader --ignore-gpu-blocklist --enable-webgl --no-sandbox`. Touch via `hasTouch:true`. Ein Lauf, ein Screenshot, Fremd-Anfragen mitloggen. Große Unity-Spiele brauchen 60–90 s zum Laden (im Hintergrund laufen lassen).
 
 ## Fertige Spiele (alle im Repo, mit Launcher)
-ragdoll-hit, hills-of-steel (+ Admin-Modus, `hills-of-steel-admin`), perfect-hotel, level-devil, slice-master, fruit-ninja, angry-bird, subway-surfers, kick-the-buddy (Geheim-Cheat Taste K), drift-hunters (Touch-Steuerung), zombie-rush, stickman-gta, war-of-sticks, johnny-trigger (Sniper, Unity; Zahlensuche-Admin), **johnny-trigger-admin** (eigene Version mit Debugger-Panel: alle Waffen/Skins/Geld per `SendMessage("Debugger", ...)`), johnny-trigger-remake (selbstgebauter Nachbau Level 1 mit Original-Modellen, Three.js), rogue-sergeant (iPad-Steuerung, Bildrate 60 fps, highp-Shader), ultimate-car-driving (Touch-Steuerung), tank-stars, open-panzer-front (Touch-Steuerung), lakeside-fishing (deutsch, Einzelspieler, Ansicht-Taste), neon-swing, golf-orbit, bowmasters, crossy-road.
+ragdoll-hit, hills-of-steel (+ Admin-Modus, `hills-of-steel-admin`), perfect-hotel, level-devil, slice-master, fruit-ninja, angry-bird, subway-surfers, kick-the-buddy (Geheim-Cheat Taste K), drift-hunters (Touch-Steuerung), zombie-rush, stickman-gta, war-of-sticks, johnny-trigger (Sniper, Unity; Zahlensuche-Admin), **johnny-trigger-admin** (eigene Version mit Debugger-Panel: alle Waffen/Skins/Geld per `SendMessage("Debugger", ...)`), johnny-trigger-remake (selbstgebauter Nachbau Level 1 mit Original-Modellen, Three.js), rogue-sergeant (iPad-Steuerung, Bildrate 60 fps, highp-Shader), ultimate-car-driving (Touch-Steuerung), tank-stars, open-panzer-front (Touch-Steuerung), lakeside-fishing (deutsch, Einzelspieler, Ansicht-Taste), neon-swing, golf-orbit, bowmasters, crossy-road, cookie-clicker (obere Leiste entfernt, jsDelivr), solar-smash (YouTube-Playables-Unity, Zip-Ablauf, siehe unten).
 
 ## Offene/bekannte Punkte
 - Rogue Sergeant: Baum-/Himmel-Flackern auf dem iPad, Ursache unklar (zuletzt highp-Shader + 60 fps versucht).
@@ -46,3 +46,8 @@ ragdoll-hit, hills-of-steel (+ Admin-Modus, `hills-of-steel-admin`), perfect-hot
 ## Sicherheit
 - Fremden Code nur ausführen, wenn der Nutzer das Repo genannt hat (Auto-Modus blockiert sonst). Beim Bauen fremder npm-Projekte `npm ci --ignore-scripts`.
 - Keine Passwörter/Schlüssel im Chat anfordern. Datenbank-Zugänge trägt der Nutzer selbst beim Hoster ein.
+
+## Solar Smash / YouTube-Playables-Unity (Lehre)
+- Quelle: `bubbls/youtube-playables`. Loader ist obfuskiert und stuerzt ab (`GLctx`), wenn Daten/Wasm nicht als Blob aus dem Original-Zip-Ablauf kommen. Deshalb Originalablauf behalten: `Build.data.zip`/`Build.wasm.zip` im Repo, `lib/jszip`, `TemplateData`.
+- Launcher holt `index.html` per raw (Basis `<base>` = raw), setzt `window.__RAW`/`__JSD`; Loader, Framework, jszip, CSS absolut ueber jsDelivr-Zwischenstand (Skripte laufen nur von dort). Assets (Bundles) kommen aus der Basis (raw), nicht aus `streamingAssetsUrl` allein.
+- Geteilte Bundle-Teile (`planets.part1/2`) vorher zusammengefuegt, Merge-Skript aus index.html entfernt.
