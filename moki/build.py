@@ -17,5 +17,5 @@ logo=r("logo/moki-logo.svg").replace('id="mg"','id="slg"').replace('url(#mg)','u
 eng=json.dumps(r("motifs.js")+"\n"+r("engine.js")).replace("<","\\u003c")
 studio=studio.replace("<!--ICON-->",links).replace("<!--LOGO-->",logo).replace("/*CSS*/",r("studio.css"))
 studio=studio.replace("/*CONFIG*/",r("config.js")+"\nwindow.MOKI_ENGINE = "+eng+";")
-studio=studio.replace("/*JS*/",r("motifs.js")+"\n"+r("studio-icons.js")+"\n"+r("studio-core.js")+"\n"+r("studio-model.js")+"\n"+r("studio-builder.js")+"\n"+r("studio-main.js"))
+studio=studio.replace("/*JS*/",r("motifs.js")+"\n"+r("studio-icons.js")+"\n"+r("studio-core.js")+"\n"+r("studio-model.js")+"\n"+r("studio-builder.js")+"\n"+r("studio-main.js")+"\n"+r("studio-extras.js"))
 open("studio.html","w",encoding="utf-8").write(studio)

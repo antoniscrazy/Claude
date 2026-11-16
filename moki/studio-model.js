@@ -216,7 +216,7 @@ game.start();
 function newGame(kind) {
   const t = TEMPLATES[kind] || TEMPLATES.empty;
   const g = { id: null, slug: null, title: t.title, description: '', creator: App.name, icon: null, status: 'draft', dirty: true, mode: t.mode || 'builder', model: null, code: '' };
-  if (g.mode === 'code') { g.code = STARTER_CODE; g.model = newModel(); } else g.model = t.mk();
+  if (g.mode === 'code') { g.code = t.code || STARTER_CODE; g.model = newModel(); } else g.model = t.mk();
   return g;
 }
 

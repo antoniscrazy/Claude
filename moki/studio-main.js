@@ -331,6 +331,7 @@ function renderCode() {
   const g = App.g, pane = $('#pane-code'), ro = g.mode === 'builder', code = currentCode();
   pane.innerHTML = `<div class="ctools">
       <button class="btn sm ghost" id="c-help" type="button">${ic('code')}Hilfe</button>
+      ${ro ? '' : `<button class="btn sm ghost" id="c-snip" type="button">${ic('plus')}Bausteine</button>`}
       <button class="btn sm" id="c-ai" type="button">${ic('sparkles')}Mit KI bauen</button>
       ${ro ? `<button class="btn sm warn" id="c-edit" type="button">${ic('edit')}Code bearbeiten</button>` : `<button class="btn sm ghost" id="c-run" type="button">${ic('down')}Ausführen (Strg+Enter)</button>`}
       ${!ro && g.model ? `<button class="btn sm ghost" id="c-back" type="button">Zurück zum Baukasten</button>` : ''}
@@ -351,6 +352,7 @@ function renderCode() {
       e.preventDefault(); ta.setRangeText('\n' + ind, s, ta.selectionEnd, 'end'); ta.dispatchEvent(new Event('input'));
     }
   });
+  const csn = $('#c-snip', pane); if (csn) csn.onclick = openSnippets;
   $('#c-ai', pane).onclick = () => openAI('replace');
   $('#c-help', pane).onclick = () => { const h = $('#help', pane); h.hidden = !h.hidden; };
   const ce = $('#c-edit', pane); if (ce) ce.onclick = async () => { if (await confirmBox('Code bearbeiten?', 'Ab jetzt läuft dein Spiel mit dem Code. Im Baukasten kannst du es nicht mehr weiterbauen, außer du übernimmst den Baukasten später wieder (dann geht dein Code verloren).', 'Code bearbeiten')) { g.mode = 'code'; g.code = code; markDirty(); renderCode(); } };
