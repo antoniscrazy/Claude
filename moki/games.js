@@ -31,7 +31,7 @@ window.MOKI_GAMES = [
     image: "ragdoll-hit.jpg",
     emoji: "🪓",
     colors: ["#4a4a4a", "#f5a500"],
-    description: "Kampfspiel mit Ragdoll-Figuren.",
+    description: "Physik-Kampfspiel mit Strichmännchen: schlagen, treten und Waffen aufheben.",
     featured: false
   },
   {
@@ -157,7 +157,7 @@ window.MOKI_GAMES = [
     image: "zombie-rush.jpg",
     emoji: "🧟",
     colors: ["#f5a500", "#c0392b"],
-    description: "Zombie-Spiel mit Pixel-Soldaten.",
+    description: "Roguelike-Action: Wähle Helden und kämpfe dich durch Wellen von Zombies.",
     featured: false
   },
   {
@@ -168,7 +168,7 @@ window.MOKI_GAMES = [
     image: "stickman-gta.jpg",
     emoji: "🚗",
     colors: ["#2b5fa8", "#f5a500"],
-    description: "Stickman-Spiel in einer offenen Stadt mit Autos.",
+    description: "Stickman in einer offenen Stadt: Fahre Autos, entkomme der Polizei und erledige Missionen.",
     featured: false
   },
   {
@@ -179,7 +179,7 @@ window.MOKI_GAMES = [
     image: "war-of-sticks.jpg",
     emoji: "⚔️",
     colors: ["#ffe600", "#1b9ad6"],
-    description: "Strategiespiel mit Strichmännchen-Armeen.",
+    description: "Echtzeit-Strategie: Führe deine Strichmännchen-Armee gegen das Rote Reich, sammle Gold, bilde Einheiten aus und rüste sie auf.",
     featured: false
   },
   {
@@ -333,7 +333,7 @@ window.MOKI_GAMES = [
     image: "count-control-legends.jpg",
     emoji: "🔢",
     colors: ["#2b9cf0", "#f5f7ff"],
-    description: "Laufe durch Tore mit Plus- und Minus-Zahlen.",
+    description: "Führe eine Strichmännchen-Armee durch Tore, die deine Zahl addieren, multiplizieren oder teilen, und besiege am Ziel den Boss.",
     added: "2026-11-16",
     featured: false
   },
