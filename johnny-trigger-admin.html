@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Johnny Trigger - Sniper (Admin)</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #111; color: #fff; font-family: sans-serif; }
+  body { display: flex; flex-direction: column; }
+  /* Eigene Leiste über dem Spiel – der Button verdeckt dadurch nichts vom Spiel. */
+  #bar { flex: 0 0 auto; display: flex; justify-content: flex-end; padding: 6px 12px; background: #111; }
+  #game { flex: 1 1 auto; width: 100%; border: 0; display: block; min-height: 0; }
+  
+/* Admin-Panel im Stil von Johnny Trigger: orange Karte, lila Titelleiste, dicke Knöpfe */
+#admtab{position:fixed;left:12px;bottom:12px;z-index:70;display:flex;align-items:center;gap:8px;padding:10px 16px 10px 12px;border:3px solid #4b1d8f;border-radius:999px;background:linear-gradient(#ffb64a,#ff8a00);color:#fff;font:900 15px/1 "Arial Rounded MT Bold","Trebuchet MS",system-ui,sans-serif;letter-spacing:.5px;text-shadow:0 2px 0 rgba(75,29,143,.9),0 0 3px rgba(75,29,143,.9);box-shadow:0 4px 0 #4b1d8f,0 8px 16px rgba(0,0,0,.35);cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none}
+#admtab:active{transform:translateY(3px);box-shadow:0 1px 0 #4b1d8f}
+#admtab .dot{width:12px;height:12px;border-radius:50%;background:#7CFF4B;box-shadow:0 0 0 2px #4b1d8f}
+#admpanel{position:fixed;left:12px;bottom:68px;z-index:69;width:min(360px,calc(100vw - 24px));max-height:calc(100vh - 150px);display:flex;flex-direction:column;border:3px solid #4b1d8f;border-radius:20px;overflow:hidden;background:linear-gradient(#ffc15f,#ff9a1a);box-shadow:0 6px 0 #4b1d8f,0 16px 36px rgba(0,0,0,.45);font-family:"Arial Rounded MT Bold","Trebuchet MS",system-ui,sans-serif;transform-origin:left bottom;transform:scale(.85) translateY(14px);opacity:0;pointer-events:none;transition:transform .18s ease,opacity .18s ease}
+#admpanel.open{transform:none;opacity:1;pointer-events:auto}
+#admpanel .hd{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:linear-gradient(#8a4fe0,#6a30c4);color:#fff;font-weight:900;font-size:17px;letter-spacing:1px;text-shadow:0 2px 0 rgba(0,0,0,.35)}
+#admpanel .hd button{width:30px;height:30px;border:0;border-radius:50%;background:#fff;color:#6a30c4;font:900 16px/1 inherit;cursor:pointer}
+#admpanel .bd{padding:10px 12px 12px;overflow:auto;-webkit-overflow-scrolling:touch}
+#admpanel .sec{margin:6px 0 4px;color:#5a2a00;font-weight:900;font-size:12px;letter-spacing:1.5px;text-transform:uppercase}
+#admpanel .row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px}
+#admpanel .row.one{grid-template-columns:1fr}
+.admb{display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;border:3px solid rgba(0,0,0,.28);border-bottom-width:5px;border-radius:14px;color:#fff;font:900 13px/1.1 "Arial Rounded MT Bold","Trebuchet MS",system-ui,sans-serif;text-align:center;text-shadow:0 2px 0 rgba(0,0,0,.3);cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none}
+.admb:active{transform:translateY(2px);border-bottom-width:3px}
+.admb.g{background:linear-gradient(#7CFF4B,#2fbf1d)}.admb.b{background:linear-gradient(#5cc8ff,#1f8fe0)}.admb.y{background:linear-gradient(#ffe45c,#f0b400);color:#5a3a00;text-shadow:0 1px 0 rgba(255,255,255,.5)}.admb.p{background:linear-gradient(#c58cff,#8a4fe0)}.admb.r{background:linear-gradient(#ff8a7a,#e0301f)}
+.admb.on{background:linear-gradient(#ff8a7a,#e0301f)}
+#admst{margin-top:6px;min-height:20px;padding:7px 10px;border-radius:12px;background:rgba(75,29,143,.88);color:#fff;font-weight:800;font-size:12.5px;text-align:center}
+@media (max-height:520px){#admpanel{max-height:calc(100vh - 90px)}}
+/* Moki: Back-Button */
+  #moki-back {
+    padding: 9px 16px; border-radius: 999px;
+    background: linear-gradient(90deg, #00e5a8, #ffd23f);
+    color: #04201a; font: 800 14px "Segoe UI", system-ui, sans-serif;
+    text-decoration: none; box-shadow: 0 3px 12px rgba(0, 0, 0, .5); opacity: .92;
+  }
+  #moki-back:hover { opacity: 1; transform: scale(1.05); }
+</style>
+</head>
+<body>
+<div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
+<div id="admtab"><span class="dot"></span>ADMIN PANEL</div>
+<div id="admpanel" aria-hidden="true">
+  <div class="hd"><span>ADMIN PANEL</span><button id="admclose" aria-label="Schließen">✕</button></div>
+  <div class="bd">
+    <div class="sec">Waffen</div>
+    <div class="row">
+      <button class="admb g" data-m="UnlockGuns" data-then="ShowInventory" data-n="Alle Waffen freigeschaltet">🔫 Alle Waffen</button>
+      <button class="admb g" data-m="UnlockNextGun" data-then="ShowInventory" data-n="Nächste Waffe freigeschaltet">➕ Nächste Waffe</button>
+    </div>
+    <div class="sec">Skins</div>
+    <div class="row one"><button class="admb b" data-m="UnlockSkins" data-n="Skins freigeschaltet">🎨 Alle Skins freischalten</button></div>
+    <div class="sec">Geld</div>
+    <div class="row">
+      <button class="admb y" data-m="AddMoney" data-n="Geld hinzugefügt">💰 Geld +</button>
+      <button class="admb y" id="admauto">♾ Unendlich: AUS</button>
+    </div>
+    <div class="sec">Spiel</div>
+    <div class="row">
+      <button class="admb p" data-m="ShowInventory" data-n="Inventar geöffnet">🎒 Inventar</button>
+      <button class="admb p" data-m="ShowChestRoom" data-n="Truhenraum geöffnet">📦 Truhenraum</button>
+      <button class="admb p" data-m="ShowDrone" data-n="Drohne gerufen">🚁 Drohne</button>
+      <button class="admb r" data-m="WinGame" data-n="Level gewonnen">🏆 Level gewinnen</button>
+    </div>
+    <div id="admst">Bereit</div>
+  </div>
+</div>
+<iframe id="game" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe>
+<script>
+// Lädt das Spiel direkt aus dem GitHub-Repo (über jsDelivr, mit Commit-Version fest verdrahtet).
+// Kein lokaler Server nötig – die Datei funktioniert auch per Doppelklick.
+const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/9de11ed9d946862f4ddbd144909a6c213b7b02ed/johnny-trigger-sniper/";
+
+(function(){
+var fr=document.getElementById("game"),st=document.getElementById("admst"),pn=document.getElementById("admpanel"),auto=null,tm=null;
+function say(t){st.textContent=t;clearTimeout(tm);tm=setTimeout(function(){st.textContent="Bereit"},3500)}
+// Das Spiel hat einen eingebauten Debugger (Objekt "Debugger"): dessen Funktionen rufen wir direkt auf.
+function call(m){var w=fr.contentWindow;if(!w||!w.unityGame)return false;try{w.unityGame.SendMessage("Debugger",m);return true}catch(e){return false}}
+function toggle(o){var on=o===undefined?!pn.classList.contains("open"):o;pn.classList.toggle("open",on);pn.setAttribute("aria-hidden",on?"false":"true")}
+document.getElementById("admtab").onclick=function(){toggle()};
+document.getElementById("admclose").onclick=function(){toggle(false)};
+Array.prototype.forEach.call(pn.querySelectorAll("button[data-m]"),function(b){
+  b.onclick=function(){var ok=call(b.dataset.m);say(ok?"✔ "+b.dataset.n:"Spiel ist noch nicht bereit");if(ok&&b.dataset.then)setTimeout(function(){call(b.dataset.then)},700)};
+});
+document.getElementById("admauto").onclick=function(){
+  var btn=this;
+  if(auto){clearInterval(auto);auto=null;btn.classList.remove("on");btn.textContent="♾ Unendlich: AUS";return say("Unendlich Geld aus")}
+  if(!call("AddMoney"))return say("Spiel ist noch nicht bereit");
+  auto=setInterval(function(){call("AddMoney")},800);btn.classList.add("on");btn.textContent="♾ Unendlich: AN";say("✔ Geld wird laufend hinzugefügt");
+};
+})();
+
+const ADS_JS = "// Keine Werbung: Zwischenwerbung entf\u00e4llt, Belohnungen (Rewarded Ads) gelten sofort als angesehen.\n(function () {\n  var ok = function () { return Promise.resolve(); };\n  var base = {\n    init: ok, initWithVideoHB: ok, commercialBreak: ok, rewardedBreak: function () { return Promise.resolve(true); },\n    displayAd: function () {}, destroyAd: function () {}, isAdBlocked: function () { return false; },\n    getURLParam: function () { return \"\"; }, getLanguage: function () { return \"en\"; }, shareableURL: function () { return Promise.resolve(\"\"); },\n    getLeaderboard: ok, sendHighscore: function () {}, captureError: function () {}, setDebug: function () {}, measure: function () {}\n  };\n  window.PokiSDK = new Proxy(base, { get: function (t, k) { return k in t ? t[k] : function () { return Promise.resolve(); }; } });\n  window.adBridge = undefined;\n})();\ntry { var _g = navigator.getGamepads ? navigator.getGamepads.bind(navigator) : null; navigator.getGamepads = function () { try { return _g ? _g() : []; } catch (e) { return []; } }; } catch (e) {}\nwindow.open = function () { return null; };\n\n// Poki-Br\u00fccke des Spiels: meldet \"ready\", Werbung sofort fertig, Belohnung sofort true.\n(function () {\n  var bridge = null;\n  function unity() { return window.unityGame; }\n  window.initPokiBridge = function (name) {\n    bridge = name;\n    (function wait() { if (unity()) { try { unity().SendMessage(name, \"ready\"); } catch (e) {} } else setTimeout(wait, 100); })();\n  };\n  window.commercialBreak = function () {\n    setTimeout(function () { try { unity().SendMessage(bridge, \"commercialBreakCompleted\"); } catch (e) {} }, 150);\n  };\n  window.rewardedBreak = function () {\n    setTimeout(function () { try { unity().SendMessage(bridge, \"rewardedBreakCompleted\", \"true\"); } catch (e) {} }, 300);\n  };\n})();\n";
+const START_JS = "var canvas = document.querySelector(\"#unity-canvas\");\nvar config = { dataUrl: \"https://raw.githubusercontent.com/antoniscrazy/Claude/9de11ed9d946862f4ddbd144909a6c213b7b02ed/johnny-trigger-sniper/Build/da03c09927164da0a1bb2ad5a08766ca.data\", frameworkUrl: \"https://raw.githubusercontent.com/antoniscrazy/Claude/9de11ed9d946862f4ddbd144909a6c213b7b02ed/johnny-trigger-sniper/Build/2ccb62f18123b5b9f5fe3c4e93552948.js\", codeUrl: \"https://raw.githubusercontent.com/antoniscrazy/Claude/9de11ed9d946862f4ddbd144909a6c213b7b02ed/johnny-trigger-sniper/Build/ced0c6748fa27ccd26d9db875271b400.wasm\", streamingAssetsUrl: \"https://raw.githubusercontent.com/antoniscrazy/Claude/284bb39fdae941f6ba469f9adf797f26690dc100/johnny-trigger-admin/StreamingAssets\", companyName: \"Game\", productName: \"Johnny Trigger - Sniper Game\", productVersion: \"1.0\" };\nvar bar = document.getElementById(\"pbar\");\ncreateUnityInstance(canvas, config, function (p) { if (bar) bar.style.width = (p * 100) + \"%\"; }).then(function (inst) { window.gameInstance = inst; window.unityGame = inst; var l = document.getElementById(\"ploading\"); if (l) l.remove(); }).catch(function (e) { document.body.append(\"Fehler: \" + e); });\n";
+fetch("https://raw.githubusercontent.com/antoniscrazy/Claude/9de11ed9d946862f4ddbd144909a6c213b7b02ed/johnny-trigger-sniper/Build/jt-sniper-v2022.3.18f1-store-v1_0_0-build40.loader.js")
+  .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+  .then(loader => {
+    const esc = s => s.replace(/<\/script>/gi, "<\/script>");
+    const html = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><style>html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#00C565}#unity-canvas{width:100%;height:100%;display:block}#ploading{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:240px;height:12px;background:rgba(0,0,0,.2);border-radius:6px;overflow:hidden}#pbar{height:100%;width:0;background:#fff}</style></head><body>' +
+      '<canvas id="unity-canvas"></canvas><div id="ploading"><div id="pbar"></div></div>' +
+      '<script>' + esc(ADS_JS) + '<\/script><script>' + esc(loader) + '<\/script><script>' + esc(START_JS) + '<\/script></body></html>';
+    document.getElementById("game").srcdoc = html;
+  })
+  .catch(e => { document.body.append("Fehler beim Laden: " + e.message); });
+</script>
+</body>
+</html>
