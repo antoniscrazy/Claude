@@ -7,6 +7,7 @@ import sys, os, re, base64, json
 args = [a for a in sys.argv[1:] if not a.startswith("--")]
 game, out, title = args
 original_worker = "--worker-original" in sys.argv
+debug = "--debug" in sys.argv
 
 BOOT = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "vfs_boot.js"), encoding="utf-8").read()
 INLINE = {"poki-sdk.js", "box2d.wasm.js", "scripts/supportcheck.js", "scripts/main.js"}
@@ -35,7 +36,7 @@ head = ('<!doctype html><html><head><meta charset="utf-8">'
   '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">'
   '<base href="https://game.local/"><title>%s</title>'
   '<script>%s</script><script>window.__GAME_BASE="https://game.local/";</script>'
-  '<script>document.write("<style>"+window.__vfsCss(%s)+"</style>")</script></head><body>' % (title, esc(BOOT), json.dumps(css).replace("</", "<\\/")))
+  '<script>document.write("<style>"+window.__vfsCss(%s)+"</style>")</script>%s</head><body>' % (title, esc(BOOT), json.dumps(css).replace("</", "<\\/"), ("<script>%s</script>" % esc(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "vfs_debug.js"), encoding="utf-8").read())) if debug else ""))
 body = "".join("<script>%s</script>" % esc(rd(n)) for n in ["poki-sdk.js", "box2d.wasm.js", "scripts/supportcheck.js"])
 body += '<script type="module">%s</script></body></html>' % esc(main_js)
 game_html = head + body
