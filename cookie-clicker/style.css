@@ -3388,3 +3388,6 @@ STOP THE FANCY
 
 
 /**{overflow:hidden!important;}*/
+/* Moki: obere Leiste (Eigenwerbung/Links) entfernt */
+#topBar{display:none !important;}
+.onWeb #game{top:0px !important;}
