@@ -16,10 +16,11 @@ mk astro-survivors "Astro Survivors"
 mk head-soccer "Head Soccer" --touch '{"left":[["ArrowLeft","◀"],["ArrowRight","▶"]],"right":[["ArrowUp","▲"],["Space","⚽"]]}'
 mk snow-rider "Snow Rider 3D" --touch '{"left":[["ArrowLeft","◀"],["ArrowRight","▶"]],"right":[["ArrowUp","▲"]]}'
 mk stick-slasher "Stick Slasher" --touch '{"left":[["ArrowLeft","◀"],["ArrowRight","▶"]],"right":[["ArrowUp","▲"],["KeyX","⚔"],["Space","␣"]]}'
-mk poly-track "Poly Track" --touch '{"left":[["ArrowLeft","◀"],["ArrowRight","▶"]],"right":[["ArrowUp","▲"],["ArrowDown","▼"]]}'
 mk hill-climb-racing-lite "Hill Climb Racing Lite"
 mk dan-the-man "Dan the Man"
 mk mob-control "Mob Control"
 mk royal-towers "Royal Towers"
 mk stick-fight "Stick Fight" --touch '{"left":[["KeyA","◀"],["KeyD","▶"],["KeyW","▲"]],"right":[["KeyJ","1"],["KeyK","2"],["KeyL","3"]]}'
 mk stick-jet "Stick Jet"
+mk stacky-dash "Stacky Dash"
+mk basket-battle "Basket Battle"
