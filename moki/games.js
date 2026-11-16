@@ -238,6 +238,17 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "neon-swing",
+    title: "Neon Swing",
+    url: "https://guileless-gelato-033ea9.netlify.app",
+    category: "Action",
+    image: "neon-swing.jpg",
+    emoji: "⚡",
+    colors: ["#2a0a3a", "#ff2d7a"],
+    description: "Schwinge dich durch neonbeleuchtete Level.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
