@@ -20,7 +20,7 @@ const ICONS = {
   game: '<path d="M6 12h4M8 10v4"/><path d="M15 13h.01M18 11h.01"/><rect width="20" height="12" x="2" y="6" rx="2"/>', blocks: '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
   code: '<path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/>', cloud: '<path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/><path d="M12 12v9M8 16l4-4 4 4"/>',
   down: '<path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/><path d="M12 21v-9M8 17l4 4 4-4"/>', target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
-  bolt: '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>', mouse: '<rect x="5" y="2" width="14" height="20" rx="7"/><path d="M12 6v4"/>', pen: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>'
+  bolt: '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>', sparkles: '<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/>', ext: '<path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>', copy: '<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>', mouse: '<rect x="5" y="2" width="14" height="20" rx="7"/><path d="M12 6v4"/>', pen: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>'
 };
 const ic = (n, c) => `<svg class="i${c ? ' ' + c : ''}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
 
@@ -146,6 +146,7 @@ const TEMPLATES = {
       return M;
     }
   },
+  ai: { icon: 'sparkles', name: 'Mit KI bauen', desc: 'Keine Lust selbst zu bauen? Sag einer KI, was du willst, und füge den Code hier ein.', title: 'Mein KI-Spiel', mode: 'code' },
   code: { icon: 'code', name: 'Nur Code', desc: 'Schreibe dein Spiel selbst in JavaScript. Ein kleines Beispiel ist dabei.', title: 'Mein Code-Spiel', mode: 'code' }
 };
 const STARTER_CODE = `// Willkommen im Code-Modus! Das hier ist ein kleines, fertiges Spiel.
@@ -292,10 +293,10 @@ async function showDash() {
   App.view = 'dash'; App.g = null;
   $('#view-edit').hidden = true; $('#view-dash').hidden = false;
   const el = $('#view-dash');
-  el.innerHTML = `<section class="hero"><div style="flex:1;min-width:260px"><h1>Hallo ${esc(App.name)}!</h1><p>Baue dein eigenes Spiel: mit dem Baukasten ganz ohne Programmieren oder mit eigenem Code. Speichere es, und wenn du willst, erscheint es bei Moki unter „Kreationen“.</p></div><button class="btn pri" id="d-new" type="button" style="padding:14px 26px;font-size:16px">${ic('plus')}Neues Spiel</button></section>
+  el.innerHTML = `<section class="hero"><div style="flex:1;min-width:260px"><h1>Hallo ${esc(App.name)}!</h1><p>Baue dein eigenes Spiel: mit dem Baukasten ganz ohne Programmieren oder mit eigenem Code. Speichere es, und wenn du willst, erscheint es bei Moki unter „Kreationen“.</p></div><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn pri" id="d-new" type="button" style="padding:14px 26px;font-size:16px">${ic('plus')}Neues Spiel</button><button class="btn" id="d-ai" type="button" style="padding:14px 22px;font-size:16px">${ic('sparkles')}Mit KI bauen</button></div></section>
     <h2 class="sec">Meine Spiele</h2><p class="sub">Nur du kannst sie bearbeiten (über den Schlüssel in diesem Browser).</p><div id="d-list"><p class="sub"><span class="spin"></span> Lade …</p></div>
     <div class="keybox">${ic('link')}<span style="flex:1;min-width:200px">Deine Spiele sind an einen geheimen Schlüssel in diesem Browser gebunden. Sichere ihn, wenn du auch an einem anderen Gerät weiterbauen willst.</span><button class="btn ghost sm" id="d-key" type="button">Schlüssel anzeigen</button></div>`;
-  $('#d-new').onclick = openTemplates; $('#d-key').onclick = openKey;
+  $('#d-new').onclick = openTemplates; $('#d-ai').onclick = () => openAI('new'); $('#d-key').onclick = openKey;
   await loadMine();
   const list = $('#d-list'); if (!list || App.view !== 'dash') return;
   const draft = LS.get('moki-studio-draft', null);
@@ -327,7 +328,90 @@ async function publish(g) {
 }
 function openTemplates() {
   const m = modal(`<h3>Wie willst du anfangen?</h3><p class="lead">Such dir eine Vorlage aus. Du kannst später alles ändern.</p><div class="tpls">${Object.entries(TEMPLATES).map(([k, t]) => `<button class="tpl" data-k="${k}" type="button"><span class="ti">${ic(t.icon)}</span><b>${esc(t.name)}</b><span>${esc(t.desc)}</span></button>`).join('')}</div>`, { wide: true });
-  m.addEventListener('click', e => { const t = e.target.closest('.tpl'); if (!t) return; m.close(); App.g = newGame(t.dataset.k); enterEditor(); });
+  m.addEventListener('click', e => { const t = e.target.closest('.tpl'); if (!t) return; m.close(); if (t.dataset.k === 'ai') { openAI('new'); return; } App.g = newGame(t.dataset.k); enterEditor(); });
+}
+
+// ====================================================================
+// Mit KI bauen: fertiger Prompt für duck.ai, danach Code einfügen
+// ====================================================================
+const AI_URL = 'https://duck.ai/';
+const AI_INTRO = `Du bist Spiele-Entwickler im "Moki Studio". Schreibe mir ein kleines Browser-Spiel in JavaScript für die Moki-Engine.
+
+REGELN FÜR DEINE ANTWORT
+- Gib NUR EINEN Code-Block mit reinem JavaScript zurück. Kein HTML, kein CSS, keine Bibliotheken, keine Bilder, keine Töne, kein Internet. Alles wird von der Engine gezeichnet.
+- Schreibe die Kommentare im Code auf Deutsch. Nach dem Code höchstens 2 kurze Sätze zur Steuerung.
+- Das Spiel muss mit Tastatur UND Finger (Touch) spielbar sein, ein klares Ziel haben (gewinnen oder verlieren) und beim Start sofort funktionieren.
+- Benutze NUR die Funktionen, die unten stehen. Erfinde keine anderen. Die Variable Moki gibt es schon, nichts importieren. Am Ende muss game.start() stehen.
+
+SO FUNKTIONIERT DIE MOKI-ENGINE
+Das Spielfeld ist 800 x 500 groß. Die Figuren sind einfache Formen.
+const game = Moki.game({ background:'#0d1240', lives:3, time:30, timeMode:'win', showScore:true })
+  lives: Leben (0 = keine, bei 0 Leben ist das Spiel verloren). time: Sekunden (0 = keine Zeit). timeMode: 'win' oder 'lose' = was passiert, wenn die Zeit abläuft.
+game.sprite({ name, shape, color, size, x, y, control, axis, motion, speed, label })  legt eine Figur an und gibt sie zurück.
+  shape: circle, square, triangle, diamond, star, heart. color: z. B. '#00e5a8'. size: Pixel.
+  x und y beim Anlegen sind PROZENT vom Spielfeld (0 bis 100, auch -5 für knapp außerhalb).
+  control: 'keys' (Pfeiltasten/WASD und Finger), 'mouse' (Maus/Finger folgt) oder 'none'. axis: 'x', 'y' oder 'xy' (wohin sich die gesteuerte Figur bewegen darf).
+  motion: none, fall (fällt), rise (steigt), left, right, bounce (springt umher), follow (verfolgt die gesteuerte Figur). speed: Pixel pro Sekunde. label: Text in der Figur.
+  Figuren mit motion fall/rise/left/right starten automatisch am Rand neu, wenn sie den Bildschirm verlassen.
+Figur s: s.x und s.y sind zur Laufzeit PIXEL (Mitte). Außerdem s.name, s.color, s.size, s.speed, s.label, s.visible.
+  s.place(xProzent, yProzent), s.respawn() (am passenden Rand neu starten), s.destroy(), s.clone(), s.touches(andereFigur).
+Ereignisse:
+  game.onStart(() => {})   game.onUpdate(dt => {}) jedes Bild, dt in Sekunden
+  game.onKey('SPACE', () => {})  (SPACE, LEFT, RIGHT, UP, DOWN, ENTER, A bis Z)
+  game.onTouch('NameA', 'NameB', (a, b) => {})  wenn sich zwei Figuren berühren (a und b sind die beteiligten Figuren)
+  game.onEdge('Name', s => {})  Figur verlässt den Bildschirm.   game.onClick('Name', s => {})  Figur angetippt.
+  game.every(sekunden, () => {})   game.onScore(punkte, () => {})  wenn die Punktzahl erreicht ist
+Aktionen: game.addScore(n)  game.addLife(n)  game.say('Text', sekunden)  game.win('Text')  game.lose('Text')
+  game.spawn('Name') (neue Kopie einer Figur)  game.find('Name')  game.all('Name')  game.random(min, max)
+  Lesen: game.score, game.lives, game.time. Figuren mit gleichem name sind eine Gruppe, auch Kopien.
+
+BEISPIEL (ein komplettes, funktionierendes Spiel)
+\`\`\`javascript
+${STARTER_CODE}\`\`\`
+
+Wenn dir etwas fehlt, baue es mit diesen Funktionen nach. Das ist mein Wunsch:`;
+const aiPrompt = req => AI_INTRO + ' ' + (req || '').trim();
+function extractCode(text) {
+  const t = String(text || '').replace(/\r/g, '');
+  const blocks = [...t.matchAll(/```[a-zA-Z]*\n([\s\S]*?)```/g)].map(m => m[1]);
+  if (blocks.length) return blocks.sort((a, b) => b.length - a.length)[0].trim() + '\n';
+  const open = /```[a-zA-Z]*\n([\s\S]*)$/.exec(t);   // Block ohne schließende Klammern
+  return (open ? open[1] : t).trim() + '\n';
+}
+function openAI(mode) {
+  const replace = mode === 'replace' && App.g;
+  const m = modal(`<h3>Keine Lust, selbst zu bauen?</h3>
+    <p class="lead">Dann lass eine KI das Spiel schreiben. Das geht in drei Schritten, ohne Anmeldung.</p>
+    <div class="aistep"><span class="n">1</span><div style="flex:1"><b>Schreib, was du haben willst</b>
+      <textarea class="in" id="ai-req" rows="3" maxlength="600" placeholder="z. B. Ein Spiel, in dem ich ein Raumschiff steuere und Meteoriten ausweiche. Wer 30 Sekunden überlebt, gewinnt." autofocus></textarea></div></div>
+    <div class="aistep"><span class="n">2</span><div style="flex:1"><b>Kopiere den Prompt und öffne duck.ai</b>
+      <p class="hint" style="margin-top:2px">Der Prompt erklärt der KI, wie Moki-Spiele funktionieren, und hängt deinen Wunsch hinten an. Füge ihn dort einfach in das Chatfenster ein.</p>
+      <div class="addrow" style="margin-top:8px"><button class="btn pri" id="ai-copy" type="button" disabled>${ic('copy')}Prompt kopieren</button><a class="btn" id="ai-open" href="${AI_URL}" target="_blank" rel="noopener noreferrer">${ic('ext')}duck.ai öffnen</a></div>
+      <details style="margin-top:10px"><summary class="hint" style="cursor:pointer">Prompt ansehen</summary><textarea class="in" id="ai-prompt" rows="7" readonly style="font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;margin-top:8px"></textarea></details></div></div>
+    <div class="aistep"><span class="n">3</span><div style="flex:1"><b>Füge die Antwort der KI hier ein</b>
+      <textarea class="in" id="ai-code" rows="4" placeholder="Hier den ganzen Code oder die ganze Antwort der KI einfügen"></textarea></div></div>
+    <div class="note" style="margin-top:6px;font-size:14px">duck.ai ist ein Dienst von DuckDuckGo, nicht von Moki. Schick dort keine privaten Daten hin. Die KI macht manchmal Fehler: Wenn das Spiel nicht läuft, siehst du die Fehlermeldung in der Konsole. Kopier sie in den Chat und bitte die KI, den Fehler zu beheben.</div>
+    <div class="err" id="ai-err"></div>
+    <div class="mfoot"><button class="btn ghost" id="ai-x" type="button">Abbrechen</button><button class="btn pri" id="ai-go" type="button" disabled>${replace ? 'In dieses Spiel einsetzen' : 'Als neues Spiel öffnen'}</button></div>`, { wide: true });
+  const R = s => $(s, m), upd = () => {
+    const req = R('#ai-req').value.trim(), has = req.length >= 5;
+    R('#ai-prompt').value = aiPrompt(req); R('#ai-copy').disabled = !has; R('#ai-go').disabled = R('#ai-code').value.trim().length < 20;
+  };
+  R('#ai-req').addEventListener('input', upd); R('#ai-code').addEventListener('input', upd); upd();
+  R('#ai-copy').onclick = () => copyText(aiPrompt(R('#ai-req').value));
+  R('#ai-x').onclick = () => m.close();
+  R('#ai-go').onclick = async () => {
+    const code = extractCode(R('#ai-code').value);
+    if (!/Moki\.game\s*\(/.test(code)) { R('#ai-err').textContent = 'Das sieht nicht nach Moki-Code aus (es fehlt Moki.game). Hast du die ganze Antwort der KI eingefügt?'; return; }
+    if (code.length > 100000) { R('#ai-err').textContent = 'Der Code ist zu lang.'; return; }
+    if (replace) {
+      const g = App.g;
+      if (g.mode === 'code' && g.code.trim() && g.code.trim() !== code.trim() && !(await confirmBox('Code ersetzen?', 'Dein bisheriger Code wird durch den Code der KI ersetzt.', 'Ersetzen', true))) return;
+      g.mode = 'code'; g.code = code; markDirty(); m.close(); setTab('code'); runPreview(); toast('Code eingesetzt', 'ok');
+    } else {
+      m.close(); App.g = newGame('code'); App.g.code = code; App.g.title = 'Mein KI-Spiel'; enterEditor(); toast('Fertig! Probier das Spiel in der Vorschau.', 'ok');
+    }
+  };
 }
 async function openGame(id) {
   const row = await rpc('moki_get_mine', { p_token: App.token, p_id: id });
@@ -578,6 +662,7 @@ function renderCode() {
   const g = App.g, pane = $('#pane-code'), ro = g.mode === 'builder', code = currentCode();
   pane.innerHTML = `<div class="ctools">
       <button class="btn sm ghost" id="c-help" type="button">${ic('code')}Hilfe</button>
+      <button class="btn sm" id="c-ai" type="button">${ic('sparkles')}Mit KI bauen</button>
       ${ro ? `<button class="btn sm warn" id="c-edit" type="button">${ic('edit')}Code bearbeiten</button>` : `<button class="btn sm ghost" id="c-run" type="button">${ic('down')}Ausführen (Strg+Enter)</button>`}
       ${!ro && g.model ? `<button class="btn sm ghost" id="c-back" type="button">Zurück zum Baukasten</button>` : ''}
     </div>
@@ -597,6 +682,7 @@ function renderCode() {
       e.preventDefault(); ta.setRangeText('\n' + ind, s, ta.selectionEnd, 'end'); ta.dispatchEvent(new Event('input'));
     }
   });
+  $('#c-ai', pane).onclick = () => openAI('replace');
   $('#c-help', pane).onclick = () => { const h = $('#help', pane); h.hidden = !h.hidden; };
   const ce = $('#c-edit', pane); if (ce) ce.onclick = async () => { if (await confirmBox('Code bearbeiten?', 'Ab jetzt läuft dein Spiel mit dem Code. Im Baukasten kannst du es nicht mehr weiterbauen, außer du übernimmst den Baukasten später wieder (dann geht dein Code verloren).', 'Code bearbeiten')) { g.mode = 'code'; g.code = code; markDirty(); renderCode(); } };
   const cr = $('#c-run', pane); if (cr) cr.onclick = runPreview;

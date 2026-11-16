@@ -173,3 +173,9 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   .g2{grid-template-columns:1fr}.who span{display:none}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.aistep{display:flex;gap:14px;align-items:flex-start;margin-bottom:16px}
+.aistep .n{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#00e5a8,#2fe0c0);color:#04201a;font-weight:900;margin-top:2px}
+.aistep b{display:block;margin-bottom:6px;font-size:16px}
+.aistep textarea.in{font-size:15px;line-height:1.5;resize:vertical}
+a.btn{text-decoration:none}
