@@ -325,6 +325,18 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "count-control-legends",
+    title: "Count Control Legends",
+    url: "https://warm-concha-b50fcb.netlify.app",
+    category: "Geschicklichkeit",
+    image: "count-control-legends.jpg",
+    emoji: "🔢",
+    colors: ["#2b9cf0", "#f5f7ff"],
+    description: "Laufe durch Tore mit Plus- und Minus-Zahlen.",
+    neu: true,
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
