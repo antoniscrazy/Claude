@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title>Moki – Update</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjggMTI4IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9Ik1va2kiPgo8ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImlnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjMDBlNWE4Ii8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjZmZkMjNmIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+CjxyZWN0IHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiByeD0iMzAiIGZpbGw9IiMwYTBkMmIiLz4KPGNpcmNsZSBjeD0iNjQiIGN5PSI2NCIgcj0iMzQiIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNpZykiIHN0cm9rZS13aWR0aD0iMjAiLz4KPHBhdGggZD0iTTU1IDQ5TDc5IDY0TDU1IDc5WiIgZmlsbD0iI2ZmZiIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjciIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+">
 <style>
   :root{--bg:#0a0d2b;--panel:#141a4a;--text:#fff;--muted:#a3abe0;--accent:#00e5a8;--accent2:#ffd23f}
   *{box-sizing:border-box;margin:0}
@@ -16,7 +17,7 @@
   .b2{width:280px;height:280px;background:var(--accent2);right:-60px;bottom:8%;animation-delay:-5s}
   @keyframes float{50%{transform:translate(30px,-40px)}}
   .card{position:relative;max-width:560px;width:100%;text-align:center;padding:48px 32px 40px;background:#141a4acc;border:1px solid #ffffff14;border-radius:28px;backdrop-filter:blur(8px);box-shadow:0 20px 60px #000a}
-  .logo{font-weight:900;font-size:64px;letter-spacing:-3px;line-height:1;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .logo{width:240px;margin:0 auto}.logo svg{width:100%;height:auto;display:block}
   .tag{display:inline-block;margin:18px 0 16px;padding:6px 14px;border-radius:999px;border:1px solid #ffd23f66;background:#3a2e08;color:#ffe9a0;font-size:14px;font-weight:700}
   h1{font-size:30px;line-height:1.2;margin-bottom:14px}
   p{color:var(--muted);font-size:17px;line-height:1.6}
@@ -25,13 +26,21 @@
   @keyframes run{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
   .small{margin-top:22px;font-size:14px;opacity:.8}
   @media (prefers-reduced-motion:reduce){.blob,.bar i{animation:none}.bar i{width:60%}}
-  @media (max-width:480px){.logo{font-size:52px}h1{font-size:24px}.card{padding:36px 22px 30px}}
+  @media (max-width:480px){.logo{width:200px}h1{font-size:24px}.card{padding:36px 22px 30px}}
 </style>
 </head>
 <body>
   <div class="blob b1"></div><div class="blob b2"></div>
   <main class="card">
-    <div class="logo">moki</div>
+    <div class="logo" role="img" aria-label="Moki"><svg viewBox="-14 -20 392 170" ><defs><linearGradient id="wlg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="362" y2="0"><stop offset="0" stop-color="#00e5a8"/><stop offset="1" stop-color="#ffd23f"/></linearGradient></defs><g fill="none" stroke="url(#wlg)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round">
+<path d="M12 120V70C12 52 22 44 38 44S64 52 64 70V120"/>
+<path d="M64 70C64 52 74 44 90 44S116 52 116 70V120"/>
+<circle cx="192" cy="82" r="38"/>
+<path d="M268 12V120"/><path d="M268 90L304 48"/><path d="M286 74L310 120"/>
+<path d="M350 44V120"/>
+</g>
+<circle cx="350" cy="6" r="14" fill="url(#wlg)"/>
+<path d="M183 66L207 82L183 98Z" fill="#fff" stroke="#fff" stroke-width="7" stroke-linejoin="round"/></svg></div>
     <div class="tag">Update in Arbeit</div>
     <h1>Moki bekommt ein großes Update</h1>
     <p>Wir bauen gerade um und bringen neue Spiele und Verbesserungen mit.<br>Die Seite ist <b style="color:#fff">bald wieder erreichbar</b>.</p>

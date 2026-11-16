@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-14 -20 392 170" role="img" aria-label="Moki"><defs><linearGradient id="mg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="362" y2="0"><stop offset="0" stop-color="#00e5a8"/><stop offset="1" stop-color="#ffd23f"/></linearGradient></defs><rect x="-14" y="-20" width="392" height="170" fill="#0a0d2b"/><g fill="none" stroke="url(#mg)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round">
+<path d="M12 120V70C12 52 22 44 38 44S64 52 64 70V120"/>
+<path d="M64 70C64 52 74 44 90 44S116 52 116 70V120"/>
+<circle cx="192" cy="82" r="38"/>
+<path d="M268 12V120"/><path d="M268 90L304 48"/><path d="M286 74L310 120"/>
+<path d="M350 44V120"/>
+</g>
+<circle cx="350" cy="6" r="14" fill="url(#mg)"/>
+<path d="M183 66L207 82L183 98Z" fill="#fff" stroke="#fff" stroke-width="7" stroke-linejoin="round"/></svg>
