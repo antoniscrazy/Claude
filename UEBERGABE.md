@@ -52,3 +52,12 @@ ragdoll-hit, hills-of-steel (+ Admin-Modus, `hills-of-steel-admin`), perfect-hot
 - Launcher holt `index.html` per raw (Basis `<base>` = raw), setzt `window.__RAW`/`__JSD`; Loader, Framework, jszip, CSS absolut ueber jsDelivr-Zwischenstand (Skripte laufen nur von dort). Assets (Bundles) kommen aus der Basis (raw), nicht aus `streamingAssetsUrl` allein.
 - Geteilte Bundle-Teile (`planets.part1/2`) vorher zusammengefuegt, Merge-Skript aus index.html entfernt.
 - Stick War Legacy: gleiches Muster. Zusaetzlich lud `unarchiver.min.js` jszip relativ zur Basis (raw) und hing: `loadScript` in index.html auf `__JSD` ueberschrieben. Logo-Datei in `TemplateData` nie ersetzen/loeschen (Loader prueft sie), nur per CSS `opacity:0` ausblenden. Perfect Flip (PlayHop) nicht auf GitHub gefunden. MAXGAMES-Logo im Menue bleibt.
+
+## Neu in dieser Sitzung (Stand)
+- Fertig, mit Launcher: cookie-clicker, solar-smash, stick-war-legacy, eggy-car (iPad-Touch unklar), count-control-legends (Unity, Poki-Build; `d0cum3nt`-Platzhalter noetig), robo-cleaner-simulator (PlayCanvas, **eine einzige HTML**).
+- **brain-test (Tricky Puzzles, Construct 3): auf dem iPad des Nutzers fehlen Texte/schwarzer Bildschirm, Ursache NICHT geklaert.** In Chromium und WebKit (Playwright, iPad-Emulation) laeuft alles. Versuche: Worker aus, Schriften nach TrueType, eingebettete Einzeldatei, Diagnose-Version (`brain-test-diagnose.html`, Bildschirm-Log). Nutzer hat das Spiel aufgegeben. Vermutung (ungeprueft): alter Spielstand im Browser (150 Hinweise) oder iOS-Speicher.
+- Perfect Flip, Brain Test All-Star, Squishy Merge, Tower Master (PlayHop/Poki): keine GitHub-Kopie gefunden.
+- **jsDelivr-Zwischenstaende:** neue Binaerdateien (wasm, Bilder, Audio) sind dort oft erst nach Minuten bis Stunden abrufbar (404/503) und lassen Spiele haengen. Vor dem Test alle Dateien per curl pruefen. Dateinamen mit Leerzeichen liefert jsDelivr nicht aus.
+- **Besser fuer kleine Spiele (< ca. 30 MB): eine einzige HTML mit allen Dateien eingebettet** (`tools/build_selfcontained.py` fuer PlayCanvas, `tools/build_selfcontained_c3.py` fuer Construct 3, Option `--debug` fuer Bildschirm-Log). Kein jsDelivr noetig.
+- WebKit zum Testen ist installiert worden (`playwright install webkit` + `install-deps`), iPad-Emulation: `devices['iPad Pro 11 landscape']`.
+- Der Nutzer will keine automatischen Loeschungen seiner Browserdaten (wurde vom System blockiert).
