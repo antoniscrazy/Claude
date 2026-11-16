@@ -149,6 +149,7 @@ section>h2+.grid{margin-top:16px}
 </div>
 <script>
 // Neues Spiel hinzufügen: einfach einen Eintrag in diese Liste kopieren.
+// added: "JJJJ-MM-TT" = Datum, an dem das Spiel dazukam. 7 Tage lang trägt die Kachel das NEU-Schild, danach verschwindet es automatisch.
 window.MOKI_GAMES = [
   {
     id: "drive-mad",
@@ -396,7 +397,7 @@ window.MOKI_GAMES = [
     emoji: "⚡",
     colors: ["#2a0a3a", "#ff2d7a"],
     description: "Schwinge dich mit einem Seil durch neonbeleuchtete Level.",
-    neu: true,
+    added: "2026-11-16",
     featured: false
   },
   {
@@ -409,7 +410,7 @@ window.MOKI_GAMES = [
     emoji: "⛳",
     colors: ["#1fa89a", "#12304a"],
     description: "Golf auf kleinen Planeten im Weltall.",
-    neu: true,
+    added: "2026-11-16",
     featured: false
   },
   {
@@ -422,7 +423,7 @@ window.MOKI_GAMES = [
     emoji: "🏹",
     colors: ["#1b2a6b", "#e03a2f"],
     description: "Ziele und schieße mit Pfeil, Speer und anderen Waffen auf deinen Gegner.",
-    neu: true,
+    added: "2026-11-16",
     featured: false
   },
   {
@@ -434,7 +435,7 @@ window.MOKI_GAMES = [
     emoji: "🐔",
     colors: ["#69cbec", "#ffffff"],
     description: "Hüpfe über Straßen, Gleise und Flüsse, ohne überfahren zu werden.",
-    neu: true,
+    added: "2026-11-16",
     featured: false
   },
   {
@@ -446,7 +447,7 @@ window.MOKI_GAMES = [
     emoji: "🍪",
     colors: ["#2a6ab0", "#b06a2a"],
     description: "Klicke auf den Keks, kaufe Verbesserungen und baue ein Keks-Imperium auf.",
-    neu: true,
+    added: "2026-11-16",
     featured: false
   },
   {
@@ -458,7 +459,7 @@ window.MOKI_GAMES = [
     emoji: "🌍",
     colors: ["#0a1030", "#ff5a1f"],
     description: "Zerstöre Planeten mit Waffen, Raketen und Katastrophen.",
-    neu: true,
+    added: "2026-11-16",
     featured: false
   },
   {
@@ -471,7 +472,7 @@ window.MOKI_GAMES = [
     emoji: "🗡️",
     colors: ["#2b6fd6", "#2e9c2e"],
     description: "Baue Minen, trainiere Einheiten und zerstöre die gegnerische Statue.",
-    neu: true,
+    added: "2026-11-16",
     featured: false
   },
   {
@@ -483,7 +484,7 @@ window.MOKI_GAMES = [
     emoji: "🔢",
     colors: ["#2b9cf0", "#f5f7ff"],
     description: "Laufe durch Tore mit Plus- und Minus-Zahlen.",
-    neu: true,
+    added: "2026-11-16",
     featured: false
   },
   {
@@ -577,12 +578,19 @@ const favBtn = g => `<span class="fav${favs.has(g.id) ? " on" : ""}" role="butto
 let category = "Alle";
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const tile = g => `<a class="tile${g.wide ? " wide" : ""}" href="${g.url}" data-id="${g.id}" aria-label="${esc(g.title)}" title="${esc(g.title)}" style="background:linear-gradient(135deg,${g.colors[0]},${g.colors[1]})">${g.image ? `<img src="${g.image}" alt="" loading="lazy">` : `<span class="em">${g.emoji}</span>`}<span class="name">${esc(g.title)}</span>${g.neu ? `<span class="new">NEU</span>` : ""}${g.category ? favBtn(g) : ""}</a>`;
+const tile = g => `<a class="tile${g.wide ? " wide" : ""}" href="${g.url}" data-id="${g.id}" aria-label="${esc(g.title)}" title="${esc(g.title)}" style="background:linear-gradient(135deg,${g.colors[0]},${g.colors[1]})">${g.image ? `<img src="${g.image}" alt="" loading="lazy">` : `<span class="em">${g.emoji}</span>`}<span class="name">${esc(g.title)}</span>${isNew(g) ? `<span class="new">NEU</span>` : ""}${g.category ? favBtn(g) : ""}</a>`;
 
 // ---- Spiel des Tages: wechselt jeden Tag um Mitternacht (deutsche Zeit), für alle gleich ----
 function berlinDay() {
   const [y, m, d] = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()).split("-").map(Number);
   return Math.floor(Date.UTC(y, m - 1, d) / 86400000);
+}
+// NEU-Schild: 7 Tage ab dem Datum "added" in games.js (Tag 0 bis Tag 6), danach automatisch weg.
+function isNew(g, day = berlinDay()) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(g.added || "");
+  if (!m) return false;
+  const age = day - Math.floor(Date.UTC(+m[1], +m[2] - 1, +m[3]) / 86400000);
+  return age >= 0 && age < 7;
 }
 function hashId(s) { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
 // Feste, gemischte Reihenfolge: jedes Spiel kommt einmal pro Runde dran, zwei Tage hintereinander nie dasselbe.

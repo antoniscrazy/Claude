@@ -1,4 +1,5 @@
 // Neues Spiel hinzufügen: einfach einen Eintrag in diese Liste kopieren.
+// added: "JJJJ-MM-TT" = Datum, an dem das Spiel dazukam. 7 Tage lang trägt die Kachel das NEU-Schild, danach verschwindet es automatisch.
 window.MOKI_GAMES = [
   {
     id: "drive-mad",
@@ -246,7 +247,7 @@ window.MOKI_GAMES = [
     emoji: "⚡",
     colors: ["#2a0a3a", "#ff2d7a"],
     description: "Schwinge dich mit einem Seil durch neonbeleuchtete Level.",
-    neu: true,
+    added: "2026-11-16",
     featured: false
   },
   {
@@ -259,7 +260,7 @@ window.MOKI_GAMES = [
     emoji: "⛳",
     colors: ["#1fa89a", "#12304a"],
     description: "Golf auf kleinen Planeten im Weltall.",
-    neu: true,
+    added: "2026-11-16",
     featured: false
   },
   {
@@ -272,7 +273,7 @@ window.MOKI_GAMES = [
     emoji: "🏹",
     colors: ["#1b2a6b", "#e03a2f"],
     description: "Ziele und schieße mit Pfeil, Speer und anderen Waffen auf deinen Gegner.",
-    neu: true,
+    added: "2026-11-16",
     featured: false
   },
   {
@@ -284,7 +285,7 @@ window.MOKI_GAMES = [
     emoji: "🐔",
     colors: ["#69cbec", "#ffffff"],
     description: "Hüpfe über Straßen, Gleise und Flüsse, ohne überfahren zu werden.",
-    neu: true,
+    added: "2026-11-16",
     featured: false
   },
   {
@@ -296,7 +297,7 @@ window.MOKI_GAMES = [
     emoji: "🍪",
     colors: ["#2a6ab0", "#b06a2a"],
     description: "Klicke auf den Keks, kaufe Verbesserungen und baue ein Keks-Imperium auf.",
-    neu: true,
+    added: "2026-11-16",
     featured: false
   },
   {
@@ -308,7 +309,7 @@ window.MOKI_GAMES = [
     emoji: "🌍",
     colors: ["#0a1030", "#ff5a1f"],
     description: "Zerstöre Planeten mit Waffen, Raketen und Katastrophen.",
-    neu: true,
+    added: "2026-11-16",
     featured: false
   },
   {
@@ -321,7 +322,7 @@ window.MOKI_GAMES = [
     emoji: "🗡️",
     colors: ["#2b6fd6", "#2e9c2e"],
     description: "Baue Minen, trainiere Einheiten und zerstöre die gegnerische Statue.",
-    neu: true,
+    added: "2026-11-16",
     featured: false
   },
   {
@@ -333,7 +334,7 @@ window.MOKI_GAMES = [
     emoji: "🔢",
     colors: ["#2b9cf0", "#f5f7ff"],
     description: "Laufe durch Tore mit Plus- und Minus-Zahlen.",
-    neu: true,
+    added: "2026-11-16",
     featured: false
   },
   {
