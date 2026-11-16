@@ -261,6 +261,18 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "bowmasters",
+    title: "Bowmasters",
+    url: "https://cool-bunny-e1dc46.netlify.app",
+    category: "Action",
+    image: "bowmasters.jpg",
+    wide: true,
+    emoji: "🏹",
+    colors: ["#1b2a6b", "#e03a2f"],
+    description: "Duelle mit Pfeil und Bogen gegen verrückte Gegner.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
