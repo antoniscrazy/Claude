@@ -5,5 +5,5 @@ window.MOKI_CFG = {
   sbUrl: "https://lgztiptcaqjxufbmvpcv.supabase.co",
   sbKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxnenRpcHRjYXFqeHVmYm12cGN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgxOTAxNzUsImV4cCI6MjEwMzc2NjE3NX0.eKyv1VjyR57eYyWSoOf2AG1xO7QZq3KvbQ6cqTbjBuQ",
   mokiUrl: "https://mokiorg.netlify.app/",
-  studioUrl: "https://mokiorg.netlify.app/studio.html"
+  studioUrl: "https://mokiorg-studio.netlify.app/"
 };
