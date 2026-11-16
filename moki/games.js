@@ -249,6 +249,18 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "golf-orbit",
+    title: "Golf Orbit",
+    url: "https://reliable-fudge-a0e83d.netlify.app",
+    category: "Sport",
+    image: "golf-orbit.jpg",
+    wide: true,
+    emoji: "⛳",
+    colors: ["#1fa89a", "#12304a"],
+    description: "Golf auf kleinen Planeten im Weltall.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
