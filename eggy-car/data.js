@@ -3948,7 +3948,7 @@
               ],
               [
                 [50, 119, null, 489000399763574, false, [
-                  [2, ["bg music", false]],
+                  [2, ["bg_music", false]],
                   [3, 1],
                   [0, [0, -10]],
                   [1, [2, "gp_track"]]
@@ -9713,8 +9713,8 @@
       ["coin.ogg", 10150],
       ["unlock.m4a", 42092],
       ["unlock.ogg", 36815],
-      ["bg music.m4a", 2275437],
-      ["bg music.ogg", 1787218],
+      ["bg_music.m4a", 2275437],
+      ["bg_music.ogg", 1787218],
       ["game_over.m4a", 25652],
       ["game_over.ogg", 26302]
     ], "media/", false, 1280, 720, 2, true, true, true, "1.0.0.0", true, false, 0, 0, 73, false, true, 1, true, "Eggy Car", 0, [
