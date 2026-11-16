@@ -98,3 +98,19 @@ body.side-collapsed .cat{justify-content:center;width:48px;height:48px;padding:0
 body.side-collapsed .cat.on{background:linear-gradient(135deg,var(--accent),#2fe0c0)}
 .cat .lbl{flex:1}
 @media(max-width:900px){.toggle,.sidehead h3{display:none}.sidehead{display:none}body.side-collapsed .layout{grid-template-columns:1fr}body.side-collapsed .cat{width:auto;height:auto;padding:9px 16px}body.side-collapsed .cat .lbl{display:inline}.cat .i{width:18px;height:18px}}
+
+/* Favoriten-Stern */
+.fav{position:absolute;top:10px;left:10px;z-index:3;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:rgba(10,13,43,.6);backdrop-filter:blur(6px);color:#fff;cursor:pointer;opacity:0;transform:scale(.85);transition:opacity .15s,transform .15s,background .15s}
+.fav .i{width:18px;height:18px}
+.tile:hover .fav,.tile:focus-within .fav,.fav:focus-visible{opacity:1;transform:none}
+.fav:hover{background:rgba(10,13,43,.9);transform:scale(1.1)}
+.fav.on{opacity:1;transform:none;color:var(--accent2)}
+.fav.on .i{fill:var(--accent2)}
+@media (hover:none){.fav{opacity:.9;transform:none}}
+/* Zufall-Knopf und Überschriften mit Symbol */
+.rndbtn{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border:0;border-radius:999px;background:var(--panel2);color:var(--text);font:700 14px "Segoe UI",system-ui,sans-serif;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s}
+.rndbtn:hover{background:var(--accent);color:#04201a}
+h2 .i{width:22px;height:22px;margin-right:10px;vertical-align:-3px;color:var(--muted)}
+@media(max-width:900px){.rndbtn span{display:none}.rndbtn{padding:10px}}
+section>h2+.grid{margin-top:16px}
+@media(max-width:900px){.badge{display:none!important}}

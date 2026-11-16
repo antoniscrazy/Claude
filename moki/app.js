@@ -18,14 +18,40 @@ const SVG = {
   flame: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
   alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/>',
   play: '<polygon points="6 3 20 12 6 21 6 3" fill="currentColor"/>',
+  star: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+  clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  shuffle: '<path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4"/><path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2"/><path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8"/><path d="m18 14 4 4-4 4"/>',
+  target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  crosshair: '<circle cx="12" cy="12" r="10"/><path d="M22 12h-4M6 12H2M12 6V2M12 22v-4"/>',
   globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>'
 };
 const icon = n => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${SVG[n] || SVG.spiel}</svg>`;
-const CATICON = { Alle: "alle", Fahren: "fahren", Action: "action", Simulation: "simulation", Strategie: "strategie", Sport: "sport", Abenteuer: "abenteuer" };
+const CATICON = { Alle: "alle", __fav: "star", Fahren: "fahren", Geschicklichkeit: "target", "Kampf & Schießen": "crosshair", Simulation: "simulation", Strategie: "strategie", Sport: "sport", Abenteuer: "abenteuer" };
+const CATORDER = ["Fahren", "Geschicklichkeit", "Kampf & Schießen", "Simulation", "Strategie", "Sport", "Abenteuer"];
+const CATLABEL = { Alle: "Alle", __fav: "Favoriten" };
+
+// ---- Favoriten und "Zuletzt gespielt" (nur in diesem Browser gespeichert) ----
+const store = {
+  get(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+const known = new Set(games.map(g => g.id));
+let favs = new Set(store.get("moki-fav", []).filter(id => known.has(id)));
+let recent = store.get("moki-recent", []).filter(id => known.has(id));
+function toggleFav(id) {
+  favs.has(id) ? favs.delete(id) : favs.add(id);
+  store.set("moki-fav", [...favs]);
+}
+function recordPlay(id) {
+  if (!known.has(id)) return;
+  recent = [id, ...recent.filter(x => x !== id)].slice(0, 12);
+  store.set("moki-recent", recent);
+}
+const favBtn = g => `<span class="fav${favs.has(g.id) ? " on" : ""}" role="button" tabindex="0" data-fav="${g.id}" aria-pressed="${favs.has(g.id)}" aria-label="${esc(g.title)} ${favs.has(g.id) ? "aus Favoriten entfernen" : "zu Favoriten hinzufügen"}" title="${favs.has(g.id) ? "Aus Favoriten entfernen" : "Zu Favoriten"}">${icon("star")}</span>`;
 let category = "Alle";
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const tile = g => `<a class="tile${g.wide ? " wide" : ""}" href="${g.url}" data-id="${g.id}" aria-label="${esc(g.title)}" title="${esc(g.title)}" style="background:linear-gradient(135deg,${g.colors[0]},${g.colors[1]})">${g.image ? `<img src="${g.image}" alt="" loading="lazy">` : `<span class="em">${g.emoji}</span>`}<span class="name">${esc(g.title)}</span>${g.neu ? `<span class="new">NEU</span>` : ""}</a>`;
+const tile = g => `<a class="tile${g.wide ? " wide" : ""}" href="${g.url}" data-id="${g.id}" aria-label="${esc(g.title)}" title="${esc(g.title)}" style="background:linear-gradient(135deg,${g.colors[0]},${g.colors[1]})">${g.image ? `<img src="${g.image}" alt="" loading="lazy">` : `<span class="em">${g.emoji}</span>`}<span class="name">${esc(g.title)}</span>${g.neu ? `<span class="new">NEU</span>` : ""}${g.category ? favBtn(g) : ""}</a>`;
 
 // ---- Spiel des Tages: wechselt jeden Tag um Mitternacht (deutsche Zeit), für alle gleich ----
 function berlinDay() {
@@ -50,11 +76,13 @@ function heroHtml() {
 }
 
 function renderSide() {
-  const cats = ["Alle", ...new Set(games.map(g => g.category))];
+  const used = [...new Set(games.map(g => g.category))];
+  const cats = ["Alle", "__fav", ...CATORDER.filter(c => used.includes(c)), ...used.filter(c => !CATORDER.includes(c))];
   const collapsed = document.body.classList.contains("side-collapsed");
   side.innerHTML = `<div class="sidehead"><h3>Kategorien</h3><button class="toggle" type="button" aria-label="${collapsed ? "Seitenleiste ausklappen" : "Seitenleiste einklappen"}" aria-expanded="${!collapsed}" title="${collapsed ? "Ausklappen" : "Einklappen"}">${icon("panel")}</button></div>` + cats.map(c => {
-    const n = c === "Alle" ? games.length : games.filter(g => g.category === c).length;
-    return `<button class="cat ${c === category ? "on" : ""}" data-c="${esc(c)}" title="${esc(c)} (${n})" aria-label="${esc(c)}, ${n} Spiele">${icon(CATICON[c])}<span class="lbl">${esc(c)}</span><span class="n">${n}</span></button>`;
+    const n = c === "Alle" ? games.length : c === "__fav" ? favs.size : games.filter(g => g.category === c).length;
+    const label = CATLABEL[c] || c;
+    return `<button class="cat ${c === category ? "on" : ""}" data-c="${esc(c)}" title="${esc(label)} (${n})" aria-label="${esc(label)}, ${n} Spiele">${icon(CATICON[c])}<span class="lbl">${esc(label)}</span><span class="n">${n}</span></button>`;
   }).join("");
   side.querySelectorAll(".cat").forEach(b => b.onclick = () => { category = b.dataset.c; home(); });
   side.querySelector(".toggle").onclick = () => {
@@ -66,15 +94,22 @@ function renderSide() {
 
 function home() {
   const q = search.value.trim().toLowerCase();
-  const list = games.filter(g => (category === "Alle" || g.category === category) && g.title.toLowerCase().includes(q));
+  const inCat = g => category === "Alle" || (category === "__fav" ? favs.has(g.id) : g.category === category);
+  const list = games.filter(g => inCat(g) && g.title.toLowerCase().includes(q));
   renderSide();
-  const title = category === "Alle" ? "Alle Spiele" : category;
+  const title = category === "Alle" ? "Alle Spiele" : (CATLABEL[category] || category);
+  const rec = recent.map(id => games.find(g => g.id === id)).filter(Boolean).slice(0, 6);
+  const emptyMsg = category === "__fav" && !q ? `Noch keine Favoriten. Tippe bei einem Spiel auf den Stern, dann erscheint es hier.` : "Kein Spiel gefunden.";
   app.innerHTML = `
     ${!q && category === "Alle" ? heroHtml() : ""}
+    ${!q && category === "Alle" && rec.length ? `<section>
+      <h2>${icon("clock")}Zuletzt gespielt</h2>
+      <div class="grid">${rec.map(tile).join("")}</div>
+    </section>` : ""}
     <section>
       <h2>${esc(title)}</h2>
       <p class="sub">${list.length} ${list.length === 1 ? "Spiel" : "Spiele"}</p>
-      ${list.length ? `<div class="grid">${list.map(tile).join("")}</div>` : `<p class="empty">Kein Spiel gefunden.</p>`}
+      ${list.length ? `<div class="grid">${list.map(tile).join("")}</div>` : `<p class="empty">${emptyMsg}</p>`}
     </section>
     ${!q && category === "Alle" && sites.length ? `<section>
       <h2>Weitere Seiten</h2>
@@ -97,11 +132,49 @@ function warnDialog(g) {
   o.addEventListener("click", e => { if (e.target === o || e.target.dataset.a === "no") close(); });
   addEventListener("keydown", function k(e) { if (e.key === "Escape") { close(); removeEventListener("keydown", k); } });
   document.body.appendChild(o);
+  o.querySelector(".go").addEventListener("click", () => recordPlay(g.id));
   o.querySelector(".go").focus();
 }
+function setFavUi(id) {
+  const on = favs.has(id);
+  document.querySelectorAll(`.fav[data-fav="${id}"]`).forEach(el => {
+    el.classList.toggle("on", on);
+    el.setAttribute("aria-pressed", on);
+    const t = (games.find(g => g.id === id) || {}).title || "";
+    el.setAttribute("aria-label", t + (on ? " aus Favoriten entfernen" : " zu Favoriten hinzufügen"));
+    el.title = on ? "Aus Favoriten entfernen" : "Zu Favoriten";
+  });
+}
+function onFav(el) {
+  const id = el.dataset.fav;
+  toggleFav(id);
+  setFavUi(id);
+  renderSide();
+  if (category === "__fav") home();   // Spiel verschwindet aus der Favoriten-Ansicht
+}
+function openGame(g) {   // Popup bei Warnung, sonst direkt öffnen
+  if (g.warning) return warnDialog(g);
+  recordPlay(g.id);
+  location.href = g.url;
+}
 document.addEventListener("click", e => {
+  const f = e.target.closest(".fav");
+  if (f) { e.preventDefault(); e.stopPropagation(); onFav(f); return; }
   const t = e.target.closest("a[data-id]");
-  if (!t || e.ctrlKey || e.metaKey || e.shiftKey) return;
+  if (!t) return;
   const g = [...games, ...sites].find(x => x.id === t.dataset.id);
-  if (g && g.warning) { e.preventDefault(); warnDialog(g); }
+  if (!g) return;
+  if (g.warning && !(e.ctrlKey || e.metaKey || e.shiftKey)) { e.preventDefault(); warnDialog(g); return; }
+  recordPlay(g.id);
 });
+document.addEventListener("keydown", e => {
+  if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("fav")) { e.preventDefault(); onFav(e.target); }
+});
+// Zufälliges Spiel
+const rnd = document.getElementById("rnd");
+if (rnd) rnd.addEventListener("click", () => {
+  const pool = games.filter(g => g.id !== (recent[0] || ""));
+  openGame(pool[Math.floor(Math.random() * pool.length)]);
+});
+// Zurück-Taste des Browsers: Liste "Zuletzt gespielt" neu laden
+addEventListener("pageshow", e => { if (e.persisted) { recent = store.get("moki-recent", []).filter(id => known.has(id)); home(); } });
