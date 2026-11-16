@@ -191,6 +191,21 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .aistep textarea.in{font-size:15px;line-height:1.5;resize:vertical}
 a.btn{text-decoration:none}
 
+/* Baukasten v2 */
+#scene{width:100%;height:auto;display:block;border-radius:14px;background:#000;touch-action:none;box-shadow:0 6px 20px #0008}
+.cardx.sprite.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.chead .xbtn{width:30px;height:30px}.chead .xbtn .i{width:16px;height:16px}
+.xbtn[disabled]{opacity:.25;cursor:default}.xbtn[disabled]:hover{background:transparent;color:var(--muted)}
+details.more{margin-top:10px;border-top:1px solid #ffffff12;padding-top:8px}
+details.more>summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--accent);list-style:none}
+details.more>summary::-webkit-details-marker{display:none}
+details.more>summary::before{content:"+ ";}details.more[open]>summary::before{content:"– ";}
+.rline .ck{display:flex;flex-direction:row;align-items:center;gap:6px}
+.rline .xbtn{margin-left:auto}
+
+.scrtabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.scrtabs .tab{padding:6px 12px;font-size:13px;background:var(--panel3)}.scrtabs .tab.on{background:var(--accent);color:#04201a}
+
 </style>
 </head>
 <body>
@@ -253,20 +268,32 @@ window.MOKI_CFG = {
   studioUrl: "https://mokiorg.netlify.app/studio.html"
 };
 
-window.MOKI_ENGINE = "// Moki Engine: kleine 2D-Spiele-Engine. L\u00e4uft IM Spiel-Frame (Studio-Vorschau und Moki-Spielseite).\n// Koordinaten: Spielfeld ist 800 x 500. Beim Anlegen sind x/y in PROZENT (0-100), zur Laufzeit sind s.x/s.y in PIXELN.\n(function () {\n  'use strict';\n  var W = 800, H = 500, MAXS = 300;\n  function send(o) { try { o.moki = 1; window.parent.postMessage(o, '*'); } catch (e) {} }\n\n  // Konsole und Fehler an das Studio weiterreichen\n  ['log', 'info', 'warn', 'error'].forEach(function (k) {\n    var orig = console[k];\n    console[k] = function () {\n      var t = Array.prototype.map.call(arguments, function (a) {\n        if (typeof a === 'string') return a;\n        try { return JSON.stringify(a); } catch (e) { return String(a); }\n      }).join(' ');\n      send({ type: 'log', level: k, text: t });\n      try { orig.apply(console, arguments); } catch (e) {}\n    };\n  });\n  window.addEventListener('error', function (e) { send({ type: 'error', text: e.message, line: e.lineno || 0 }); });\n  window.addEventListener('unhandledrejection', function (e) {\n    var r = e.reason; send({ type: 'error', text: String((r && r.message) || r), line: 0 });\n  });\n\n  function rr(c, x, y, w, h, r) {\n    c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);\n    c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();\n  }\n  var PATH = {\n    circle: function (c, s) { c.arc(0, 0, s / 2, 0, 7); },\n    square: function (c, s) { rr(c, -s / 2, -s / 2, s, s, s * 0.18); },\n    triangle: function (c, s) { c.moveTo(0, -s / 2); c.lineTo(s / 2, s / 2); c.lineTo(-s / 2, s / 2); c.closePath(); },\n    diamond: function (c, s) { c.moveTo(0, -s / 2); c.lineTo(s / 2, 0); c.lineTo(0, s / 2); c.lineTo(-s / 2, 0); c.closePath(); },\n    star: function (c, s) {\n      for (var i = 0; i \u003c 10; i++) {\n        var r = i % 2 ? s * 0.22 : s * 0.5, a = -Math.PI / 2 + i * Math.PI / 5;\n        i ? c.lineTo(Math.cos(a) * r, Math.sin(a) * r) : c.moveTo(Math.cos(a) * r, Math.sin(a) * r);\n      }\n      c.closePath();\n    },\n    heart: function (c, s) {\n      var u = s / 2;\n      c.moveTo(0, u * 0.9); c.bezierCurveTo(-u * 1.6, -u * 0.1, -u * 0.8, -u * 1.1, 0, -u * 0.35);\n      c.bezierCurveTo(u * 0.8, -u * 1.1, u * 1.6, -u * 0.1, 0, u * 0.9); c.closePath();\n    }\n  };\n  function rand(a, b) { return a + Math.random() * (b - a); }\n  function keyName(e) {\n    var c = e.code || '';\n    if (c === 'Space') return 'SPACE';\n    if (c.indexOf('Arrow') === 0) return c.slice(5).toUpperCase();\n    if (c.indexOf('Key') === 0) return c.slice(3).toUpperCase();\n    if (c === 'Enter') return 'ENTER';\n    return String(e.key || '').toUpperCase();\n  }\n\n  function createGame(o) {\n    o = o || {};\n    var G = {\n      score: 0, lives: o.lives | 0, time: 0, state: 'ready', width: W, height: H,\n      background: o.background || '#0d1240', title: o.title || window.MOKI_TITLE || 'Spiel',\n      timeLimit: +o.time || 0, timeMode: o.timeMode === 'lose' ? 'lose' : 'win', showScore: o.showScore !== false\n    };\n    var sprites = [], defs = {}, nextId = 1, touching = {}, timers = [], scoreCbs = [], msg = null, endMsg = '';\n    var h = { start: [], update: [], key: {}, touch: [], edge: [], click: [] };\n    var down = {}, pointer = { x: W / 2, y: H / 2, down: false, seen: false };\n\n    var cv = document.createElement('canvas');\n    var ctx = cv.getContext('2d');\n    document.body.appendChild(cv);\n    var css = document.createElement('style');\n    css.textContent = 'html,body{margin:0;height:100%;background:#000;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}' +\n      'canvas{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(100vw,160vh);height:min(62.5vw,100vh);display:block;outline:none}';\n    document.head.appendChild(css);\n    var dpr = 1;\n    function fit() {\n      var r = cv.getBoundingClientRect(); dpr = Math.min(window.devicePixelRatio || 1, 2);\n      cv.width = Math.max(1, Math.round(r.width * dpr)); cv.height = Math.max(1, Math.round(r.height * dpr));\n    }\n    addEventListener('resize', fit); fit();\n    cv.tabIndex = 0;\n\n    // ---------- Figuren ----------\n    function Sprite(opt, isClone) {\n      this.id = nextId++;\n      this.name = String(opt.name || 'Figur');\n      this.shape = PATH[opt.shape] ? opt.shape : 'circle';\n      this.color = opt.color || '#00e5a8';\n      this.size = +opt.size || 40;\n      this.control = opt.control || 'none';       // 'keys' | 'mouse' | 'none'\n      this.axis = opt.axis || 'xy';               // 'x' | 'y' | 'xy'\n      this.motion = opt.motion || 'none';         // none fall rise left right bounce follow\n      this.speed = opt.speed != null ? +opt.speed : 200;\n      this.autoRespawn = opt.autoRespawn !== false;\n      this.label = opt.label || '';\n      this.visible = true; this.alive = true; this.out = false; this.vx = 0; this.vy = 0;\n      this.x = (opt.x != null ? +opt.x : 50) / 100 * W;\n      this.y = (opt.y != null ? +opt.y : 50) / 100 * H;\n      this._opt = opt;\n      if (this.motion === 'bounce') { var a = rand(0.4, 1.2) * (Math.random() \u003c .5 ? 1 : -1); this.vx = Math.cos(a) * this.speed * (Math.random() \u003c .5 ? 1 : -1); this.vy = Math.abs(Math.sin(a)) * this.speed * (Math.random() \u003c .5 ? 1 : -1); }\n    }\n    Sprite.prototype.place = function (xp, yp) { this.x = xp / 100 * W; this.y = yp / 100 * H; this.out = false; return this; };\n    Sprite.prototype.destroy = function () { this.alive = false; };\n    Sprite.prototype.clone = function () { return add(new Sprite(this._opt)); };\n    Sprite.prototype.touches = function (o) { return hit(this, o); };\n    Sprite.prototype.respawn = function () {\n      var s = this.size, m = this.motion;\n      if (m === 'fall') { this.x = rand(s / 2, W - s / 2); this.y = -s / 2; }\n      else if (m === 'rise') { this.x = rand(s / 2, W - s / 2); this.y = H + s / 2; }\n      else if (m === 'left') { this.x = W + s / 2; this.y = rand(s / 2, H - s / 2); }\n      else if (m === 'right') { this.x = -s / 2; this.y = rand(s / 2, H - s / 2); }\n      else { this.x = rand(s, W - s); this.y = rand(s, H - s); }\n      this.out = false; return this;\n    };\n    function add(s) { if (sprites.length \u003c MAXS) sprites.push(s); else s.alive = false; return s; }\n    G.sprite = function (opt) {\n      opt = opt || {};\n      var s = add(new Sprite(opt));\n      if (!defs[s.name]) defs[s.name] = opt;\n      return s;\n    };\n    G.spawn = function (name) {\n      var d = defs[name]; if (!d) return null;\n      var s = add(new Sprite(d)); s.respawn(); return s;\n    };\n    G.find = function (name) { for (var i = 0; i \u003c sprites.length; i++) if (sprites[i].alive && sprites[i].name === name) return sprites[i]; return null; };\n    G.all = function (name) { return sprites.filter(function (s) { return s.alive && (!name || s.name === name); }); };\n    function nm(x) { return typeof x === 'string' ? x : (x && x.name); }\n\n    function ext(s) { return (s.shape === 'square' ? 0.45 : 0.4) * s.size; }\n    function hit(a, b) { var ea = ext(a), eb = ext(b); return Math.abs(a.x - b.x) \u003c ea + eb && Math.abs(a.y - b.y) \u003c ea + eb; }\n\n    // ---------- Ereignisse ----------\n    G.onStart = function (f) { h.start.push(f); };\n    G.onUpdate = function (f) { h.update.push(f); };\n    G.onKey = function (k, f) { k = String(k).toUpperCase(); (h.key[k] = h.key[k] || []).push(f); };\n    G.onTouch = function (a, b, f) { h.touch.push({ a: nm(a), b: nm(b), f: f }); };\n    G.onEdge = function (a, f) { h.edge.push({ a: nm(a), f: f }); };\n    G.onClick = function (a, f) { h.click.push({ a: nm(a), f: f }); };\n    G.every = function (sec, f) { timers.push({ t: 0, every: Math.max(0.05, +sec || 1), f: f }); };\n    G.onScore = function (n, f) { scoreCbs.push({ n: +n, f: f, done: false }); };\n\n    // ---------- Aktionen ----------\n    G.addScore = function (n) { G.score += (+n || 0); };\n    G.addLife = function (n) { G.lives = Math.max(0, G.lives + (+n || 0)); if (G.lives === 0 && n \u003c 0 && G.state === 'play' && o.lives > 0) G.lose('Keine Leben mehr'); };\n    G.say = function (t, sec) { msg = { t: String(t), left: sec == null ? 2 : +sec }; };\n    G.win = function (m) { if (G.state === 'play') { G.state = 'won'; endMsg = m || 'Gewonnen!'; } };\n    G.lose = function (m) { if (G.state === 'play') { G.state = 'lost'; endMsg = m || 'Verloren'; } };\n    G.random = rand;\n    G.start = function () { loopStart(); };\n\n    function startPlay() {\n      if (G.state !== 'ready') return;\n      G.state = 'play'; cv.focus();\n      h.start.forEach(function (f) { safe(f); });\n    }\n    function restart() {\n      if (window.parent !== window) send({ type: 'restart' }); else location.reload();\n    }\n    function safe(f, a, b) { try { f(a, b); } catch (e) { console.error(e && e.message ? e.message : String(e)); } }\n\n    // ---------- Eingabe ----------\n    function setPointer(e) {\n      var r = cv.getBoundingClientRect();\n      pointer.x = (e.clientX - r.left) / r.width * W; pointer.y = (e.clientY - r.top) / r.height * H; pointer.seen = true;\n    }\n    cv.addEventListener('pointermove', setPointer);\n    cv.addEventListener('pointerdown', function (e) {\n      setPointer(e); pointer.down = true;\n      try { cv.setPointerCapture(e.pointerId); } catch (x) {}\n      if (G.state === 'ready') { startPlay(); return; }\n      if (G.state === 'won' || G.state === 'lost') { restart(); return; }\n      for (var i = sprites.length - 1; i >= 0; i--) {\n        var s = sprites[i]; if (!s.alive) continue;\n        if (Math.abs(pointer.x - s.x) \u003c s.size / 2 + 6 && Math.abs(pointer.y - s.y) \u003c s.size / 2 + 6) {\n          h.click.forEach(function (c) { if (c.a === s.name) safe(c.f, s); });\n          break;\n        }\n      }\n    });\n    cv.addEventListener('pointerup', function () { pointer.down = false; });\n    cv.addEventListener('pointercancel', function () { pointer.down = false; });\n    addEventListener('keydown', function (e) {\n      var k = keyName(e);\n      if (['SPACE', 'LEFT', 'RIGHT', 'UP', 'DOWN'].indexOf(k) > -1) e.preventDefault();\n      if (G.state === 'ready' && !e.repeat) { startPlay(); return; }\n      if ((G.state === 'won' || G.state === 'lost') && (k === 'SPACE' || k === 'ENTER') && !e.repeat) { restart(); return; }\n      if (!down[k] && G.state === 'play' && h.key[k]) h.key[k].forEach(function (f) { safe(f); });\n      down[k] = true;\n    });\n    addEventListener('keyup', function (e) { down[keyName(e)] = false; });\n    addEventListener('blur', function () { down = {}; pointer.down = false; });\n    function pressed(a, b) { return down[a] || down[b]; }\n\n    // ---------- Update ----------\n    function update(dt) {\n      G.time += dt;\n      if (msg) { msg.left -= dt; if (msg.left \u003c= 0) msg = null; }\n      var i, s;\n      for (i = 0; i \u003c sprites.length; i++) {\n        s = sprites[i]; if (!s.alive) continue;\n        var half = s.size / 2;\n        if (s.control === 'keys') {\n          var dx = 0, dy = 0;\n          if (s.axis !== 'y') dx = (pressed('RIGHT', 'D') ? 1 : 0) - (pressed('LEFT', 'A') ? 1 : 0);\n          if (s.axis !== 'x') dy = (pressed('DOWN', 'S') ? 1 : 0) - (pressed('UP', 'W') ? 1 : 0);\n          if (pointer.down) {   // Touch: Richtung zum Finger\n            if (s.axis !== 'y' && Math.abs(pointer.x - s.x) > 6) dx = pointer.x > s.x ? 1 : -1;\n            if (s.axis !== 'x' && Math.abs(pointer.y - s.y) > 6) dy = pointer.y > s.y ? 1 : -1;\n          }\n          var l = Math.sqrt(dx * dx + dy * dy) || 1;\n          s.x += dx / l * s.speed * dt; s.y += dy / l * s.speed * dt;\n        } else if (s.control === 'mouse' && pointer.seen) {\n          if (s.axis !== 'y') s.x = pointer.x;\n          if (s.axis !== 'x') s.y = pointer.y;\n        }\n        if (s.control !== 'none') { s.x = Math.max(half, Math.min(W - half, s.x)); s.y = Math.max(half, Math.min(H - half, s.y)); }\n        var m = s.motion;\n        if (m === 'fall') s.y += s.speed * dt;\n        else if (m === 'rise') s.y -= s.speed * dt;\n        else if (m === 'left') s.x -= s.speed * dt;\n        else if (m === 'right') s.x += s.speed * dt;\n        else if (m === 'bounce') {\n          s.x += s.vx * dt; s.y += s.vy * dt;\n          if (s.x \u003c half) { s.x = half; s.vx = Math.abs(s.vx); } if (s.x > W - half) { s.x = W - half; s.vx = -Math.abs(s.vx); }\n          if (s.y \u003c half) { s.y = half; s.vy = Math.abs(s.vy); } if (s.y > H - half) { s.y = H - half; s.vy = -Math.abs(s.vy); }\n        } else if (m === 'follow') {\n          var t = null; for (var j = 0; j \u003c sprites.length; j++) if (sprites[j].alive && sprites[j].control !== 'none') { t = sprites[j]; break; }\n          if (t) { var ax = t.x - s.x, ay = t.y - s.y, d = Math.sqrt(ax * ax + ay * ay) || 1; s.x += ax / d * s.speed * dt; s.y += ay / d * s.speed * dt; }\n        }\n        // Rand\n        var outNow = s.x \u003c -half || s.x > W + half || s.y \u003c -half || s.y > H + half;\n        if (outNow && !s.out) {\n          s.out = true;\n          var sp = s;\n          h.edge.forEach(function (e) { if (e.a === sp.name) safe(e.f, sp); });\n          if (s.alive && s.autoRespawn && (m === 'fall' || m === 'rise' || m === 'left' || m === 'right')) s.respawn();\n        } else if (!outNow) s.out = false;\n      }\n      // Ber\u00fchrungen (nur beim Beginn der Ber\u00fchrung)\n      h.touch.forEach(function (tc) {\n        var A = G.all(tc.a), B = G.all(tc.b);\n        A.forEach(function (a) { B.forEach(function (b) {\n          if (a === b) return;\n          var key = tc.a + '|' + tc.b + '|' + a.id + '|' + b.id, inx = hit(a, b);\n          if (inx && !touching[key]) { touching[key] = 1; safe(tc.f, a, b); } else if (!inx) delete touching[key];\n        }); });\n      });\n      timers.forEach(function (t) { t.t += dt; while (t.t >= t.every) { t.t -= t.every; safe(t.f); } });\n      scoreCbs.forEach(function (c) { if (!c.done && G.score >= c.n) { c.done = true; safe(c.f); } });\n      h.update.forEach(function (f) { safe(f, dt); });\n      sprites = sprites.filter(function (s) { return s.alive; });\n      if (G.timeLimit > 0 && G.time >= G.timeLimit && G.state === 'play') { G.time = G.timeLimit; G.timeMode === 'win' ? G.win('Geschafft!') : G.lose('Zeit abgelaufen'); }\n    }\n\n    // ---------- Zeichnen ----------\n    function text(t, x, y, size, color, align, weight) {\n      ctx.font = (weight || 800) + ' ' + size + 'px \"Segoe UI\",system-ui,sans-serif';\n      ctx.textAlign = align || 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = color || '#fff'; ctx.fillText(t, x, y);\n    }\n    function overlay(a) { ctx.fillStyle = 'rgba(8,10,35,' + a + ')'; ctx.fillRect(0, 0, W, H); }\n    function draw() {\n      var k = cv.width / W;\n      ctx.setTransform(k, 0, 0, k, 0, 0);\n      ctx.fillStyle = G.background; ctx.fillRect(0, 0, W, H);\n      for (var i = 0; i \u003c sprites.length; i++) {\n        var s = sprites[i]; if (!s.alive || !s.visible) continue;\n        ctx.save(); ctx.translate(s.x, s.y);\n        ctx.beginPath(); PATH[s.shape](ctx, s.size);\n        ctx.fillStyle = s.color; ctx.fill();\n        ctx.lineWidth = Math.max(2, s.size * 0.06); ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.stroke();\n        if (s.label) text(s.label, 0, 0, Math.max(12, s.size * 0.4), '#0a0d2b');\n        ctx.restore();\n      }\n      if (G.state !== 'ready') {\n        if (G.showScore) text('Punkte  ' + G.score, 20, 28, 24, '#fff', 'left');\n        if (o.lives > 0) { for (var l = 0; l \u003c G.lives; l++) { ctx.save(); ctx.translate(W - 30 - l * 34, 28); ctx.beginPath(); PATH.heart(ctx, 24); ctx.fillStyle = '#ff4d6d'; ctx.fill(); ctx.restore(); } }\n        if (G.timeLimit > 0) text(String(Math.max(0, Math.ceil(G.timeLimit - G.time))), W / 2, 28, 28, '#ffd23f');\n      }\n      if (msg && G.state === 'play') { text(msg.t, W / 2, 80, 30, '#ffd23f'); }\n      if (G.state === 'ready') {\n        overlay(0.72); text(G.title, W / 2, H / 2 - 26, 46, '#fff'); text('Tippen oder Taste dr\u00fccken zum Starten', W / 2, H / 2 + 34, 20, '#a3abe0', 'center', 600);\n      } else if (G.state === 'won' || G.state === 'lost') {\n        overlay(0.7); text(endMsg, W / 2, H / 2 - 40, 52, G.state === 'won' ? '#00e5a8' : '#ff6b81');\n        text('Punkte  ' + G.score, W / 2, H / 2 + 14, 26, '#fff');\n        text('Tippen f\u00fcr noch einmal', W / 2, H / 2 + 62, 19, '#a3abe0', 'center', 600);\n      }\n    }\n\n    var last = 0, running = false;\n    function frame(t) {\n      var dt = Math.min(0.05, (t - last) / 1000 || 0); last = t;\n      if (G.state === 'play' && !document.hidden) { try { update(dt); } catch (e) { console.error(e.message); } }\n      draw(); requestAnimationFrame(frame);\n    }\n    function loopStart() { if (running) return; running = true; requestAnimationFrame(function (t) { last = t; frame(t); }); }\n    send({ type: 'ready' });\n    return G;\n  }\n\n  window.Moki = { version: 1, game: createGame };\n})();\n";
+window.MOKI_ENGINE = "// Gemeinsame Formen und Motive (Engine + Studio)\nfunction starArr(cx, cy, ro, ri) {\n  const p = [];\n  for (let i = 0; i \u003c 10; i++) { const r = i % 2 ? ri : ro, a = -Math.PI / 2 + i * Math.PI / 5; p.push((cx + Math.cos(a) * r).toFixed(1) + ',' + (cy + Math.sin(a) * r).toFixed(1)); }\n  return p;\n}\nconst starPts = (cx, cy, ro, ri) => starArr(cx, cy, ro, ri).join(' ');\n\n// Formen als SVG-Pfade in einer 100 x 100 Box (Engine nutzt Path2D, Studio nutzt \u003cpath>)\nconst MOKI_SHAPES = {\n  circle: 'M50 0A50 50 0 1 1 50 100A50 50 0 1 1 50 0Z',\n  triangle: 'M50 2L98 98H2Z',\n  diamond: 'M50 0L100 50L50 100L0 50Z',\n  star: 'M' + starArr(50, 54, 50, 21).join('L') + 'Z',\n  heart: 'M50 98C8 66 2 30 22 14C36 4 50 14 50 28C50 14 64 4 78 14C98 30 92 66 50 98Z',\n  hexagon: 'M26 4H74L100 50L74 96H26L0 50Z',\n  ring: 'M50 0A50 50 0 1 1 50 100A50 50 0 1 1 50 0ZM50 24A26 26 0 1 0 50 76A26 26 0 1 0 50 24Z',\n  cross: 'M34 0H66V34H100V66H66V100H34V66H0V34H34Z',\n  arrow: 'M0 34H56V6L100 50L56 94V66H0Z'\n};\nconst MOKI_SHAPE_NAMES = [['circle', 'Kreis'], ['square', 'Quadrat / Balken'], ['triangle', 'Dreieck'], ['diamond', 'Raute'], ['star', 'Stern'], ['heart', 'Herz'], ['hexagon', 'Sechseck'], ['ring', 'Ring'], ['cross', 'Kreuz'], ['arrow', 'Pfeil'], ['text', 'Nur Text'], ['button', 'Knopf (Men\u00fc)']];\n\nconst MOKI_MOTIFS = [\n  { id: 'rocket', name: 'Rakete', svg: '\u003cpath d=\"M50 8C66 22 71 44 67 66H33C29 44 34 22 50 8Z\" fill=\"#fff\"/>\u003ccircle cx=\"50\" cy=\"38\" r=\"8.5\" fill=\"#4cc9f0\"/>\u003cpath d=\"M33 50 17 68v14l19-12Z\" fill=\"#ff4d6d\"/>\u003cpath d=\"M67 50 83 68v14L64 70Z\" fill=\"#ff4d6d\"/>\u003cpath d=\"M41 69c1 19 9 25 9 25s8-6 9-25Z\" fill=\"#ffd23f\"/>' },\n  { id: 'star', name: 'Stern', svg: '\u003cpolygon points=\"' + starPts(50, 53, 42, 18) + '\" fill=\"#ffd23f\"/>\u003ccircle cx=\"41\" cy=\"50\" r=\"3.2\" fill=\"#0d1240\" stroke=\"none\"/>\u003ccircle cx=\"59\" cy=\"50\" r=\"3.2\" fill=\"#0d1240\" stroke=\"none\"/>\u003cpath d=\"M43 60q7 6 14 0\" fill=\"none\"/>' },\n  { id: 'heart', name: 'Herz', svg: '\u003cpath d=\"M50 86C14 60 12 30 30 22c12-5 20 4 20 10 0-6 8-15 20-10 18 8 16 38-20 64Z\" fill=\"#ff4d6d\"/>\u003cpath d=\"M28 36c2-5 7-7 11-5\" fill=\"none\" stroke=\"#fff\" stroke-opacity=\".7\"/>' },\n  { id: 'bolt', name: 'Blitz', svg: '\u003cpolygon points=\"58,6 22,56 46,56 38,94 78,40 54,40\" fill=\"#ffd23f\"/>' },\n  { id: 'ghost', name: 'Geist', svg: '\u003cpath d=\"M20 90V46C20 22 34 10 50 10s30 12 30 36v44l-10-10-10 10-10-10-10 10-10-10Z\" fill=\"#fff\"/>\u003ccircle cx=\"40\" cy=\"44\" r=\"5\" fill=\"#0d1240\" stroke=\"none\"/>\u003ccircle cx=\"60\" cy=\"44\" r=\"5\" fill=\"#0d1240\" stroke=\"none\"/>\u003cpath d=\"M44 58q6 5 12 0\" fill=\"none\"/>' },\n  { id: 'crown', name: 'Krone', svg: '\u003cpolygon points=\"14,76 10,32 32,52 50,22 68,52 90,32 86,76\" fill=\"#ffd23f\"/>\u003crect x=\"14\" y=\"76\" width=\"72\" height=\"11\" rx=\"3\" fill=\"#ff9f1c\"/>\u003ccircle cx=\"10\" cy=\"32\" r=\"5\" fill=\"#ff4d6d\"/>\u003ccircle cx=\"50\" cy=\"22\" r=\"5\" fill=\"#4cc9f0\"/>\u003ccircle cx=\"90\" cy=\"32\" r=\"5\" fill=\"#ff4d6d\"/>' },\n  { id: 'ball', name: 'Ball', svg: '\u003ccircle cx=\"50\" cy=\"50\" r=\"40\" fill=\"#fff\"/>\u003cpolygon points=\"50,33 65,44 59,62 41,62 35,44\" fill=\"#0d1240\"/>\u003cpath d=\"M50 33V12M65 44l20-7M59 62l12 17M41 62 29 79M35 44l-20-7\" fill=\"none\"/>' },\n  { id: 'planet', name: 'Planet', svg: '\u003ccircle cx=\"50\" cy=\"50\" r=\"27\" fill=\"#ff9f1c\"/>\u003cpath d=\"M36 38q14-6 28 2M34 56q16 6 32-2\" fill=\"none\" stroke-opacity=\".5\"/>\u003cellipse cx=\"50\" cy=\"52\" rx=\"45\" ry=\"12\" transform=\"rotate(-22 50 52)\" fill=\"none\" stroke=\"#fff\" stroke-width=\"6\"/>\u003cellipse cx=\"50\" cy=\"52\" rx=\"45\" ry=\"12\" transform=\"rotate(-22 50 52)\" fill=\"none\" stroke-width=\"1.5\"/>' },\n  { id: 'car', name: 'Auto', svg: '\u003cpath d=\"M8 62 15 46c3-5 8-7 14-7h38c6 0 11 3 15 8l9 11c2 3 2 7-1 9H11Z\" fill=\"#ff4d6d\"/>\u003cpath d=\"M32 43h16v12H27Zm22 0h12c4 0 7 2 10 6l2 6H54Z\" fill=\"#bfeaff\"/>\u003ccircle cx=\"29\" cy=\"68\" r=\"11\" fill=\"#0d1240\"/>\u003ccircle cx=\"29\" cy=\"68\" r=\"4.5\" fill=\"#fff\" stroke=\"none\"/>\u003ccircle cx=\"72\" cy=\"68\" r=\"11\" fill=\"#0d1240\"/>\u003ccircle cx=\"72\" cy=\"68\" r=\"4.5\" fill=\"#fff\" stroke=\"none\"/>' },\n  { id: 'sword', name: 'Schwert', svg: '\u003cg transform=\"rotate(45 50 50)\">\u003cpath d=\"M46 6h8l2 54H44Z\" fill=\"#dfe6f5\"/>\u003crect x=\"30\" y=\"60\" width=\"40\" height=\"8\" rx=\"3\" fill=\"#ffd23f\"/>\u003crect x=\"45\" y=\"68\" width=\"10\" height=\"17\" rx=\"3\" fill=\"#a0522d\"/>\u003ccircle cx=\"50\" cy=\"90\" r=\"5.5\" fill=\"#ffd23f\"/>\u003c/g>' },\n  { id: 'gem', name: 'Edelstein', svg: '\u003cpolygon points=\"50,90 10,40 28,14 72,14 90,40\" fill=\"#4cc9f0\"/>\u003cpath d=\"M10 40h80M28 14l22 26 22-26M50 40v50\" fill=\"none\" stroke-width=\"2.5\"/>' },\n  { id: 'pad', name: 'Controller', svg: '\u003crect x=\"6\" y=\"28\" width=\"88\" height=\"46\" rx=\"23\" fill=\"#7b2ff7\"/>\u003cpath d=\"M31 42v18M22 51h18\" stroke=\"#fff\" stroke-width=\"7\"/>\u003ccircle cx=\"68\" cy=\"45\" r=\"6\" fill=\"#ffd23f\"/>\u003ccircle cx=\"79\" cy=\"57\" r=\"6\" fill=\"#ff4d8d\"/>' },\n  { id: 'blob', name: 'Moki', svg: '\u003cpath d=\"M16 58C16 30 32 14 50 14s34 16 34 44c0 22-14 32-34 32S16 80 16 58Z\" fill=\"#7ff5d4\"/>\u003cpath d=\"M18 52C14 30 32 8 50 8s36 22 32 44\" fill=\"none\" stroke=\"#ffd23f\" stroke-width=\"5\"/>\u003crect x=\"8\" y=\"46\" width=\"12\" height=\"24\" rx=\"6\" fill=\"#ffd23f\"/>\u003crect x=\"80\" y=\"46\" width=\"12\" height=\"24\" rx=\"6\" fill=\"#ffd23f\"/>\u003cellipse cx=\"38\" cy=\"58\" rx=\"4.5\" ry=\"6\" fill=\"#0d1240\" stroke=\"none\"/>\u003cellipse cx=\"62\" cy=\"58\" rx=\"4.5\" ry=\"6\" fill=\"#0d1240\" stroke=\"none\"/>\u003cpath d=\"M42 72q8 8 16 0\" fill=\"none\"/>' }\n];\n\n// Moki Engine v2: kleine 2D-Spiele-Engine. L\u00e4uft IM Spiel-Frame (Studio-Vorschau und Moki-Spielseite).\n// Spielfeld 800 x 500. Beim Anlegen sind x/y in PROZENT (0-100), zur Laufzeit sind s.x/s.y in PIXELN (Mitte der Figur).\n// (Davor im selben Skript: motifs.js mit MOKI_SHAPES und MOKI_MOTIFS.)\n(function () {\n  'use strict';\n  var W = 800, H = 500, MAXS = 400, MAXP = 500;\n  function send(o) { try { o.moki = 1; window.parent.postMessage(o, '*'); } catch (e) {} }\n\n  // Konsole und Fehler an das Studio weiterreichen\n  ['log', 'info', 'warn', 'error'].forEach(function (k) {\n    var orig = console[k];\n    console[k] = function () {\n      var t = Array.prototype.map.call(arguments, function (a) {\n        if (typeof a === 'string') return a;\n        try { return JSON.stringify(a); } catch (e) { return String(a); }\n      }).join(' ');\n      send({ type: 'log', level: k, text: t });\n      try { orig.apply(console, arguments); } catch (e) {}\n    };\n  });\n  window.addEventListener('error', function (e) { send({ type: 'error', text: e.message, line: e.lineno || 0 }); });\n  window.addEventListener('unhandledrejection', function (e) { var r = e.reason; send({ type: 'error', text: String((r && r.message) || r), line: 0 }); });\n\n  // ---------- Formen und Bilder ----------\n  var PATHS = {}, IMGS = {};\n  Object.keys(MOKI_SHAPES).forEach(function (k) { PATHS[k] = new Path2D(MOKI_SHAPES[k]); });\n  MOKI_MOTIFS.forEach(function (m) {\n    if (m.id === 'star' || m.id === 'heart') return;\n    var img = new Image();\n    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('\u003csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" width=\"200\" height=\"200\">\u003cg stroke=\"#0d1240\" stroke-width=\"3.4\" stroke-linejoin=\"round\" stroke-linecap=\"round\">' + m.svg + '\u003c/g>\u003c/svg>');\n    IMGS[m.id] = img;\n  });\n  function validShape(s) { return s === 'square' || s === 'text' || s === 'button' || !!PATHS[s] || !!IMGS[s]; }\n  function rr(w, h, r) {   // abgerundetes Rechteck mit gleichm\u00e4\u00dfigem Radius, Mitte bei 0,0\n    var p = new Path2D(), x = -w / 2, y = -h / 2; r = Math.min(r, w / 2, h / 2);\n    p.moveTo(x + r, y); p.arcTo(x + w, y, x + w, y + h, r); p.arcTo(x + w, y + h, x, y + h, r); p.arcTo(x, y + h, x, y, r); p.arcTo(x, y, x + w, y, r); p.closePath(); return p;\n  }\n  function rand(a, b) { return a + Math.random() * (b - a); }\n  function clamp(v, a, b) { return v \u003c a ? a : v > b ? b : v; }\n  function keyName(e) {\n    var c = e.code || '';\n    if (c === 'Space') return 'SPACE';\n    if (c.indexOf('Arrow') === 0) return c.slice(5).toUpperCase();\n    if (c.indexOf('Key') === 0) return c.slice(3).toUpperCase();\n    if (c === 'Enter') return 'ENTER';\n    return String(e.key || '').toUpperCase();\n  }\n\n  // ---------- T\u00f6ne (selbst erzeugt, keine Dateien) ----------\n  var AC = null;\n  function ac() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } return AC; }\n  function tone(f0, f1, dur, type, vol, delay) {\n    var c = ac(); if (!c) return;\n    try {\n      if (c.state === 'suspended') c.resume();\n      var t = c.currentTime + (delay || 0), o = c.createOscillator(), g = c.createGain();\n      o.type = type || 'square'; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);\n      g.gain.setValueAtTime(vol || 0.12, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);\n      o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur + 0.02);\n    } catch (e) {}\n  }\n  function noise(dur, vol) {\n    var c = ac(); if (!c) return;\n    try {\n      if (c.state === 'suspended') c.resume();\n      var n = Math.floor(c.sampleRate * dur), b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0);\n      for (var i = 0; i \u003c n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);\n      var s = c.createBufferSource(), g = c.createGain(); s.buffer = b; g.gain.value = vol || 0.2; s.connect(g); g.connect(c.destination); s.start();\n    } catch (e) {}\n  }\n  var SOUNDS = {\n    coin: function () { tone(880, 1320, 0.12, 'square', 0.1); tone(1320, 1760, 0.14, 'square', 0.1, 0.09); },\n    hit: function () { tone(220, 70, 0.2, 'sawtooth', 0.14); },\n    jump: function () { tone(280, 620, 0.16, 'square', 0.1); },\n    shoot: function () { tone(1000, 180, 0.12, 'sawtooth', 0.09); },\n    pop: function () { tone(500, 1000, 0.08, 'sine', 0.16); },\n    powerup: function () { tone(400, 800, 0.1, 'square', 0.1); tone(600, 1200, 0.1, 'square', 0.1, 0.1); tone(900, 1800, 0.16, 'square', 0.1, 0.2); },\n    explosion: function () { noise(0.35, 0.25); tone(120, 40, 0.3, 'sawtooth', 0.12); },\n    win: function () { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, f, 0.18, 'triangle', 0.14, i * 0.12); }); },\n    lose: function () { [392, 330, 262, 196].forEach(function (f, i) { tone(f, f * 0.96, 0.22, 'triangle', 0.14, i * 0.15); }); }\n  };\n\n  function createGame(o) {\n    o = o || {};\n    var G = {\n      score: 0, lives: o.lives | 0, time: 0, state: 'ready', width: W, height: H, vars: {}, gravity: o.gravity != null ? +o.gravity : 1400,\n      background: o.background || '#0d1240', background2: o.background2 || '', pattern: o.pattern || 'none', help: o.help || '',\n      title: o.title || window.MOKI_TITLE || 'Spiel', timeLimit: +o.time || 0, timeMode: o.timeMode === 'lose' ? 'lose' : 'win', showScore: o.showScore !== false\n    };\n    var scr = {}; (o.screens || []).forEach(function (x) { if (x && x.name) scr[x.name] = { menu: !!x.menu }; });\n    G.screens = (o.screens && o.screens.length) ? scr : null;\n    G.screen = G.screens ? o.screens[0].name : '';\n    var sprites = [], defs = {}, nextId = 1, touching = {}, timers = [], scoreCbs = [], whens = [], msg = null, endMsg = '';\n    var parts = [], shakeT = 0, flashC = '', flashT = 0, stars = [];\n    var h = { screen: {}, start: [], update: [], key: {}, hold: {}, up: {}, touch: [], edge: [], click: [], pointer: [], destroy: [] };\n    var down = {}, pointer = { x: W / 2, y: H / 2, down: false, seen: false };\n    for (var si = 0; si \u003c 70; si++) stars.push([Math.random() * W, Math.random() * H, Math.random() * 1.8 + 0.4, Math.random() * 0.6 + 0.3]);\n\n    var cv = document.createElement('canvas'), ctx = cv.getContext('2d');\n    document.body.appendChild(cv);\n    var css = document.createElement('style');\n    css.textContent = 'html,body{margin:0;height:100%;background:#000;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}' +\n      'canvas{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(100vw,160vh);height:min(62.5vw,100vh);display:block;outline:none}';\n    document.head.appendChild(css);\n    function fit() { var r = cv.getBoundingClientRect(), d = Math.min(window.devicePixelRatio || 1, 2); cv.width = Math.max(1, Math.round(r.width * d)); cv.height = Math.max(1, Math.round(r.height * d)); }\n    addEventListener('resize', fit); fit();\n    cv.tabIndex = 0;\n\n    function fmt(t) {   // {score} {lives} {time} {meineVariable}\n      return String(t).replace(/\\{([^{}]+)\\}/g, function (m, k) {\n        k = k.trim();\n        if (k === 'score') return G.score; if (k === 'lives') return G.lives; if (k === 'message') return endMsg;\n        if (k === 'time') return G.timeLimit > 0 ? Math.max(0, Math.ceil(G.timeLimit - G.time)) : Math.floor(G.time);\n        return Object.prototype.hasOwnProperty.call(G.vars, k) ? G.vars[k] : m;\n      });\n    }\n\n    // ---------- Figuren ----------\n    function Sprite(opt) {\n      this.id = nextId++;\n      this.name = String(opt.name || 'Figur');\n      this.shape = validShape(opt.shape) ? opt.shape : 'circle';\n      this.color = opt.color || '#00e5a8';\n      this.size = +opt.size || 40;\n      this.stretch = +opt.stretch || 1;\n      this.angle = +opt.angle || 0;\n      this.spin = +opt.spin || 0;\n      this.opacity = opt.opacity != null ? +opt.opacity : 1;\n      this.control = opt.control || 'none';\n      this.axis = opt.axis || 'xy';\n      this.motion = opt.motion || 'none';\n      this.speed = opt.speed != null ? +opt.speed : 200;\n      this.physics = opt.physics || 'none';        // none | platformer | topdown\n      this.solid = !!opt.solid;\n      this.hp = opt.hp != null ? +opt.hp : 1; this.maxHp = this.hp;\n      this.wrap = !!opt.wrap;\n      this.openBottom = !!opt.openBottom;\n      this.jumpPower = opt.jump != null ? +opt.jump : 640;\n      this.autoRespawn = opt.autoRespawn !== false;\n      this.killOutside = !!opt.killOutside;\n      this.label = opt.label || '';\n      this.z = +opt.z || 0;\n      this.screen = opt.screen || '';\n      this.visible = opt.visible !== false;\n      this.alive = true; this.out = false; this.onGround = false; this.vy = 0; this.hurtT = 0;\n      this.x = (opt.x != null ? +opt.x : 50) / 100 * W;\n      this.y = (opt.y != null ? +opt.y : 50) / 100 * H;\n      this.bx = 0; this.by = 0;\n      if (this.motion === 'bounce') { var a = rand(0.5, 1.1), sx = Math.random() \u003c .5 ? 1 : -1, sy = Math.random() \u003c .5 ? 1 : -1; this.bx = Math.cos(a) * sx; this.by = Math.sin(a) * sy; }\n      this._opt = opt;\n    }\n    Object.defineProperty(Sprite.prototype, 'w', { get: function () { return this.size * this.stretch; } });\n    Object.defineProperty(Sprite.prototype, 'h', { get: function () { return this.size; } });\n    Sprite.prototype.place = function (xp, yp) { this.x = xp / 100 * W; this.y = yp / 100 * H; this.out = false; this.vy = 0; return this; };\n    Sprite.prototype.scatter = function () { this.x = rand(this.w / 2, W - this.w / 2); this.y = rand(this.h / 2, H - this.h / 2); this.out = false; return this; };\n    Sprite.prototype.destroy = function () { if (!this.alive) return; this.alive = false; var s = this; h.destroy.forEach(function (d) { if (d.a === s.name) safe(d.f, s); }); };\n    Sprite.prototype.clone = function () {\n      var c = add(new Sprite(Object.assign({}, this._opt, { rows: 1, cols: 1 })));\n      c.x = this.x; c.y = this.y; c.color = this.color; c.size = this.size; c.speed = this.speed; c.angle = this.angle; c.bx = this.bx; c.by = this.by; return c;\n    };\n    Sprite.prototype.touches = function (o) { return hit(this, o); };\n    Sprite.prototype.respawn = function () {\n      var w = this.w, hh = this.h, m = this.motion;\n      if (m === 'fall') { this.x = rand(w / 2, W - w / 2); this.y = -hh / 2; }\n      else if (m === 'rise') { this.x = rand(w / 2, W - w / 2); this.y = H + hh / 2; }\n      else if (m === 'left') { this.x = W + w / 2; this.y = rand(hh / 2, H - hh / 2); }\n      else if (m === 'right') { this.x = -w / 2; this.y = rand(hh / 2, H - hh / 2); }\n      else return this.scatter();\n      this.out = false; return this;\n    };\n    Sprite.prototype.hurt = function (n) {\n      n = n == null ? 1 : +n; if (!this.alive) return this;\n      this.hp -= n; this.hurtT = 0.18;\n      if (this.hp \u003c= 0) { this.burst(this.color, 12); this.destroy(); }\n      return this;\n    };\n    Sprite.prototype.jump = function (p, air) { if (air || this.onGround || this.physics !== 'platformer') { this.vy = -(p != null ? +p : this.jumpPower); this.onGround = false; return true; } return false; };\n    Sprite.prototype.fly = function (dir, speed) { var d = toDir(this, dir); this.motion = 'drift'; this.bx = d[0]; this.by = d[1]; if (speed != null) this.speed = +speed; return this; };\n    Sprite.prototype.stop = function () { this.motion = 'none'; this.bx = 0; this.by = 0; this.vy = 0; return this; };\n    Sprite.prototype.nudge = function (dir, px) { var d = toDir(this, dir); this.x += d[0] * px; this.y += d[1] * px; return this; };\n    Sprite.prototype.shoot = function (name, dir, speed) {\n      var d = defs[name]; if (!d) return null;\n      var p = add(new Sprite(Object.assign({}, d, { rows: 1, cols: 1, motion: 'drift', control: 'none', physics: 'none', killOutside: true, autoRespawn: false })));\n      var v = toDir(this, dir); p.bx = v[0]; p.by = v[1]; p.speed = speed != null ? +speed : 520;\n      p.x = this.x + v[0] * (this.w / 2 + p.w / 2); p.y = this.y + v[1] * (this.h / 2 + p.h / 2); return p;\n    };\n    Sprite.prototype.bounceOff = function (o) {\n      var dx = this.x - o.x, dy = this.y - o.y, px = (this.w + o.w) / 2 - Math.abs(dx), py = (this.h + o.h) / 2 - Math.abs(dy);\n      if (px \u003c= 0 || py \u003c= 0) return this;\n      if (px \u003c py) { this.x += dx > 0 ? px : -px; this.bx = (dx > 0 ? 1 : -1) * Math.abs(this.bx || 0.5); }\n      else {\n        this.y += dy > 0 ? py : -py; var up = dy \u003c 0; var off = clamp(dx / (o.w / 2), -1, 1);\n        this.bx = off * 0.85; this.by = (up ? -1 : 1) * Math.sqrt(Math.max(0.1, 1 - this.bx * this.bx));\n      }\n      return this;\n    };\n    Sprite.prototype.burst = function (color, n) { burst(this.x, this.y, color || this.color, n); return this; };\n    function add(s) { if (sprites.length \u003c MAXS) sprites.push(s); else s.alive = false; return s; }\n    function toDir(s, d) {\n      if (Array.isArray(d)) { var l = Math.sqrt(d[0] * d[0] + d[1] * d[1]) || 1; return [d[0] / l, d[1] / l]; }\n      if (typeof d === 'number') { var r = d * Math.PI / 180; return [Math.cos(r), Math.sin(r)]; }\n      if (d && typeof d === 'object' && d.x != null) { var ax = d.x - s.x, ay = d.y - s.y, l2 = Math.sqrt(ax * ax + ay * ay) || 1; return [ax / l2, ay / l2]; }\n      switch (String(d)) {\n        case 'up': return [0, -1]; case 'down': return [0, 1]; case 'left': return [-1, 0]; case 'right': return [1, 0];\n        case 'pointer': var px = pointer.x - s.x, py = pointer.y - s.y, l3 = Math.sqrt(px * px + py * py) || 1; return [px / l3, py / l3];\n      }\n      return [0, -1];\n    }\n    G.sprite = function (opt) {\n      opt = opt || {};\n      var cols = Math.max(1, Math.min(40, opt.cols | 0 || 1)), rows = Math.max(1, Math.min(40, opt.rows | 0 || 1));\n      var first = null;\n      for (var j = 0; j \u003c rows; j++) for (var i = 0; i \u003c cols; i++) {\n        var s = add(new Sprite(opt));\n        s.x += i * (s.w + (+opt.gapX || 8)); s.y += j * (s.h + (+opt.gapY || 8));\n        if (!first) first = s;\n      }\n      if (!defs[first.name]) defs[first.name] = Object.assign({}, opt, { rows: 1, cols: 1 });\n      return first;\n    };\n    G.spawn = function (name) { var d = defs[name]; if (!d) return null; var s = add(new Sprite(d)); s.respawn(); return s; };\n    G.find = function (name) { for (var i = 0; i \u003c sprites.length; i++) if (sprites[i].alive && sprites[i].name === name) return sprites[i]; return null; };\n    G.all = function (name) { return sprites.filter(function (s) { return s.alive && (!name || s.name === name); }); };\n    G.count = function (name) { var n = 0; for (var i = 0; i \u003c sprites.length; i++) if (sprites[i].alive && (!name || sprites[i].name === name)) n++; return n; };\n    function nm(x) { return typeof x === 'string' ? x : (x && x.name); }\n    function act(s) { return !G.screens || !s.screen || s.screen === G.screen; }\n    function frozen() { return !!(G.screens && G.screens[G.screen] && G.screens[G.screen].menu); }\n    G.go = function (name) {\n      if (!G.screens || !G.screens[name]) return;\n      G.screen = name; touching = {}; pointer.down = false;\n      (h.screen[name] || []).forEach(function (f) { safe(f); });\n    };\n    G.onScreen = function (name, f) { (h.screen[name] = h.screen[name] || []).push(f); };\n\n    function bw(s) { return s.w * (s.shape === 'square' || s.shape === 'button' || IMGS[s.shape] ? 0.45 : 0.4); }\n    function bh(s) { return s.h * (s.shape === 'square' || s.shape === 'button' || IMGS[s.shape] ? 0.45 : 0.4); }\n    function hit(a, b) { return Math.abs(a.x - b.x) \u003c bw(a) + bw(b) && Math.abs(a.y - b.y) \u003c bh(a) + bh(b); }\n    function overlap(a, b) { return Math.abs(a.x - b.x) \u003c (a.w + b.w) / 2 && Math.abs(a.y - b.y) \u003c (a.h + b.h) / 2; }\n\n    // ---------- Ereignisse ----------\n    G.onStart = function (f) { h.start.push(f); };\n    G.onUpdate = function (f) { h.update.push(f); };\n    G.onKey = function (k, f) { k = String(k).toUpperCase(); (h.key[k] = h.key[k] || []).push(f); };\n    G.onKeyHold = function (k, f) { k = String(k).toUpperCase(); (h.hold[k] = h.hold[k] || []).push(f); };\n    G.onKeyUp = function (k, f) { k = String(k).toUpperCase(); (h.up[k] = h.up[k] || []).push(f); };\n    G.onTouch = function (a, b, f) { h.touch.push({ a: nm(a), b: nm(b), f: f }); };\n    G.onEdge = function (a, f) { h.edge.push({ a: nm(a), f: f }); };\n    G.onClick = function (a, f) { h.click.push({ a: nm(a), f: f }); };\n    G.onPointer = function (f) { h.pointer.push(f); };\n    G.onDestroy = function (a, f) { h.destroy.push({ a: nm(a), f: f }); };\n    G.every = function (sec, f) { timers.push({ t: 0, every: Math.max(0.05, +sec || 1), f: f }); };\n    G.after = function (sec, f) { timers.push({ t: 0, every: Math.max(0.01, +sec || 1), f: f, once: true }); };\n    G.onScore = function (n, f) { scoreCbs.push({ n: +n, f: f, done: false }); };\n    G.when = function (cond, f) { whens.push({ c: cond, f: f, was: false }); };\n\n    // ---------- Aktionen ----------\n    G.set = function (k, v) { G.vars[k] = v; }; G.get = function (k) { return Object.prototype.hasOwnProperty.call(G.vars, k) ? G.vars[k] : 0; };\n    G.change = function (k, d) { G.vars[k] = (+G.get(k) || 0) + (+d || 0); };\n    G.addScore = function (n) { G.score += (+n || 0); };\n    G.addLife = function (n) { G.lives = Math.max(0, G.lives + (+n || 0)); if (G.lives === 0 && n \u003c 0 && G.state === 'play' && o.lives > 0) G.lose('Keine Leben mehr'); };\n    G.say = function (t, sec) { msg = { t: String(t), left: sec == null ? 2 : +sec }; };\n    G.win = function (m) { if (G.state !== 'play') return; endMsg = m || 'Gewonnen!'; SOUNDS.win(); if (G.screens && G.screens['Gewonnen']) { G.go('Gewonnen'); return; } G.state = 'won'; };\n    G.lose = function (m) { if (G.state !== 'play') return; endMsg = m || 'Verloren'; SOUNDS.lose(); if (G.screens && G.screens['Verloren']) { G.go('Verloren'); return; } G.state = 'lost'; };\n    G.sound = function (n) { var f = SOUNDS[n]; if (f) f(); };\n    G.shake = function (ms) { shakeT = Math.max(shakeT, (+ms || 300) / 1000); };\n    G.flash = function (c) { flashC = c || '#ffffff'; flashT = 0.35; };\n    function burst(x, y, c, n) { n = Math.min(n || 14, 60); for (var i = 0; i \u003c n && parts.length \u003c MAXP; i++) { var a = Math.random() * 6.283, sp = rand(60, 320); parts.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: rand(0.35, 0.8), max: 0.8, c: c || '#fff', s: rand(3, 7) }); } }\n    G.burst = function (xp, yp, c, n) { burst(xp / 100 * W, yp / 100 * H, c, n); };\n    G.random = rand;\n    G.restart = function () { restart(); };\n    G.start = function () { loopStart(); if (G.screens && G.state === 'ready') startPlay(); };\n\n    function startPlay() {\n      if (G.state !== 'ready') return;\n      ac(); G.state = 'play'; cv.focus();\n      h.start.forEach(function (f) { safe(f); });\n      if (G.screens) (h.screen[G.screen] || []).forEach(function (f) { safe(f); });\n    }\n    function restart() { if (window.parent !== window) send({ type: 'restart' }); else location.reload(); }\n    function safe(f, a, b) { try { f(a, b); } catch (e) { console.error(e && e.message ? e.message : String(e)); } }\n\n    // ---------- Eingabe ----------\n    function setPointer(e) { var r = cv.getBoundingClientRect(); pointer.x = (e.clientX - r.left) / r.width * W; pointer.y = (e.clientY - r.top) / r.height * H; pointer.seen = true; }\n    cv.addEventListener('pointermove', setPointer);\n    cv.addEventListener('pointerdown', function (e) {\n      setPointer(e); pointer.down = true; ac();\n      try { cv.setPointerCapture(e.pointerId); } catch (x) {}\n      if (G.state === 'ready') { startPlay(); return; }\n      if (G.state === 'won' || G.state === 'lost') { restart(); return; }\n      sprites.forEach(function (s) { if (s.alive && act(s) && s.physics === 'platformer' && s.control !== 'none' && pointer.y \u003c s.y - s.h * 0.6) s.jump(); });\n      for (var i = sprites.length - 1; i >= 0; i--) {\n        var s = sprites[i]; if (!s.alive || !act(s)) continue;\n        if (Math.abs(pointer.x - s.x) \u003c s.w / 2 + 6 && Math.abs(pointer.y - s.y) \u003c s.h / 2 + 6) { h.click.forEach(function (c) { if (c.a === s.name) safe(c.f, s); }); break; }\n      }\n      h.pointer.forEach(function (f) { safe(f, pointer.x, pointer.y); });\n    });\n    cv.addEventListener('pointerup', function () { pointer.down = false; });\n    cv.addEventListener('pointercancel', function () { pointer.down = false; });\n    addEventListener('keydown', function (e) {\n      var k = keyName(e);\n      if (['SPACE', 'LEFT', 'RIGHT', 'UP', 'DOWN'].indexOf(k) > -1) e.preventDefault();\n      if (G.state === 'ready' && !e.repeat) { startPlay(); return; }\n      if ((G.state === 'won' || G.state === 'lost') && (k === 'SPACE' || k === 'ENTER') && !e.repeat) { restart(); return; }\n      if (!down[k] && G.state === 'play') {\n        if (h.key[k]) h.key[k].forEach(function (f) { safe(f); });\n        if (k === 'SPACE' || k === 'UP' || k === 'W') sprites.forEach(function (s) { if (s.alive && act(s) && s.physics === 'platformer' && s.control === 'keys') s.jump(); });\n      }\n      down[k] = true;\n    });\n    addEventListener('keyup', function (e) { var k = keyName(e); down[k] = false; if (G.state === 'play' && h.up[k]) h.up[k].forEach(function (f) { safe(f); }); });\n    addEventListener('blur', function () { down = {}; pointer.down = false; });\n    function pressed(a, b) { return down[a] || down[b]; }\n\n    // ---------- Update ----------\n    function moveSolid(s, dx, dy) {\n      var solids = sprites.filter(function (o) { return o.alive && o.solid && o !== s; }), i, o;\n      s.x += dx;\n      for (i = 0; i \u003c solids.length; i++) { o = solids[i]; if (overlap(s, o)) { if (dx > 0) s.x = o.x - (o.w + s.w) / 2; else if (dx \u003c 0) s.x = o.x + (o.w + s.w) / 2; } }\n      s.y += dy; s.onGround = false;\n      for (i = 0; i \u003c solids.length; i++) {\n        o = solids[i];\n        if (overlap(s, o)) {\n          if (dy > 0) { s.y = o.y - (o.h + s.h) / 2; s.vy = 0; s.onGround = true; }\n          else if (dy \u003c 0) { s.y = o.y + (o.h + s.h) / 2; if (s.vy \u003c 0) s.vy = 0; }\n        }\n      }\n    }\n    function fxStep(dt) {\n      for (var i = parts.length - 1; i >= 0; i--) { var p = parts[i]; p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 500 * dt; if (p.life \u003c= 0) parts.splice(i, 1); }\n      if (shakeT > 0) shakeT -= dt; if (flashT > 0) flashT -= dt;\n    }\n    function update(dt) {\n      if (frozen()) { fxStep(dt); return; }\n      G.time += dt;\n      if (msg) { msg.left -= dt; if (msg.left \u003c= 0) msg = null; }\n      var i, s, k;\n      for (k in h.hold) if (down[k]) h.hold[k].forEach(function (f) { safe(f, dt); });\n      for (i = 0; i \u003c sprites.length; i++) {\n        s = sprites[i]; if (!s.alive || !act(s)) continue;\n        var w2 = s.w / 2, h2 = s.h / 2, cvx = 0, cvy = 0, ph = s.physics;\n        if (s.hurtT > 0) s.hurtT -= dt;\n        if (s.spin) s.angle += s.spin * dt;\n        if (s.control === 'keys') {\n          var dx = 0, dy = 0;\n          if (s.axis !== 'y') dx = (pressed('RIGHT', 'D') ? 1 : 0) - (pressed('LEFT', 'A') ? 1 : 0);\n          if (s.axis !== 'x' && ph !== 'platformer') dy = (pressed('DOWN', 'S') ? 1 : 0) - (pressed('UP', 'W') ? 1 : 0);\n          if (pointer.down) {\n            if (s.axis !== 'y' && Math.abs(pointer.x - s.x) > 6) dx = pointer.x > s.x ? 1 : -1;\n            if (s.axis !== 'x' && ph !== 'platformer' && Math.abs(pointer.y - s.y) > 6) dy = pointer.y > s.y ? 1 : -1;\n          }\n          var l = Math.sqrt(dx * dx + dy * dy) || 1; cvx = dx / l * s.speed; cvy = dy / l * s.speed;\n        } else if (s.control === 'mouse' && pointer.seen) {\n          if (s.axis !== 'y') s.x = pointer.x;\n          if (s.axis !== 'x') s.y = pointer.y;\n        }\n        var m = s.motion, mvx = 0, mvy = 0;\n        if (m === 'fall') mvy = s.speed; else if (m === 'rise') mvy = -s.speed;\n        else if (m === 'left') mvx = -s.speed; else if (m === 'right') mvx = s.speed;\n        else if (m === 'bounce' || m === 'drift') { mvx = s.bx * s.speed; mvy = s.by * s.speed; }\n        else if (m === 'follow') {\n          var t = null; for (var j = 0; j \u003c sprites.length; j++) if (sprites[j] !== s && sprites[j].alive && sprites[j].control !== 'none') { t = sprites[j]; break; }\n          if (t) { var ax = t.x - s.x, ay = t.y - s.y, d = Math.sqrt(ax * ax + ay * ay) || 1; mvx = ax / d * s.speed; mvy = ay / d * s.speed; }\n        }\n        var vx = cvx + mvx, vy = cvy + mvy;\n        if (ph === 'platformer') { s.vy += G.gravity * dt; vy = s.vy + mvy; }\n        if (ph !== 'none') moveSolid(s, vx * dt, vy * dt); else { s.x += vx * dt; s.y += vy * dt; }\n        // Rand-Verhalten\n        if (s.control !== 'none') { s.x = clamp(s.x, w2, W - w2); if (ph !== 'platformer') s.y = clamp(s.y, h2, H - h2); }\n        if (m === 'bounce') {\n          if (s.x \u003c w2) { s.x = w2; s.bx = Math.abs(s.bx); } else if (s.x > W - w2) { s.x = W - w2; s.bx = -Math.abs(s.bx); }\n          if (s.y \u003c h2) { s.y = h2; s.by = Math.abs(s.by); } else if (s.y > H - h2 && !s.openBottom) { s.y = H - h2; s.by = -Math.abs(s.by); }\n        }\n        if (s.wrap) { if (s.x \u003c -w2) s.x = W + w2; else if (s.x > W + w2) s.x = -w2; if (s.y \u003c -h2) s.y = H + h2; else if (s.y > H + h2) s.y = -h2; }\n        var outNow = !s.wrap && (s.x \u003c -w2 || s.x > W + w2 || s.y \u003c -h2 || s.y > H + h2);\n        if (outNow && !s.out) {\n          s.out = true; var sp = s;\n          h.edge.forEach(function (e) { if (e.a === sp.name) safe(e.f, sp); });\n          if (s.alive && s.killOutside) s.alive = false;\n          else if (s.alive && s.autoRespawn && (m === 'fall' || m === 'rise' || m === 'left' || m === 'right')) s.respawn();\n        } else if (!outNow) s.out = false;\n      }\n      h.touch.forEach(function (tc) {\n        var A = G.all(tc.a).filter(act), B = G.all(tc.b).filter(act);\n        A.forEach(function (a) { B.forEach(function (b) {\n          if (a === b || !a.alive || !b.alive) return;\n          var key = tc.a + '|' + tc.b + '|' + a.id + '|' + b.id, inx = hit(a, b);\n          if (inx && !touching[key]) { touching[key] = 1; safe(tc.f, a, b); } else if (!inx) delete touching[key];\n        }); });\n      });\n      timers.forEach(function (t) { t.t += dt; while (t.t >= t.every && !t.dead) { t.t -= t.every; safe(t.f); if (t.once) t.dead = true; } });\n      timers = timers.filter(function (t) { return !t.dead; });\n      scoreCbs.forEach(function (c) { if (!c.done && G.score >= c.n) { c.done = true; safe(c.f); } });\n      whens.forEach(function (w) { var v = false; try { v = !!w.c(); } catch (e) {} if (v && !w.was) safe(w.f); w.was = v; });\n      h.update.forEach(function (f) { safe(f, dt); });\n      fxStep(dt);\n      sprites = sprites.filter(function (s) { return s.alive; });\n      if (G.timeLimit > 0 && G.time >= G.timeLimit && G.state === 'play') { G.time = G.timeLimit; G.timeMode === 'win' ? G.win('Geschafft!') : G.lose('Zeit abgelaufen'); }\n    }\n\n    // ---------- Zeichnen ----------\n    function text(t, x, y, size, color, align, weight) {\n      ctx.font = (weight || 800) + ' ' + size + 'px \"Segoe UI\",system-ui,sans-serif';\n      ctx.textAlign = align || 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = color || '#fff'; ctx.fillText(t, x, y);\n    }\n    function overlay(a) { ctx.fillStyle = 'rgba(8,10,35,' + a + ')'; ctx.fillRect(0, 0, W, H); }\n    function drawBg() {\n      if (G.background2) { var g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, G.background); g.addColorStop(1, G.background2); ctx.fillStyle = g; } else ctx.fillStyle = G.background;\n      ctx.fillRect(0, 0, W, H);\n      if (G.pattern === 'stars') { ctx.fillStyle = '#fff'; for (var i = 0; i \u003c stars.length; i++) { ctx.globalAlpha = stars[i][3]; ctx.beginPath(); ctx.arc(stars[i][0], stars[i][1], stars[i][2], 0, 7); ctx.fill(); } ctx.globalAlpha = 1; }\n      else if (G.pattern === 'grid') { ctx.strokeStyle = 'rgba(255,255,255,.07)'; ctx.lineWidth = 1; ctx.beginPath(); for (var x = 0; x \u003c= W; x += 50) { ctx.moveTo(x, 0); ctx.lineTo(x, H); } for (var y = 0; y \u003c= H; y += 50) { ctx.moveTo(0, y); ctx.lineTo(W, y); } ctx.stroke(); }\n      else if (G.pattern === 'dots') { ctx.fillStyle = 'rgba(255,255,255,.09)'; for (var a = 25; a \u003c W; a += 50) for (var b = 25; b \u003c H; b += 50) { ctx.beginPath(); ctx.arc(a, b, 3, 0, 7); ctx.fill(); } }\n    }\n    function drawSprite(s) {\n      var w = s.w, hh = s.h;\n      ctx.globalAlpha = clamp(s.opacity, 0, 1) * (s.hurtT > 0 ? 0.55 : 1);\n      if (s.shape === 'button') {\n        var hov = pointer.seen && Math.abs(pointer.x - s.x) \u003c w / 2 && Math.abs(pointer.y - s.y) \u003c hh / 2;\n        ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.angle * Math.PI / 180); var sc = hov ? (pointer.down ? 0.96 : 1.05) : 1; ctx.scale(sc, sc);\n        var bp = rr(w, hh, Math.min(w, hh) * 0.32); ctx.fillStyle = s.color; ctx.fill(bp);\n        if (hov) { ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fill(bp); }\n        ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.stroke(bp);\n        text(fmt(s.label), 0, 0, Math.max(14, Math.min(hh * 0.42, w * 0.3)), '#0a0d2b'); ctx.restore(); ctx.globalAlpha = 1; return;\n      }\n      if (s.shape === 'text') { ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.angle * Math.PI / 180); text(fmt(s.label), 0, 0, Math.max(10, s.size), s.color); ctx.restore(); ctx.globalAlpha = 1; return; }\n      ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.angle * Math.PI / 180);\n      if (IMGS[s.shape]) { var im = IMGS[s.shape]; if (im.complete && im.naturalWidth) ctx.drawImage(im, -w / 2, -hh / 2, w, hh); }\n      else {\n        var p;\n        if (s.shape === 'square') p = rr(w, hh, Math.min(w, hh) * 0.18);\n        else { p = new Path2D(); p.addPath(PATHS[s.shape], new DOMMatrix().translate(-w / 2, -hh / 2).scale(w / 100, hh / 100)); }\n        ctx.fillStyle = s.color; ctx.fill(p, s.shape === 'ring' ? 'evenodd' : 'nonzero');\n        ctx.lineWidth = Math.max(2, Math.min(w, hh) * 0.06); ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.stroke(p);\n      }\n      if (s.label) text(fmt(s.label), 0, 0, Math.max(12, Math.min(w, hh) * 0.4), '#0a0d2b');\n      ctx.restore(); ctx.globalAlpha = 1;\n    }\n    function draw() {\n      var k = cv.width / W;\n      ctx.setTransform(k, 0, 0, k, 0, 0);\n      ctx.save();\n      if (shakeT > 0) ctx.translate(rand(-6, 6), rand(-6, 6));\n      drawBg();\n      var list = sprites; if (list.some(function (s) { return s.z; })) list = sprites.slice().sort(function (a, b) { return a.z - b.z; });\n      for (var i = 0; i \u003c list.length; i++) { var s = list[i]; if (s.alive && s.visible && act(s)) drawSprite(s); }\n      for (i = 0; i \u003c parts.length; i++) { var p = parts[i]; ctx.globalAlpha = clamp(p.life / p.max, 0, 1); ctx.fillStyle = p.c; ctx.fillRect(p.x - p.s / 2, p.y - p.s / 2, p.s, p.s); }\n      ctx.globalAlpha = 1;\n      ctx.restore();\n      if (flashT > 0) { ctx.globalAlpha = clamp(flashT / 0.35, 0, 1) * 0.6; ctx.fillStyle = flashC; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1; }\n      if (G.state !== 'ready' && !frozen()) {\n        if (G.showScore) text('Punkte  ' + G.score, 20, 28, 24, '#fff', 'left');\n        if (o.lives > 0) { for (var l = 0; l \u003c G.lives; l++) { ctx.save(); ctx.translate(W - 30 - l * 34, 28); ctx.fillStyle = '#ff4d6d'; var hp = new Path2D(); hp.addPath(PATHS.heart, new DOMMatrix().translate(-12, -12).scale(0.24, 0.24)); ctx.fill(hp); ctx.restore(); } }\n        if (G.timeLimit > 0) text(String(Math.max(0, Math.ceil(G.timeLimit - G.time))), W / 2, 28, 28, '#ffd23f');\n      }\n      if (msg && G.state === 'play' && !frozen()) text(msg.t, W / 2, 80, 30, '#ffd23f');\n      if (G.state === 'ready') {\n        overlay(0.72); text(G.title, W / 2, H / 2 - (G.help ? 50 : 26), 46, '#fff');\n        if (G.help) text(G.help, W / 2, H / 2 + 4, 20, '#e3e7ff', 'center', 600);\n        text('Tippen oder Taste dr\u00fccken zum Starten', W / 2, H / 2 + (G.help ? 60 : 34), 20, '#a3abe0', 'center', 600);\n      } else if (G.state === 'won' || G.state === 'lost') {\n        overlay(0.7); text(endMsg, W / 2, H / 2 - 40, 52, G.state === 'won' ? '#00e5a8' : '#ff6b81');\n        text('Punkte  ' + G.score, W / 2, H / 2 + 14, 26, '#fff');\n        text('Tippen f\u00fcr noch einmal', W / 2, H / 2 + 62, 19, '#a3abe0', 'center', 600);\n      }\n    }\n\n    var last = 0, running = false;\n    function frame(t) {\n      var dt = Math.min(0.05, (t - last) / 1000 || 0); last = t;\n      if (G.state === 'play' && !document.hidden) { try { update(dt); } catch (e) { console.error(e.message); } }\n      draw();\n      var over = false; if (pointer.seen && G.state === 'play') for (var q = 0; q \u003c sprites.length; q++) { var t = sprites[q]; if (t.alive && act(t) && t.shape === 'button' && Math.abs(pointer.x - t.x) \u003c t.w / 2 && Math.abs(pointer.y - t.y) \u003c t.h / 2) { over = true; break; } }\n      cv.style.cursor = over ? 'pointer' : '';\n      requestAnimationFrame(frame);\n    }\n    function loopStart() { if (running) return; running = true; requestAnimationFrame(function (t) { last = t; frame(t); }); }\n    send({ type: 'ready' });\n    return G;\n  }\n\n  window.Moki = { version: 2, game: createGame };\n})();\n";
 </script>
 <script>
-// Icon-Baukasten: Motiv + Farbverlauf -> 400x400 Bild (wie die Kacheln bei Moki)
-const ICON_PALS = [
-  ['#00e5a8', '#2b6fd6'], ['#ff7a18', '#af002d'], ['#7b2ff7', '#f107a3'], ['#2b9cf0', '#1b2a8f'], ['#ffe600', '#ff9f1c'],
-  ['#3ba7f5', '#69cbec'], ['#2e9c2e', '#d9ec2a'], ['#ff4d8d', '#ffb347'], ['#1b1f4a', '#4b2ea8'], ['#f5f7ff', '#a9d6ff']
-];
-function starPts(cx, cy, ro, ri) {
+// Gemeinsame Formen und Motive (Engine + Studio)
+function starArr(cx, cy, ro, ri) {
   const p = [];
   for (let i = 0; i < 10; i++) { const r = i % 2 ? ri : ro, a = -Math.PI / 2 + i * Math.PI / 5; p.push((cx + Math.cos(a) * r).toFixed(1) + ',' + (cy + Math.sin(a) * r).toFixed(1)); }
-  return p.join(' ');
+  return p;
 }
-const ICON_MOTIFS = [
+const starPts = (cx, cy, ro, ri) => starArr(cx, cy, ro, ri).join(' ');
+
+// Formen als SVG-Pfade in einer 100 x 100 Box (Engine nutzt Path2D, Studio nutzt <path>)
+const MOKI_SHAPES = {
+  circle: 'M50 0A50 50 0 1 1 50 100A50 50 0 1 1 50 0Z',
+  triangle: 'M50 2L98 98H2Z',
+  diamond: 'M50 0L100 50L50 100L0 50Z',
+  star: 'M' + starArr(50, 54, 50, 21).join('L') + 'Z',
+  heart: 'M50 98C8 66 2 30 22 14C36 4 50 14 50 28C50 14 64 4 78 14C98 30 92 66 50 98Z',
+  hexagon: 'M26 4H74L100 50L74 96H26L0 50Z',
+  ring: 'M50 0A50 50 0 1 1 50 100A50 50 0 1 1 50 0ZM50 24A26 26 0 1 0 50 76A26 26 0 1 0 50 24Z',
+  cross: 'M34 0H66V34H100V66H66V100H34V66H0V34H34Z',
+  arrow: 'M0 34H56V6L100 50L56 94V66H0Z'
+};
+const MOKI_SHAPE_NAMES = [['circle', 'Kreis'], ['square', 'Quadrat / Balken'], ['triangle', 'Dreieck'], ['diamond', 'Raute'], ['star', 'Stern'], ['heart', 'Herz'], ['hexagon', 'Sechseck'], ['ring', 'Ring'], ['cross', 'Kreuz'], ['arrow', 'Pfeil'], ['text', 'Nur Text'], ['button', 'Knopf (Menü)']];
+
+const MOKI_MOTIFS = [
   { id: 'rocket', name: 'Rakete', svg: '<path d="M50 8C66 22 71 44 67 66H33C29 44 34 22 50 8Z" fill="#fff"/><circle cx="50" cy="38" r="8.5" fill="#4cc9f0"/><path d="M33 50 17 68v14l19-12Z" fill="#ff4d6d"/><path d="M67 50 83 68v14L64 70Z" fill="#ff4d6d"/><path d="M41 69c1 19 9 25 9 25s8-6 9-25Z" fill="#ffd23f"/>' },
   { id: 'star', name: 'Stern', svg: '<polygon points="' + starPts(50, 53, 42, 18) + '" fill="#ffd23f"/><circle cx="41" cy="50" r="3.2" fill="#0d1240" stroke="none"/><circle cx="59" cy="50" r="3.2" fill="#0d1240" stroke="none"/><path d="M43 60q7 6 14 0" fill="none"/>' },
   { id: 'heart', name: 'Herz', svg: '<path d="M50 86C14 60 12 30 30 22c12-5 20 4 20 10 0-6 8-15 20-10 18 8 16 38-20 64Z" fill="#ff4d6d"/><path d="M28 36c2-5 7-7 11-5" fill="none" stroke="#fff" stroke-opacity=".7"/>' },
@@ -280,6 +307,13 @@ const ICON_MOTIFS = [
   { id: 'gem', name: 'Edelstein', svg: '<polygon points="50,90 10,40 28,14 72,14 90,40" fill="#4cc9f0"/><path d="M10 40h80M28 14l22 26 22-26M50 40v50" fill="none" stroke-width="2.5"/>' },
   { id: 'pad', name: 'Controller', svg: '<rect x="6" y="28" width="88" height="46" rx="23" fill="#7b2ff7"/><path d="M31 42v18M22 51h18" stroke="#fff" stroke-width="7"/><circle cx="68" cy="45" r="6" fill="#ffd23f"/><circle cx="79" cy="57" r="6" fill="#ff4d8d"/>' },
   { id: 'blob', name: 'Moki', svg: '<path d="M16 58C16 30 32 14 50 14s34 16 34 44c0 22-14 32-34 32S16 80 16 58Z" fill="#7ff5d4"/><path d="M18 52C14 30 32 8 50 8s36 22 32 44" fill="none" stroke="#ffd23f" stroke-width="5"/><rect x="8" y="46" width="12" height="24" rx="6" fill="#ffd23f"/><rect x="80" y="46" width="12" height="24" rx="6" fill="#ffd23f"/><ellipse cx="38" cy="58" rx="4.5" ry="6" fill="#0d1240" stroke="none"/><ellipse cx="62" cy="58" rx="4.5" ry="6" fill="#0d1240" stroke="none"/><path d="M42 72q8 8 16 0" fill="none"/>' }
+];
+
+const ICON_MOTIFS = MOKI_MOTIFS;
+// Icon-Baukasten: Motiv + Farbverlauf -> 400x400 Bild (wie die Kacheln bei Moki)
+const ICON_PALS = [
+  ['#00e5a8', '#2b6fd6'], ['#ff7a18', '#af002d'], ['#7b2ff7', '#f107a3'], ['#2b9cf0', '#1b2a8f'], ['#ffe600', '#ff9f1c'],
+  ['#3ba7f5', '#69cbec'], ['#2e9c2e', '#d9ec2a'], ['#ff4d8d', '#ffb347'], ['#1b1f4a', '#4b2ea8'], ['#f5f7ff', '#a9d6ff']
 ];
 function iconSvg(motifId, palIdx) {
   const m = ICON_MOTIFS.find(x => x.id === motifId) || ICON_MOTIFS[0];
@@ -330,12 +364,12 @@ const ICONS = {
   game: '<path d="M6 12h4M8 10v4"/><path d="M15 13h.01M18 11h.01"/><rect width="20" height="12" x="2" y="6" rx="2"/>', blocks: '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
   code: '<path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/>', cloud: '<path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/><path d="M12 12v9M8 16l4-4 4 4"/>',
   down: '<path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/><path d="M12 21v-9M8 17l4 4 4-4"/>', target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
-  bolt: '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>', sparkles: '<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/>', ext: '<path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>', copy: '<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>', mouse: '<rect x="5" y="2" width="14" height="20" rx="7"/><path d="M12 6v4"/>', pen: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>'
+  bolt: '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>', up: '<path d="m18 15-6-6-6 6"/>', down2: '<path d="m6 9 6 6 6-6"/>', sparkles: '<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/>', ext: '<path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>', copy: '<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>', mouse: '<rect x="5" y="2" width="14" height="20" rx="7"/><path d="M12 6v4"/>', pen: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>'
 };
 const ic = (n, c) => `<svg class="i${c ? ' ' + c : ''}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
 
 // ---------------- Zustand ----------------
-const App = { name: LS.get('moki-studio-name', ''), token: '', mine: null, g: null, view: 'dash', tab: 'builder', cons: [], loadErr: '' };
+const App = { scr: '', sel: null, name: LS.get('moki-studio-name', ''), token: '', mine: null, g: null, view: 'dash', tab: 'builder', cons: [], loadErr: '' };
 function getToken() {
   let t = LS.get('moki-studio-key', '');
   if (typeof t !== 'string' || t.length < 16) {
@@ -395,64 +429,184 @@ function copyText(t) {
 function fallbackCopy(t, done) { const a = document.createElement('textarea'); a.value = t; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); done(); } catch (e) { toast('Kopieren nicht möglich', 'bad'); } a.remove(); }
 const gameUrl = slug => CFG.mokiUrl.replace(/\/?$/, '/') + '#/spiel/' + slug;
 
+
 // ====================================================================
-// Baukasten-Modell und Code-Erzeugung
+// Baukasten-Modell (v2), Vorlagen und Code-Erzeugung
 // ====================================================================
 let _uid = 0; const uid = p => p + Date.now().toString(36).slice(-4) + (++_uid).toString(36);
-const SHAPES = [['circle', 'Kreis'], ['square', 'Quadrat'], ['triangle', 'Dreieck'], ['diamond', 'Raute'], ['star', 'Stern'], ['heart', 'Herz']];
+const SHAPE_OPTS = MOKI_SHAPE_NAMES;
+const IMAGE_OPTS = MOKI_MOTIFS.filter(m => m.id !== 'star' && m.id !== 'heart').map(m => [m.id, m.name]);
 const CONTROLS = [['none', 'Keine'], ['keys', 'Tasten und Finger'], ['mouse', 'Maus und Finger']];
 const AXES = [['xy', 'Alle Richtungen'], ['x', 'Nur links/rechts'], ['y', 'Nur hoch/runter']];
-const MOTIONS = [['none', 'Bleibt stehen'], ['fall', 'Fällt nach unten'], ['rise', 'Steigt nach oben'], ['left', 'Fliegt nach links'], ['right', 'Fliegt nach rechts'], ['bounce', 'Springt umher'], ['follow', 'Verfolgt den Spieler']];
+const MOTIONS = [['none', 'Bleibt stehen'], ['fall', 'Fällt nach unten'], ['rise', 'Steigt nach oben'], ['left', 'Fliegt nach links'], ['right', 'Fliegt nach rechts'], ['bounce', 'Springt umher (prallt ab)'], ['follow', 'Verfolgt den Spieler']];
+const PHYSICS = [['none', 'Keine'], ['platformer', 'Schwerkraft (Hüpfen)'], ['topdown', 'Von oben (stößt an Wände)']];
+const PATTERNS = [['none', 'Kein Muster'], ['stars', 'Sterne'], ['grid', 'Gitter'], ['dots', 'Punkte']];
 const KEYS = [['SPACE', 'Leertaste'], ['LEFT', 'Pfeil links'], ['RIGHT', 'Pfeil rechts'], ['UP', 'Pfeil hoch'], ['DOWN', 'Pfeil runter'], ['ENTER', 'Enter']].concat('ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(c => [c, 'Taste ' + c]));
-const EVENTS = [['start', 'Das Spiel startet'], ['touch', 'Zwei Figuren berühren sich'], ['key', 'Eine Taste wird gedrückt'], ['edge', 'Eine Figur verlässt den Bildschirm'], ['click', 'Eine Figur wird angetippt'], ['every', 'Alle paar Sekunden'], ['score', 'Die Punkte erreichen eine Zahl']];
-const ACTIONS = [['score', 'Punkte ändern'], ['life', 'Leben ändern'], ['respawn', 'Figur neu oben starten'], ['place', 'Figur an einen Ort setzen'], ['destroy', 'Figur entfernen'], ['spawn', 'Neue Figur erzeugen'], ['speed', 'Figur schneller oder langsamer'], ['say', 'Nachricht zeigen'], ['win', 'Spiel gewonnen'], ['lose', 'Spiel verloren']];
+const DIRS = [['up', 'nach oben'], ['down', 'nach unten'], ['left', 'nach links'], ['right', 'nach rechts'], ['pointer', 'zur Maus / zum Finger']];
+const SCREEN_OPS = [['==', 'ist'], ['!=', 'ist nicht']];
+const SOUND_OPTS = [['coin', 'Münze'], ['hit', 'Treffer'], ['jump', 'Sprung'], ['shoot', 'Schuss'], ['pop', 'Plopp'], ['powerup', 'Power-up'], ['explosion', 'Explosion'], ['win', 'Sieg'], ['lose', 'Niederlage']];
+const EFFECT_OPTS = [['sparks', 'Funken an einer Figur'], ['boom', 'Explosion an einer Figur'], ['shake', 'Bildschirm wackeln'], ['flash', 'Bildschirm blitzt']];
+const OPS = [['>=', 'mindestens'], ['<=', 'höchstens'], ['==', 'genau'], ['>', 'mehr als'], ['<', 'weniger als'], ['!=', 'nicht']];
+const EVENTS = [['start', 'Das Spiel startet'], ['touch', 'Zwei Figuren berühren sich'], ['key', 'Eine Taste wird gedrückt'], ['hold', 'Eine Taste wird gehalten'], ['tap', 'Irgendwo getippt oder geklickt'], ['click', 'Eine Figur wird angetippt'], ['edge', 'Eine Figur verlässt den Bildschirm'], ['destroyed', 'Eine Figur wird zerstört'], ['every', 'Alle paar Sekunden'], ['after', 'Nach einer Wartezeit (einmal)'], ['stat', 'Ein Wert erreicht eine Zahl'], ['score', 'Die Punkte erreichen eine Zahl'], ['screen', 'Ein Bildschirm (Menü) wird geöffnet']];
+const ACTIONS = [['score', 'Punkte ändern'], ['life', 'Leben ändern'], ['setvar', 'Variable setzen'], ['addvar', 'Variable ändern'],
+  ['respawn', 'Figur oben/am Rand neu starten'], ['scatter', 'Figur zufällig platzieren'], ['place', 'Figur an einen Ort setzen'], ['destroy', 'Figur entfernen'], ['spawn', 'Neue Figur erzeugen'],
+  ['fly', 'Figur fliegen lassen'], ['stop', 'Figur anhalten'], ['move', 'Figur schieben (bei „Taste gehalten“)'], ['jump', 'Figur springen lassen'], ['shoot', 'Figur schießt'], ['hurt', 'Figur nimmt Schaden'], ['bounce', 'Figur prallt ab'],
+  ['speed', 'Tempo ändern'], ['grow', 'Größe ändern'], ['color', 'Farbe ändern'], ['show', 'Figur zeigen / verstecken'],
+  ['sound', 'Ton abspielen'], ['effect', 'Effekt zeigen'], ['say', 'Nachricht zeigen'], ['win', 'Spiel gewonnen'], ['lose', 'Spiel verloren'], ['go', 'Zu einem Bildschirm (Menü) wechseln'], ['restart', 'Spiel neu starten']];
 
-const newModel = () => ({ v: 1, settings: { bg: '#0d1240', lives: 0, time: 0, timeMode: 'win', showScore: true }, sprites: [], rules: [] });
+// ---------- Standardwerte und Aufräumen alter Modelle ----------
+const SPR_DEF = { shape: 'circle', color: '#00e5a8', size: 50, stretch: 1, x: 50, y: 50, angle: 0, spin: 0, opacity: 1, control: 'none', axis: 'xy', motion: 'none', speed: 200, physics: 'none', solid: false, screen: '', hp: 1, wrap: false, openBottom: false, jump: 640, label: '', rows: 1, cols: 1, gapX: 8, gapY: 8 };
+const SET_DEF = { bg: '#0d1240', bg2: '', pattern: 'none', lives: 0, time: 0, timeMode: 'win', showScore: true, gravity: 1400, help: '' };
+function normalizeModel(M) {
+  M = M || {}; M.v = 2;
+  M.settings = Object.assign({}, SET_DEF, M.settings || {});
+  M.vars = Array.isArray(M.vars) ? M.vars : [];
+  M.screens = Array.isArray(M.screens) ? M.screens : [];
+  M.sprites = (M.sprites || []).map(s => Object.assign({ id: uid('s'), name: 'Figur' }, SPR_DEF, s));
+  M.rules = (M.rules || []).map(r => Object.assign({ id: uid('r'), when: { type: 'start' }, conds: [], then: [] }, r, { conds: r.conds || [], then: r.then || [] }));
+  return M;
+}
+const newModel = () => normalizeModel({ settings: {}, sprites: [], rules: [] });
 const SPR = {
-  player: { name: 'Spieler', shape: 'circle', color: '#00e5a8', size: 56, x: 50, y: 86, control: 'keys', axis: 'x', motion: 'none', speed: 420 },
-  item: { name: 'Stern', shape: 'star', color: '#ffd23f', size: 40, x: 30, y: -5, control: 'none', axis: 'xy', motion: 'fall', speed: 220 },
-  enemy: { name: 'Gegner', shape: 'triangle', color: '#ff4d6d', size: 46, x: 65, y: -5, control: 'none', axis: 'xy', motion: 'fall', speed: 260 },
-  bouncer: { name: 'Springer', shape: 'diamond', color: '#4cc9f0', size: 50, x: 50, y: 40, control: 'none', axis: 'xy', motion: 'bounce', speed: 220 },
-  blank: { name: 'Figur', shape: 'square', color: '#ffffff', size: 50, x: 50, y: 50, control: 'none', axis: 'xy', motion: 'none', speed: 200 }
+  player: { name: 'Spieler', shape: 'circle', color: '#00e5a8', size: 56, x: 50, y: 86, control: 'keys', axis: 'x', speed: 420 },
+  item: { name: 'Stern', shape: 'star', color: '#ffd23f', size: 40, x: 30, y: -5, motion: 'fall', speed: 220 },
+  enemy: { name: 'Gegner', shape: 'triangle', color: '#ff4d6d', size: 46, x: 65, y: -5, motion: 'fall', speed: 260 },
+  bouncer: { name: 'Springer', shape: 'diamond', color: '#4cc9f0', size: 50, x: 50, y: 40, motion: 'bounce', speed: 220 },
+  hero: { name: 'Held', shape: 'blob', color: '#7ff5d4', size: 50, x: 10, y: 80, control: 'keys', axis: 'x', physics: 'platformer', speed: 280, jump: 660 },
+  ground: { name: 'Boden', shape: 'square', color: '#6b4a2e', size: 40, stretch: 20, x: 50, y: 97, solid: true },
+  platform: { name: 'Plattform', shape: 'square', color: '#8a5a3a', size: 24, stretch: 5, x: 50, y: 70, solid: true },
+  bullet: { name: 'Schuss', shape: 'diamond', color: '#ffd23f', size: 14, x: -10, y: -10 },
+  text: { name: 'Anzeige', shape: 'text', color: '#ffffff', size: 24, x: 50, y: 8, label: 'Punkte: {score}' },
+  blank: { name: 'Figur', shape: 'square', color: '#ffffff', size: 50, x: 50, y: 50 },
+  button: { name: 'Knopf', shape: 'button', color: '#00e5a8', size: 56, stretch: 4, x: 50, y: 55, label: 'Knopf' }
 };
-function addSprite(M, kind) {
-  const b = Object.assign({}, SPR[kind] || SPR.blank); b.id = uid('s');
+function addSprite(M, kind, over) {
+  const b = Object.assign({}, SPR_DEF, SPR[kind] || SPR.blank, over || {}); b.id = uid('s');
   let n = b.name, i = 2; while (M.sprites.some(s => s.name === n)) n = b.name + ' ' + i++;
   b.name = n; M.sprites.push(b); return b;
 }
+const R = (when, then, conds) => ({ id: uid('r'), when, conds: conds || [], then });
+
+
+// ---------- Menüs: Hauptmenü, Spiel, Pause, Gewonnen, Verloren ----------
+function addMenus(M, title) {
+  if (M.screens.length) return;
+  const sc = (name, menu) => { const s = { id: uid('c'), name, menu }; M.screens.push(s); return s; };
+  const home = sc('Hauptmenü', true), play = sc('Spiel', false), pause = sc('Pause', true), won = sc('Gewonnen', true), lost = sc('Verloren', true);
+  M.sprites.forEach(s => { if (!s.screen) s.screen = play.id; });
+  const txt = (scr, label, y, size, color) => addSprite(M, 'text', { screen: scr.id, label, y, size, color, name: 'Text ' + scr.name });
+  const btn = (scr, label, y, color, x, size, stretch) => addSprite(M, 'button', { screen: scr.id, label, y, color: color || '#00e5a8', x: x == null ? 50 : x, size: size || 56, stretch: stretch || 4.4, name: 'Knopf ' + label });
+  const go = (b, to, snd) => M.rules.push(R({ type: 'click', a: b.id }, [{ type: 'sound', sound: 'pop' }, { type: 'go', screen: to.id }]));
+  txt(home, title || 'Mein Spiel', 30, 56, '#ffffff'); go(btn(home, 'Spielen', 56), play); txt(home, 'Tippe auf Spielen', 72, 22, '#a3abe0');
+  go(btn(play, 'II', 94, '#ffd23f', 95, 40, 1.4), pause);
+  txt(pause, 'Pause', 28, 56, '#ffd23f'); go(btn(pause, 'Weiter', 52), play); go(btn(pause, 'Hauptmenü', 70, '#4cc9f0'), home);
+  txt(won, '{message}', 28, 52, '#00e5a8'); txt(won, 'Punkte: {score}', 42, 28, '#ffffff');
+  M.rules.push(R({ type: 'click', a: btn(won, 'Nochmal', 60).id }, [{ type: 'restart' }])); go(btn(won, 'Hauptmenü', 78, '#4cc9f0'), home);
+  txt(lost, '{message}', 28, 52, '#ff6b81'); txt(lost, 'Punkte: {score}', 42, 28, '#ffffff');
+  M.rules.push(R({ type: 'click', a: btn(lost, 'Nochmal', 60).id }, [{ type: 'restart' }])); go(btn(lost, 'Hauptmenü', 78, '#4cc9f0'), home);
+}
+
+// ---------- Vorlagen ----------
 const TEMPLATES = {
   empty: { icon: 'blocks', name: 'Leeres Spiel', desc: 'Starte bei null und baue alles selbst im Baukasten.', title: 'Mein Spiel', mk() { return newModel(); } },
   catch: {
     icon: 'target', name: 'Fang-Spiel', desc: 'Fange fallende Sterne mit dem Korb, aber weiche den Steinen aus.', title: 'Sternenfänger',
     mk() {
-      const M = newModel(); M.settings.lives = 3;
-      const k = addSprite(M, 'player'); k.name = 'Korb'; k.shape = 'square'; k.size = 70; k.y = 90; k.speed = 480;
-      const s = addSprite(M, 'item'); const r = addSprite(M, 'enemy'); r.name = 'Stein'; r.shape = 'circle'; r.color = '#ff6b81';
-      M.rules.push({ id: uid('r'), when: { type: 'touch', a: k.id, b: s.id }, then: [{ type: 'score', n: 1 }, { type: 'respawn', target: '@b' }] });
-      M.rules.push({ id: uid('r'), when: { type: 'touch', a: k.id, b: r.id }, then: [{ type: 'life', n: -1 }, { type: 'respawn', target: '@b' }] });
-      M.rules.push({ id: uid('r'), when: { type: 'every', n: 2 }, then: [{ type: 'spawn', sprite: s.id }] });
-      M.rules.push({ id: uid('r'), when: { type: 'score', n: 12 }, then: [{ type: 'win', text: 'Geschafft!' }] });
+      const M = newModel(); M.settings.lives = 3; M.settings.help = 'Pfeiltasten oder Finger bewegen den Korb';
+      const k = addSprite(M, 'player', { name: 'Korb', shape: 'square', size: 70, y: 90, speed: 480 });
+      const s = addSprite(M, 'item'); const r = addSprite(M, 'enemy', { name: 'Stein', shape: 'circle', color: '#ff6b81' });
+      M.rules.push(R({ type: 'touch', a: k.id, b: s.id }, [{ type: 'score', n: 1 }, { type: 'sound', sound: 'coin' }, { type: 'effect', kind: 'sparks', target: '@b' }, { type: 'respawn', target: '@b' }]));
+      M.rules.push(R({ type: 'touch', a: k.id, b: r.id }, [{ type: 'life', n: -1 }, { type: 'sound', sound: 'hit' }, { type: 'effect', kind: 'shake' }, { type: 'respawn', target: '@b' }]));
+      M.rules.push(R({ type: 'every', n: 2 }, [{ type: 'spawn', sprite: s.id, where: 'auto' }]));
+      M.rules.push(R({ type: 'stat', stat: 'score', op: '>=', n: 12 }, [{ type: 'win', text: 'Geschafft!' }]));
       return M;
     }
   },
+  menus: {
+    icon: 'blocks', name: 'Fang-Spiel mit Menüs', desc: 'Wie das Fang-Spiel, aber mit Hauptmenü, Pause und Sieger-/Verlierer-Bildschirm.', title: 'Sternenfänger',
+    mk() { const M = TEMPLATES.catch.mk(); M.settings.help = ''; addMenus(M, 'Sternenfänger'); return M; }
+  },
   dodge: {
-    icon: 'bolt', name: 'Ausweichen', desc: 'Überlebe 30 Sekunden und weiche den Gegnern aus.', title: 'Ausweich-Meister',
+    icon: 'bolt', name: 'Ausweichen', desc: 'Überlebe 30 Sekunden und weiche den Felsen aus.', title: 'Ausweich-Meister',
     mk() {
-      const M = newModel(); M.settings.lives = 3; M.settings.time = 30; M.settings.timeMode = 'win'; M.settings.showScore = false;
-      const p = addSprite(M, 'player'); p.axis = 'xy'; p.y = 50; p.speed = 360; p.shape = 'circle';
-      const e = addSprite(M, 'enemy'); e.name = 'Fels'; e.shape = 'circle'; e.color = '#ff9f1c'; e.size = 50;
-      M.rules.push({ id: uid('r'), when: { type: 'touch', a: p.id, b: e.id }, then: [{ type: 'life', n: -1 }, { type: 'respawn', target: '@b' }] });
-      M.rules.push({ id: uid('r'), when: { type: 'every', n: 1.2 }, then: [{ type: 'spawn', sprite: e.id }] });
+      const M = newModel(); Object.assign(M.settings, { lives: 3, time: 30, timeMode: 'win', showScore: false, bg: '#12082e', bg2: '#2a1458', pattern: 'stars', help: 'Weiche den Felsen aus und überlebe 30 Sekunden' });
+      const p = addSprite(M, 'player', { shape: 'rocket', axis: 'xy', y: 50, speed: 360 });
+      const e = addSprite(M, 'enemy', { name: 'Fels', shape: 'hexagon', color: '#ff9f1c', size: 50 });
+      M.rules.push(R({ type: 'touch', a: p.id, b: e.id }, [{ type: 'life', n: -1 }, { type: 'sound', sound: 'hit' }, { type: 'effect', kind: 'boom', target: '@b' }, { type: 'respawn', target: '@b' }]));
+      M.rules.push(R({ type: 'every', n: 1.2 }, [{ type: 'spawn', sprite: e.id, where: 'auto' }]));
       return M;
     }
   },
   click: {
     icon: 'mouse', name: 'Klick-Jagd', desc: 'Tippe das flinke Ziel an, bevor die Zeit abläuft.', title: 'Klick-Jagd',
     mk() {
-      const M = newModel(); M.settings.time = 20; M.settings.timeMode = 'lose';
-      const z = addSprite(M, 'bouncer'); z.name = 'Ziel'; z.shape = 'circle'; z.color = '#ff4d8d'; z.size = 64; z.speed = 260;
-      M.rules.push({ id: uid('r'), when: { type: 'click', a: z.id }, then: [{ type: 'score', n: 1 }, { type: 'respawn', target: '@a' }, { type: 'speed', target: '@a', f: 1.12 }] });
-      M.rules.push({ id: uid('r'), when: { type: 'score', n: 12 }, then: [{ type: 'win', text: 'Schnell genug!' }] });
+      const M = newModel(); M.settings.time = 20; M.settings.timeMode = 'lose'; M.settings.pattern = 'dots'; M.settings.help = 'Tippe das Ziel an';
+      const z = addSprite(M, 'bouncer', { name: 'Ziel', shape: 'ring', color: '#ff4d8d', size: 64, speed: 260 });
+      M.rules.push(R({ type: 'click', a: z.id }, [{ type: 'score', n: 1 }, { type: 'sound', sound: 'pop' }, { type: 'effect', kind: 'sparks', target: '@a' }, { type: 'scatter', target: '@a' }, { type: 'speed', target: '@a', f: 1.12 }]));
+      M.rules.push(R({ type: 'stat', stat: 'score', op: '>=', n: 12 }, [{ type: 'win', text: 'Schnell genug!' }]));
+      return M;
+    }
+  },
+  platformer: {
+    icon: 'bolt', name: 'Hüpfen und Rennen', desc: 'Springe über Plattformen, sammle Münzen und erreiche das Ziel.', title: 'Hüpf-Abenteuer',
+    mk() {
+      const M = newModel(); Object.assign(M.settings, { bg: '#10244a', bg2: '#2a5f9e', pattern: 'dots', lives: 3, gravity: 1500, help: 'Pfeile oder Finger laufen, Leertaste oder nach oben tippen springt' });
+      addSprite(M, 'ground'); const pa = [[18, 84], [40, 70], [62, 56], [84, 42]];
+      pa.forEach((p, i) => addSprite(M, 'platform', { name: 'Plattform ' + 'ABCD'[i], x: p[0], y: p[1] }));
+      const h = addSprite(M, 'hero');
+      const m = addSprite(M, 'item', { name: 'Münze', shape: 'star', size: 30, motion: 'none', x: 36, y: 63, cols: 3, gapX: 12 });
+      const g = addSprite(M, 'enemy', { name: 'Gegner', shape: 'ghost', color: '#ffffff', size: 40, x: 60, y: 91, motion: 'right', speed: 110, wrap: true, autoRespawn: false });
+      const z = addSprite(M, 'blank', { name: 'Ziel', shape: 'crown', size: 44, x: 84, y: 33 });
+      M.rules.push(R({ type: 'touch', a: h.id, b: m.id }, [{ type: 'score', n: 1 }, { type: 'sound', sound: 'coin' }, { type: 'effect', kind: 'sparks', target: '@b' }, { type: 'destroy', target: '@b' }]));
+      M.rules.push(R({ type: 'touch', a: h.id, b: g.id }, [{ type: 'life', n: -1 }, { type: 'sound', sound: 'hit' }, { type: 'effect', kind: 'shake' }, { type: 'place', target: '@a', x: 8, y: 80 }]));
+      M.rules.push(R({ type: 'touch', a: h.id, b: z.id }, [{ type: 'win', text: 'Ziel erreicht!' }]));
+      return M;
+    }
+  },
+  shooter: {
+    icon: 'target', name: 'Weltraum-Schütze', desc: 'Fliege mit dem Raumschiff, schieße Geister ab und halte sie auf Abstand.', title: 'Weltraum-Schütze',
+    mk() {
+      const M = newModel(); Object.assign(M.settings, { bg: '#050816', bg2: '#1b1040', pattern: 'stars', lives: 3, help: 'Pfeile bewegen, Leertaste schießt (oder tippen)' });
+      const s = addSprite(M, 'player', { name: 'Schiff', shape: 'rocket', size: 56, y: 88 });
+      const b = addSprite(M, 'bullet', { name: 'Schuss', shape: 'diamond', color: '#ffd23f', size: 16, stretch: 0.6 });
+      const e = addSprite(M, 'enemy', { name: 'Geist', shape: 'ghost', color: '#ffffff', size: 44, x: 14, y: 8, cols: 6, rows: 2, gapX: 30, gapY: 24, speed: 55 });
+      const shoot = [{ type: 'shoot', target: s.id, sprite: b.id, dir: 'up', speed: 640 }, { type: 'sound', sound: 'shoot' }];
+      M.rules.push(R({ type: 'key', key: 'SPACE' }, shoot.map(a => Object.assign({}, a))));
+      M.rules.push(R({ type: 'tap' }, shoot.map(a => Object.assign({}, a))));
+      M.rules.push(R({ type: 'touch', a: b.id, b: e.id }, [{ type: 'destroy', target: '@a' }, { type: 'effect', kind: 'sparks', target: '@b' }, { type: 'hurt', target: '@b', n: 1 }, { type: 'score', n: 1 }, { type: 'sound', sound: 'pop' }]));
+      M.rules.push(R({ type: 'touch', a: e.id, b: s.id }, [{ type: 'life', n: -1 }, { type: 'sound', sound: 'hit' }, { type: 'effect', kind: 'shake' }, { type: 'destroy', target: '@a' }]));
+      M.rules.push(R({ type: 'every', n: 1.6 }, [{ type: 'spawn', sprite: e.id, where: 'auto' }]));
+      M.rules.push(R({ type: 'stat', stat: 'score', op: '>=', n: 20 }, [{ type: 'win', text: 'Sektor gesichert!' }]));
+      return M;
+    }
+  },
+  flappy: {
+    icon: 'bolt', name: 'Hüpf-Vogel', desc: 'Tippe zum Flattern und fliege durch die Lücken zwischen den Säulen.', title: 'Hüpf-Vogel',
+    mk() {
+      const M = newModel(); Object.assign(M.settings, { bg: '#2b9cf0', bg2: '#a9defa', pattern: 'none', gravity: 1300, help: 'Tippen oder Leertaste: flattern' });
+      const v = addSprite(M, 'hero', { name: 'Vogel', shape: 'blob', size: 44, x: 25, y: 45, control: 'none', physics: 'platformer', speed: 0 });
+      const s = addSprite(M, 'enemy', { name: 'Säule', shape: 'square', color: '#2e9c2e', size: 280, stretch: 0.2, x: 110, y: 50, motion: 'left', speed: 220 });
+      const flap = [{ type: 'jump', target: v.id, power: 480, air: true }, { type: 'sound', sound: 'jump' }];
+      M.rules.push(R({ type: 'key', key: 'SPACE' }, flap.map(a => Object.assign({}, a))));
+      M.rules.push(R({ type: 'tap' }, flap.map(a => Object.assign({}, a))));
+      M.rules.push(R({ type: 'touch', a: v.id, b: s.id }, [{ type: 'sound', sound: 'hit' }, { type: 'effect', kind: 'shake' }, { type: 'lose', text: 'Aua!' }]));
+      M.rules.push(R({ type: 'edge', a: v.id }, [{ type: 'lose', text: 'Runtergefallen' }]));
+      M.rules.push(R({ type: 'every', n: 1.3 }, [{ type: 'spawn', sprite: s.id, where: 'auto' }]));
+      M.rules.push(R({ type: 'every', n: 1 }, [{ type: 'score', n: 1 }]));
+      return M;
+    }
+  },
+  breakout: {
+    icon: 'blocks', name: 'Ziegelbrecher', desc: 'Lenke den Ball mit dem Schläger und zerstöre alle Ziegel.', title: 'Ziegelbrecher',
+    mk() {
+      const M = newModel(); Object.assign(M.settings, { bg: '#0d1240', pattern: 'grid', lives: 3, help: 'Pfeile oder Finger bewegen den Schläger' });
+      const p = addSprite(M, 'player', { name: 'Schläger', shape: 'square', color: '#00e5a8', size: 18, stretch: 6, y: 92, speed: 560 });
+      const b = addSprite(M, 'bouncer', { name: 'Ball', shape: 'circle', color: '#ffffff', size: 18, x: 50, y: 78, speed: 380, openBottom: true });
+      const z = addSprite(M, 'blank', { name: 'Ziegel', shape: 'square', color: '#ff4d6d', size: 22, stretch: 2.2, x: 26, y: 12, rows: 4, cols: 8, gapX: 6, gapY: 6 });
+      M.rules.push(R({ type: 'touch', a: b.id, b: p.id }, [{ type: 'bounce', target: '@a', other: '@b' }, { type: 'sound', sound: 'pop' }]));
+      M.rules.push(R({ type: 'touch', a: b.id, b: z.id }, [{ type: 'bounce', target: '@a', other: '@b' }, { type: 'score', n: 1 }, { type: 'sound', sound: 'coin' }, { type: 'effect', kind: 'sparks', target: '@b' }, { type: 'destroy', target: '@b' }]));
+      M.rules.push(R({ type: 'edge', a: b.id }, [{ type: 'life', n: -1 }, { type: 'sound', sound: 'hit' }, { type: 'place', target: '@a', x: 50, y: 76 }]));
+      M.rules.push(R({ type: 'stat', stat: 'count:' + z.id, op: '<=', n: 0 }, [{ type: 'win', text: 'Alle Ziegel weg!' }]));
       return M;
     }
   },
@@ -496,33 +650,103 @@ function newGame(kind) {
   return g;
 }
 
+// ====================================================================
+// Code-Erzeugung
+// ====================================================================
+const round = v => Math.round(num(v) * 100) / 100;
 function genCode(M) {
+  M = normalizeModel(M);
   const S = M.settings, L = [];
-  const byId = id => M.sprites.find(s => s.id === id);
-  const nameOf = id => (byId(id) || {}).name;
+  const spr = id => M.sprites.find(s => s.id === id), nameOf = id => (spr(id) || {}).name;
+  const vr = id => M.vars.find(v => v.id === id);
   L.push('// Dieses Spiel wurde im Baukasten gebaut. Du kannst den Code frei ändern.');
-  L.push(`const game = Moki.game({ background: ${q(S.bg)}, lives: ${num(S.lives) | 0}, time: ${num(S.time)}, timeMode: ${q(S.timeMode)}, showScore: ${!!S.showScore} });`);
+  const g = [`background: ${q(S.bg)}`];
+  if (S.bg2) g.push(`background2: ${q(S.bg2)}`);
+  if (S.pattern && S.pattern !== 'none') g.push(`pattern: ${q(S.pattern)}`);
+  if (M.screens.length) g.push(`screens: [${M.screens.map(c => `{ name: ${q(c.name)}, menu: ${!!c.menu} }`).join(', ')}]`);
+  g.push(`lives: ${num(S.lives) | 0}`, `time: ${num(S.time)}`, `timeMode: ${q(S.timeMode)}`, `showScore: ${!!S.showScore}`);
+  if (num(S.gravity) !== 1400) g.push(`gravity: ${num(S.gravity)}`);
+  if (S.help) g.push(`help: ${q(S.help)}`);
+  L.push(`const game = Moki.game({ ${g.join(', ')} });`);
+  if (M.vars.length) { L.push(''); M.vars.forEach(v => L.push(`game.set(${q(v.name)}, ${num(v.value)});`)); }
   if (M.sprites.length) L.push('');
-  M.sprites.forEach(s => L.push(`game.sprite({ name: ${q(s.name)}, shape: ${q(s.shape)}, color: ${q(s.color)}, size: ${num(s.size)}, x: ${num(s.x)}, y: ${num(s.y)}, control: ${q(s.control)}, axis: ${q(s.axis)}, motion: ${q(s.motion)}, speed: ${num(s.speed)} });`));
+  M.sprites.forEach(s => {
+    const o = [`name: ${q(s.name)}`, `shape: ${q(s.shape)}`, `color: ${q(s.color)}`, `size: ${round(s.size)}`, `x: ${round(s.x)}`, `y: ${round(s.y)}`];
+    if (num(s.stretch) !== 1) o.push(`stretch: ${round(s.stretch)}`);
+    if (num(s.angle)) o.push(`angle: ${round(s.angle)}`);
+    if (num(s.spin)) o.push(`spin: ${round(s.spin)}`);
+    if (num(s.opacity) !== 1) o.push(`opacity: ${round(s.opacity)}`);
+    if (s.control !== 'none') o.push(`control: ${q(s.control)}`, `axis: ${q(s.axis)}`);
+    if (s.motion !== 'none') o.push(`motion: ${q(s.motion)}`);
+    if (s.control !== 'none' || s.motion !== 'none' || num(s.speed) !== 200) o.push(`speed: ${round(s.speed)}`);
+    if (s.physics !== 'none') o.push(`physics: ${q(s.physics)}`);
+    if (s.physics === 'platformer' && num(s.jump) !== 640) o.push(`jump: ${round(s.jump)}`);
+    if (s.solid) o.push('solid: true');
+    const scn = M.screens.find(c => c.id === s.screen); if (scn) o.push(`screen: ${q(scn.name)}`);
+    if (num(s.hp) !== 1) o.push(`hp: ${num(s.hp)}`);
+    if (s.wrap) o.push('wrap: true');
+    if (s.openBottom && s.motion === 'bounce') o.push('openBottom: true');
+    if (s.label) o.push(`label: ${q(s.label)}`);
+    if (num(s.cols) > 1 || num(s.rows) > 1) o.push(`cols: ${num(s.cols) || 1}`, `rows: ${num(s.rows) || 1}`, `gapX: ${num(s.gapX)}`, `gapY: ${num(s.gapY)}`);
+    L.push(`game.sprite({ ${o.join(', ')} });`);
+  });
   const tg = t => (t === '@a' ? { kind: 'v', v: 'a' } : t === '@b' ? { kind: 'v', v: 'b' } : nameOf(t) ? { kind: 'f', n: nameOf(t) } : null);
-  function act(a, ind) {
-    const P = ind;
-    const onT = (fn) => {
-      const t = tg(a.target); if (!t) return [P + '// (Figur fehlt: ' + a.type + ')'];
+  const stat = k => {
+    if (k === 'score') return 'game.score'; if (k === 'lives') return 'game.lives'; if (k === 'time') return 'game.time';
+    if (String(k).startsWith('var:')) { const v = vr(k.slice(4)); return v ? `game.get(${q(v.name)})` : null; }
+    if (String(k).startsWith('count:')) { const n = nameOf(k.slice(6)); return n ? `game.count(${q(n)})` : null; }
+    return null;
+  };
+  const scrName = id => (M.screens.find(c => c.id === id) || {}).name;
+  const cmp = c => {
+    if (String(c.stat).startsWith('screen:')) { const n = scrName(c.stat.slice(7)); return n ? `game.screen ${c.op === '!=' ? '!==' : '==='} ${q(n)}` : null; }
+    const e = stat(c.stat); const op = OPS.some(o => o[0] === c.op) ? c.op : '>='; return e ? `${e} ${op} ${num(c.n)}` : null; };
+  function act(a, P) {
+    const onT = fn => {
+      const t = tg(a.target); if (!t) return [P + `// (Figur fehlt: ${a.type})`];
       if (t.kind === 'v') return [P + fn(t.v)];
       return [P + `{ const t = game.find(${q(t.n)}); if (t) ${fn('t')} }`];
     };
+    const other = () => { const t = tg(a.other); return t ? (t.kind === 'v' ? t.v : `game.find(${q(t.n)})`) : null; };
+    const dir = d => q(DIRS.some(x => x[0] === d) ? d : 'up');
     switch (a.type) {
       case 'score': return [P + `game.addScore(${num(a.n)});`];
       case 'life': return [P + `game.addLife(${num(a.n)});`];
+      case 'setvar': { const v = vr(a.var); return v ? [P + `game.set(${q(v.name)}, ${num(a.n)});`] : [P + '// (Variable fehlt)']; }
+      case 'addvar': { const v = vr(a.var); return v ? [P + `game.change(${q(v.name)}, ${num(a.n)});`] : [P + '// (Variable fehlt)']; }
       case 'respawn': return onT(v => v + '.respawn();');
+      case 'scatter': return onT(v => v + '.scatter();');
       case 'destroy': return onT(v => v + '.destroy();');
       case 'place': return onT(v => `${v}.place(${num(a.x)}, ${num(a.y)});`);
+      case 'fly': return onT(v => `${v}.fly(${dir(a.dir)}, ${num(a.speed) || 300});`);
+      case 'stop': return onT(v => v + '.stop();');
+      case 'move': return onT(v => `${v}.nudge(${dir(a.dir)}, ${num(a.speed) || 200} * (typeof dt === 'number' ? dt : 0.02));`);
+      case 'jump': return onT(v => `${v}.jump(${num(a.power) || 640}${a.air ? ', true' : ''});`);
+      case 'shoot': return nameOf(a.sprite) ? onT(v => `${v}.shoot(${q(nameOf(a.sprite))}, ${dir(a.dir)}, ${num(a.speed) || 520});`) : [P + '// (Figur fehlt: shoot)'];
+      case 'hurt': return onT(v => `${v}.hurt(${num(a.n) || 1});`);
+      case 'bounce': { const o = other(); return o ? onT(v => `${v}.bounceOff(${o});`) : [P + '// (Figur fehlt: bounce)']; }
       case 'speed': return onT(v => `${v}.speed *= ${num(a.f) || 1};`);
-      case 'spawn': return nameOf(a.sprite) ? [P + `game.spawn(${q(nameOf(a.sprite))});`] : [P + '// (Figur fehlt: spawn)'];
+      case 'grow': return onT(v => `${v}.size *= ${num(a.f) || 1};`);
+      case 'color': return onT(v => `${v}.color = ${q(a.color || '#ffffff')};`);
+      case 'show': return onT(v => `${v}.visible = ${a.visible === false ? 'false' : 'true'};`);
+      case 'spawn': {
+        const n = nameOf(a.sprite); if (!n) return [P + '// (Figur fehlt: spawn)'];
+        const w = a.where || 'auto';
+        if (w === 'auto') return [P + `game.spawn(${q(n)});`];
+        if (w === 'random') return [P + `game.spawn(${q(n)})?.scatter();`];
+        if (w === 'xy') return [P + `game.spawn(${q(n)})?.place(${num(a.x)}, ${num(a.y)});`];
+        const t = tg(w === 'at@a' ? '@a' : '@b'); return [P + `{ const n = game.spawn(${q(n)}); if (n) { n.x = ${t.v}.x; n.y = ${t.v}.y; } }`];
+      }
+      case 'sound': return [P + `game.sound(${q(a.sound || 'coin')});`];
+      case 'effect':
+        if (a.kind === 'shake') return [P + 'game.shake(300);'];
+        if (a.kind === 'flash') return [P + 'game.flash("#ffffff");'];
+        return onT(v => (a.kind === 'boom' ? `{ ${v}.burst(null, 30); game.shake(200); }` : `${v}.burst();`));
       case 'say': return [P + `game.say(${q(a.text || '')}, 2);`];
       case 'win': return [P + `game.win(${q(a.text || 'Gewonnen!')});`];
       case 'lose': return [P + `game.lose(${q(a.text || 'Verloren')});`];
+      case 'go': { const n = scrName(a.screen); return n ? [P + `game.go(${q(n)});`] : [P + '// (Bildschirm fehlt)']; }
+      case 'restart': return [P + 'game.restart();'];
     }
     return [];
   }
@@ -530,21 +754,368 @@ function genCode(M) {
     const w = r.when || {}; let head = null;
     if (w.type === 'start') head = 'game.onStart(() => {';
     else if (w.type === 'key') head = `game.onKey(${q(w.key || 'SPACE')}, () => {`;
+    else if (w.type === 'hold') head = `game.onKeyHold(${q(w.key || 'SPACE')}, (dt) => {`;
+    else if (w.type === 'tap') head = 'game.onPointer(() => {';
     else if (w.type === 'touch') head = nameOf(w.a) && nameOf(w.b) ? `game.onTouch(${q(nameOf(w.a))}, ${q(nameOf(w.b))}, (a, b) => {` : null;
     else if (w.type === 'edge') head = nameOf(w.a) ? `game.onEdge(${q(nameOf(w.a))}, (a) => {` : null;
     else if (w.type === 'click') head = nameOf(w.a) ? `game.onClick(${q(nameOf(w.a))}, (a) => {` : null;
+    else if (w.type === 'destroyed') head = nameOf(w.a) ? `game.onDestroy(${q(nameOf(w.a))}, (a) => {` : null;
     else if (w.type === 'every') head = `game.every(${num(w.n) || 1}, () => {`;
+    else if (w.type === 'after') head = `game.after(${num(w.n) || 1}, () => {`;
     else if (w.type === 'score') head = `game.onScore(${num(w.n)}, () => {`;
+    else if (w.type === 'screen') { const n = scrName(w.screen); head = n ? `game.onScreen(${q(n)}, () => {` : null; }
+    else if (w.type === 'stat') { const e = cmp(w); head = e ? `game.when(() => ${e}, () => {` : null; }
     L.push('');
-    if (!head) { L.push('// (Regel unvollständig, es fehlt eine Figur)'); return; }
+    if (!head) { L.push('// (Regel unvollständig, es fehlt eine Angabe)'); return; }
+    const conds = (r.conds || []).map(cmp).filter(Boolean);
     L.push(head);
-    (r.then || []).forEach(a => act(a, '  ').forEach(x => L.push(x)));
+    const I = conds.length ? '    ' : '  ';
+    if (conds.length) L.push(`  if (${conds.join(' && ')}) {`);
+    (r.then || []).forEach(a => act(a, I).forEach(x => L.push(x)));
+    if (conds.length) L.push('  }');
     L.push('});');
   });
   L.push(''); L.push('game.start();');
   return L.join('\n') + '\n';
 }
 const currentCode = () => (App.g.mode === 'code' ? App.g.code : genCode(App.g.model));
+
+// ====================================================================
+// Baukasten-Oberfläche (Spielfeld zum Ziehen, Figuren, Variablen, Regeln)
+// ====================================================================
+const opt = (list, v) => list.map(([k, l]) => `<option value="${esc(k)}"${String(k) === String(v) ? ' selected' : ''}>${esc(l)}</option>`).join('');
+const shapeOpts = v => `<optgroup label="Formen">${opt(SHAPE_OPTS, v)}</optgroup><optgroup label="Bilder">${opt(IMAGE_OPTS, v)}</optgroup>`;
+const spOpts = (M, v, ph) => `<option value="">${esc(ph || '— Figur wählen —')}</option>` + M.sprites.map(s => `<option value="${esc(s.id)}"${s.id === v ? ' selected' : ''}>${esc(s.name)}</option>`).join('');
+const varOpts = (M, v) => `<option value="">— Variable wählen —</option>` + M.vars.map(x => `<option value="${esc(x.id)}"${x.id === v ? ' selected' : ''}>${esc(x.name)}</option>`).join('');
+function statOpts(M, v) {
+  return (M.screens.length ? `<optgroup label="Bildschirm">${M.screens.map(c => `<option value="screen:${esc(c.id)}"${v === 'screen:' + c.id ? ' selected' : ''}>Bildschirm: ${esc(c.name)}</option>`).join('')}</optgroup>` : '') + `<optgroup label="Spiel"><option value="score"${v === 'score' ? ' selected' : ''}>Punkte</option><option value="lives"${v === 'lives' ? ' selected' : ''}>Leben</option><option value="time"${v === 'time' ? ' selected' : ''}>Spielzeit (Sekunden)</option></optgroup>` +
+    (M.vars.length ? `<optgroup label="Variablen">${M.vars.map(x => `<option value="var:${esc(x.id)}"${v === 'var:' + x.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</optgroup>` : '') +
+    (M.sprites.length ? `<optgroup label="Anzahl Figuren">${M.sprites.map(s => `<option value="count:${esc(s.id)}"${v === 'count:' + s.id ? ' selected' : ''}>Anzahl: ${esc(s.name)}</option>`).join('')}</optgroup>` : '');
+}
+const scrOpts = (M, v, ph) => `<option value="">${esc(ph || '— Bildschirm wählen —')}</option>` + M.screens.map(c => `<option value="${esc(c.id)}"${c.id === v ? ' selected' : ''}>${esc(c.name)}</option>`).join('');
+const hasA = w => ['touch', 'edge', 'click', 'destroyed'].includes(w.type);
+function targetOpts(M, when, v) {
+  let o = '<option value="">— Figur wählen —</option>';
+  if (when.type === 'touch') o += `<option value="@a"${v === '@a' ? ' selected' : ''}>Die erste Figur (A)</option><option value="@b"${v === '@b' ? ' selected' : ''}>Die zweite Figur (B)</option>`;
+  else if (hasA(when)) o += `<option value="@a"${v === '@a' ? ' selected' : ''}>Diese Figur</option>`;
+  return o + M.sprites.map(s => `<option value="${esc(s.id)}"${s.id === v ? ' selected' : ''}>${esc(s.name)}</option>`).join('');
+}
+const MURL = {};
+const motifUrl = id => MURL[id] || (MURL[id] = svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="200" height="200"><g stroke="#0d1240" stroke-width="3.4" stroke-linejoin="round" stroke-linecap="round">${(MOKI_MOTIFS.find(m => m.id === id) || { svg: '' }).svg}</g></svg>`));
+
+// ---------- Spielfeld (SVG) ----------
+function sceneCells(s) {
+  const w = num(s.size) * (num(s.stretch) || 1), h = num(s.size), cols = Math.max(1, num(s.cols) | 0), rows = Math.max(1, num(s.rows) | 0), out = [];
+  for (let j = 0; j < Math.min(rows, 40); j++) for (let i = 0; i < Math.min(cols, 40); i++) out.push({ cx: num(s.x) / 100 * 800 + i * (w + num(s.gapX)), cy: num(s.y) / 100 * 500 + j * (h + num(s.gapY)), w, h });
+  return out;
+}
+function sceneShape(s, c) {
+  const tr = `translate(${c.cx} ${c.cy}) rotate(${num(s.angle)})`, op = ` opacity="${Math.max(0.15, num(s.opacity))}"`;
+  if (s.shape === 'text') return `<text transform="${tr}" text-anchor="middle" dominant-baseline="central" font-family="Segoe UI,system-ui,sans-serif" font-weight="800" font-size="${Math.max(10, num(s.size))}" fill="${esc(s.color)}"${op}>${esc(String(s.label || 'Text').replace(/\{score\}|\{lives\}|\{time\}/g, '0').replace(/\{[^}]+\}/g, '0'))}</text>`;
+  if (MOKI_MOTIFS.some(m => m.id === s.shape && s.shape !== 'star' && s.shape !== 'heart')) return `<image transform="${tr}" href="${motifUrl(s.shape)}" x="${-c.w / 2}" y="${-c.h / 2}" width="${c.w}" height="${c.h}"${op}/>`;
+  if (s.shape === 'button') return `<g transform="${tr}"${op}><rect x="${-c.w / 2}" y="${-c.h / 2}" width="${c.w}" height="${c.h}" rx="${Math.min(c.w, c.h) * 0.32}" fill="${esc(s.color)}" stroke="rgba(255,255,255,.7)" stroke-width="3"/><text text-anchor="middle" dominant-baseline="central" font-family="Segoe UI,system-ui,sans-serif" font-weight="800" font-size="${Math.max(14, Math.min(c.h * 0.42, c.w * 0.3))}" fill="#0a0d2b">${esc(String(s.label || 'Knopf').replace(/\{[^}]+\}/g, '0'))}</text></g>`;
+  const st = ` fill="${esc(s.color)}" stroke="rgba(255,255,255,.6)" stroke-width="2" vector-effect="non-scaling-stroke"${op}`;
+  if (s.shape === 'square') return `<rect transform="${tr}" x="${-c.w / 2}" y="${-c.h / 2}" width="${c.w}" height="${c.h}" rx="${Math.min(c.w, c.h) * 0.18}"${st}/>`;
+  return `<path transform="${tr} translate(${-c.w / 2} ${-c.h / 2}) scale(${c.w / 100} ${c.h / 100})" d="${MOKI_SHAPES[s.shape] || MOKI_SHAPES.circle}" fill-rule="${s.shape === 'ring' ? 'evenodd' : 'nonzero'}"${st}/>`;
+}
+function sceneInner(M) {
+  const S = M.settings; let h = `<defs><linearGradient id="sgbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${esc(S.bg)}"/><stop offset="1" stop-color="${esc(S.bg2 || S.bg)}"/></linearGradient></defs><rect width="800" height="500" fill="url(#sgbg)"/>`;
+  for (let x = 100; x < 800; x += 100) h += `<line x1="${x}" y1="0" x2="${x}" y2="500" stroke="#fff" stroke-opacity=".06"/>`;
+  for (let y = 100; y < 500; y += 100) h += `<line x1="0" y1="${y}" x2="800" y2="${y}" stroke="#fff" stroke-opacity=".06"/>`;
+  h += '<rect x="0.5" y="0.5" width="799" height="499" fill="none" stroke="#fff" stroke-opacity=".25"/>';
+  const vis = s => !App.scr || !s.screen || s.screen === App.scr;
+  M.sprites.filter(vis).forEach(s => { const cells = sceneCells(s); h += `<g data-sid="${esc(s.id)}" style="cursor:grab">${cells.map(c => sceneShape(s, c)).join('')}</g>`; });
+  const sel = M.sprites.find(s => s.id === App.sel && vis(s));
+  if (sel) {
+    const c = sceneCells(sel), a = c[0], z = c[c.length - 1];
+    const x0 = a.cx - a.w / 2, y0 = a.cy - a.h / 2, x1 = z.cx + z.w / 2, y1 = z.cy + z.h / 2;
+    h += `<rect x="${x0 - 3}" y="${y0 - 3}" width="${x1 - x0 + 6}" height="${y1 - y0 + 6}" fill="none" stroke="#00e5a8" stroke-width="2" stroke-dasharray="7 5" pointer-events="none"/>`;
+    h += `<text x="${x0}" y="${Math.max(14, y0 - 8)}" fill="#00e5a8" font-size="15" font-weight="800" font-family="Segoe UI,system-ui,sans-serif" pointer-events="none">${esc(sel.name)}</text>`;
+    h += `<circle data-handle="${esc(sel.id)}" cx="${a.cx + a.w / 2}" cy="${a.cy + a.h / 2}" r="9" fill="#00e5a8" stroke="#04201a" stroke-width="2" style="cursor:nwse-resize"/>`;
+  }
+  return h;
+}
+function drawScene() { const s = $('#scene'); if (s && App.g) s.innerHTML = sceneInner(App.g.model); }
+let drag = null;
+function scenePoint(e) { const svg = $('#scene'), pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; const p = pt.matrixTransform(svg.getScreenCTM().inverse()); return { x: p.x, y: p.y }; }
+function markSelected() { $$('#pane-builder .cardx.sprite').forEach(c => c.classList.toggle('sel', c.dataset.sid === App.sel)); }
+document.addEventListener('pointerdown', e => {
+  const svg = e.target.closest && e.target.closest('#scene'); if (!svg || !App.g) return;
+  const M = App.g.model, p = scenePoint(e), handle = e.target.closest('[data-handle]'), g = e.target.closest('[data-sid]');
+  if (handle) { const s = M.sprites.find(x => x.id === handle.dataset.handle); drag = { mode: 'size', s }; }
+  else if (g) {
+    const s = M.sprites.find(x => x.id === g.dataset.sid); App.sel = s.id;
+    drag = { mode: 'move', s, ox: p.x - num(s.x) / 100 * 800, oy: p.y - num(s.y) / 100 * 500, moved: false };
+    markSelected();
+  } else { App.sel = null; markSelected(); }
+  if (drag) { try { svg.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); }
+  drawScene();
+});
+document.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const p = scenePoint(e), s = drag.s;
+  if (drag.mode === 'move') {
+    s.x = Math.round((p.x - drag.ox) / 800 * 100 * 2) / 2; s.y = Math.round((p.y - drag.oy) / 500 * 100 * 2) / 2; drag.moved = true;
+  } else {
+    const cx = num(s.x) / 100 * 800, cy = num(s.y) / 100 * 500, st = num(s.stretch) || 1;
+    s.size = clamp(Math.round(Math.max(Math.abs(p.x - cx) * 2 / st, Math.abs(p.y - cy) * 2) / 2) * 2, 8, 600); drag.moved = true;
+  }
+  drawScene();
+});
+function endDrag() {
+  if (!drag) return;
+  const moved = drag.moved; drag = null;
+  if (moved) { markDirty(); scheduleRun(120); }
+  renderBuilder();
+}
+document.addEventListener('pointerup', endDrag);
+document.addEventListener('pointercancel', endDrag);
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+document.addEventListener('dblclick', e => {
+  const g = e.target.closest && e.target.closest('#scene [data-sid]'); if (!g) return;
+  const card = $(`#pane-builder .cardx.sprite[data-sid="${g.dataset.sid}"]`); if (card) { const d = $('details.more', card); if (d) d.open = true; card.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+});
+
+// ---------- Karten ----------
+const tools = (kind, i, n) => kind === 'screen' ? `<button class="xbtn" data-act="up-screen" data-i="${i}" type="button" aria-label="Nach oben" title="Nach oben"${i === 0 ? ' disabled' : ''}>${ic('up')}</button><button class="xbtn" data-act="down-screen" data-i="${i}" type="button" aria-label="Nach unten" title="Nach unten"${i === n - 1 ? ' disabled' : ''}>${ic('down2')}</button><button class="xbtn" data-act="del-screen" data-i="${i}" type="button" aria-label="Löschen" title="Löschen">${ic('trash')}</button>` : `<button class="xbtn" data-act="up-${kind}" data-i="${i}" type="button" aria-label="Nach oben" title="Nach oben"${i === 0 ? ' disabled' : ''}>${ic('up')}</button><button class="xbtn" data-act="down-${kind}" data-i="${i}" type="button" aria-label="Nach unten" title="Nach unten"${i === n - 1 ? ' disabled' : ''}>${ic('down2')}</button><button class="xbtn" data-act="dup-${kind}" data-i="${i}" type="button" aria-label="Duplizieren" title="Duplizieren">${ic('copy')}</button><button class="xbtn" data-act="del-${kind}" data-i="${i}" type="button" aria-label="Löschen" title="Löschen">${ic('trash')}</button>`;
+function spriteCard(M, s, i) {
+  const P = 'sprites.' + i + '.', ctl = s.control !== 'none', txt = s.shape === 'text', btn = s.shape === 'button';
+  const sl = (label, f, min, max, step, suf) => `<label><span class="lt">${label}<b>${num(s[f])}${suf || ''}</b></span><input type="range" min="${min}" max="${max}" step="${step || 1}" data-p="${P}${f}" data-suf="${suf || ''}" value="${num(s[f])}"></label>`;
+  return `<div class="cardx sprite${App.sel === s.id ? ' sel' : ''}" data-sid="${esc(s.id)}">
+    <div class="chead"><span class="sw" style="background:${esc(s.color)}"></span><input class="nm" data-p="${P}name" data-re="1" value="${esc(s.name)}" maxlength="24" aria-label="Name">${tools('sprite', i, M.sprites.length)}</div>
+    <div class="g2">
+      <label>Aussehen<select data-p="${P}shape" data-re="1">${shapeOpts(s.shape)}</select></label>
+      <label>Farbe<input type="color" data-p="${P}color" data-sw="1" value="${esc(s.color)}"></label>
+      ${btn ? `<label style="grid-column:1/-1">Text auf dem Knopf<input type="text" data-p="${P}label" value="${esc(s.label)}" maxlength="24"></label>` : ''}
+      ${txt ? `<label style="grid-column:1/-1">Text (mit {score}, {lives}, {time} oder {Variable})<input type="text" data-p="${P}label" value="${esc(s.label)}" maxlength="80"></label>` : ''}
+      ${sl(txt ? 'Schriftgröße' : 'Größe', 'size', 8, 400, 1)}
+      ${sl('Tempo', 'speed', 0, 900, 10)}
+      ${sl('Start links/rechts', 'x', -10, 110, 0.5, '%')}
+      ${sl('Start oben/unten', 'y', -10, 110, 0.5, '%')}
+      ${M.screens.length ? `<label style="grid-column:1/-1">Zeigen auf<select data-p="${P}screen"><option value="">Allen Bildschirmen</option>${M.screens.map(c => `<option value="${esc(c.id)}"${c.id === s.screen ? ' selected' : ''}>Nur: ${esc(c.name)}</option>`).join('')}</select></label>` : ''}
+      <label>Steuerung<select data-p="${P}control" data-re="1">${opt(CONTROLS, s.control)}</select></label>
+      ${ctl ? `<label>Darf sich bewegen<select data-p="${P}axis">${opt(AXES, s.axis)}</select></label>` : `<label>Bewegung<select data-p="${P}motion" data-re="1">${opt(MOTIONS, s.motion)}</select></label>`}
+    </div>
+    <details class="more"><summary>Mehr Einstellungen</summary><div class="g2" style="margin-top:10px">
+      ${sl('Breite (mal Größe)', 'stretch', 0.1, 24, 0.1)}
+      ${sl('Drehung', 'angle', -180, 180, 5, '°')}
+      ${sl('Dauerdrehung', 'spin', -360, 360, 10, '°/s')}
+      ${sl('Deckkraft', 'opacity', 0.1, 1, 0.05)}
+      <label>Physik<select data-p="${P}physics" data-re="1">${opt(PHYSICS, s.physics)}</select></label>
+      ${s.physics === 'platformer' ? sl('Sprungkraft', 'jump', 200, 1100, 10) : '<span></span>'}
+      ${sl('Leben der Figur', 'hp', 1, 99, 1)}
+      <span></span>
+      <label class="ck"><input type="checkbox" data-p="${P}solid"${s.solid ? ' checked' : ''}>Fest (Boden / Wand / Plattform)</label>
+      <label class="ck"><input type="checkbox" data-p="${P}wrap"${s.wrap ? ' checked' : ''}>Kommt auf der anderen Seite wieder rein</label>
+      ${s.motion === 'bounce' ? `<label class="ck"><input type="checkbox" data-p="${P}openBottom"${s.openBottom ? ' checked' : ''}>Unten offen (Ball kann herausfallen)</label>` : ''}
+      ${!txt && !btn ? `<label style="grid-column:1/-1">Beschriftung in der Figur<input type="text" data-p="${P}label" value="${esc(s.label)}" maxlength="40"></label>` : ''}
+      <div style="grid-column:1/-1" class="lab" style="margin:6px 0 0">Viele auf einmal (Gitter)</div>
+      ${sl('Spalten', 'cols', 1, 20, 1)}${sl('Zeilen', 'rows', 1, 20, 1)}
+      ${sl('Abstand waagrecht', 'gapX', 0, 80, 1)}${sl('Abstand senkrecht', 'gapY', 0, 80, 1)}
+    </div></details></div>`;
+}
+function whenParams(M, w, P) {
+  switch (w.type) {
+    case 'touch': return `<select data-p="${P}a">${spOpts(M, w.a, '— Figur A —')}</select><span>und</span><select data-p="${P}b" data-re="1">${spOpts(M, w.b, '— Figur B —')}</select><span>sich berühren</span>`;
+    case 'key': return `<select data-p="${P}key">${opt(KEYS, w.key)}</select><span>gedrückt wird</span>`;
+    case 'hold': return `<select data-p="${P}key">${opt(KEYS, w.key)}</select><span>gehalten wird (jedes Bild)</span>`;
+    case 'tap': return '<span>irgendwo getippt oder geklickt wird</span>';
+    case 'edge': return `<select data-p="${P}a">${spOpts(M, w.a)}</select><span>den Bildschirm verlässt</span>`;
+    case 'click': return `<select data-p="${P}a">${spOpts(M, w.a)}</select><span>angetippt wird</span>`;
+    case 'destroyed': return `<select data-p="${P}a">${spOpts(M, w.a)}</select><span>zerstört wird</span>`;
+    case 'every': return `<span>alle</span><input type="number" step="0.1" min="0.1" data-p="${P}n" value="${num(w.n)}"><span>Sekunden</span>`;
+    case 'after': return `<span>nach</span><input type="number" step="0.1" min="0.1" data-p="${P}n" value="${num(w.n)}"><span>Sekunden (einmal)</span>`;
+    case 'score': return `<span>die Punkte</span><input type="number" step="1" data-p="${P}n" value="${num(w.n)}"><span>erreichen</span>`;
+    case 'screen': return `<select data-p="${P}screen">${scrOpts(M, w.screen)}</select><span>geöffnet wird</span>`;
+    case 'stat': return `<select data-p="${P}stat">${statOpts(M, w.stat)}</select><select data-p="${P}op">${opt(OPS, w.op)}</select><input type="number" step="1" data-p="${P}n" value="${num(w.n)}">`;
+  } return '<span>das Spiel startet</span>';
+}
+function actParams(M, w, a, P) {
+  const T = () => `<select data-p="${P}target">${targetOpts(M, w, a.target)}</select>`, N = (f, step, min) => `<input type="number" step="${step || 1}"${min != null ? ` min="${min}"` : ''} data-p="${P}${f}" value="${num(a[f])}">`;
+  switch (a.type) {
+    case 'score': return `<span>Punkte um</span>${N('n')}`;
+    case 'life': return `<span>Leben um</span>${N('n')}`;
+    case 'setvar': return `<select data-p="${P}var">${varOpts(M, a.var)}</select><span>auf</span>${N('n')}`;
+    case 'addvar': return `<select data-p="${P}var">${varOpts(M, a.var)}</select><span>um</span>${N('n')}`;
+    case 'respawn': return T() + '<span>am Rand neu starten</span>';
+    case 'scatter': return T() + '<span>zufällig platzieren</span>';
+    case 'destroy': return T() + '<span>entfernen</span>';
+    case 'place': return T() + `<span>nach X</span>${N('x', 1, 0)}<span>% Y</span>${N('y', 1, 0)}<span>%</span>`;
+    case 'fly': return T() + `<select data-p="${P}dir">${opt(DIRS, a.dir)}</select><span>mit Tempo</span>${N('speed', 10, 0)}`;
+    case 'stop': return T() + '<span>anhalten</span>';
+    case 'move': return T() + `<select data-p="${P}dir">${opt(DIRS, a.dir)}</select><span>mit Tempo</span>${N('speed', 10, 0)}`;
+    case 'jump': return T() + `<span>springt mit Kraft</span>${N('power', 10, 0)}<label class="ck" style="color:#fff"><input type="checkbox" data-p="${P}air"${a.air ? ' checked' : ''}>auch in der Luft</label>`;
+    case 'shoot': return T() + `<span>schießt</span><select data-p="${P}sprite">${spOpts(M, a.sprite, '— Geschoss —')}</select><select data-p="${P}dir">${opt(DIRS, a.dir)}</select><span>Tempo</span>${N('speed', 10, 0)}`;
+    case 'hurt': return T() + `<span>Schaden</span>${N('n', 1, 1)}`;
+    case 'bounce': return T() + `<span>prallt ab von</span><select data-p="${P}other">${targetOpts(M, w, a.other)}</select>`;
+    case 'speed': return T() + `<span>Tempo mal</span>${N('f', 0.05, 0)}`;
+    case 'grow': return T() + `<span>Größe mal</span>${N('f', 0.05, 0)}`;
+    case 'color': return T() + `<span>Farbe</span><input type="color" data-p="${P}color" value="${esc(a.color || '#ff4d6d')}">`;
+    case 'show': return T() + `<select data-p="${P}visible" data-bool="1"><option value="true"${a.visible !== false ? ' selected' : ''}>zeigen</option><option value="false"${a.visible === false ? ' selected' : ''}>verstecken</option></select>`;
+    case 'spawn': return `<select data-p="${P}sprite">${spOpts(M, a.sprite)}</select><span>neu erzeugen</span><select data-p="${P}where" data-re="1">${opt([['auto', 'am Rand (wie gewohnt)'], ['random', 'zufällig'], ['xy', 'an einem Ort']].concat(hasA(w) ? [['at@a', 'bei Figur A']] : []).concat(w.type === 'touch' ? [['at@b', 'bei Figur B']] : []), a.where || 'auto')}</select>` + (a.where === 'xy' ? `<span>X</span>${N('x', 1, 0)}<span>% Y</span>${N('y', 1, 0)}<span>%</span>` : '');
+    case 'go': return `<span>zu</span><select data-p="${P}screen">${scrOpts(M, a.screen)}</select><span>wechseln</span>`;
+    case 'sound': return `<select data-p="${P}sound">${opt(SOUND_OPTS, a.sound)}</select>`;
+    case 'effect': return `<select data-p="${P}kind" data-re="1">${opt(EFFECT_OPTS, a.kind)}</select>` + (a.kind === 'sparks' || a.kind === 'boom' ? T() : '');
+    case 'say': return `<input type="text" data-p="${P}text" value="${esc(a.text || '')}" maxlength="60" placeholder="Text">`;
+    case 'win': case 'lose': return `<input type="text" data-p="${P}text" value="${esc(a.text || '')}" maxlength="40" placeholder="Text (optional)">`;
+  } return '';
+}
+function ruleCard(M, r, i) {
+  const P = 'rules.' + i + '.', w = r.when;
+  return `<div class="cardx">
+    <div class="rline"><span class="lbl">Wenn</span><select data-p="${P}when.type" data-re="1">${opt(EVENTS, w.type)}</select><span style="margin-left:auto;display:flex;gap:2px">${tools('rule', i, M.rules.length)}</span></div>
+    <div class="rline" style="margin-left:46px">${whenParams(M, w, P + 'when.')}</div>
+    ${(r.conds || []).map((c, ci) => `<div class="rline" style="margin-left:46px"><span class="lbl" style="color:var(--accent2)">nur wenn</span><select data-p="${P}conds.${ci}.stat" data-re="1">${statOpts(M, c.stat)}</select>${String(c.stat).startsWith('screen:') ? `<select data-p="${P}conds.${ci}.op">${opt(SCREEN_OPS, c.op === '!=' ? '!=' : '==')}</select>` : `<select data-p="${P}conds.${ci}.op">${opt(OPS, c.op)}</select><input type="number" step="1" data-p="${P}conds.${ci}.n" value="${num(c.n)}">`}<button class="xbtn" data-act="del-cond" data-i="${i}" data-ci="${ci}" type="button" aria-label="Bedingung löschen">${ic('x')}</button></div>`).join('')}
+    <div class="then">${(r.then || []).map((a, ai) => `<div class="rline"><span class="lbl">dann</span><select data-p="${P}then.${ai}.type" data-re="1">${opt(ACTIONS, a.type)}</select><button class="xbtn" data-act="del-action" data-i="${i}" data-ai="${ai}" type="button" aria-label="Aktion löschen">${ic('x')}</button></div><div class="rline" style="margin-left:46px">${actParams(M, w, a, P + 'then.' + ai + '.')}</div>`).join('')}
+      <div class="addrow" style="margin-top:6px"><button class="btn sm ghost" data-act="add-action" data-i="${i}" type="button">${ic('plus')}Aktion</button><button class="btn sm ghost" data-act="add-cond" data-i="${i}" type="button">${ic('plus')}Bedingung</button></div></div></div>`;
+}
+function varRow(v, i) {
+  return `<div class="rline"><input type="text" data-p="vars.${i}.name" data-re="1" value="${esc(v.name)}" maxlength="20" aria-label="Name der Variable" style="min-width:120px"><span>startet bei</span><input type="number" step="1" data-p="vars.${i}.value" value="${num(v.value)}"><button class="xbtn" data-act="del-var" data-i="${i}" type="button" aria-label="Variable löschen">${ic('trash')}</button></div>`;
+}
+function renderBuilder() {
+  const g = App.g; if (!g) return; g.model = normalizeModel(g.model);
+  const M = g.model, pane = $('#pane-builder'), top = pane.scrollTop, S = M.settings;
+  const openState = $$('details.bx', pane).map(d => d.open), moreOpen = $$('details.more', pane).map(d => d.open);
+  pane.innerHTML = `
+  ${g.mode === 'code' ? `<div class="tonote">Dieses Spiel besteht aus eigenem Code. Der Baukasten zeigt hier den alten Stand. Wenn du hier etwas änderst, wird der Code <b>ersetzt</b>, sobald du „Aus dem Baukasten übernehmen“ wählst.<div style="margin-top:10px"><button class="btn sm warn" data-act="from-builder" type="button">Aus dem Baukasten übernehmen</button></div></div>` : ''}
+  <details class="bx" open><summary>${ic('game')} Spielfeld <span class="cnt">ziehen zum Verschieben</span></summary><div class="in-b">
+    ${M.screens.length ? `<div class="scrtabs"><button class="tab${!App.scr ? ' on' : ''}" data-act="scr-tab" data-sid="" type="button">Alle</button>${M.screens.map(c => `<button class="tab${App.scr === c.id ? ' on' : ''}" data-act="scr-tab" data-sid="${esc(c.id)}" type="button">${esc(c.name)}</button>`).join('')}</div>` : ''}
+    <svg id="scene" viewBox="0 0 800 500" role="img" aria-label="Spielfeld: Figuren zum Verschieben ziehen">${sceneInner(M)}</svg>
+    <p class="hint">So sieht das Spielfeld beim Start aus. Zieh eine Figur zum Verschieben, die grüne Kugel unten rechts vergrößert sie. Doppelklick öffnet die Einstellungen.</p>
+  </div></details>
+  <details class="bx" open><summary>${ic('pen')} Spiel</summary><div class="in-b"><div class="g2">
+    <label>Hintergrund oben<input type="color" data-p="settings.bg" value="${esc(S.bg)}"></label>
+    <label>Hintergrund unten <span class="hint" style="margin:0;display:inline">(optional)</span><span style="display:flex;gap:6px"><input type="color" data-p="settings.bg2" value="${esc(S.bg2 || S.bg)}" style="flex:1"><button class="btn sm ghost" data-act="clear-bg2" type="button"${S.bg2 ? '' : ' disabled'}>Aus</button></span></label>
+    <label>Muster<select data-p="settings.pattern">${opt(PATTERNS, S.pattern)}</select></label>
+    <label>Leben (0 = keine)<input type="number" min="0" max="9" data-p="settings.lives" value="${num(S.lives)}"></label>
+    <label>Zeit in Sekunden (0 = keine)<input type="number" min="0" max="600" data-p="settings.time" value="${num(S.time)}"></label>
+    <label>Wenn die Zeit abläuft<select data-p="settings.timeMode"><option value="win"${S.timeMode === 'win' ? ' selected' : ''}>hast du gewonnen</option><option value="lose"${S.timeMode === 'lose' ? ' selected' : ''}>hast du verloren</option></select></label>
+    <label><span class="lt">Schwerkraft<b>${num(S.gravity)}</b></span><input type="range" min="200" max="3000" step="50" data-p="settings.gravity" value="${num(S.gravity)}"></label>
+    <label class="ck"><input type="checkbox" data-p="settings.showScore"${S.showScore ? ' checked' : ''}>Punkte anzeigen</label>
+    <label style="grid-column:1/-1">Anleitung auf dem Startbildschirm<input type="text" data-p="settings.help" value="${esc(S.help)}" maxlength="70" placeholder="z. B. Pfeiltasten bewegen den Spieler"></label>
+  </div></div></details>
+  <details class="bx"${M.screens.length ? ' open' : ''}><summary>${ic('blocks')} Bildschirme und Menüs <span class="cnt">${M.screens.length}</span></summary><div class="in-b">
+    <p class="hint" style="margin-top:0">Ein Bildschirm ist zum Beispiel das Hauptmenü, das Spiel oder die Pause. Figuren und Knöpfe zeigst du nur auf einem Bildschirm. Der oberste Bildschirm ist der Start. Ein „Menü“ hält das Spiel an. Heißt ein Bildschirm <b>Gewonnen</b> oder <b>Verloren</b>, öffnet er sich automatisch beim Sieg bzw. bei der Niederlage (Text dort: {message}).</p>
+    ${M.screens.map((c, i) => `<div class="rline"><input type="text" data-p="screens.${i}.name" data-re="1" value="${esc(c.name)}" maxlength="20" aria-label="Name des Bildschirms" style="min-width:120px"><label class="ck" style="color:#fff"><input type="checkbox" data-p="screens.${i}.menu"${c.menu ? ' checked' : ''}>Menü (Spiel pausiert)</label><span style="margin-left:auto;display:flex;gap:2px">${tools('screen', i, M.screens.length)}</span></div>`).join('')}
+    <div class="addrow"><button class="btn sm" data-act="add-screen" type="button">${ic('plus')}Bildschirm</button>${M.screens.length ? '' : `<button class="btn sm pri" data-act="add-menus" type="button">${ic('sparkles')}Standard-Menüs hinzufügen</button>`}</div>
+  </div></details>
+  <details class="bx"${M.vars.length ? ' open' : ''}><summary>${ic('blocks')} Variablen <span class="cnt">${M.vars.length}</span></summary><div class="in-b">
+    <p class="hint" style="margin-top:0">Variablen merken sich eine Zahl, zum Beispiel „Schlüssel“ oder „Level“. Du kannst sie in Regeln ändern und prüfen und mit {Name} in Texten anzeigen.</p>
+    ${M.vars.map(varRow).join('')}
+    <div class="addrow"><button class="btn sm" data-act="add-var" type="button">${ic('plus')}Variable</button></div>
+  </div></details>
+  <details class="bx" open><summary>${ic('game')} Figuren <span class="cnt">${M.sprites.length}</span></summary><div class="in-b">
+    ${M.sprites.length ? M.sprites.map((s, i) => spriteCard(M, s, i)).join('') : '<p class="hint">Noch keine Figuren. Füge unten eine hinzu: Spieler, Sammelobjekt oder Gegner.</p>'}
+    <div class="addrow">${[['player', 'Spieler'], ['hero', 'Hüpf-Held'], ['item', 'Sammelobjekt'], ['enemy', 'Gegner'], ['bouncer', 'Springer'], ['ground', 'Boden'], ['platform', 'Plattform'], ['bullet', 'Geschoss'], ['text', 'Text'], ['button', 'Knopf'], ['blank', 'Leer']].map(([k, l]) => `<button class="btn sm${k === 'blank' ? ' ghost' : ''}" data-act="add-sprite" data-k="${k}" type="button">${ic('plus')}${l}</button>`).join('')}</div>
+  </div></details>
+  <details class="bx" open><summary>${ic('bolt')} Regeln <span class="cnt">${M.rules.length}</span></summary><div class="in-b">
+    ${M.rules.length ? M.rules.map((r, i) => ruleCard(M, r, i)).join('') : '<p class="hint">Regeln sagen, was passiert. Zum Beispiel: „Wenn Spieler und Stern sich berühren, dann Punkte um 1.“</p>'}
+    <div class="addrow"><button class="btn sm pri" data-act="add-rule" type="button">${ic('plus')}Regel</button></div>
+    ${M.sprites.length > 1 && new Set(M.sprites.map(s => s.name)).size !== M.sprites.length ? '<p class="hint bad">Zwei Figuren heißen gleich. Gib ihnen verschiedene Namen.</p>' : ''}
+  </div></details>`;
+  $$('details.bx', pane).forEach((d, i) => { if (openState[i] === false) d.open = false; });
+  $$('details.more', pane).forEach((d, i) => { if (moreOpen[i]) d.open = true; });
+  pane.scrollTop = top;
+}
+function getPath(o, path) { return path.split('.').reduce((a, k) => (a == null ? a : a[k]), o); }
+function setPath(o, path, v) { const k = path.split('.'), last = k.pop(); const t = k.reduce((a, x) => a[x], o); t[last] = v; }
+function fixWhen(M, r) {
+  const w = r.when, s = M.sprites;
+  if (w.type === 'touch') { w.a = w.a || (s[0] && s[0].id) || ''; w.b = w.b || (s[1] && s[1].id) || (s[0] && s[0].id) || ''; }
+  else if (['edge', 'click', 'destroyed'].includes(w.type)) w.a = w.a || (s[0] && s[0].id) || '';
+  else if (w.type === 'key' || w.type === 'hold') w.key = w.key || 'SPACE';
+  else if (w.type === 'every') w.n = w.n || 2; else if (w.type === 'after') w.n = w.n || 3;
+  else if (w.type === 'score') w.n = w.n || 10;
+  else if (w.type === 'screen') w.screen = w.screen || (M.screens[0] && M.screens[0].id) || '';
+  else if (w.type === 'stat') { w.stat = w.stat || 'score'; w.op = w.op || '>='; if (w.n == null) w.n = 10; }
+  (r.then || []).forEach(a => {
+    if (a.target === '@b' && w.type !== 'touch') a.target = '';
+    if (a.target === '@a' && !hasA(w)) a.target = '';
+    if (a.other === '@b' && w.type !== 'touch') a.other = ''; if (a.other === '@a' && !hasA(w)) a.other = '';
+    if (a.where === 'at@b' && w.type !== 'touch') a.where = 'auto'; if (a.where === 'at@a' && !hasA(w)) a.where = 'auto';
+  });
+}
+const NEEDS_T = ['respawn', 'scatter', 'destroy', 'place', 'fly', 'stop', 'move', 'jump', 'shoot', 'hurt', 'bounce', 'speed', 'grow', 'color', 'show'];
+function fixAction(M, r, a) {
+  const s = M.sprites, d = { score: { n: 1 }, life: { n: -1 }, setvar: { n: 0 }, addvar: { n: 1 }, place: { x: 50, y: 50 }, fly: { dir: 'up', speed: 300 }, move: { dir: 'right', speed: 200 }, jump: { power: 640 }, shoot: { dir: 'up', speed: 520 }, hurt: { n: 1 }, speed: { f: 1.2 }, grow: { f: 1.2 }, color: { color: '#ff4d6d' }, spawn: { where: 'auto' }, sound: { sound: 'coin' }, effect: { kind: 'sparks' }, say: { text: 'Hallo!' } }[a.type];
+  if (d) for (const k in d) if (a[k] == null) a[k] = d[k];
+  const defT = r.when.type === 'touch' ? '@b' : (hasA(r.when) ? '@a' : (s[0] && s[0].id) || '');
+  if ((NEEDS_T.includes(a.type) || (a.type === 'effect' && (a.kind === 'sparks' || a.kind === 'boom'))) && !a.target) a.target = (a.type === 'jump' || a.type === 'shoot' || a.type === 'fly' || a.type === 'move' || a.type === 'stop') ? ((hasA(r.when) ? '@a' : (s[0] && s[0].id)) || '') : defT;
+  if (a.type === 'go' && !a.screen) a.screen = (M.screens[0] && M.screens[0].id) || '';
+  if (a.type === 'bounce' && !a.other) a.other = r.when.type === 'touch' ? '@b' : '';
+  if (a.type === 'bounce' && r.when.type === 'touch') a.target = a.target || '@a';
+  if (['spawn', 'shoot'].includes(a.type) && !a.sprite) a.sprite = (s[0] && s[0].id) || '';
+  if ((a.type === 'setvar' || a.type === 'addvar') && !a.var) a.var = (M.vars[0] && M.vars[0].id) || '';
+}
+function onBuilderInput(e) {
+  const el = e.target.closest('[data-p]'); if (!el) return;
+  const g = App.g, M = g.model, p = el.dataset.p;
+  let v = el.type === 'checkbox' ? el.checked : (el.type === 'range' || el.type === 'number') ? (el.value === '' ? 0 : +el.value) : el.value;
+  if (el.dataset.bool) v = v === 'true';
+  if (e.type === 'input' && el.tagName === 'SELECT') return;
+  const before = getPath(M, p);
+  setPath(M, p, v);
+  if (e.type === 'change' && before === v && !el.dataset.re && !/\.when\.type$|\.then\.\d+\.type$/.test(p)) return;
+  if (/^sprites\.\d+\.control$/.test(p) && v !== 'none') M.sprites[+p.split('.')[1]].motion = 'none';
+  const lab = el.closest('label'); if (lab && el.type === 'range') { const b = $('b', lab); if (b) b.textContent = v + (el.dataset.suf || ''); }
+  if (el.dataset.sw) { const sw = el.closest('.cardx') && $('.sw', el.closest('.cardx')); if (sw) sw.style.background = v; }
+  const m = /^rules\.(\d+)\.when\.type$/.exec(p); if (m) fixWhen(M, M.rules[+m[1]]);
+  const m2 = /^rules\.(\d+)\.when\.(a|b)$/.exec(p); if (m2) fixWhen(M, M.rules[+m2[1]]);
+  const ma = /^rules\.(\d+)\.then\.(\d+)\.(type|kind|where)$/.exec(p); if (ma) fixAction(M, M.rules[+ma[1]], M.rules[+ma[1]].then[+ma[2]]);
+  if (p.endsWith('.name') && p.startsWith('sprites.')) {
+    const i = +p.split('.')[1]; let n = String(v).trim() || 'Figur', k = 2, base = n;
+    while (M.sprites.some((s, j) => j !== i && s.name === n)) n = base + ' ' + k++;
+    M.sprites[i].name = e.type === 'change' ? n : String(v);
+  }
+  if (p.startsWith('screens.') && p.endsWith('.name')) { const i = +p.split('.')[1]; let n = String(v).replace(/["\\]/g, '').trim() || 'Bildschirm', k = 2, base = n; while (M.screens.some((c, j) => j !== i && c.name === n)) n = base + ' ' + k++; M.screens[i].name = e.type === 'change' ? n : String(v).replace(/["\\]/g, ''); }
+  const mc = /^rules\.(\d+)\.conds\.(\d+)\.stat$/.exec(p); if (mc) { const c = M.rules[+mc[1]].conds[+mc[2]]; if (String(c.stat).startsWith('screen:')) { c.op = '=='; } else if (c.op === '==' || c.op === '!=') c.op = '>='; }
+  if (p.startsWith('vars.') && p.endsWith('.name')) M.vars[+p.split('.')[1]].name = String(v).replace(/[{}]/g, '').trim() || 'Variable';
+  if (p.startsWith('sprites.') || p.startsWith('settings.')) drawScene();
+  if (e.type === 'change' && (el.dataset.re || m || ma || mc)) renderBuilder();
+  markDirty(); if (g.mode === 'builder') scheduleRun();
+}
+$('#pane-builder').addEventListener('input', onBuilderInput);
+$('#pane-builder').addEventListener('change', onBuilderInput);
+$('#pane-builder').addEventListener('click', e => {
+  const cardHead = e.target.closest('.cardx.sprite .chead'); if (cardHead && !e.target.closest('button,input')) { App.sel = cardHead.closest('.cardx').dataset.sid; markSelected(); drawScene(); }
+  const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
+  const g = App.g, M = g.model, a = b.dataset.act, i = +b.dataset.i, mv = (arr, from, to) => { arr.splice(to, 0, arr.splice(from, 1)[0]); };
+  if (a === 'add-sprite') { const s = addSprite(M, b.dataset.k, { screen: (App.scr && M.screens.some(c => c.id === App.scr)) ? App.scr : '' }); App.sel = s.id; }
+  else if (a === 'del-sprite') {
+    const id = M.sprites[i].id; M.sprites.splice(i, 1); if (App.sel === id) App.sel = null;
+    M.rules.forEach(r => { ['a', 'b'].forEach(k => { if (r.when[k] === id) r.when[k] = ''; }); if (r.when.stat === 'count:' + id) r.when.stat = 'score'; (r.conds || []).forEach(c => { if (c.stat === 'count:' + id) c.stat = 'score'; }); (r.then || []).forEach(x => { ['target', 'sprite', 'other'].forEach(k => { if (x[k] === id) x[k] = ''; }); }); });
+  }
+  else if (a === 'up-sprite') mv(M.sprites, i, i - 1); else if (a === 'down-sprite') mv(M.sprites, i, i + 1);
+  else if (a === 'dup-sprite') { const c = JSON.parse(JSON.stringify(M.sprites[i])); c.id = uid('s'); let n = c.name.replace(/ \d+$/, ''), k = 2; while (M.sprites.some(s => s.name === n + ' ' + k)) k++; c.name = n + ' ' + k; c.x = Math.min(110, num(c.x) + 4); c.y = Math.min(110, num(c.y) + 4); M.sprites.splice(i + 1, 0, c); App.sel = c.id; }
+  else if (a === 'add-rule') { const r = { id: uid('r'), when: { type: M.sprites.length > 1 ? 'touch' : 'start' }, conds: [], then: [{ type: 'score' }] }; fixWhen(M, r); fixAction(M, r, r.then[0]); M.rules.push(r); }
+  else if (a === 'del-rule') M.rules.splice(i, 1);
+  else if (a === 'up-rule') mv(M.rules, i, i - 1); else if (a === 'down-rule') mv(M.rules, i, i + 1);
+  else if (a === 'dup-rule') { const c = JSON.parse(JSON.stringify(M.rules[i])); c.id = uid('r'); M.rules.splice(i + 1, 0, c); }
+  else if (a === 'add-action') { const r = M.rules[i], x = { type: 'score' }; fixAction(M, r, x); r.then.push(x); }
+  else if (a === 'del-action') M.rules[i].then.splice(+b.dataset.ai, 1);
+  else if (a === 'add-cond') M.rules[i].conds.push({ stat: 'score', op: '>=', n: 5 });
+  else if (a === 'del-cond') M.rules[i].conds.splice(+b.dataset.ci, 1);
+  else if (a === 'add-var') { let n = 'Zahl', k = 2; while (M.vars.some(v => v.name === n)) n = 'Zahl ' + k++; M.vars.push({ id: uid('v'), name: n, value: 0 }); }
+  else if (a === 'del-var') { const id = M.vars[i].id; M.vars.splice(i, 1); M.rules.forEach(r => { if (r.when.stat === 'var:' + id) r.when.stat = 'score'; (r.conds || []).forEach(c => { if (c.stat === 'var:' + id) c.stat = 'score'; }); (r.then || []).forEach(x => { if (x.var === id) x.var = ''; }); }); }
+  else if (a === 'clear-bg2') M.settings.bg2 = '';
+  else if (a === 'scr-tab') App.scr = b.dataset.sid;
+  else if (a === 'add-screen') { let n = 'Bildschirm', k = 2; while (M.screens.some(c => c.name === n)) n = 'Bildschirm ' + k++; const c = { id: uid('c'), name: n, menu: true }; M.screens.push(c); App.scr = c.id; }
+  else if (a === 'add-menus') { addMenus(M, g.title); App.scr = M.screens[0].id; toast('Menüs hinzugefügt: Hauptmenü, Pause, Gewonnen und Verloren', 'ok'); }
+  else if (a === 'up-screen') mv(M.screens, i, i - 1); else if (a === 'down-screen') mv(M.screens, i, i + 1);
+  else if (a === 'del-screen') {
+    const c = M.screens[i], n = M.sprites.filter(s => s.screen === c.id).length;
+    confirmBox('Bildschirm löschen?', `„${c.name}“ wird gelöscht${n ? ` und die ${n} Figur${n > 1 ? 'en' : ''} darauf auch` : ''}.`, 'Löschen', true).then(ok => {
+      if (!ok) return;
+      M.sprites = M.sprites.filter(s => s.screen !== c.id); M.screens.splice(M.screens.indexOf(c), 1); if (App.scr === c.id) App.scr = '';
+      M.rules.forEach(r => { if (r.when.screen === c.id) r.when.screen = ''; (r.conds || []).forEach(x => { if (x.stat === 'screen:' + c.id) x.stat = 'score'; }); (r.then || []).forEach(x => { if (x.screen === c.id) x.screen = ''; }); });
+      renderBuilder(); markDirty(); scheduleRun(100);
+    });
+    return;
+  }
+  else if (a === 'from-builder') { g.mode = 'builder'; g.code = ''; toast('Der Code wurde durch den Baukasten ersetzt', 'ok'); }
+  else return;
+  renderBuilder(); markDirty(); scheduleRun(100);
+});
 
 // ====================================================================
 // Vorschau (geschützte Box: sandbox ohne same-origin)
@@ -654,26 +1225,40 @@ REGELN FÜR DEINE ANTWORT
 - Benutze NUR die Funktionen, die unten stehen. Erfinde keine anderen. Die Variable Moki gibt es schon, nichts importieren. Am Ende muss game.start() stehen.
 
 SO FUNKTIONIERT DIE MOKI-ENGINE
-Das Spielfeld ist 800 x 500 groß. Die Figuren sind einfache Formen.
-const game = Moki.game({ background:'#0d1240', lives:3, time:30, timeMode:'win', showScore:true })
-  lives: Leben (0 = keine, bei 0 Leben ist das Spiel verloren). time: Sekunden (0 = keine Zeit). timeMode: 'win' oder 'lose' = was passiert, wenn die Zeit abläuft.
-game.sprite({ name, shape, color, size, x, y, control, axis, motion, speed, label })  legt eine Figur an und gibt sie zurück.
-  shape: circle, square, triangle, diamond, star, heart. color: z. B. '#00e5a8'. size: Pixel.
-  x und y beim Anlegen sind PROZENT vom Spielfeld (0 bis 100, auch -5 für knapp außerhalb).
-  control: 'keys' (Pfeiltasten/WASD und Finger), 'mouse' (Maus/Finger folgt) oder 'none'. axis: 'x', 'y' oder 'xy' (wohin sich die gesteuerte Figur bewegen darf).
-  motion: none, fall (fällt), rise (steigt), left, right, bounce (springt umher), follow (verfolgt die gesteuerte Figur). speed: Pixel pro Sekunde. label: Text in der Figur.
+Das Spielfeld ist 800 x 500 groß. Figuren sind Formen oder kleine Bilder.
+const game = Moki.game({ background:'#0d1240', background2:'#2b1b6b', pattern:'stars', lives:3, time:30, timeMode:'win', showScore:true, gravity:1400, help:'Anleitung' })
+  background2 (optional) macht einen Farbverlauf nach unten. pattern: 'none', 'stars', 'grid', 'dots'. lives: Leben (0 = keine, bei 0 Leben ist das Spiel verloren). time: Sekunden (0 = keine). timeMode: 'win' oder 'lose' = was passiert, wenn die Zeit abläuft. help: kurzer Text auf dem Startbildschirm.
+game.sprite({ name, shape, color, size, stretch, x, y, angle, spin, opacity, control, axis, motion, speed, physics, solid, hp, wrap, openBottom, jump, label, cols, rows, gapX, gapY })  legt eine Figur an und gibt sie zurück.
+  shape: circle, square, triangle, diamond, star, heart, hexagon, ring, cross, arrow, text (nur Text aus label), button (Knopf mit label). Als Bilder: rocket, ghost, crown, ball, planet, car, sword, gem, pad, blob, bolt.
+  color: z. B. '#00e5a8'. size: Pixel (Höhe). stretch: Breite = size * stretch (für Balken, Plattformen). angle: Drehung in Grad. spin: Grad pro Sekunde. opacity: 0 bis 1.
+  x und y beim Anlegen sind PROZENT vom Spielfeld (0 bis 100, auch -5 oder 110 für knapp außerhalb).
+  control: 'keys' (Pfeiltasten/WASD und Finger), 'mouse' oder 'none'. axis: 'x', 'y' oder 'xy' (wohin die gesteuerte Figur darf).
+  motion: none, fall, rise, left, right, bounce (prallt an den Rändern ab), follow (verfolgt die gesteuerte Figur). speed: Pixel pro Sekunde. openBottom: true = bounce-Figur prallt unten nicht ab.
+  physics: 'platformer' (Schwerkraft, springt mit Leertaste/oben/Tippen oben, steht auf Figuren mit solid:true) oder 'topdown' (stößt nur an solid-Figuren). solid: true = fester Boden/Wand/Plattform. jump: Sprungkraft (Standard 640).
+  hp: Leben der Figur. wrap: true = kommt auf der anderen Seite wieder rein. label: Text in der Figur (oder bei shape 'text' der Text selbst, mit {score}, {lives}, {time} und {meineVariable}).
+  cols und rows (und gapX, gapY in Pixeln) legen viele gleiche Figuren in einem Gitter an, z. B. Ziegel.
   Figuren mit motion fall/rise/left/right starten automatisch am Rand neu, wenn sie den Bildschirm verlassen.
-Figur s: s.x und s.y sind zur Laufzeit PIXEL (Mitte). Außerdem s.name, s.color, s.size, s.speed, s.label, s.visible.
-  s.place(xProzent, yProzent), s.respawn() (am passenden Rand neu starten), s.destroy(), s.clone(), s.touches(andereFigur).
+Figur s: s.x und s.y sind zur Laufzeit PIXEL (Mitte). Außerdem s.name, s.color, s.size, s.speed, s.angle, s.label, s.visible, s.hp, s.onGround.
+  s.place(xProzent, yProzent), s.respawn(), s.scatter() (zufällig), s.destroy(), s.clone(), s.touches(andereFigur), s.hurt(schaden) (bei hp 0 weg),
+  s.jump(kraft, inDerLuftErlaubt), s.fly(richtung, tempo), s.stop(), s.nudge(richtung, pixel), s.shoot('GeschossName', richtung, tempo), s.bounceOff(andereFigur), s.burst(farbe).
+  richtung: 'up', 'down', 'left', 'right', 'pointer' (zur Maus/zum Finger), eine Figur, ein Winkel in Grad (0 = rechts, 90 = unten) oder [dx, dy].
+  Eine Figur, die als Geschoss mit shoot genutzt wird, legst du vorher mit game.sprite() an, am besten außerhalb des Bildschirms (x:-10, y:-10).
 Ereignisse:
-  game.onStart(() => {})   game.onUpdate(dt => {}) jedes Bild, dt in Sekunden
-  game.onKey('SPACE', () => {})  (SPACE, LEFT, RIGHT, UP, DOWN, ENTER, A bis Z)
+  game.onStart(() => {})   game.onUpdate(dt => {}) jedes Bild, dt in Sekunden   game.onPointer((x, y) => {}) irgendwo getippt
+  game.onKey('SPACE', () => {}) (SPACE, LEFT, RIGHT, UP, DOWN, ENTER, A bis Z)   game.onKeyHold('LEFT', dt => {}) solange gehalten
   game.onTouch('NameA', 'NameB', (a, b) => {})  wenn sich zwei Figuren berühren (a und b sind die beteiligten Figuren)
-  game.onEdge('Name', s => {})  Figur verlässt den Bildschirm.   game.onClick('Name', s => {})  Figur angetippt.
-  game.every(sekunden, () => {})   game.onScore(punkte, () => {})  wenn die Punktzahl erreicht ist
-Aktionen: game.addScore(n)  game.addLife(n)  game.say('Text', sekunden)  game.win('Text')  game.lose('Text')
-  game.spawn('Name') (neue Kopie einer Figur)  game.find('Name')  game.all('Name')  game.random(min, max)
+  game.onEdge('Name', s => {}) Figur verlässt den Bildschirm.   game.onClick('Name', s => {}) Figur angetippt.   game.onDestroy('Name', s => {}) Figur zerstört.
+  game.onScreen('Name', () => {}) wenn ein Bildschirm (Menü) geöffnet wird
+  game.every(sekunden, () => {})   game.after(sekunden, () => {}) einmal   game.onScore(punkte, () => {})   game.when(() => game.get('Schlüssel') >= 3, () => {}) wenn die Bedingung wahr wird
+Aktionen: game.addScore(n)  game.addLife(n)  game.say('Text', sekunden)  game.win('Text')  game.lose('Text')  game.restart()
+  game.spawn('Name') (neue Kopie einer Figur, startet am Rand)  game.find('Name')  game.all('Name')  game.count('Name')  game.random(min, max)
+  game.set('Name', wert)  game.change('Name', plusMinus)  game.get('Name')  (eigene Zahlen-Variablen)
+  game.sound('coin' | 'hit' | 'jump' | 'shoot' | 'pop' | 'powerup' | 'explosion' | 'win' | 'lose')  game.shake(ms)  game.flash('#fff')  game.burst(xProzent, yProzent, farbe, anzahl)
   Lesen: game.score, game.lives, game.time. Figuren mit gleichem name sind eine Gruppe, auch Kopien.
+Menüs und Bildschirme (optional): Moki.game({ screens:[{ name:'Hauptmenü', menu:true }, { name:'Spiel', menu:false }, { name:'Pause', menu:true }] }) legt Bildschirme an. Der erste ist der Start. menu:true hält das Spiel an (nur Knöpfe und Texte reagieren).
+  Bei jeder Figur sagt screen:'Name', auf welchem Bildschirm sie erscheint (ohne screen auf allen). game.go('Spiel') wechselt den Bildschirm, game.screen ist der aktuelle.
+  shape:'button' macht einen Knopf mit label als Beschriftung. Er reagiert mit game.onClick('Knopfname', () => game.go('Spiel')). Texte: shape:'text'.
+  Gibt es Bildschirme namens 'Gewonnen' und 'Verloren', öffnen sie sich automatisch bei game.win/game.lose; {message} zeigt dort den Text von win/lose an. game.restart() startet das ganze Spiel neu (zurück ins Hauptmenü).
 
 BEISPIEL (ein komplettes, funktionierendes Spiel)
 \`\`\`javascript
@@ -800,155 +1385,22 @@ function setTab(t) {
 }
 $$('.ltabs .tab').forEach(b => b.onclick = () => setTab(b.dataset.tab));
 
-// ---------- Baukasten-Oberfläche ----------
-const opt = (list, v) => list.map(([k, l]) => `<option value="${esc(k)}"${String(k) === String(v) ? ' selected' : ''}>${esc(l)}</option>`).join('');
-const spOpts = (M, v, ph) => `<option value="">${esc(ph || '— Figur wählen —')}</option>` + M.sprites.map(s => `<option value="${esc(s.id)}"${s.id === v ? ' selected' : ''}>${esc(s.name)}</option>`).join('');
-function targetOpts(M, when, v) {
-  let o = '<option value="">— Figur wählen —</option>';
-  if (when.type === 'touch') o += `<option value="@a"${v === '@a' ? ' selected' : ''}>Die erste Figur (A)</option><option value="@b"${v === '@b' ? ' selected' : ''}>Die zweite Figur (B)</option>`;
-  else if (when.type === 'edge' || when.type === 'click') o += `<option value="@a"${v === '@a' ? ' selected' : ''}>Diese Figur</option>`;
-  return o + M.sprites.map(s => `<option value="${esc(s.id)}"${s.id === v ? ' selected' : ''}>${esc(s.name)}</option>`).join('');
-}
-function spriteCard(M, s, i) {
-  const P = 'sprites.' + i + '.';
-  return `<div class="cardx">
-    <div class="chead"><span class="sw" style="background:${esc(s.color)}"></span><input class="nm" data-p="${P}name" data-re="1" value="${esc(s.name)}" maxlength="24" aria-label="Name"><button class="xbtn" data-act="del-sprite" data-i="${i}" type="button" aria-label="Figur löschen">${ic('trash')}</button></div>
-    <div class="g2">
-      <label>Form<select data-p="${P}shape">${opt(SHAPES, s.shape)}</select></label>
-      <label>Farbe<input type="color" data-p="${P}color" data-sw="1" value="${esc(s.color)}"></label>
-      <label><span class="lt">Größe<b>${num(s.size)}</b></span><input type="range" min="16" max="160" data-p="${P}size" value="${num(s.size)}"></label>
-      <label><span class="lt">Tempo<b>${num(s.speed)}</b></span><input type="range" min="0" max="900" step="10" data-p="${P}speed" value="${num(s.speed)}"></label>
-      <label><span class="lt">Start links/rechts<b>${num(s.x)}%</b></span><input type="range" min="-10" max="110" data-p="${P}x" data-suf="%" value="${num(s.x)}"></label>
-      <label><span class="lt">Start oben/unten<b>${num(s.y)}%</b></span><input type="range" min="-10" max="110" data-p="${P}y" data-suf="%" value="${num(s.y)}"></label>
-      <label>Steuerung<select data-p="${P}control" data-re="1">${opt(CONTROLS, s.control)}</select></label>
-      ${s.control !== 'none' ? `<label>Darf sich bewegen<select data-p="${P}axis">${opt(AXES, s.axis)}</select></label>` : `<label>Bewegung<select data-p="${P}motion">${opt(MOTIONS, s.motion)}</select></label>`}
-    </div>
-  </div>`;
-}
-function whenParams(M, w, P) {
-  switch (w.type) {
-    case 'touch': return `<select data-p="${P}a">${spOpts(M, w.a, '— Figur A —')}</select><span>und</span><select data-p="${P}b" data-re="1">${spOpts(M, w.b, '— Figur B —')}</select><span>sich berühren</span>`;
-    case 'key': return `<select data-p="${P}key">${opt(KEYS, w.key)}</select><span>gedrückt wird</span>`;
-    case 'edge': return `<select data-p="${P}a">${spOpts(M, w.a)}</select><span>den Bildschirm verlässt</span>`;
-    case 'click': return `<select data-p="${P}a">${spOpts(M, w.a)}</select><span>angetippt wird</span>`;
-    case 'every': return `<span>alle</span><input type="number" step="0.1" min="0.1" data-p="${P}n" value="${num(w.n)}"><span>Sekunden</span>`;
-    case 'score': return `<span>die Punkte</span><input type="number" step="1" data-p="${P}n" value="${num(w.n)}"><span>erreichen</span>`;
-  } return '<span>das Spiel startet</span>';
-}
-function actParams(M, w, a, P) {
-  const T = () => `<select data-p="${P}target">${targetOpts(M, w, a.target)}</select>`;
-  switch (a.type) {
-    case 'score': return `<span>Punkte um</span><input type="number" step="1" data-p="${P}n" value="${num(a.n)}">`;
-    case 'life': return `<span>Leben um</span><input type="number" step="1" data-p="${P}n" value="${num(a.n)}">`;
-    case 'respawn': return T() + '<span>oben neu starten</span>';
-    case 'destroy': return T() + '<span>entfernen</span>';
-    case 'place': return T() + `<span>nach X</span><input type="number" min="0" max="100" data-p="${P}x" value="${num(a.x)}"><span>% Y</span><input type="number" min="0" max="100" data-p="${P}y" value="${num(a.y)}"><span>%</span>`;
-    case 'spawn': return `<select data-p="${P}sprite">${spOpts(M, a.sprite)}</select><span>neu erzeugen</span>`;
-    case 'speed': return T() + `<span>Tempo mal</span><input type="number" step="0.05" min="0" data-p="${P}f" value="${num(a.f) || 1}">`;
-    case 'say': return `<input type="text" data-p="${P}text" value="${esc(a.text || '')}" maxlength="60" placeholder="Text">`;
-    case 'win': case 'lose': return `<input type="text" data-p="${P}text" value="${esc(a.text || '')}" maxlength="40" placeholder="Text (optional)">`;
-  } return '';
-}
-function ruleCard(M, r, i) {
-  const P = 'rules.' + i + '.', w = r.when;
-  return `<div class="cardx">
-    <div class="rline"><span class="lbl">Wenn</span><select data-p="${P}when.type" data-re="1">${opt(EVENTS, w.type)}</select><button class="xbtn" data-act="del-rule" data-i="${i}" type="button" style="margin-left:auto" aria-label="Regel löschen">${ic('trash')}</button></div>
-    <div class="rline" style="margin-left:46px">${whenParams(M, w, P + 'when.')}</div>
-    <div class="then">${(r.then || []).map((a, ai) => `<div class="rline"><span class="lbl">dann</span><select data-p="${P}then.${ai}.type" data-re="1">${opt(ACTIONS, a.type)}</select><button class="xbtn" data-act="del-action" data-i="${i}" data-ai="${ai}" type="button" aria-label="Aktion löschen">${ic('x')}</button></div><div class="rline" style="margin-left:46px">${actParams(M, w, a, P + 'then.' + ai + '.')}</div>`).join('')}
-      <button class="btn sm ghost" data-act="add-action" data-i="${i}" type="button">${ic('plus')}Aktion</button></div></div>`;
-}
-function renderBuilder() {
-  const g = App.g; if (!g) return; const M = g.model, pane = $('#pane-builder'), top = pane.scrollTop;
-  const S = M.settings;
-  const sections = $$('details.bx', pane).map(d => d.open); // offen/zu merken
-  const html = `
-  ${g.mode === 'code' ? `<div class="tonote">Dieses Spiel besteht aus eigenem Code. Der Baukasten zeigt hier den alten Stand. Wenn du hier etwas änderst, wird der Code <b>ersetzt</b>, sobald du „Aus dem Baukasten übernehmen“ wählst.<div style="margin-top:10px"><button class="btn sm warn" data-act="from-builder" type="button">Aus dem Baukasten übernehmen</button></div></div>` : ''}
-  <details class="bx" open><summary>${ic('pen')} Spiel</summary><div class="in-b"><div class="g2">
-    <label>Hintergrund<input type="color" data-p="settings.bg" value="${esc(S.bg)}"></label>
-    <label>Leben (0 = keine)<input type="number" min="0" max="9" data-p="settings.lives" value="${num(S.lives)}"></label>
-    <label>Zeit in Sekunden (0 = keine)<input type="number" min="0" max="600" data-p="settings.time" value="${num(S.time)}"></label>
-    <label>Wenn die Zeit abläuft<select data-p="settings.timeMode"><option value="win"${S.timeMode === 'win' ? ' selected' : ''}>hast du gewonnen</option><option value="lose"${S.timeMode === 'lose' ? ' selected' : ''}>hast du verloren</option></select></label>
-    <label class="ck"><input type="checkbox" data-p="settings.showScore"${S.showScore ? ' checked' : ''}>Punkte anzeigen</label>
-  </div></div></details>
-  <details class="bx" open><summary>${ic('game')} Figuren <span class="cnt">${M.sprites.length}</span></summary><div class="in-b">
-    ${M.sprites.length ? M.sprites.map((s, i) => spriteCard(M, s, i)).join('') : '<p class="hint">Noch keine Figuren. Füge unten eine hinzu: Spieler, Sammelobjekt oder Gegner.</p>'}
-    <div class="addrow"><button class="btn sm" data-act="add-sprite" data-k="player" type="button">${ic('plus')}Spieler</button><button class="btn sm" data-act="add-sprite" data-k="item" type="button">${ic('plus')}Sammelobjekt</button><button class="btn sm" data-act="add-sprite" data-k="enemy" type="button">${ic('plus')}Gegner</button><button class="btn sm" data-act="add-sprite" data-k="bouncer" type="button">${ic('plus')}Springer</button><button class="btn sm ghost" data-act="add-sprite" data-k="blank" type="button">${ic('plus')}Leer</button></div>
-  </div></details>
-  <details class="bx" open><summary>${ic('bolt')} Regeln <span class="cnt">${M.rules.length}</span></summary><div class="in-b">
-    ${M.rules.length ? M.rules.map((r, i) => ruleCard(M, r, i)).join('') : '<p class="hint">Regeln sagen, was passiert. Zum Beispiel: „Wenn Spieler und Stern sich berühren, dann Punkte um 1.“</p>'}
-    <div class="addrow"><button class="btn sm pri" data-act="add-rule" type="button">${ic('plus')}Regel</button></div>
-    ${M.sprites.length > 1 && new Set(M.sprites.map(s => s.name)).size !== M.sprites.length ? '<p class="hint bad">Zwei Figuren heißen gleich. Gib ihnen verschiedene Namen.</p>' : ''}
-  </div></details>`;
-  pane.innerHTML = html;
-  $$('details.bx', pane).forEach((d, i) => { if (sections[i] === false) d.open = false; });
-  pane.scrollTop = top;
-}
-function getPath(o, path) { return path.split('.').reduce((a, k) => (a == null ? a : a[k]), o); }
-function setPath(o, path, v) { const k = path.split('.'), last = k.pop(); const t = k.reduce((a, x) => a[x], o); t[last] = v; }
-function fixWhen(M, r) {
-  const w = r.when, s = M.sprites;
-  if (w.type === 'touch') { w.a = w.a || (s[0] && s[0].id) || ''; w.b = w.b || (s[1] && s[1].id) || (s[0] && s[0].id) || ''; }
-  else if (w.type === 'edge' || w.type === 'click') w.a = w.a || (s[0] && s[0].id) || '';
-  else if (w.type === 'key') w.key = w.key || 'SPACE';
-  else if (w.type === 'every') w.n = w.n || 2;
-  else if (w.type === 'score') w.n = w.n || 10;
-  (r.then || []).forEach(a => { if (a.target === '@b' && w.type !== 'touch') a.target = ''; if (a.target === '@a' && !['touch', 'edge', 'click'].includes(w.type)) a.target = ''; });
-}
-function fixAction(M, r, a) {
-  const s = M.sprites, d = { score: { n: 1 }, life: { n: -1 }, place: { x: 50, y: 50 }, speed: { f: 1.2 }, say: { text: 'Hallo!' } }[a.type];
-  if (d) for (const k in d) if (a[k] == null) a[k] = d[k];
-  if (['respawn', 'destroy', 'place', 'speed'].includes(a.type) && !a.target) a.target = r.when.type === 'touch' ? '@b' : (['edge', 'click'].includes(r.when.type) ? '@a' : (s[0] && s[0].id) || '');
-  if (a.type === 'spawn' && !a.sprite) a.sprite = (s[0] && s[0].id) || '';
-}
-function onBuilderInput(e) {
-  const el = e.target.closest('[data-p]'); if (!el) return;
-  const g = App.g, M = g.model, p = el.dataset.p;
-  let v = el.type === 'checkbox' ? el.checked : (el.type === 'range' || el.type === 'number') ? (el.value === '' ? 0 : +el.value) : el.value;
-  if (e.type === 'input' && (el.tagName === 'SELECT' || el.dataset.re)) { if (el.tagName === 'SELECT') return; }
-  const before = getPath(M, p);
-  setPath(M, p, v);
-  if (e.type === 'change' && before === v && !el.dataset.re && !/\.when\.type$|\.then\.\d+\.type$/.test(p)) return;   // nur Verlassen des Feldes, nichts geändert
-  if (g.mode === 'code') { /* Änderungen am Baukasten ersetzen den Code erst auf Wunsch */ }
-  const lab = el.closest('label'); if (lab && el.type === 'range') { const b = $('b', lab); if (b) b.textContent = v + (el.dataset.suf || ''); }
-  if (el.dataset.sw) { const sw = el.closest('.cardx') && $('.sw', el.closest('.cardx')); if (sw) sw.style.background = v; }
-  if (/^sprites\.\d+\.control$/.test(p) && v !== 'none') M.sprites[+p.split('.')[1]].motion = 'none';
-  const m = /^rules\.(\d+)\.when\.type$/.exec(p);
-  if (m) fixWhen(M, M.rules[+m[1]]);
-  const ma = /^rules\.(\d+)\.then\.(\d+)\.type$/.exec(p);
-  if (ma) fixAction(M, M.rules[+ma[1]], M.rules[+ma[1]].then[+ma[2]]);
-  if (p.endsWith('.name')) {   // eindeutige Namen
-    const i = +p.split('.')[1]; let n = String(v).trim() || 'Figur', k = 2, base = n;
-    while (M.sprites.some((s, j) => j !== i && s.name === n)) n = base + ' ' + k++;
-    if (e.type === 'change') M.sprites[i].name = n; else M.sprites[i].name = String(v);
-  }
-  if (e.type === 'change' && (el.dataset.re || m || ma)) renderBuilder();
-  markDirty(); if (g.mode === 'builder') scheduleRun();
-}
-$('#pane-builder').addEventListener('input', onBuilderInput);
-$('#pane-builder').addEventListener('change', onBuilderInput);
-$('#pane-builder').addEventListener('click', e => {
-  const b = e.target.closest('[data-act]'); if (!b) return;
-  const g = App.g, M = g.model, a = b.dataset.act, i = +b.dataset.i;
-  if (a === 'add-sprite') addSprite(M, b.dataset.k);
-  else if (a === 'del-sprite') { const id = M.sprites[i].id; M.sprites.splice(i, 1); M.rules.forEach(r => { ['a', 'b'].forEach(k => { if (r.when[k] === id) r.when[k] = ''; }); (r.then || []).forEach(x => { if (x.target === id) x.target = ''; if (x.sprite === id) x.sprite = ''; }); }); }
-  else if (a === 'add-rule') { const r = { id: uid('r'), when: { type: M.sprites.length > 1 ? 'touch' : 'start' }, then: [{ type: 'score', n: 1 }] }; fixWhen(M, r); M.rules.push(r); }
-  else if (a === 'del-rule') M.rules.splice(i, 1);
-  else if (a === 'add-action') { const r = M.rules[i], x = { type: 'score' }; fixAction(M, r, x); r.then.push(x); }
-  else if (a === 'del-action') M.rules[i].then.splice(+b.dataset.ai, 1);
-  else if (a === 'from-builder') { g.mode = 'builder'; g.code = ''; toast('Der Code wurde durch den Baukasten ersetzt', 'ok'); }
-  renderBuilder(); markDirty(); scheduleRun(100);
-});
-
 // ---------- Code-Editor ----------
-const HELP = `<h4>Spiel anlegen</h4><p><code>const game = Moki.game({ background:'#0d1240', lives:3, time:30 })</code><br>Am Ende immer <code>game.start()</code>. Das Spielfeld ist 800 × 500 groß.</p>
-<h4>Figuren</h4><p><code>game.sprite({ name, shape, color, size, x, y, control, axis, motion, speed })</code><br>
-Form: circle, square, triangle, diamond, star, heart · Steuerung: 'keys' oder 'mouse' · Bewegung: fall, rise, left, right, bounce, follow.<br>
-<code>x</code> und <code>y</code> sind beim Anlegen Prozent (0 bis 100). Zur Laufzeit sind <code>s.x</code> und <code>s.y</code> Pixel.</p>
-<p><code>s.place(x%, y%)</code> · <code>s.respawn()</code> · <code>s.destroy()</code> · <code>s.clone()</code> · <code>s.touches(andere)</code> · <code>s.color</code>, <code>s.size</code>, <code>s.speed</code> ändern.</p>
-<h4>Ereignisse</h4><p><code>game.onStart(() => {})</code> · <code>game.onUpdate(dt => {})</code> (jedes Bild)<br><code>game.onKey('SPACE', () => {})</code> (Tasten: SPACE, LEFT, RIGHT, UP, DOWN, ENTER, A bis Z)<br>
-<code>game.onTouch('Spieler', 'Stern', (a, b) => {})</code> · <code>game.onEdge('Stein', s => {})</code> · <code>game.onClick('Ziel', s => {})</code><br><code>game.every(2, () => {})</code> (alle 2 Sekunden) · <code>game.onScore(10, () => {})</code></p>
-<h4>Aktionen</h4><p><code>game.addScore(1)</code> · <code>game.addLife(-1)</code> · <code>game.say('Text', 2)</code> · <code>game.win('Geschafft!')</code> · <code>game.lose('Pech')</code><br>
-<code>game.spawn('Stern')</code> neue Figur · <code>game.find('Spieler')</code> · <code>game.all('Stern')</code> · <code>game.random(a, b)</code><br><code>game.score</code>, <code>game.lives</code>, <code>game.time</code> lesen.</p>
+const HELP = `<h4>Spiel anlegen</h4><p><code>const game = Moki.game({ background:'#0d1240', background2:'#2b1b6b', pattern:'stars', lives:3, time:30, gravity:1400, help:'Anleitung' })</code><br>Am Ende immer <code>game.start()</code>. Das Spielfeld ist 800 × 500 groß.</p>
+<h4>Figuren</h4><p><code>game.sprite({ name, shape, color, size, stretch, x, y, angle, spin, opacity, control, axis, motion, speed, physics, solid, hp, wrap, jump, label, cols, rows, gapX, gapY })</code><br>
+Formen: circle, square, triangle, diamond, star, heart, hexagon, ring, cross, arrow, text, button · Bilder: rocket, ghost, crown, ball, planet, car, sword, gem, pad, blob, bolt<br>
+Steuerung: 'keys' oder 'mouse' · Bewegung: fall, rise, left, right, bounce, follow · Physik: 'platformer' (Schwerkraft und Springen) oder 'topdown' · <code>solid:true</code> für festen Boden und Wände.<br>
+<code>x</code> und <code>y</code> sind beim Anlegen Prozent (0 bis 100). Zur Laufzeit sind <code>s.x</code> und <code>s.y</code> Pixel. Mit <code>cols</code> und <code>rows</code> entsteht ein Gitter aus vielen gleichen Figuren.</p>
+<p><code>s.place(x%, y%)</code> · <code>s.respawn()</code> · <code>s.scatter()</code> · <code>s.destroy()</code> · <code>s.clone()</code> · <code>s.touches(andere)</code> · <code>s.hurt(1)</code> · <code>s.jump(kraft)</code> · <code>s.fly('up', 300)</code> · <code>s.stop()</code> · <code>s.shoot('Kugel', 'up', 600)</code> · <code>s.bounceOff(andere)</code> · <code>s.burst()</code></p>
+<h4>Ereignisse</h4><p><code>game.onStart(() => {})</code> · <code>game.onUpdate(dt => {})</code> (jedes Bild) · <code>game.onPointer((x, y) => {})</code><br><code>game.onKey('SPACE', () => {})</code> · <code>game.onKeyHold('LEFT', dt => {})</code> (Tasten: SPACE, LEFT, RIGHT, UP, DOWN, ENTER, A bis Z)<br>
+<code>game.onTouch('Spieler', 'Stern', (a, b) => {})</code> · <code>game.onEdge('Stein', s => {})</code> · <code>game.onClick('Ziel', s => {})</code> · <code>game.onDestroy('Gegner', s => {})</code><br><code>game.every(2, () => {})</code> · <code>game.after(5, () => {})</code> · <code>game.onScore(10, () => {})</code> · <code>game.when(() => game.get('Level') >= 3, () => {})</code></p>
+<h4>Aktionen</h4><p><code>game.addScore(1)</code> · <code>game.addLife(-1)</code> · <code>game.say('Text', 2)</code> · <code>game.win('Geschafft!')</code> · <code>game.lose('Pech')</code> · <code>game.restart()</code><br>
+<code>game.spawn('Stern')</code> neue Figur · <code>game.find('Spieler')</code> · <code>game.all('Stern')</code> · <code>game.count('Ziegel')</code> · <code>game.random(a, b)</code><br>
+<code>game.set('Schlüssel', 0)</code> · <code>game.change('Schlüssel', 1)</code> · <code>game.get('Schlüssel')</code> (eigene Variablen) · <code>game.score</code>, <code>game.lives</code>, <code>game.time</code><br>
+<code>game.sound('coin')</code> (coin, hit, jump, shoot, pop, powerup, explosion, win, lose) · <code>game.shake(300)</code> · <code>game.flash('#fff')</code> · <code>game.burst(x%, y%, farbe)</code></p>
+<h4>Menüs und Bildschirme</h4><p><code>Moki.game({ screens:[{ name:'Hauptmenü', menu:true }, { name:'Spiel', menu:false }] })</code> · Figur mit <code>screen:'Spiel'</code> erscheint nur dort · <code>game.go('Spiel')</code> wechselt · <code>game.onScreen('Spiel', () => {})</code><br>
+Ein Knopf ist <code>shape:'button'</code> mit <code>label:'Spielen'</code>, dazu <code>game.onClick('Knopfname', () => game.go('Spiel'))</code>. Bildschirme namens <code>Gewonnen</code> und <code>Verloren</code> öffnen sich automatisch; <code>{message}</code> zeigt den Text an.</p>
+<h4>Texte anzeigen</h4><p>Eine Figur mit <code>shape:'text'</code> und <code>label:'Punkte: {score} Leben: {lives}'</code> zeigt Werte live an. Auch <code>{Schlüssel}</code> für eigene Variablen.</p>
 <h4>Tipp</h4><p>Mit <code>console.log(...)</code> schreibst du in die Konsole unter der Vorschau. Fehler zeigen die Zeile an.</p>`;
 function hl(src) {
   const e = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
