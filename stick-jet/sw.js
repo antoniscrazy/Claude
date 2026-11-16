@@ -1,1 +1,0 @@
-No Content: https://mathgames66.github.io/games/html5/stickjetchallenge/sw.js
