@@ -295,6 +295,17 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "solar-smash",
+    title: "Solar Smash",
+    url: "https://bejewelled-bombolone-9a36cd.netlify.app",
+    category: "Simulation",
+    image: "solar-smash.jpg",
+    emoji: "🌍",
+    colors: ["#0a1030", "#ff5a1f"],
+    description: "Zerstöre Planeten mit Waffen und Katastrophen.",
+    featured: false
+  },
+  {
     id: "voxelcraft",
     title: "VoxelCraft",
     url: "https://sage-beijinho-7ca6f4.netlify.app",
