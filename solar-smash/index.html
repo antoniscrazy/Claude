@@ -8,7 +8,7 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
 
   <title>YT Game Wrapper WebGL Template</title>
-  <style>html,body{margin:0;height:100%;background:#000;overflow:hidden}#unity-container,#unity-canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;outline:none}#unity-loading-bar{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);display:none}#unity-progress-bar-empty{width:240px;height:10px;border-radius:5px;background:rgba(255,255,255,.15);margin-top:10px;overflow:hidden}#unity-progress-bar-full{width:0%;height:100%;background:#00e5a8}</style>
+  <link rel="stylesheet" href="TemplateData/style.css"><style>html,body{margin:0;height:100%;background:#000;overflow:hidden}#unity-container,#unity-canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;outline:none}#unity-loading-bar{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);display:none}#unity-progress-bar-empty{width:240px;height:10px;border-radius:5px;background:rgba(255,255,255,.15);margin-top:10px;overflow:hidden}#unity-progress-bar-full{width:0%;height:100%;background:#00e5a8}</style>
   <script nonce="we8ZPMAc10sjbMeA8f_pRw">
 if (!window.ytgame) {
   window.ytgame = {
@@ -305,9 +305,9 @@ Unarchiver.loadedFormats = {};
     var buildUrl = "Build";
     var loaderUrl = buildUrl + "/Build.loader.js";
     var config = {
-      dataUrl: (window.__RAW||"") + "Build/Build.data",
+      dataUrl: (window.__RAW||"") + "Build/Build.data.zip",
       frameworkUrl: buildUrl + "/Build.framework.js",
-        codeUrl: (window.__RAW||"") + "Build/Build.wasm",
+        codeUrl: (window.__RAW||"") + "Build/Build.wasm.zip",
       streamingAssetsUrl: (window.__RAW||"") + "StreamingAssets",
       companyName: "Paradyme Games",
       productName: "Live - Solar Smash YouTube",

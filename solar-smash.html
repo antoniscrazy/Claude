@@ -8,11 +8,7 @@
   html, body { margin: 0; height: 100%; background: #111; color: #fff; font-family: sans-serif; overflow: hidden; }
   body { display: flex; flex-direction: column; }
   #bar { flex: 0 0 auto; display: flex; justify-content: flex-end; padding: 6px 12px; background: #111; }
-  #wrap { flex: 1 1 auto; position: relative; min-height: 0; }
-  #unity-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; background: #000; outline: none; touch-action: none; }
-  #ld { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); text-align: center; width: 70%; max-width: 360px; }
-  #pb { height: 10px; border-radius: 5px; background: rgba(255,255,255,.15); overflow: hidden; margin-top: 8px; }
-  #pf { height: 100%; width: 0; background: #00e5a8; }
+  #game { flex: 1 1 auto; width: 100%; border: 0; display: block; min-height: 0; background: #000; }
   #moki-back {
     padding: 9px 16px; border-radius: 999px;
     background: linear-gradient(90deg, #00e5a8, #ffd23f);
@@ -24,73 +20,16 @@
 </head>
 <body>
 <div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
-<div id="wrap"><div id="unity-container" style="position:absolute;inset:0"><canvas id="unity-canvas" tabindex="-1"></canvas></div><div id="ld"><div id="tx">Lade Spiel (ca. 100 MB) …</div><div id="pb"><div id="pf"></div></div></div></div>
+<iframe id="game" allow="autoplay *; fullscreen *; gamepad *" allowfullscreen></iframe>
 <script>
-// Laedt das Spiel aus deinem GitHub-Repo (raw.githubusercontent.com, Commit fest). Keine Werbung, keine Tracker.
-const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/ab27351926e1cbcfd487f7438359344a04e66309/solar-smash/";
-const ORIGIN = new URL(BASE).origin;
-
-// Netz-Sperre: nur dein Repo, blob: und data: erlaubt.
-(function () {
-  function ok(u) { try { var x = new URL(String(u), location.href); return x.protocol === "blob:" || x.protocol === "data:" || x.protocol === "about:" || x.origin === ORIGIN || x.origin === "https://cdn.jsdelivr.net"; } catch (e) { return true; } }
-  var open = XMLHttpRequest.prototype.open, send = XMLHttpRequest.prototype.send;
-  XMLHttpRequest.prototype.open = function (m, u) { this._blocked = !ok(u); return open.apply(this, arguments); };
-  XMLHttpRequest.prototype.send = function () {
-    if (!this._blocked) return send.apply(this, arguments);
-    var x = this; setTimeout(function () { x.dispatchEvent(new ProgressEvent("error")); x.dispatchEvent(new ProgressEvent("loadend")); }, 0);
-  };
-  var f = window.fetch;
-  window.fetch = function (r) { return ok(r && r.url || r) ? f.apply(this, arguments) : Promise.reject(new TypeError("Failed to fetch")); };
-  if (navigator.sendBeacon) navigator.sendBeacon = function (u) { return ok(u); };
-  window.open = function () { return null; };
-})();
-
-// YouTube-Playables-SDK durch lokalen Platzhalter ersetzen (Speichern in localStorage).
-window.ytgame = {
-  SDK_VERSION: "standalone", IN_PLAYABLES_ENV: false,
-  SdkError: function (t) { this.errorType = t; this.message = ""; },
-  SdkErrorType: { UNDEFINED: 0, GAMEAPI_UNDEFINED: 1 },
-  game: {
-    firstFrameReady: function () {}, gameReady: function () {},
-    loadData: function () { var v = ""; try { v = localStorage.getItem("solar-smash-save") || ""; } catch (e) {} return Promise.resolve(v); },
-    saveData: function (d) { try { localStorage.setItem("solar-smash-save", d); } catch (e) {} return Promise.resolve(); }
-  },
-  engagement: { sendScore: function () { return Promise.resolve(); } },
-  ads: { requestAd: function () { return Promise.resolve(1); }, requestInterstitialAd: function () { return Promise.resolve(); }, AdResult: { UNKNOWN: 0, SHOWED: 1, REJECTED: 3, DISMISSED: 2 } },
-  health: { logError: function () {}, logWarning: function () {} },
-  system: {
-    getLanguage: function () { return Promise.resolve("en"); },
-    isAudioEnabled: function () { return true; },
-    onAudioEnabledChange: function () { return function () {}; },
-    onPause: function () { return function () {}; }, onResume: function () { return function () {}; }
-  }
-};
-window.ytgamehelper = { myConsoleLog: function () {} };
-
-const tx = document.getElementById("tx"), pf = document.getElementById("pf");
-(async () => {
-  try {
-    const get = (f, kind) => fetch(BASE + f).then(r => { if (!r.ok) throw new Error(f + ": " + r.status); return r[kind](); });
-    let done = 0; const bump = () => { done++; pf.style.width = (done / 4 * 70) + "%"; };
-    const [loaderTxt, fw, dataBlob, wasmBlob] = await Promise.all([
-      Promise.resolve(null),
-      Promise.resolve(null),
-      get("Build/Build.data", "blob").then(x => { bump(); return x; }),
-      get("Build/Build.wasm", "blob").then(x => { bump(); return x; })
-    ]);
-    await new Promise((res, rej) => { const s = document.createElement("script"); s.src = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@67096f74f04bb0b3ff059aefbf4a0a9a52e9449f/solar-smash/Build/Build.loader.js"; s.onload = res; s.onerror = () => rej(new Error("Loader")); document.head.appendChild(s); });
-    tx.textContent = "Starte …";
-    const inst = await createUnityInstance(document.getElementById("unity-canvas"), {
-      dataUrl: URL.createObjectURL(new Blob([dataBlob], { type: "application/octet-stream" })),
-      codeUrl: URL.createObjectURL(new Blob([wasmBlob], { type: "application/wasm" })),
-      frameworkUrl: "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@67096f74f04bb0b3ff059aefbf4a0a9a52e9449f/solar-smash/Build/Build.framework.js",
-      streamingAssetsUrl: BASE + "StreamingAssets",
-      companyName: "Paradyme Games", productName: "Live - Solar Smash YouTube", productVersion: "0.1.0"
-    }, p => { pf.style.width = (70 + p * 30) + "%"; });
-    window.unityGame = inst;
-    document.getElementById("ld").remove();
-  } catch (e) { tx.textContent = "Fehler beim Laden: " + (e.message || e); }
-})();
+// Spiel aus deinem GitHub-Repo: index.html + grosse Dateien ueber raw.githubusercontent.com, Loader/Framework ueber jsDelivr (Skripte). Commit fest.
+const RAW = "https://raw.githubusercontent.com/antoniscrazy/Claude/7cada8296e4cb5072cd14cc8c1bc6498962c57d6/solar-smash/";
+const JSD = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@67096f74f04bb0b3ff059aefbf4a0a9a52e9449f/solar-smash/";
+const PRE = '<base href="' + JSD + '"><script>window.__RAW=' + JSON.stringify(RAW) + ';(function(){var OK=[' + JSON.stringify(new URL(RAW).origin) + ',"https://cdn.jsdelivr.net"];function ok(u){try{var x=new URL(String(u),location.href);return x.protocol==="blob:"||x.protocol==="data:"||x.protocol==="about:"||OK.indexOf(x.origin)>=0}catch(e){return true}}var o=XMLHttpRequest.prototype.open,s=XMLHttpRequest.prototype.send;XMLHttpRequest.prototype.open=function(m,u){this._b=!ok(u);return o.apply(this,arguments)};XMLHttpRequest.prototype.send=function(){if(!this._b)return s.apply(this,arguments);var x=this;setTimeout(function(){x.dispatchEvent(new ProgressEvent("error"));x.dispatchEvent(new ProgressEvent("loadend"))},0)};var f=window.fetch;window.fetch=function(r){return ok(r&&r.url||r)?f.apply(this,arguments):Promise.reject(new TypeError("Failed to fetch"))};if(navigator.sendBeacon)navigator.sendBeacon=function(){return false};window.open=function(){return null}})()<\/script>';
+fetch(RAW + "index.html")
+  .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+  .then(html => { document.getElementById("game").srcdoc = html.replace("<head>", () => "<head>" + PRE); })
+  .catch(e => { document.body.append("Fehler beim Laden: " + e.message); });
 </script>
 </body>
 </html>
