@@ -1,6 +1,8 @@
 # Musik fuer den Trailer (am Computer erzeugt, keine echte Musik). Aufruf: python3 audio2.py <ausgabe.wav>
 import numpy as np, wave, sys
-sr=44100; T=100.0; n=int(sr*T); t=np.arange(n)/sr; B=.5
+L_MOKI=float(sys.argv[2]) if len(sys.argv)>2 else 54.0
+STUDIO=14.0+L_MOKI; WALL=STUDIO+28.0; FIN=WALL+8.0; TEASE=FIN+6.0; T=TEASE+14.0
+sr=44100; n=int(sr*T); t=np.arange(n)/sr; B=.5
 rng=np.random.default_rng(11); out=np.zeros(n)
 def add(sig,at,g=1.0):
     i=int(at*sr)
@@ -40,7 +42,7 @@ def roll(a,b,g0=.12,g1=.5):
     for i in range(k):
         tt=a+i*.0625*(1-i/(k*2.5)); add(snare(),tt,g0+(g1-g0)*i/k)
 CH=[(45,[57,60,64]),(41,[53,57,60]),(48,[55,60,64]),(43,[55,59,62])]   # Am F C G, je 2 s
-DROP=4.0; AD0=8.0; RES=11.2; GROOVE=12.0; WALL=86.0; FIN=94.0
+DROP=4.0; AD0=8.0; RES=11.2; GROOVE=12.0
 # --- Intro 0-4: Riser, Drone, Partikel-Ticks
 riser(0.0,DROP,80,900,.3,.2)
 out+=np.sin(2*np.pi*55*t)*.18*np.clip(t/3,0,1)*(t<FIN)
@@ -93,18 +95,29 @@ riser(10.0,RES,200,2800,.25,.15)
 add(boom(2.2),RES,1.1); add(crash(2.0),RES,.8)   # Wisch-Moment
 roll(10.4,11.2,.1,.35)
 add(crash(2.0),14.0,.6)                          # Moki-Aufnahme beginnt
-for c in (22.0,30.0,38.0,46.0): add(crash(1.6),c,.35)
-roll(56.0,58.0)                                  # -> Studio
-add(crash(2.0),58.0,.7)
-for c in (66.0,74.0,82.0): add(crash(1.6),c,.35)
-roll(84.0,WALL,.12,.55)                          # -> Spielewand
+for c in range(22,int(STUDIO-2),8): add(crash(1.6),float(c),.35)
+roll(STUDIO-2,STUDIO)                            # -> Studio
+add(crash(2.0),STUDIO,.7)
+for c in range(int(STUDIO)+8,int(WALL-2),8): add(crash(1.6),float(c),.35)
+roll(WALL-2,WALL,.12,.55)                          # -> Spielewand
 add(boom(2.0),WALL,.9); add(crash(2.2),WALL,.8)
-riser(92.0,FIN,300,3500,.25,.2)
+riser(FIN-2,FIN,300,3500,.25,.2)
 # --- Finale
 add(boom(2.8),FIN,1.3); add(crash(3.0),FIN,1.0); add(kick(),FIN,1.0)
 for mm in (45,57,60,64,69,72): add(lp(tone(nf(mm),5.0,'pad',.02,.7),3000),FIN,.14)
 add(tone(nf(81),4.0,'lead',.02,1.1),FIN,.08)
 for q in range(1,6): add(lp(tone(nf([69,72,76,81,76,72][q]),.4,'pluck',.003,6),5000),FIN+q*B,.1)
+# --- Teaser: dunkle Drohne, Herzschlag, Ticken, Schlaege zu den Texten
+uT=np.clip((t-TEASE)/4.0,0,1)*((t>=TEASE)&(t<T)); lfo=.6+.4*np.sin(2*np.pi*.25*(t-TEASE))
+out+=(np.sin(2*np.pi*41*t)*.3+np.sin(2*np.pi*58*t)*.12*lfo)*uT
+for k in range(14):
+    g=min(.65,.25+k*.04); add(lp(kick(),160),TEASE+k*1.0,g); add(lp(kick(),160),TEASE+k*1.0+.28,g*.6)
+for mm in (45,51,57,60):
+    add(lp(tone(nf(mm),9.0,'pad',3.0,.3),1400),TEASE+2.0,.06)
+for k in range(10): add(lp(rng.standard_normal(int(.012*sr)),9000)*.9,TEASE+4.6+k,.35)
+for u0 in (6.2,8.0,10.0,12.0):
+    add(boom(1.6),TEASE+u0,.55)
+    m=(t>=TEASE+u0-.5)&(t<TEASE+u0); out+=np.where(m,lp(rng.standard_normal(n),6000)*(t-(TEASE+u0-.5))*.5,0)
 # --- Sidechain, Fade
 sc=np.ones(n)
 for i in range(int(DROP/B),int(FIN/B)):

@@ -139,9 +139,51 @@ function finale(u){
   const URL='mokiorg.netlify.app',n=clamp(Math.floor((u-2.6)/.07),0,URL.length);if(u>2.6){x.save();rr(W/2-250,622,500,64,32);x.fillStyle='rgba(10,13,43,.9)';x.fill();x.lineWidth=4;x.strokeStyle=ACC;x.stroke();txt(URL.slice(0,n)+((Math.floor(u*3)%2&&n<URL.length)?'|':''),W/2,655,36,ACC,'center',700);x.restore()}
   flash(1-u*4);vign(.35);if(u>5.5){x.fillStyle=`rgba(0,0,0,${(u-5.5)/.5})`;x.fillRect(0,0,W,H)}
 }
+// ---------- Teaser: geheimnisvoller Countdown (0 - 14 lokal)
+function teaser(u){
+  x.fillStyle='#02030a';x.fillRect(0,0,W,H);
+  // Nebel
+  for(let i=0;i<5;i++){const px=W*(.15+.7*rnd(i+1))+Math.sin(u*.3+i)*80,py=H*(.2+.6*rnd(i+8))+Math.cos(u*.25+i)*50;const gg=x.createRadialGradient(px,py,0,px,py,360);gg.addColorStop(0,i%2?'rgba(60,30,140,.28)':'rgba(0,120,110,.2)');gg.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=gg;x.fillRect(0,0,W,H)}
+  // Silhouetten der kommenden Spiele (Fragezeichen-Kacheln), flackern
+  if(u>2.0){const cols=10,rows=6,cw=108,gp=14,gw=cols*(cw+gp),sx=(W-gw)/2+gp/2,sy=70;
+    for(let i=0;i<cols*rows;i++){const a=eo((u-2.0-i*.025)/.6);if(a<=0)continue;const fl=.35+.65*(Math.sin(u*(1.5+rnd(i)*3)+i)*.5+.5);
+      const px=sx+(i%cols)*(cw+gp),py=sy+Math.floor(i/cols)*(cw+gp);x.save();x.globalAlpha=a*.38*fl;rr(px,py,cw,cw,20);x.fillStyle='#101035';x.fill();x.lineWidth=2;x.strokeStyle='rgba(120,100,255,.5)';x.stroke();
+      txt('?',px+cw/2,py+cw/2+3,48,'rgba(180,160,255,.85)','center',900);x.restore()}}
+  // Scan-Lichtstrahl
+  if(u>2.0){const sx2=((u*180)%(W+400))-200;const gg=x.createLinearGradient(sx2-160,0,sx2+160,0);gg.addColorStop(0,'rgba(255,255,255,0)');gg.addColorStop(.5,'rgba(255,255,255,.07)');gg.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=gg;x.fillRect(sx2-160,0,320,H)}
+  // 0-2.4: Herzschlag + Satz
+  if(u<4.6){const hb=Math.exp(-((u%1.0)*7))+Math.exp(-(((u+.75)%1.0)*9))*.6;x.save();x.translate(W/2,H/2);const gg=x.createRadialGradient(0,0,5,0,0,260);gg.addColorStop(0,`rgba(255,59,107,${.12+hb*.35})`);gg.addColorStop(1,'rgba(255,59,107,0)');x.fillStyle=gg;x.fillRect(-300,-300,600,600);x.restore();
+    const T='Aber das ist erst der Anfang.',n=clamp(Math.floor((u-.5)/.055),0,T.length),a=u>3.8?1-(u-3.8)/.8:1;if(u>.5){x.globalAlpha=clamp(a);txt(T.slice(0,n)+((Math.floor(u*3)%2&&n<T.length)?'|':''),W/2,H/2,44,'#d8dcff','center',500);x.globalAlpha=1}}
+  // ab 4.6: Countdown 14 Tage, laeuft in Echtzeit
+  if(u>=4.6){const v=u-4.6,k=back(v/.5);const total=14*86400-Math.floor(v);const d=Math.floor(total/86400),h=Math.floor(total%86400/3600),m=Math.floor(total%3600/60),s=total%60;
+    const blink=1-Math.min(1,(v%1)*8); // Sekunden-Impuls
+    x.save();x.translate(W/2,H/2-30);x.scale(k,k);
+    const gl=(u>11.8)?(rnd(Math.floor(u*30))>.8?1:0):0; if(gl)x.translate((rnd(Math.floor(u*60))-.5)*24,0);
+    const labels=['TAGE','STUNDEN','MINUTEN','SEKUNDEN'],vals=[d,h,m,s];
+    for(let i=0;i<4;i++){const bx=-445+i*230;x.save();x.translate(bx+100,0);
+      rr(-100,-110,200,200,30);x.fillStyle='rgba(8,10,34,.92)';x.fill();x.lineWidth=4;x.strokeStyle=i===3?`rgba(255,210,63,${.5+.5*blink})`:'rgba(120,100,255,.55)';x.shadowColor=i===3?ACC2:'#6a5aff';x.shadowBlur=i===3?30*blink+8:14;x.stroke();x.shadowBlur=0;
+      const off=i===3?blink*14:0;txt(String(vals[i]).padStart(2,'0'),0,-12+off*0,104,'#fff','center',900);
+      txt(labels[i],0,66,20,'#a3abe0','center',700);if(i<3)txt(':',115,-14,80,'rgba(255,255,255,.35)','center',900);x.restore()}
+    // RGB-Versatz bei Glitch
+    if(gl){x.globalCompositeOperation='lighter';x.globalAlpha=.35;x.translate(8,0);txt('14 : 00 : 00 : 00',0,-12,60,'rgba(255,0,80,.6)');x.globalCompositeOperation='source-over';x.globalAlpha=1}
+    x.restore();
+    // Texte
+    const lines=[[6.2,'100+ SPIELE',86,'#fff'],[8.0,'DAS MEGA-UPDATE',74,ACC2],[10.0,'02.12.2026  ·  00:00 UHR',48,ACC],[12.0,'SEI DABEI.',70,'#fff']];
+    for(let i=0;i<lines.length;i++){const[a,tx,sz,col]=lines[i],e=i<lines.length-1?lines[i+1][0]:99;if(u<a||u>=e)continue;const uu=u-a,inK=eo(uu/.25),out=u>e-.18?(u-(e-.18))/.18:0;
+      x.save();x.translate(W/2,H/2+190);x.globalAlpha=1-out;x.scale(1+(1-inK)*1.6,1+(1-inK)*1.6);const j=(rnd(Math.floor(u*50))>.88&&uu<.9)?(rnd(Math.floor(u*50)+3)-.5)*26:0;x.translate(j,0);
+      txt(tx,0,0,sz,col,'center',900,['#02030a',14]);x.restore()}
+  }
+  // Rauschen
+  for(let i=0;i<40;i++){x.fillStyle=`rgba(255,255,255,${.03+rnd(i+Math.floor(u*24))*.05})`;x.fillRect(rnd(i*3+Math.floor(u*24))*W,rnd(i*5+Math.floor(u*24)+7)*H,rnd(i)*120+10,1)}
+  // horizontale Glitch-Streifen kurz vor Ende
+  if(u>12.9){for(let i=0;i<6;i++){const y=rnd(i+Math.floor(u*30))*H,h2=6+rnd(i+20)*30;x.drawImage(c,0,y*1.5,1920,h2*1.5,(rnd(i+40)-.5)*80*1.5,y*1.5,1920,h2*1.5)}}
+  vign(.75);flash(u<.05?(.05-u)*10:0);
+  if(u>13.6){x.fillStyle=`rgba(0,0,0,${(u-13.6)/.4})`;x.fillRect(0,0,W,H)}
+  if(u<.5){x.fillStyle=`rgba(0,0,0,${1-u/.5})`;x.fillRect(0,0,W,H)}
+}
 function render(t,set){
   x.setTransform(1.5,0,0,1.5,0,0);x.globalAlpha=1;x.clearRect(0,0,W,H);
-  if(set==='A'){if(t<8)intro(t);else ads(t-8)}else{if(t<8)wall(t);else finale(t-8)}
+  if(set==='A'){if(t<8)intro(t);else ads(t-8)}else if(set==='B'){if(t<8)wall(t);else finale(t-8)}else teaser(t)
 }
 load();
 </script>
