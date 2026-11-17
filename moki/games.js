@@ -820,6 +820,19 @@ window.MOKI_GAMES = [
     description: "Erobere Fläche, indem du einen Pfad zeichnest und zurück zu deinem Gebiet fährst. Pass auf, dass dich niemand erwischt.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "idle-startup-tycoon",
+    title: "Idle Startup Tycoon",
+    url: "https://fabulous-dieffenbachia-cf4a62.netlify.app",
+    category: "Simulation",
+    image: "idle-startup-tycoon.jpg",
+    wide: true,
+    emoji: "💼",
+    colors: ["#7cc4f0", "#2a7ad0"],
+    description: "Baue dein eigenes Start-up auf: Stelle Mitarbeiter ein, entwickle Apps und werde zum Tech-Chef.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
