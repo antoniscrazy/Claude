@@ -31,6 +31,19 @@
 const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/bc9f88c5a1d50b78d6190499af79c9d8ea540fea/aquapark-io/";
 const ORIGIN = new URL(BASE).origin;
 
+// Addressables-Katalog (klein) ueber jsDelivr laden: raw antwortet beim parallelen Start teils mit 500.
+const AA_JSD = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@aab22db5e88567d41a95efc7194e7d6db0ecdd4c/aquapark-io/StreamingAssets/aa/";
+(function () {
+  var o = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function (m, u) {
+    var s = String(u);
+    if (/\/StreamingAssets\/aa\/(settings\.json|catalog\.bin)(\?|$)/.test(s)) {
+      u = AA_JSD + (/settings/.test(s) ? "settings.json" : "catalog.bin");
+    }
+    return o.apply(this, [m, u].concat([].slice.call(arguments, 2)));
+  };
+})();
+
 // --- Netz-Sperre: nur dein Repo (raw.githubusercontent.com), blob: und data: sind erlaubt. Alles andere (z. B. Unity-Analytics api.uca.cloud) wird blockiert.
 (function () {
   function ok(u) { try { var x = new URL(String(u), location.href); return x.protocol === "blob:" || x.protocol === "data:" || x.origin === ORIGIN || x.protocol === "about:" || x.protocol === "file:" && false; } catch (e) { return true; } }
