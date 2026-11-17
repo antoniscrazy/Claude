@@ -651,6 +651,18 @@ window.MOKI_GAMES = [
     description: "Ein Comic-Rätselspiel im Königshof: Finde den richtigen Weg, um an den König heranzukommen. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "blumgi-slime",
+    title: "Blumgi Slime",
+    url: "https://spontaneous-croquembouche-afe750.netlify.app",
+    category: "Geschicklichkeit",
+    image: "blumgi-slime.jpg",
+    emoji: "🟢",
+    colors: ["#ff6177", "#2fd6c2"],
+    description: "Spring mit einem bunten Schleim-Wesen über Hindernisse und komm so weit wie möglich. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
