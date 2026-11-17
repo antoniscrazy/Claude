@@ -1,0 +1,33 @@
+{
+  "cards": [
+    "ClassicObby",
+    "SkateboardObby",
+    "MonkeyObby",
+    "AsmrMode",
+    "TowerObby",
+    "SlimeTower",
+    "TrollTower",
+    "BikeObby",
+    "IqTestMode",
+    "MeowMode",
+    "PvpMode",
+    "CartObby",
+    "LadderObby",
+    "KnockoutMode",
+    "PlaneObby",
+    "RiverObby",
+    "CarObby",
+    "BallObby"
+  ],
+  "effects": {
+    "SkateboardObby": {
+      "fire": true,
+      "scale": 1.07,
+      "yoyo": true
+    },
+    "MonkeyObby": {
+      "scale": 1.03,
+      "yoyo": false
+    }
+  }
+}
