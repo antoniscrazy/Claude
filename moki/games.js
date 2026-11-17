@@ -553,6 +553,18 @@ window.MOKI_GAMES = [
     description: "Baue kleine Türme und beschieße damit anrückende Gegner. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "penguin-diner",
+    title: "Penguin Diner",
+    url: "https://playful-cannoli-ce6045.netlify.app",
+    category: "Simulation",
+    image: "penguin-diner.jpg",
+    emoji: "🐧",
+    colors: ["#7fc4e0", "#e870b0"],
+    description: "Führe ein Restaurant im Eis: Bediene hungrige Gäste, bring das Essen rechtzeitig an den Tisch und sei schneller als die Pinguine. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
