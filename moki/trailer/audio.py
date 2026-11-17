@@ -1,5 +1,6 @@
 import numpy as np, wave, sys
-sr=44100; T=34; n=sr*T; t=np.arange(n)/sr
+D=float(sys.argv[2]) if len(sys.argv)>2 else 0.0
+sr=44100; T=34+D; n=int(sr*T); t=np.arange(n)/sr
 rng=np.random.default_rng(7); out=np.zeros(n)
 B=.5; T0=1.0
 def add(sig,at,g=1.0):
@@ -43,7 +44,7 @@ add(boom(2.6),T0,1.2); add(crash(),T0,.8); add(kick(),T0,1.0)
 # 3) Takte ab 1.0 bis 12.5 (5.75 Takte)
 bar=0
 while T0+bar*2*B*2 < 12.5 and False: bar+=1
-for k in range(int((31.0-T0)/(B*4))+1):
+for k in range(int((31.0+D-T0)/(B*4))+1):
     b0=T0+k*B*4; root,ch=CH[k%4]
     # Pad, Bass
     for mm in ch:
@@ -57,46 +58,46 @@ for k in range(int((31.0-T0)/(B*4))+1):
         mm=ch[pat[q]]+12
         if b0>=5.0 or q%2==0: add(lp(tone(nf(mm),.22,'pluck',.003,9),5000),b0+q*B/2,.11)
     # Melodie ab Takt 3 (b0>=3.0)
-    if b0>=5.0 and not (25.0<=b0<27.0):
+    if b0>=5.0 and not (25.0+D<=b0<27.0+D):
         mel=[ch[2]+12,ch[1]+12,ch[2]+12,ch[0]+24] if k%2 else [ch[0]+24,ch[2]+12,ch[1]+12,ch[2]+12]
         for q,mm in enumerate(mel): add(lp(tone(nf(mm),B*.95,'lead',.01,2.5),4500),b0+q*B,.12)
 # Drums
-FIN=31.0
+FIN=31.0+D
 b=T0
 while b<FIN-1e-6:
-    ad=25.0<=b<27.0
+    ad=25.0+D<=b<27.0+D
     if not ad: add(kick(),b,.95)
-    elif int(round((b-25.0)/B))%2==0: add(kick(),b,.5)
+    elif int(round((b-25.0-D)/B))%2==0: add(kick(),b,.5)
     if b>=5.0 and not ad:
         if round((b-T0)/B)%2==1: add(snare(),b,.5); add(clap(),b,.5)
         add(hat(),b+B/2,.5); add(hat(),b+B/4,.25); add(hat(),b+3*B/4,.25)
     else: add(hat(),b+B/2,.4)
     b+=B
 # Crash an Sektionsgrenzen
-for sct in (5.0,9.0,13.0,17.0,19.0,22.0,29.0): add(crash(1.8),sct,.5)
+for sct in (5.0,9.0,13.0,17.0,19.0,22.0,25.0,29.0+D): add(crash(1.8),sct,.5)
 # Snare-Roll vor 25 (24-25)
 for i in range(16):
     tt=24.0+i*.0625*(1-i/40); add(snare(),tt,.15+.025*i)
 # Werbe-Szene 25-27: schrille Toene + Stoerrauschen, Riser 26-27
-m2=(t>=25.0)&(t<27.0)
+m2=(t>=25.0+D)&(t<27.0+D)
 out+=np.where(m2,np.sign(np.sin(2*np.pi*466*t))*.06+np.sign(np.sin(2*np.pi*659*t))*.05,0)*(rng.random(n)>.35)
-for k in range(10): add(lp(rng.standard_normal(int(.08*sr)),4000),25.0+k*.2,.35)
-ph2=2*np.pi*np.cumsum(200+np.clip(t-26.0,0,1)**2*2500)/sr; u=(t>26.0)&(t<27.0); out+=np.where(u,np.sin(ph2)*.25*(t-26.0),0)
+for k in range(10): add(lp(rng.standard_normal(int(.08*sr)),4000),25.0+D+k*.2,.35)
+ph2=2*np.pi*np.cumsum(200+np.clip(t-26.0-D,0,1)**2*2500)/sr; u=(t>26.0+D)&(t<27.0+D); out+=np.where(u,np.sin(ph2)*.25*(t-26.0-D),0)
 # Aufloesung bei 27.0: Boom, Akkord
-add(boom(2.2),27.0,1.1); add(crash(2.0),27.0,.8)
+add(boom(2.2),27.0+D,1.1); add(crash(2.0),27.0+D,.8)
 # Snare-Roll vor 29
 for i in range(16):
-    tt=28.0+i*.0625*(1-i/40); add(snare(),tt,.12+.02*i)
+    tt=28.0+D+i*.0625*(1-i/40); add(snare(),tt,.12+.02*i)
 # Riser vor Finale 30-31
-u=(t>30.0)&(t<31.0); ph3=2*np.pi*np.cumsum(300+np.clip(t-30.0,0,1)**2*3500)/sr; out+=np.where(u,np.sin(ph3)*.25*(t-30.0)*2+lp(rng.standard_normal(n),5000)*.2*(t-30.0),0)
+u=(t>30.0+D)&(t<31.0+D); ph3=2*np.pi*np.cumsum(300+np.clip(t-30.0-D,0,1)**2*3500)/sr; out+=np.where(u,np.sin(ph3)*.25*(t-30.0-D)*2+lp(rng.standard_normal(n),5000)*.2*(t-30.0-D),0)
 # 4) Finale 12.5: Akkord, Boom, Crash
-add(boom(2.6),31.0,1.3); add(crash(3),31.0,1.0); add(kick(),31.0,1.0)
+add(boom(2.6),31.0+D,1.3); add(crash(3),31.0+D,1.0); add(kick(),31.0+D,1.0)
 for mm in (45,57,60,64,69,72):
-    add(lp(tone(nf(mm),2.8,'pad',.02,.9),3000),31.0,.14)
-add(tone(nf(81),2.8,'lead',.02,1.2),31.0,.08)
+    add(lp(tone(nf(mm),2.8,'pad',.02,.9),3000),31.0+D,.14)
+add(tone(nf(81),2.8,'lead',.02,1.2),31.0+D,.08)
 # Sidechain-Pump auf die Takte
 sc=np.ones(n)
-for i in range(int(T0/B*1),int(31.0/B)):
+for i in range(int(T0/B*1),int((31.0+D)/B)):
     s=int(i*B*sr)
     if s>=n: break
     L=int(.22*sr); sc[s:s+L]*=np.linspace(.35,1,min(L,n-s))
