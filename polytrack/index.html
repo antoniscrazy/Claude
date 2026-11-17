@@ -49,18 +49,18 @@
     
 <style>
 #tc{position:fixed;inset:0;pointer-events:none;z-index:50;display:none}
-#tc .b{position:absolute;bottom:22px;width:84px;height:84px;border-radius:50%;background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.5);color:#fff;font:700 30px sans-serif;display:flex;align-items:center;justify-content:center;pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none}
+#tc .b{position:absolute;bottom:90px;width:84px;height:84px;border-radius:50%;background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.5);color:#fff;font:700 30px sans-serif;display:flex;align-items:center;justify-content:center;pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none}
 #tc .b.on{background:rgba(255,255,255,.45)}
 </style><div id="tc"></div><script>
 (function(){if(!('ontouchstart' in window)&&!navigator.maxTouchPoints)return;
-var tc=document.getElementById('tc');tc.style.display='block';
+var tc=document.getElementById('tc');tc.style.display='none';setInterval(function(){var e=document.querySelector('.speedometer');var v=false;if(e){var r=e.getBoundingClientRect(),cs=getComputedStyle(e);v=r.width>0&&cs.display!='none'&&cs.visibility!='hidden'&&r.bottom>0&&r.right>0}tc.style.display=v?'block':'none'},300);
 var defs=[['◀','ArrowLeft','left:20px'],['▶','ArrowRight','left:120px'],['▲','ArrowUp','right:120px'],['▼','ArrowDown','right:20px']];
 function send(t,c){window.dispatchEvent(new KeyboardEvent(t,{code:c,key:c,bubbles:true}))}
 defs.forEach(function(d){var b=document.createElement('div');b.className='b';b.textContent=d[0];b.style.cssText=d[2];
 var dn=0;function on(e){e.preventDefault();if(dn)return;dn=1;b.classList.add('on');send('keydown',d[1])}
 function off(e){e.preventDefault();if(!dn)return;dn=0;b.classList.remove('on');send('keyup',d[1])}
 b.addEventListener('touchstart',on,{passive:false});b.addEventListener('touchend',off,{passive:false});b.addEventListener('touchcancel',off,{passive:false});tc.appendChild(b)});
-var r=document.createElement('div');r.className='b';r.textContent='R';r.style.cssText='right:20px;bottom:128px;width:60px;height:60px;font-size:22px';
+var r=document.createElement('div');r.className='b';r.textContent='R';r.style.cssText='right:20px;bottom:190px;width:60px;height:60px;font-size:22px';
 r.addEventListener('touchstart',function(e){e.preventDefault();send('keydown','KeyR');send('keyup','KeyR')},{passive:false});tc.appendChild(r);
 })();
 </script></body>
