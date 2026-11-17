@@ -529,6 +529,18 @@ window.MOKI_GAMES = [
     description: "Renne als Stickman durch die Level, schalte Gegner mit deiner Waffe aus und weiche den Kugeln geschickt aus.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "smash-it",
+    title: "Smash It",
+    url: "https://serene-paprenjak-4157e9.netlify.app",
+    category: "Simulation",
+    image: "smash-it.jpg",
+    emoji: "💥",
+    colors: ["#22c0f0", "#1b6ad6"],
+    description: "Zerlege Computer, Bildschirme und allerlei Gegenstände mit voller Wucht und lass den Frust einfach raus.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
