@@ -11,7 +11,7 @@
 <script>
 (function () {
   // Intro läuft genau einmal. Gemerkt in localStorage (und zusätzlich per Cookie als Reserve).
-  var K = "moki-intro-v1", seen = false, q = location.search;
+  var K = "moki-intro-v2", seen = false, q = location.search;
   try { seen = localStorage.getItem(K) === "1"; } catch (e) {}
   if (!seen) { try { seen = document.cookie.indexOf(K + "=1") > -1; } catch (e) {} }
   if (/[?&]intro(=1)?(&|$)/.test(q)) seen = false;   // zum Testen: moki.html?intro
@@ -302,6 +302,29 @@ html.playing body{overflow:hidden}
 .chal .cact .i{width:16px;height:16px}
 .chal.done [data-ch=done]{background:var(--accent);color:#04201a}
 @media(max-width:900px){.chal{grid-template-columns:1fr;padding:20px;border-radius:24px;margin-top:-10px}.chal .cimg img{width:100px;height:100px}.chal h2{font-size:26px}.chal .cact{flex-direction:row;flex-wrap:wrap}}
+
+/* Mega-Update-Timer */
+.mega{position:relative;display:flex;align-items:center;gap:26px;margin:-6px 0 28px;padding:18px 28px;border-radius:26px;overflow:hidden;background:linear-gradient(110deg,#0d1030,#1b1458 55%,#2a1766);border:1px solid #ffd23f55;box-shadow:0 14px 40px #0008,0 0 0 1px #ffd23f22}
+.mega::before{content:"";position:absolute;inset:-40%;background:conic-gradient(from 0deg,transparent,#ffd23f22,transparent 30%);animation:mspin 9s linear infinite}
+@keyframes mspin{to{transform:rotate(360deg)}}
+.mega>*{position:relative}
+.mega .mtxt{flex:1;min-width:0}
+.mega .chip{display:inline-flex;align-items:center;gap:6px;padding:5px 13px;border-radius:999px;background:var(--accent2);color:#3a2a00;font-weight:800;font-size:13px}
+.mega .chip .i{width:15px;height:15px}
+.mega h2{font-size:26px;margin:8px 0 2px;letter-spacing:-.4px}
+.mega p{color:#cfd4ff;font-size:14px}
+.mega .mq{display:flex;gap:8px}
+.mega .mq i{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:#ffffff10;border:1px dashed #ffffff44;font:900 22px "Segoe UI",system-ui,sans-serif;color:#ffd23f;font-style:normal;animation:mqf 2.4s ease-in-out infinite}
+.mega .mq i:nth-child(2){animation-delay:.3s}.mega .mq i:nth-child(3){animation-delay:.6s}.mega .mq i:nth-child(4){animation-delay:.9s}
+@keyframes mqf{50%{opacity:.35;transform:translateY(-3px)}}
+.mtimer{display:flex;gap:10px}
+.mdig{min-width:64px;text-align:center;padding:8px 6px 6px;border-radius:14px;background:#0a0d2bcc;border:1px solid #ffffff1f}
+.mdig b{display:block;font:900 30px/1.1 "Segoe UI",system-ui,sans-serif;font-variant-numeric:tabular-nums;color:#fff}
+.mdig span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.utease .ut{padding:16px 18px;border-radius:18px;background:linear-gradient(110deg,#0d1030,#2a1766);border:1px solid #ffd23f55}
+.utease .ut b{font-size:18px}
+.utease .ut p{color:#cfd4ff;margin:4px 0 12px;font-size:14px}
+@media(max-width:900px){.mega{flex-direction:column;align-items:flex-start;gap:14px;padding:18px}.mega .mq{display:none}.mdig{min-width:56px}.mdig b{font-size:24px}.mega h2{font-size:22px}}
 
 </style>
 </head>
@@ -1141,7 +1164,7 @@ function home() {
       ${cm.length > 5 ? `<button class="btn more" data-cat="__cre" type="button">Alle ${cm.length} Kreationen ansehen</button>` : ""}
     </section>`;
   app.innerHTML = `
-    ${!q && category === "Alle" ? heroHtml() + challengeHtml() : ""}
+    ${!q && category === "Alle" ? megaHtml() + heroHtml() + challengeHtml() : ""}
     ${!q && category === "Alle" && rec.length ? `<section>
       <h2>${icon("clock")}Zuletzt gespielt</h2>
       <div class="grid">${rec.map(tile).join("")}</div>
@@ -1345,6 +1368,32 @@ function onChallenge(act) {
 }
 setInterval(() => { const el = document.getElementById("chal-left"); if (el) el.textContent = chLeft(); }, 60000);
 
+// ---- Timer bis zum Mega-Update: 2. Dezember 2026, 00:00 Uhr deutsche Zeit (Dezember = UTC+1) ----
+const MEGA_AT = new Date("2026-12-02T00:00:00+01:00").getTime();
+const megaWhen = () => "Am 2. Dezember 2026 um 00:00 Uhr. Der Timer läuft schon.";
+function megaParts() {
+  const ms = MEGA_AT - Date.now();
+  if (ms <= 0) return null;
+  const s = Math.floor(ms / 1000);
+  return { d: Math.floor(s / 86400), h: Math.floor(s % 86400 / 3600), m: Math.floor(s % 3600 / 60), s: s % 60 };
+}
+function megaDigits() {
+  const p = megaParts() || { d: 0, h: 0, m: 0, s: 0 };
+  const box = (k, label) => `<div class="mdig"><b data-mega="${k}">${String(p[k]).padStart(2, "0")}</b><span>${label}</span></div>`;
+  return `<div class="mtimer" role="timer" aria-label="Zeit bis zum Mega-Update">${box("d", "Tage")}${box("h", "Std.")}${box("m", "Min.")}${box("s", "Sek.")}</div>`;
+}
+function megaHtml() {
+  if (!megaParts()) return "";
+  return `<section class="mega" aria-label="Mega-Update">
+    <div class="mtxt"><span class="chip">${icon("sparkles")}Mega-Update</span><h2>Über 100 Spiele kommen</h2><p>${esc(megaWhen())}</p></div>
+    <div class="mq" aria-hidden="true"><i>?</i><i>?</i><i>?</i><i>?</i></div>${megaDigits()}</section>`;
+}
+setInterval(() => {
+  const p = megaParts();
+  if (!p) { document.querySelectorAll(".mega").forEach(e => e.remove()); return; }
+  document.querySelectorAll("[data-mega]").forEach(e => { e.textContent = String(p[e.dataset.mega]).padStart(2, "0"); });
+}, 1000);
+
 home();   // erster Aufbau erst hier, damit alle Funktionen oben bereit sind
 
 </script>
@@ -1352,7 +1401,7 @@ home();   // erster Aufbau erst hier, damit alle Funktionen oben bereit sind
 // Moki-Intro: Wartungsbild -> Countdown (10) -> Animation -> Moki -> Update-Übersicht.
 // Läuft genau einmal pro Browser (siehe Skript im <head> von index.html).
 (function () {
-  const KEY = "moki-intro-v1";
+  const KEY = "moki-intro-v2";
   const root = document.documentElement;
   if (!root.classList.contains("intro-on")) return;
 
@@ -1439,19 +1488,13 @@ home();   // erster Aufbau erst hier, damit alle Funktionen oben bereit sind
 
   // ---------- Update-Übersicht ----------
   function openUpdate() {
-    const fresh = games.filter(g => g.added);
+    const fresh = games.filter(g => (g.added || "") >= "2026-11-17");
     const feats = [
-      ["sparkles", "Neues Design", "Neues Logo, neue Kopfzeile und eine Seitenleiste, die sich einklappen lässt."],
-      ["flame", "Spiel des Tages", "Jeden Tag ein anderes Spiel groß auf der Startseite, für alle dasselbe."],
-      ["star", "Favoriten", "Tippe bei einem Spiel auf den Stern, dann findest du es unter „Favoriten“. Wird in deinem Browser gespeichert."],
-      ["clock", "Zuletzt gespielt", "Deine letzten Spiele stehen oben auf der Startseite."],
-      ["shuffle", "Zufall", "Der Knopf „Zufall“ öffnet ein zufälliges Spiel."],
       ["share", "Freunde einladen", "Mit dem Teilen-Symbol auf jeder Kachel schickst du ein Spiel per Link an Freunde. Oben rechts lädst du sie zu Moki ein."],
       ["trophy", "Wochenchallenge", "Jede Woche ein neues Spiel mit einer Aufgabe. Du markierst selbst, ob du sie geschafft hast, und sammelst eine Serie."],
-      ["alle", "Bessere Kategorien", "Neu sortiert, zum Beispiel Geschicklichkeit sowie Kampf & Schießen."],
+      ["clock", "Mega-Update-Timer", "Oben auf der Startseite läuft der Timer bis zum Mega-Update mit über 100 Spielen."],
       ["tag", "NEU-Schilder", "Neue Spiele tragen 7 Tage lang ein NEU-Schild."],
-      ["pen", "Studio", "Baue eigene Spiele im Studio, mit Baukasten oder Code, und veröffentliche sie unter „Kreationen“."],
-      ["alert", "Hinweise", "Experimentelle Spiele und die Zusatzseiten warnen dich vorher."]
+      ["alert", "Weiterhin keine Werbung", "Keine Banner, keine Pop-ups und keine Video-Vorspänne. Das bleibt so."]
     ];
     upd.innerHTML = `<div class="ubox">
       <button class="uclose" type="button" aria-label="Schließen">${icon("x")}</button>
@@ -1461,6 +1504,7 @@ home();   // erster Aufbau erst hier, damit alle Funktionen oben bereit sind
       <div class="ubody">
         <section><h3>Neue Funktionen</h3><ul class="feats">${feats.map(f => `<li><span class="fi">${icon(f[0])}</span><div><b>${f[1]}</b><p>${f[2]}</p></div></li>`).join("")}</ul></section>
         <section><h3>${fresh.length} neue Spiele</h3><div class="ugrid">${fresh.map(g => `<div class="ug"><img src="${g.image}" alt=""><span>${esc(g.title)}</span></div>`).join("")}</div></section>
+        <section class="utease"><h3>Als Nächstes</h3><div class="ut"><b>Mega-Update mit über 100 Spielen</b><p>${esc(megaWhen())}</p>${megaDigits()}</div></section>
       </div>
       <footer class="ufoot"><span>${games.length} Spiele · ${sites.length} Zusatzseiten</span><button class="ubtn" id="ugo" type="button">Los geht’s</button></footer>
     </div>`;

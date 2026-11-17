@@ -1,7 +1,7 @@
 // Moki-Intro: Wartungsbild -> Countdown (10) -> Animation -> Moki -> Update-Übersicht.
 // Läuft genau einmal pro Browser (siehe Skript im <head> von index.html).
 (function () {
-  const KEY = "moki-intro-v1";
+  const KEY = "moki-intro-v2";
   const root = document.documentElement;
   if (!root.classList.contains("intro-on")) return;
 
@@ -88,19 +88,13 @@
 
   // ---------- Update-Übersicht ----------
   function openUpdate() {
-    const fresh = games.filter(g => g.added);
+    const fresh = games.filter(g => (g.added || "") >= "2026-11-17");
     const feats = [
-      ["sparkles", "Neues Design", "Neues Logo, neue Kopfzeile und eine Seitenleiste, die sich einklappen lässt."],
-      ["flame", "Spiel des Tages", "Jeden Tag ein anderes Spiel groß auf der Startseite, für alle dasselbe."],
-      ["star", "Favoriten", "Tippe bei einem Spiel auf den Stern, dann findest du es unter „Favoriten“. Wird in deinem Browser gespeichert."],
-      ["clock", "Zuletzt gespielt", "Deine letzten Spiele stehen oben auf der Startseite."],
-      ["shuffle", "Zufall", "Der Knopf „Zufall“ öffnet ein zufälliges Spiel."],
       ["share", "Freunde einladen", "Mit dem Teilen-Symbol auf jeder Kachel schickst du ein Spiel per Link an Freunde. Oben rechts lädst du sie zu Moki ein."],
       ["trophy", "Wochenchallenge", "Jede Woche ein neues Spiel mit einer Aufgabe. Du markierst selbst, ob du sie geschafft hast, und sammelst eine Serie."],
-      ["alle", "Bessere Kategorien", "Neu sortiert, zum Beispiel Geschicklichkeit sowie Kampf & Schießen."],
+      ["clock", "Mega-Update-Timer", "Oben auf der Startseite läuft der Timer bis zum Mega-Update mit über 100 Spielen."],
       ["tag", "NEU-Schilder", "Neue Spiele tragen 7 Tage lang ein NEU-Schild."],
-      ["pen", "Studio", "Baue eigene Spiele im Studio, mit Baukasten oder Code, und veröffentliche sie unter „Kreationen“."],
-      ["alert", "Hinweise", "Experimentelle Spiele und die Zusatzseiten warnen dich vorher."]
+      ["alert", "Weiterhin keine Werbung", "Keine Banner, keine Pop-ups und keine Video-Vorspänne. Das bleibt so."]
     ];
     upd.innerHTML = `<div class="ubox">
       <button class="uclose" type="button" aria-label="Schließen">${icon("x")}</button>
@@ -110,6 +104,7 @@
       <div class="ubody">
         <section><h3>Neue Funktionen</h3><ul class="feats">${feats.map(f => `<li><span class="fi">${icon(f[0])}</span><div><b>${f[1]}</b><p>${f[2]}</p></div></li>`).join("")}</ul></section>
         <section><h3>${fresh.length} neue Spiele</h3><div class="ugrid">${fresh.map(g => `<div class="ug"><img src="${g.image}" alt=""><span>${esc(g.title)}</span></div>`).join("")}</div></section>
+        <section class="utease"><h3>Als Nächstes</h3><div class="ut"><b>Mega-Update mit über 100 Spielen</b><p>${esc(megaWhen())}</p>${megaDigits()}</div></section>
       </div>
       <footer class="ufoot"><span>${games.length} Spiele · ${sites.length} Zusatzseiten</span><button class="ubtn" id="ugo" type="button">Los geht’s</button></footer>
     </div>`;

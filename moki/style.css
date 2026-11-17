@@ -280,3 +280,26 @@ html.playing body{overflow:hidden}
 .chal .cact .i{width:16px;height:16px}
 .chal.done [data-ch=done]{background:var(--accent);color:#04201a}
 @media(max-width:900px){.chal{grid-template-columns:1fr;padding:20px;border-radius:24px;margin-top:-10px}.chal .cimg img{width:100px;height:100px}.chal h2{font-size:26px}.chal .cact{flex-direction:row;flex-wrap:wrap}}
+
+/* Mega-Update-Timer */
+.mega{position:relative;display:flex;align-items:center;gap:26px;margin:-6px 0 28px;padding:18px 28px;border-radius:26px;overflow:hidden;background:linear-gradient(110deg,#0d1030,#1b1458 55%,#2a1766);border:1px solid #ffd23f55;box-shadow:0 14px 40px #0008,0 0 0 1px #ffd23f22}
+.mega::before{content:"";position:absolute;inset:-40%;background:conic-gradient(from 0deg,transparent,#ffd23f22,transparent 30%);animation:mspin 9s linear infinite}
+@keyframes mspin{to{transform:rotate(360deg)}}
+.mega>*{position:relative}
+.mega .mtxt{flex:1;min-width:0}
+.mega .chip{display:inline-flex;align-items:center;gap:6px;padding:5px 13px;border-radius:999px;background:var(--accent2);color:#3a2a00;font-weight:800;font-size:13px}
+.mega .chip .i{width:15px;height:15px}
+.mega h2{font-size:26px;margin:8px 0 2px;letter-spacing:-.4px}
+.mega p{color:#cfd4ff;font-size:14px}
+.mega .mq{display:flex;gap:8px}
+.mega .mq i{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:#ffffff10;border:1px dashed #ffffff44;font:900 22px "Segoe UI",system-ui,sans-serif;color:#ffd23f;font-style:normal;animation:mqf 2.4s ease-in-out infinite}
+.mega .mq i:nth-child(2){animation-delay:.3s}.mega .mq i:nth-child(3){animation-delay:.6s}.mega .mq i:nth-child(4){animation-delay:.9s}
+@keyframes mqf{50%{opacity:.35;transform:translateY(-3px)}}
+.mtimer{display:flex;gap:10px}
+.mdig{min-width:64px;text-align:center;padding:8px 6px 6px;border-radius:14px;background:#0a0d2bcc;border:1px solid #ffffff1f}
+.mdig b{display:block;font:900 30px/1.1 "Segoe UI",system-ui,sans-serif;font-variant-numeric:tabular-nums;color:#fff}
+.mdig span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.utease .ut{padding:16px 18px;border-radius:18px;background:linear-gradient(110deg,#0d1030,#2a1766);border:1px solid #ffd23f55}
+.utease .ut b{font-size:18px}
+.utease .ut p{color:#cfd4ff;margin:4px 0 12px;font-size:14px}
+@media(max-width:900px){.mega{flex-direction:column;align-items:flex-start;gap:14px;padding:18px}.mega .mq{display:none}.mdig{min-width:56px}.mdig b{font-size:24px}.mega h2{font-size:22px}}

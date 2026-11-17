@@ -11,7 +11,7 @@
 <script>
 (function () {
   // Intro läuft genau einmal. Gemerkt in localStorage (und zusätzlich per Cookie als Reserve).
-  var K = "moki-intro-v1", seen = false, q = location.search;
+  var K = "moki-intro-v2", seen = false, q = location.search;
   try { seen = localStorage.getItem(K) === "1"; } catch (e) {}
   if (!seen) { try { seen = document.cookie.indexOf(K + "=1") > -1; } catch (e) {} }
   if (/[?&]intro(=1)?(&|$)/.test(q)) seen = false;   // zum Testen: moki.html?intro
