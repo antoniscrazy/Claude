@@ -456,6 +456,19 @@ window.MOKI_GAMES = [
     description: "Führe dein Football-Team im Retro-Look: wirf Pässe, laufe zu Touchdowns und baue deinen Kader von Saison zu Saison aus.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "idle-restaurants",
+    title: "Idle Restaurants",
+    url: "https://fancy-marzipan-d45c81.netlify.app",
+    category: "Simulation",
+    image: "idle-restaurants.jpg",
+    wide: true,
+    emoji: "🍕",
+    colors: ["#e8a06a", "#7bc043"],
+    description: "Baue dein Restaurant aus, stelle Köche und Kellner ein und verdiene Geld, auch wenn du gerade nicht spielst.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
