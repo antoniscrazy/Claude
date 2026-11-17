@@ -550,7 +550,7 @@ window.MOKI_GAMES = [
     image: "tiny-towers.jpg",
     emoji: "🏰",
     colors: ["#e83fd0", "#7a1fc4"],
-    description: "Baue kleine Türme und beschieße damit anrückende Gegner. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    description: "Baue kleine Türme und beschieße damit anrückende Gegner.",
     added: "2026-11-17",
     featured: false
   },
@@ -562,7 +562,7 @@ window.MOKI_GAMES = [
     image: "penguin-diner.jpg",
     emoji: "🐧",
     colors: ["#7fc4e0", "#e870b0"],
-    description: "Führe ein Restaurant im Eis: Bediene hungrige Gäste, bring das Essen rechtzeitig an den Tisch und sei schneller als die Pinguine. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    description: "Führe ein Restaurant im Eis: Bediene hungrige Gäste, bring das Essen rechtzeitig an den Tisch und sei schneller als die Pinguine.",
     added: "2026-11-17",
     featured: false
   },
@@ -575,7 +575,7 @@ window.MOKI_GAMES = [
     wide: true,
     emoji: "👾",
     colors: ["#2aa8f0", "#ffc928"],
-    description: "Führe eine wachsende Menge kleiner Kämpfer gegen gegnerische Türme und Riesen. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    description: "Führe eine wachsende Menge kleiner Kämpfer gegen gegnerische Türme und Riesen.",
     added: "2026-11-17",
     featured: false
   },
@@ -588,7 +588,7 @@ window.MOKI_GAMES = [
     wide: true,
     emoji: "⚽",
     colors: ["#1a8fd8", "#3fbf3f"],
-    description: "Fußball mit riesigen Köpfen: Schieße den Ball ins gegnerische Tor und gewinne das Duell. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    description: "Fußball mit riesigen Köpfen: Schieße den Ball ins gegnerische Tor und gewinne das Duell.",
     added: "2026-11-17",
     featured: false
   },
@@ -600,7 +600,7 @@ window.MOKI_GAMES = [
     image: "stick-defenders.jpg",
     emoji: "🔫",
     colors: ["#f5a623", "#d4501c"],
-    description: "Verteidige deine Stellung mit bewaffneten Stickmen gegen anrückende Gegner. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    description: "Verteidige deine Stellung mit bewaffneten Stickmen gegen anrückende Gegner.",
     added: "2026-11-17",
     featured: false
   },
@@ -612,7 +612,7 @@ window.MOKI_GAMES = [
     image: "ragdoll-chaos.jpg",
     emoji: "🤸",
     colors: ["#3aa0f0", "#f5c518"],
-    description: "Wirf eine Ragdoll-Figur herum und sieh zu, wie sie durch die Gegend fliegt und zerlegt wird. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    description: "Wirf eine Ragdoll-Figur herum und sieh zu, wie sie durch die Gegend fliegt und zerlegt wird.",
     added: "2026-11-17",
     featured: false
   },
@@ -624,7 +624,7 @@ window.MOKI_GAMES = [
     image: "master-chess.jpg",
     emoji: "♟️",
     colors: ["#5a4a3a", "#2a2622"],
-    description: "Schach am Brett im 3D-Look: Plane deine Züge und setze den gegnerischen König matt. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    description: "Schach am Brett im 3D-Look: Plane deine Züge und setze den gegnerischen König matt.",
     added: "2026-11-17",
     featured: false
   },
@@ -636,7 +636,7 @@ window.MOKI_GAMES = [
     image: "ping-pong-go.jpg",
     emoji: "🏓",
     colors: ["#ffc928", "#e8451e"],
-    description: "Tischtennis mit bunten Schlägern: Spiel den Ball zurück und gewinne das Match. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    description: "Tischtennis mit bunten Schlägern: Spiel den Ball zurück und gewinne das Match.",
     added: "2026-11-17",
     featured: false
   },
@@ -648,7 +648,7 @@ window.MOKI_GAMES = [
     image: "murder.jpg",
     emoji: "👑",
     colors: ["#b05a8a", "#6a2f5a"],
-    description: "Ein Comic-Rätselspiel im Königshof: Finde den richtigen Weg, um an den König heranzukommen. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    description: "Ein Comic-Rätselspiel im Königshof: Finde den richtigen Weg, um an den König heranzukommen.",
     added: "2026-11-17",
     featured: false
   },
@@ -660,7 +660,7 @@ window.MOKI_GAMES = [
     image: "blumgi-slime.jpg",
     emoji: "🟢",
     colors: ["#ff6177", "#2fd6c2"],
-    description: "Spring mit einem bunten Schleim-Wesen über Hindernisse und komm so weit wie möglich. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    description: "Spring mit einem bunten Schleim-Wesen über Hindernisse und komm so weit wie möglich.",
     added: "2026-11-17",
     featured: false
   },
@@ -672,7 +672,7 @@ window.MOKI_GAMES = [
     image: "stickman-battle.jpg",
     emoji: "⚔️",
     colors: ["#2a1850", "#e0204a"],
-    description: "Rot gegen Blau: Kämpfe als Stickman mit Lichtschwert, Speer und mehr gegen deinen Gegner. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    description: "Rot gegen Blau: Kämpfe als Stickman mit Lichtschwert, Speer und mehr gegen deinen Gegner.",
     added: "2026-11-17",
     featured: false
   },
@@ -684,7 +684,7 @@ window.MOKI_GAMES = [
     image: "longcat.jpg",
     emoji: "🐱",
     colors: ["#ffd400", "#e0865a"],
-    description: "Eine Katze, die immer länger wird: Lenk sie durch das Labyrinth, ohne dich zu verfangen. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    description: "Eine Katze, die immer länger wird: Lenk sie durch das Labyrinth, ohne dich zu verfangen.",
     added: "2026-11-17",
     featured: false
   },
@@ -696,7 +696,7 @@ window.MOKI_GAMES = [
     image: "ovo-classic.jpg",
     emoji: "🏃",
     colors: ["#f2f2f2", "#222222"],
-    description: "Ein schneller Parkour-Plattformer: Renne, springe und rutsche durch knifflige Level. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    description: "Ein schneller Parkour-Plattformer: Renne, springe und rutsche durch knifflige Level.",
     added: "2026-11-17",
     featured: false
   }
