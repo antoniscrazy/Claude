@@ -639,6 +639,18 @@ window.MOKI_GAMES = [
     description: "Tischtennis mit bunten Schlägern: Spiel den Ball zurück und gewinne das Match. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "murder",
+    title: "Murder",
+    url: "https://superb-taiyaki-cff38a.netlify.app",
+    category: "Abenteuer",
+    image: "murder.jpg",
+    emoji: "👑",
+    colors: ["#b05a8a", "#6a2f5a"],
+    description: "Ein Comic-Rätselspiel im Königshof: Finde den richtigen Weg, um an den König heranzukommen. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
