@@ -432,6 +432,18 @@ window.MOKI_GAMES = [
     description: "Schwinge dich als Stickman an Seilen von Haken zu Haken und lass im richtigen Moment los, um das Ziel zu erreichen.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "flappy-bird",
+    title: "Flappy Bird",
+    url: "https://elegant-haupia-ca12cc.netlify.app",
+    category: "Geschicklichkeit",
+    image: "flappy-bird.jpg",
+    emoji: "🐤",
+    colors: ["#72c4cf", "#f5c518"],
+    description: "Tippe im richtigen Moment, damit der kleine Vogel durch die Lücken zwischen den Röhren flattert.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
