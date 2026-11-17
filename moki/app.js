@@ -383,13 +383,56 @@ function trailerHtml() {
     <button class="trlv" type="button" data-trl="play" aria-label="Moki-Trailer abspielen"><img src="trailer-poster.jpg" alt=""><span class="trlp">${icon("play")}</span></button>
     <div class="trlt"><span class="chip">${icon("flame")}Trailer</span><h2>Der Moki-Trailer</h2>
       <p>Alle Funktionen, die neuen Spiele und ein Blick auf das Mega-Update.</p>
-      <small>Das Video liegt bei YouTube. Erst wenn du auf Play drückst, wird etwas von dort geladen.</small>
+      <small>Das Video liegt bei YouTube. Erst wenn du auf Play drückst, öffnet es sich im Vollbild und es wird etwas von dort geladen.</small>
       <a class="btn" href="https://www.youtube.com/watch?v=${TRAILER_ID}" target="_blank" rel="noopener">Auf YouTube ansehen</a></div></section>`;
 }
-function playTrailer(btn) {
-  const box = btn.closest(".trl").querySelector(".trlv");
-  box.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${TRAILER_ID}?autoplay=1&rel=0" title="Moki-Trailer" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
-  box.removeAttribute("data-trl");
+function playTrailer() { showTrailerOverlay(true); }
+
+// ---- Trailer im Vollbild-Overlay: startet beim ersten Besuch automatisch (zuerst ohne Ton, ein Klick holt Ton und echtes Vollbild) ----
+const TRAILER_KEY = "moki-trailer-v1";
+function trailerSeen() { return store.get(TRAILER_KEY, 0) === 1; }
+function showTrailerOverlay(byClick) {   // byClick: kam von einem Klick, dann geht Ton und Vollbild sofort
+  return new Promise(resolve => {
+    store.set(TRAILER_KEY, 1);
+    const el = document.createElement("div"); el.id = "trlfs"; el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true"); el.setAttribute("aria-label", "Moki-Trailer");
+    el.innerHTML = `<iframe title="Moki-Trailer" src="https://www.youtube-nocookie.com/embed/${TRAILER_ID}?autoplay=1&mute=${byClick ? 0 : 1}&controls=1&rel=0&playsinline=1&enablejsapi=1&modestbranding=1" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      <button class="btn trlfs-skip" type="button" data-a="skip">Überspringen</button>
+      ${byClick ? "" : `<button class="btn go trlfs-sound" type="button" data-a="sound">${icon("play")}Ton an und Vollbild</button>`}`;
+    const fr = el.querySelector("iframe");
+    const send = (func, args) => { try { fr.contentWindow.postMessage(JSON.stringify({ event: "command", func, args: args || [] }), "*"); } catch (e) {} };
+    let done = false;
+    const close = () => {
+      if (done) return; done = true;
+      removeEventListener("keydown", onKey); removeEventListener("message", onMsg);
+      try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
+      fr.src = "about:blank"; el.remove(); resolve();
+    };
+    const onKey = e => { if (e.key === "Escape") close(); };
+    const onMsg = e => {   // Ende des Videos erkennen
+      if (e.source !== fr.contentWindow) return;
+      let d = e.data; if (typeof d === "string") { try { d = JSON.parse(d); } catch (x) { return; } }
+      if (d && d.event === "onStateChange" && d.info === 0) close();
+      if (d && d.event === "infoDelivery" && d.info && d.info.playerState === 0) close();
+    };
+    addEventListener("keydown", onKey); addEventListener("message", onMsg);
+    fr.addEventListener("load", () => {
+      try { fr.contentWindow.postMessage(JSON.stringify({ event: "listening", id: 1, channel: "widget" }), "*"); } catch (e) {}
+      send("addEventListener", ["onStateChange"]);
+    });
+    el.addEventListener("click", e => {
+      const b = e.target.closest("[data-a]"); if (!b) return;
+      if (b.dataset.a === "skip") return close();
+      if (b.dataset.a === "sound") {
+        send("unMute"); send("setVolume", [100]); send("playVideo");
+        b.remove();
+        try { if (el.requestFullscreen) el.requestFullscreen(); } catch (x) {}
+      }
+    });
+    document.body.appendChild(el);
+    if (byClick) { try { if (el.requestFullscreen) el.requestFullscreen(); } catch (x) {} }
+    else el.querySelector("[data-a=sound]").focus({ preventScroll: true });
+  });
 }
+if (/[?&]trailer(=1)?(&|$)/.test(location.search) && !document.documentElement.classList.contains("intro-on")) showTrailerOverlay();
 
 home();   // erster Aufbau erst hier, damit alle Funktionen oben bereit sind

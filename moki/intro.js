@@ -124,6 +124,12 @@
     $("ugo").focus({ preventScroll: true });
   }
 
+  // Nach dem Intro: Trailer im Vollbild (nur beim ersten Besuch), danach die Update-Uebersicht
+  function afterIntro() {
+    if (!trailerSeen() || /[?&]trailer/.test(location.search)) showTrailerOverlay().then(openUpdate);
+    else openUpdate();
+  }
+
   function leaveIntro(fast) {
     root.classList.add("site-in");
     intro.classList.add("out");
@@ -142,7 +148,7 @@
     await sleep(350);
     root.classList.remove("intro-on");
     setTimeout(() => root.classList.remove("site-in"), 1200);
-    openUpdate();
+    afterIntro();
   }
 
   skipBtn.onclick = () => { if (!skipped) { skipped = true; skipNow(); finishFast(); } };
@@ -163,7 +169,7 @@
     await wait(reduce ? 1200 : 3000); if (skipped) return;
 
     await leaveIntro(false);
-    openUpdate();
+    afterIntro();
   }
   run();
 })();
