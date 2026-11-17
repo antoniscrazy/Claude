@@ -615,6 +615,18 @@ window.MOKI_GAMES = [
     description: "Wirf eine Ragdoll-Figur herum und sieh zu, wie sie durch die Gegend fliegt und zerlegt wird. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "master-chess",
+    title: "Master Chess",
+    url: "https://grand-cranachan-c3c882.netlify.app",
+    category: "Strategie",
+    image: "master-chess.jpg",
+    emoji: "♟️",
+    colors: ["#5a4a3a", "#2a2622"],
+    description: "Schach am Brett im 3D-Look: Plane deine Züge und setze den gegnerischen König matt. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
