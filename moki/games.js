@@ -748,6 +748,18 @@ window.MOKI_GAMES = [
     description: "Werde Pilot: Starte und lande Flugzeuge und erlebe den Alltag im Cockpit.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "kiwi-clicker",
+    title: "Kiwi Clicker",
+    url: "https://resplendent-strudel-efd4c0.netlify.app",
+    category: "Simulation",
+    image: "kiwi-clicker.jpg",
+    emoji: "🥝",
+    colors: ["#7fd44a", "#c8a24a"],
+    description: "Tippe auf die Kiwi, sammle Punkte und kaufe Verbesserungen, damit es immer schneller geht.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
