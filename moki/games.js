@@ -591,6 +591,18 @@ window.MOKI_GAMES = [
     description: "Fußball mit riesigen Köpfen: Schieße den Ball ins gegnerische Tor und gewinne das Duell. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "stick-defenders",
+    title: "Stick Defenders",
+    url: "https://gorgeous-faun-4ca736.netlify.app",
+    category: "Kampf & Schießen",
+    image: "stick-defenders.jpg",
+    emoji: "🔫",
+    colors: ["#f5a623", "#d4501c"],
+    description: "Verteidige deine Stellung mit bewaffneten Stickmen gegen anrückende Gegner. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
