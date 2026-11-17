@@ -144,7 +144,7 @@ function home() {
       ${cm.length > 5 ? `<button class="btn more" data-cat="__cre" type="button">Alle ${cm.length} Kreationen ansehen</button>` : ""}
     </section>`;
   app.innerHTML = `
-    ${!q && category === "Alle" ? megaHtml() + heroHtml() + challengeHtml() : ""}
+    ${!q && category === "Alle" ? megaHtml() + heroHtml() + challengeHtml() + trailerHtml() : ""}
     ${!q && category === "Alle" && rec.length ? `<section>
       <h2>${icon("clock")}Zuletzt gespielt</h2>
       <div class="grid">${rec.map(tile).join("")}</div>
@@ -207,6 +207,8 @@ function openGame(g) {   // Popup bei Warnung, sonst direkt öffnen
 document.addEventListener("click", e => {
   const sh = e.target.closest("[data-share]");
   if (sh) { e.preventDefault(); e.stopPropagation(); shareGame(sh.dataset.share); return; }
+  const tr = e.target.closest("[data-trl]");
+  if (tr) { e.preventDefault(); playTrailer(tr); return; }
   const ch = e.target.closest("[data-ch]");
   if (ch) { e.preventDefault(); onChallenge(ch.dataset.ch); return; }
   const f = e.target.closest(".fav");
@@ -373,5 +375,21 @@ setInterval(() => {
   if (!p) { document.querySelectorAll(".mega").forEach(e => e.remove()); return; }
   document.querySelectorAll("[data-mega]").forEach(e => { e.textContent = String(p[e.dataset.mega]).padStart(2, "0"); });
 }, 1000);
+
+// ---- Moki-Trailer: YouTube, laedt erst nach dem Klick (vorher wird nichts von YouTube geladen) ----
+const TRAILER_ID = "QjldhlgWFlk";
+function trailerHtml() {
+  return `<section class="trl" aria-label="Moki-Trailer">
+    <button class="trlv" type="button" data-trl="play" aria-label="Moki-Trailer abspielen"><img src="trailer-poster.jpg" alt=""><span class="trlp">${icon("play")}</span></button>
+    <div class="trlt"><span class="chip">${icon("flame")}Trailer</span><h2>Der Moki-Trailer</h2>
+      <p>Alle Funktionen, die neuen Spiele und ein Blick auf das Mega-Update.</p>
+      <small>Das Video liegt bei YouTube. Erst wenn du auf Play drückst, wird etwas von dort geladen.</small>
+      <a class="btn" href="https://www.youtube.com/watch?v=${TRAILER_ID}" target="_blank" rel="noopener">Auf YouTube ansehen</a></div></section>`;
+}
+function playTrailer(btn) {
+  const box = btn.closest(".trl").querySelector(".trlv");
+  box.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${TRAILER_ID}?autoplay=1&rel=0" title="Moki-Trailer" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+  box.removeAttribute("data-trl");
+}
 
 home();   // erster Aufbau erst hier, damit alle Funktionen oben bereit sind
