@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script id="unity-pointerlock-guard">(function(){var r=Element.prototype.requestPointerLock;if(!r)return;Element.prototype.requestPointerLock=function(){try{var p=r.apply(this,arguments);if(p&&p.catch)p.catch(function(){});return p}catch(e){}}})();</script>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Tank Stars</title>
+    <script>
+        window.config = {
+            loader: 'unity-2020',
+            debug: false,
+            maxRatio: 24 / 9,
+            minRatio: 9 / 24,
+            title: "Tank Stars",
+            thumbnail: "thumb.png",
+            numScreenshots: 4,
+            unityVersion: "6000.1.17f1",
+            unityWebglBuildUrl: '',
+            fileSize: 19,
+            cachedDecompressedFileSizes: {
+                'game.data': 7622695,
+                'game.framework.js': 96363,
+                'game.loader.js': 8039,
+                'game.wasm': 11632817,
+            },
+            "metadata": {"poki_template_version":1,"background_color":"#000000","code_filename":"game.wasm","company_name":"Playgendary","data_filename":"game.data","development_player":"false","framework_filename":"game.framework.js","height":"600","loader_filename":"game.loader.js","product_name":"Tank Stars","product_version":"2.7.0","splash_screen_style":"Dark","unity_version":"6000.1.17f1","use_data_caching":"true","use_threads":"false","use_wasm":"true","use_webgl_1_0":"false","use_webgl_2_0":"true","width":"960"}
+        };
+    </script>
+<script>
+      /* unity-net-guard: request ra origin khác = mất mạng */
+      (function () {
+        function ext(u) {
+          try { var x = new URL(String(u), location.href); return /^https?:$/.test(x.protocol) && x.origin !== location.origin; } catch (e) { return false; }
+        }
+        var open = XMLHttpRequest.prototype.open, send = XMLHttpRequest.prototype.send;
+        XMLHttpRequest.prototype.open = function (m, u, a) { this._blocked = ext(u); this._sync = a === false; return open.apply(this, arguments); };
+        XMLHttpRequest.prototype.send = function () {
+          if (!this._blocked) return send.apply(this, arguments);
+          if (this._sync) throw new DOMException("Failed to load", "NetworkError");
+          var x = this;
+          setTimeout(function () { x.dispatchEvent(new ProgressEvent("error")); x.dispatchEvent(new ProgressEvent("loadend")); }, 0);
+        };
+        var f = window.fetch;
+        window.fetch = function (r) {
+          if (ext(r && r.url || r)) return Promise.reject(new TypeError("Failed to fetch"));
+          return f.apply(this, arguments);
+        };
+        if (navigator.sendBeacon) navigator.sendBeacon = function (u) { return ext(u) ? false : true; };
+        var d = Object.getOwnPropertyDescriptor(HTMLScriptElement.prototype, "src");
+        Object.defineProperty(HTMLScriptElement.prototype, "src", {
+          get: d.get, configurable: true,
+          set: function (v) {
+            if (!ext(v)) return d.set.call(this, v);
+            var s = this;
+            setTimeout(function () { s.dispatchEvent(new Event("error")); }, 0);
+          },
+        });
+        var wo = window.open;
+        window.open = function (u) { return ext(u) ? null : wo.apply(this, arguments); };
+      })();
+    </script>
+</head>
+<body>
+<script src="tank-stars.js"></script>
+<script src="unity-2020.js"></script>
+<script>
+    /* Plugin Poki Unity mới gọi window.getUser/getToken/login/shareableURL — unity-2020.js không có → TypeError giữa vòng lặp
+       chính, game kẹt splash (aquapark.io 2026-10-07). unity-2020.js chỉ lưu pokiBridge khi SDK chưa ready → tự bắt tên bridge.
+       Offline = chưa đăng nhập: trả *Rejected. */
+    (function () {
+        var ib = window.initPokiBridge;
+        window.initPokiBridge = function (n) { window.__pokiBridgeName = n; return ib.apply(this, arguments); };
+        function rej(m) {
+            var b = window.__pokiBridgeName || window.pokiBridge;
+            if (window.unityGame && b) window.unityGame.SendMessage(b, m); else setTimeout(function () { rej(m); }, 100);
+        }
+        if (!window.getUser) window.getUser = function () { rej("getUserRejected"); };
+        if (!window.getToken) window.getToken = function () { rej("getTokenRejected"); };
+        if (!window.login) window.login = function () { rej("loginRejected"); };
+        if (!window.shareableURL) window.shareableURL = function () { rej("shareableURLRejected"); };
+    })();
+</script>
+</body>
+</html>
