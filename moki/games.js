@@ -687,6 +687,18 @@ window.MOKI_GAMES = [
     description: "Eine Katze, die immer länger wird: Lenk sie durch das Labyrinth, ohne dich zu verfangen. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "ovo-classic",
+    title: "OvO Classic",
+    url: "https://magical-cobbler-f45d25.netlify.app",
+    category: "Geschicklichkeit",
+    image: "ovo-classic.jpg",
+    emoji: "🏃",
+    colors: ["#f2f2f2", "#222222"],
+    description: "Ein schneller Parkour-Plattformer: Renne, springe und rutsche durch knifflige Level. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
