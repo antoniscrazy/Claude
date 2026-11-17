@@ -29,7 +29,7 @@
   // Unity builds call these as window functions and wait for the reply through
   // the bridge object they register with initPokiBridge.
   let bridge = null;
-  let initBridge;
+  let initBridge = window.initPokiBridge;
   const send = (method, value) => {
     if (!window.unityGame || !bridge) return;
     try {
