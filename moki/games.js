@@ -603,6 +603,18 @@ window.MOKI_GAMES = [
     description: "Verteidige deine Stellung mit bewaffneten Stickmen gegen anrückende Gegner. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "ragdoll-chaos",
+    title: "Ragdoll Chaos",
+    url: "https://resilient-pudding-bb7e4a.netlify.app",
+    category: "Simulation",
+    image: "ragdoll-chaos.jpg",
+    emoji: "🤸",
+    colors: ["#3aa0f0", "#f5c518"],
+    description: "Wirf eine Ragdoll-Figur herum und sieh zu, wie sie durch die Gegend fliegt und zerlegt wird. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
