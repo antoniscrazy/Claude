@@ -724,6 +724,18 @@ window.MOKI_GAMES = [
     description: "Baue ein Bergbau-Imperium auf: Stelle Arbeiter ein, fördere Gold und Diamanten und werde reich.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "car-circle",
+    title: "Car Circle",
+    url: "https://starlit-dragon-20074a.netlify.app",
+    category: "Fahren",
+    image: "car-circle.jpg",
+    emoji: "🚗",
+    colors: ["#0b1330", "#e0344a"],
+    description: "Lenke Autos durch Kreuzungen und Kreise, ohne dass sie zusammenstoßen.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
