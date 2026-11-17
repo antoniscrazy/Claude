@@ -444,6 +444,18 @@ window.MOKI_GAMES = [
     description: "Tippe im richtigen Moment, damit der kleine Vogel durch die Lücken zwischen den Röhren flattert.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "retro-bowl",
+    title: "Retro Bowl",
+    url: "https://leafy-horse-51c752.netlify.app",
+    category: "Sport",
+    image: "retro-bowl.jpg",
+    emoji: "🏈",
+    colors: ["#4f9a24", "#e05a00"],
+    description: "Führe dein Football-Team im Retro-Look: wirf Pässe, laufe zu Touchdowns und baue deinen Kader von Saison zu Saison aus.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
