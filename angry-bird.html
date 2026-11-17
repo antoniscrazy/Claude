@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Angry Birds</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #111; color: #fff; font-family: sans-serif; }
+  body { display: flex; flex-direction: column; }
+  /* Eigene Leiste über dem Spiel – der Button verdeckt dadurch nichts vom Spiel. */
+  #bar { flex: 0 0 auto; display: flex; justify-content: flex-end; padding: 6px 12px; background: #111; }
+  #game { flex: 1 1 auto; width: 100%; border: 0; display: block; min-height: 0; }
+  /* Moki: Back-Button */
+  #moki-back {
+    padding: 9px 16px; border-radius: 999px;
+    background: linear-gradient(90deg, #00e5a8, #ffd23f);
+    color: #04201a; font: 800 14px "Segoe UI", system-ui, sans-serif;
+    text-decoration: none; box-shadow: 0 3px 12px rgba(0, 0, 0, .5); opacity: .92;
+  }
+  #moki-back:hover { opacity: 1; transform: scale(1.05); }
+</style>
+</head>
+<body>
+<div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
+<iframe id="game" allow="autoplay *; fullscreen *; gamepad *; clipboard-write *" allowfullscreen></iframe>
+<script>
+// Lädt das Spiel direkt aus dem GitHub-Repo (über jsDelivr, mit Commit-Version fest verdrahtet).
+// Kein lokaler Server nötig – die Datei funktioniert auch per Doppelklick.
+const BASE = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@3d8e932cf85a0c44a6d81756ea53d4f9bd5e8da2/angry-bird/";
+const SHIM = '<script>Object.defineProperty(Document.prototype,"URL",{get(){return "' + BASE + 'index.html"},configurable:true})<\/script>';
+fetch(BASE + "index.html")
+  .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+  .then(html => {
+    html = html.replace("<head>", '<head><base href="' + BASE + '">' + SHIM);
+    document.getElementById("game").srcdoc = html;
+  })
+  .catch(e => { document.body.append("Fehler beim Laden: " + e.message); });
+</script>
+</body>
+</html>
