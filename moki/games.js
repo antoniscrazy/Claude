@@ -493,6 +493,18 @@ window.MOKI_GAMES = [
     description: "Gruseliges Erkundungsspiel in den endlosen gelben Gängen der Backrooms: finde den Ausweg und entkomme den Kreaturen.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "papas-burgeria",
+    title: "Papa's Burgeria",
+    url: "https://coruscating-choux-ab10fc.netlify.app",
+    category: "Simulation",
+    image: "papas-burgeria.jpg",
+    emoji: "🍔",
+    colors: ["#1b3fb0", "#e8483a"],
+    description: "Nimm Bestellungen auf, brate die Patties und stapele die Burger genau nach Wunsch der Kunden.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
