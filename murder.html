@@ -9,7 +9,8 @@
   body { display: flex; flex-direction: column; }
   /* Eigene Leiste über dem Spiel – der Button verdeckt dadurch nichts vom Spiel. */
   #bar { flex: 0 0 auto; display: flex; justify-content: flex-end; padding: 6px 12px; background: #111; }
-  #game { flex: 1 1 auto; width: 100%; border: 0; display: block; min-height: 0; }
+  #stage { flex: 1 1 auto; position: relative; min-height: 0; width: 100%; }
+  #stage ruffle-player { position: absolute; inset: 0; width: 100%; height: 100%; }
   /* Moki: Back-Button */
   #moki-back {
     padding: 9px 16px; border-radius: 999px;
@@ -22,19 +23,15 @@
 </head>
 <body>
 <div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
-<iframe id="game" sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-forms allow-modals" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe>
+<div id="stage"></div>
+<script src="https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@0a644745dea67fa23ce061798efd28488aad4bf8/murder/lib/ruffle/ruffle.js"></script>
 <script>
-// Lädt das Spiel direkt aus dem GitHub-Repo (über jsDelivr, mit Commit-Version fest verdrahtet).
-// Kein lokaler Server nötig – die Datei funktioniert auch per Doppelklick.
+// Flash-Spiel (SWF) über Ruffle direkt auf der Seite – ohne srcdoc-Iframe (dort blockiert die Sandbox das SWF).
 const BASE = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@0a644745dea67fa23ce061798efd28488aad4bf8/murder/";
-const SHIM = '<script>window.__GAME_BASE="' + BASE + '";window.open=function(){return null};<\/script><script>(function(){var d=Object.getOwnPropertyDescriptor(HTMLImageElement.prototype,"src");Object.defineProperty(HTMLImageElement.prototype,"src",Object.assign({},d,{set:function(v){if(this.crossOrigin===null&&!/^(data|blob):/.test(v))this.crossOrigin="anonymous";d.set.call(this,v)}}));var NW=window.Worker;window.Worker=function(u,o){var s=new URL(u,document.baseURI);if(s.origin===location.origin||!/^https?:$/.test(s.protocol))return new NW(u,o);var c=(o&&o.type==="module")?"import "+JSON.stringify(s.href)+";":"importScripts("+JSON.stringify(s.href)+");";return new NW(URL.createObjectURL(new Blob([c],{type:"text/javascript"})),o)};window.Worker.prototype=NW.prototype;if(window.AudioWorklet){var am=AudioWorklet.prototype.addModule;AudioWorklet.prototype.addModule=async function(u,o){var s=new URL(u,document.baseURI);if(s.origin===location.origin||!/^https?:$/.test(s.protocol))return am.call(this,u,o);var b=await(await fetch(s)).blob();return am.call(this,URL.createObjectURL(new Blob([b],{type:"text/javascript"})),o)}}})();<\/script>';
-fetch(BASE + "index.html")
-  .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
-  .then(html => {
-    html = html.replace("<head>", '<head><base href="' + BASE + '">' + SHIM);
-    document.getElementById("game").srcdoc = html;
-  })
-  .catch(e => { document.body.append("Fehler beim Laden: " + e.message); });
+const ruffle = window.RufflePlayer.newest();
+const player = ruffle.createPlayer();
+document.getElementById("stage").appendChild(player);
+player.load({ url: BASE + "murder.swf", autoplay: "on", unmuteOverlay: "hidden" });
 </script>
 </body>
 </html>
