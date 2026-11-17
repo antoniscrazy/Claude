@@ -796,6 +796,18 @@ window.MOKI_GAMES = [
     description: "American Football im Realismus-Look: Wirf, fang und lauf zum Touchdown.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "capitalist-bus-driver",
+    title: "Capitalist Bus Driver",
+    url: "https://celadon-paprenjak-c6cf40.netlify.app",
+    category: "Simulation",
+    image: "capitalist-bus-driver.jpg",
+    emoji: "🚌",
+    colors: ["#4aa0f0", "#6cc04a"],
+    description: "Fahre Fahrgäste durch die Stadt, verdiene Geld und baue deine Buslinie aus.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
