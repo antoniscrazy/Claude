@@ -50,7 +50,7 @@ const OUT=process.argv[2];fs.mkdirSync(OUT,{recursive:true});
  await at(30.2,async()=>{const y=await p.evaluate(()=>document.querySelector('#app .grid .tile').getBoundingClientRect().top+scrollY-250);await p.evaluate(y=>window.scrollTo(0,y),y)},'hoch');
  await at(30.8,()=>cap('FAVORITEN','Deine Lieblingsspiele an einem Ort',5200),'cap8');
  await at(31.0,async()=>{for(const n of [0,1,2,3,4,5]){await mvEl(tile(n),450,0,0,0,true);await clk(`${tile(n)} >> .fav`,250,0,true);await sleep(100)}},'Favoriten setzen');
- await at(34.0,async()=>{await clk('.cat[data-c="__fav"]',900,0,true);await mv(900,700,1200);await sleep(1800)},'Favoriten ansehen');
+ await at(34.0,async()=>{await clk('.cat[data-c="__fav"]',900,0,true);await p.evaluate(()=>scrollTo(0,0));await mv(900,700,1200);await sleep(1800)},'Favoriten ansehen');
  await at(36.2,()=>clk('.cat[data-c="Alle"]',700,0,true),'Alle');
  await at(37.2,()=>cap('ZUFALLSSPIEL','Unentschlossen? Moki wählt für dich',2400),'cap9');
  await at(37.4,()=>clk('#rnd',1000,0,true),'Zufall');
