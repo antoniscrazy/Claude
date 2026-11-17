@@ -711,6 +711,19 @@ window.MOKI_GAMES = [
     description: "Trainiere am Strand, werde stärker und fordere andere Boxer im Ring heraus.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "idle-mining-empire",
+    title: "Idle Mining Empire",
+    url: "https://statuesque-rolypoly-81a7bc.netlify.app",
+    category: "Simulation",
+    image: "idle-mining-empire.jpg",
+    wide: true,
+    emoji: "⛏️",
+    colors: ["#e8a43a", "#5a3a22"],
+    description: "Baue ein Bergbau-Imperium auf: Stelle Arbeiter ein, fördere Gold und Diamanten und werde reich.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
