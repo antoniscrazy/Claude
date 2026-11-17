@@ -699,6 +699,18 @@ window.MOKI_GAMES = [
     description: "Ein schneller Parkour-Plattformer: Renne, springe und rutsche durch knifflige Level.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "beach-boxing-simulator",
+    title: "Beach Boxing Simulator",
+    url: "https://silver-mousse-0052e4.netlify.app",
+    category: "Simulation",
+    image: "beach-boxing-simulator.jpg",
+    emoji: "🥊",
+    colors: ["#2aa8f0", "#f5b830"],
+    description: "Trainiere am Strand, werde stärker und fordere andere Boxer im Ring heraus.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
