@@ -420,6 +420,18 @@ window.MOKI_GAMES = [
     description: "Setze bunte Blöcke aufs Spielfeld und räume volle Reihen und Spalten ab, bevor kein Platz mehr bleibt.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "stickman-hook",
+    title: "Stickman Hook",
+    url: "https://whimsical-halva-a0947e.netlify.app",
+    category: "Geschicklichkeit",
+    image: "stickman-hook.jpg",
+    emoji: "🪢",
+    colors: ["#b44cf0", "#6a3fd8"],
+    description: "Schwinge dich als Stickman an Seilen von Haken zu Haken und lass im richtigen Moment los, um das Ziel zu erreichen.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
