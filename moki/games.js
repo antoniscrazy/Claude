@@ -469,6 +469,18 @@ window.MOKI_GAMES = [
     description: "Baue dein Restaurant aus, stelle Köche und Kellner ein und verdiene Geld, auch wenn du gerade nicht spielst.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "airplane-manager",
+    title: "Airplane Manager",
+    url: "https://fanciful-blini-ea6ec0.netlify.app",
+    category: "Simulation",
+    image: "airplane-manager.jpg",
+    emoji: "✈️",
+    colors: ["#5cc8f0", "#2b4fa8"],
+    description: "Leite dein eigenes Flugzeug: bediene die Fluggäste, verdiene Geld und baue deine Fluglinie Stück für Stück aus.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
