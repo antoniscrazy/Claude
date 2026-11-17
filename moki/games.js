@@ -736,6 +736,18 @@ window.MOKI_GAMES = [
     description: "Lenke Autos durch Kreuzungen und Kreise, ohne dass sie zusammenstoßen.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "pilot-life",
+    title: "Pilot Life",
+    url: "https://chipper-faun-27923c.netlify.app",
+    category: "Simulation",
+    image: "pilot-life.jpg",
+    emoji: "✈️",
+    colors: ["#1a4fc8", "#7fb8f5"],
+    description: "Werde Pilot: Starte und lande Flugzeuge und erlebe den Alltag im Cockpit.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
