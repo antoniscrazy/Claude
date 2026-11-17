@@ -1,2 +1,0 @@
-(function(){var r=function(v){return function(){return Promise.resolve(v)}};
-window.PokiSDK={init:r(),setDebug:function(){},gameLoadingStart:function(){},gameLoadingFinished:function(){},gameplayStart:function(){},gameplayStop:function(){},happyTime:function(){},commercialBreak:r(),rewardedBreak:r(true),displayAd:function(){},destroyAd:function(){},setPlayerAge:function(){},captureError:function(){},shareableURL:r(""),getURLParam:function(){return ""},isAdBlocked:function(){return false},enableEventTracking:function(){}}})();
