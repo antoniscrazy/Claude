@@ -248,13 +248,14 @@ function copyText(txt) {
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok, fb); else fb();
 }
 // Allgemeiner Teilen-Dialog: { head, title, image, text, url }
+const MOKI_ICON_SVG = '<svg viewBox="0 0 128 128" aria-hidden="true"><defs><linearGradient id="mig" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00e5a8"/><stop offset="1" stop-color="#ffd23f"/></linearGradient></defs><rect width="128" height="128" rx="30" fill="#0a0d2b"/><circle cx="64" cy="64" r="34" fill="none" stroke="url(#mig)" stroke-width="20"/><path d="M55 49L79 64L55 79Z" fill="#fff" stroke="#fff" stroke-width="7" stroke-linejoin="round"/></svg>';
 function shareDialog(o) {
   const msg = o.text + " " + o.url;
   const enc = encodeURIComponent;
   const el = document.createElement("div"); el.className = "modal";
   el.innerHTML = `<div class="box shbox" role="dialog" aria-modal="true" aria-label="${esc(o.head)}">
     <h3>${icon("share")}${esc(o.head)}</h3>
-    <div class="shgame">${o.image ? `<img src="${esc(o.image)}" alt="">` : ""}<div><b>${esc(o.title)}</b><span>${esc(o.sub || "")}</span></div></div>
+    <div class="shgame">${o.svg ? `<span class="shicon">${o.svg}</span>` : o.image ? `<img src="${esc(o.image)}" alt="">` : ""}<div><b>${esc(o.title)}</b><span>${esc(o.sub || "")}</span></div></div>
     <p class="shmsg">${esc(o.text)}</p>
     <div class="shlink"><input type="text" readonly value="${esc(o.url)}" aria-label="Link"><button class="btn go" data-a="copy" type="button">${icon("link")}Kopieren</button></div>
     <div class="shbtns">
@@ -281,7 +282,7 @@ function shareGame(id) {
   shareDialog({ head: "Mit Freunden spielen", title: g.title, sub: g.category, image: g.image, text: `Komm, wir zocken ${g.title} auf Moki. Läuft direkt im Browser, ohne Werbung.`, url: gameLink(g.id) });
 }
 const inv = document.getElementById("inv");
-if (inv) inv.addEventListener("click", () => shareDialog({ head: "Freunde einladen", title: "Moki", sub: games.length + " Spiele", image: "logo/moki-icon-512.png", text: `Ich spiele auf Moki: ${games.length} Spiele direkt im Browser, ohne Werbung.`, url: mokiBase() }));
+if (inv) inv.addEventListener("click", () => shareDialog({ head: "Freunde einladen", title: "Moki", sub: games.length + " Spiele", svg: MOKI_ICON_SVG, text: `Ich spiele auf Moki: ${games.length} Spiele direkt im Browser, ohne Werbung.`, url: mokiBase() }));
 // Eingehender Link #/g/<id>: Einladung anzeigen
 function handleInvite() {
   const m = /^#\/g\/([a-z0-9-]{1,60})\/?$/i.exec(location.hash); if (!m) return;

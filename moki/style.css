@@ -329,3 +329,6 @@ html.playing body{overflow:hidden}
 #trlfs .trlfs-sound .i{width:20px;height:20px}
 @keyframes trlpulse{50%{transform:translateX(-50%) scale(1.06)}}
 #trlfs .go{background:var(--accent);color:#04201a}
+.shicon{display:block;width:72px;height:72px;border-radius:18px;overflow:hidden;box-shadow:0 6px 16px #0008}.shicon svg{width:100%;height:100%;display:block}
+.ubody .utease{margin-top:18px}
+.utease h3{margin:0 0 8px}

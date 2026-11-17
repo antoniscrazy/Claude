@@ -102,9 +102,8 @@
         <h2 id="upd-t">Das große Moki-Update ist da</h2>
         <p>Das ist neu: Funktionen und Spiele auf einen Blick.</p></div>
       <div class="ubody">
-        <section><h3>Neue Funktionen</h3><ul class="feats">${feats.map(f => `<li><span class="fi">${icon(f[0])}</span><div><b>${f[1]}</b><p>${f[2]}</p></div></li>`).join("")}</ul></section>
+        <section><h3>Neue Funktionen</h3><ul class="feats">${feats.map(f => `<li><span class="fi">${icon(f[0])}</span><div><b>${f[1]}</b><p>${f[2]}</p></div></li>`).join("")}</ul><div class="utease"><h3>Als Nächstes</h3><div class="ut"><b>Mega-Update mit über 100 Spielen</b><p>${esc(megaWhen())}</p>${megaDigits()}</div></div></section>
         <section><h3>${fresh.length} neue Spiele</h3><div class="ugrid">${fresh.map(g => `<div class="ug"><img src="${g.image}" alt=""><span>${esc(g.title)}</span></div>`).join("")}</div></section>
-        <section class="utease"><h3>Als Nächstes</h3><div class="ut"><b>Mega-Update mit über 100 Spielen</b><p>${esc(megaWhen())}</p>${megaDigits()}</div></section>
       </div>
       <footer class="ufoot"><span>${games.length} Spiele · ${sites.length} Zusatzseiten</span><button class="ubtn" id="ugo" type="button">Los geht’s</button></footer>
     </div>`;
