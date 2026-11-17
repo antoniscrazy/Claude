@@ -1,0 +1,56 @@
+{
+  "type": "playground",
+  "version": 1,
+  "name": "scene_greenMountain",
+  "material": "terrain/summer",
+  "nodes": [
+    {
+      "type": "group",
+      "name": "Root",
+      "children": [
+        {
+          "type": "landscape",
+          "ref": "landscapes/green_mountains.landscape.json",
+          "components": [
+            {
+              "type": "landscapeExtender",
+              "distance": 800,
+              "mode": "terrain",
+              "water": "river",
+              "priority": "ew"
+            }
+          ]
+        }
+      ],
+      "components": [
+        {
+          "type": "scene",
+          "background": "#9fd2f9",
+          "hemi": {
+            "sky": "#ffffff",
+            "ground": "#3a3a44",
+            "intensity": 0.9
+          },
+          "ambient": {
+            "color": "#ffffff",
+            "intensity": 0.35
+          },
+          "sun": {
+            "color": "#ffffff",
+            "intensity": 2.2,
+            "pos": [
+              5,
+              8,
+              5
+            ]
+          },
+          "fog": {
+            "color": "#9fd2f9",
+            "near": 100,
+            "far": 800
+          }
+        }
+      ]
+    }
+  ]
+}
