@@ -1,0 +1,56 @@
+{
+  "type": "playground",
+  "version": 1,
+  "name": "scene_tropical",
+  "material": "terrain/summer",
+  "nodes": [
+    {
+      "type": "group",
+      "name": "Root",
+      "children": [
+        {
+          "type": "landscape",
+          "ref": "landscapes/tropical.landscape.json",
+          "components": [
+            {
+              "type": "landscapeExtender",
+              "distance": 900,
+              "mode": "dynamic",
+              "water": "river",
+              "priority": "ns"
+            }
+          ]
+        }
+      ],
+      "components": [
+        {
+          "type": "scene",
+          "background": "#c2e8ff",
+          "hemi": {
+            "sky": "#ffffff",
+            "ground": "#3a3a44",
+            "intensity": 0.9
+          },
+          "ambient": {
+            "color": "#ffffff",
+            "intensity": 0.35
+          },
+          "sun": {
+            "color": "#fed971",
+            "intensity": 2.2,
+            "pos": [
+              5,
+              8,
+              5
+            ]
+          },
+          "fog": {
+            "color": "#c2e8ff",
+            "near": 100,
+            "far": 800
+          }
+        }
+      ]
+    }
+  ]
+}
