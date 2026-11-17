@@ -627,6 +627,18 @@ window.MOKI_GAMES = [
     description: "Schach am Brett im 3D-Look: Plane deine Züge und setze den gegnerischen König matt. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "ping-pong-go",
+    title: "Ping Pong Go!",
+    url: "https://exquisite-caramel-d34b0e.netlify.app",
+    category: "Sport",
+    image: "ping-pong-go.jpg",
+    emoji: "🏓",
+    colors: ["#ffc928", "#e8451e"],
+    description: "Tischtennis mit bunten Schlägern: Spiel den Ball zurück und gewinne das Match. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
