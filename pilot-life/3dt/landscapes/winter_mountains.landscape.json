@@ -1,0 +1,110 @@
+{
+  "type": "landscape",
+  "set": "L",
+  "tileSize": 100,
+  "style": "green",
+  "material": "terrain/winter",
+  "seed": 1337,
+  "grid": [
+    3,
+    5
+  ],
+  "tiles": [
+    {
+      "id": "terrain_l_b_03",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "id": "terrain_l_d_18",
+      "x": 1,
+      "y": 0
+    },
+    {
+      "id": "terrain_l_b_04",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "id": "terrain_l_a_01",
+      "x": 0,
+      "y": 1
+    },
+    {
+      "id": "terrain_l_a_01",
+      "x": 1,
+      "y": 1
+    },
+    {
+      "id": "terrain_l_c_15",
+      "x": 2,
+      "y": 1
+    },
+    {
+      "id": "terrain_l_a_01",
+      "x": 0,
+      "y": 2
+    },
+    {
+      "id": "terrain_l_a_01",
+      "x": 1,
+      "y": 2
+    },
+    {
+      "id": "terrain_l_a_01",
+      "x": 2,
+      "y": 2
+    },
+    {
+      "id": "terrain_l_b_13",
+      "x": 0,
+      "y": 3
+    },
+    {
+      "id": "terrain_l_a_01",
+      "x": 1,
+      "y": 3
+    },
+    {
+      "id": "terrain_l_a_01",
+      "x": 2,
+      "y": 3
+    },
+    {
+      "id": "terrain_l_c_11",
+      "x": 0,
+      "y": 4
+    },
+    {
+      "id": "terrain_l_a_01",
+      "x": 1,
+      "y": 4
+    },
+    {
+      "id": "terrain_l_a_01",
+      "x": 2,
+      "y": 4
+    }
+  ],
+  "elements": [
+    {
+      "id": "mountain_l_a_29",
+      "pos": [
+        67.67862509144805,
+        0,
+        119.66289207917771
+      ],
+      "scale": 1.7
+    },
+    {
+      "id": "mountain_l_a_30",
+      "pos": [
+        225.99483363277488,
+        0,
+        201.80782198956774
+      ],
+      "scale": 1.65,
+      "rotY": 3.839724354387525
+    }
+  ]
+}
