@@ -408,6 +408,18 @@ window.MOKI_GAMES = [
     description: "Führe einen Supermarkt als Affe: Ernte Obst und Gemüse, fülle die Regale und bediene die Kunden.",
     added: "2026-11-16",
     featured: false
+  },
+  {
+    id: "block-blast",
+    title: "Block Blast",
+    url: "https://rad-cucurucho-e9fe35.netlify.app",
+    category: "Strategie",
+    image: "block-blast.jpg",
+    emoji: "🧱",
+    colors: ["#2b3fa8", "#e8483a"],
+    description: "Setze bunte Blöcke aufs Spielfeld und räume volle Reihen und Spalten ab, bevor kein Platz mehr bleibt.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
