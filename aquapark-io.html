@@ -28,7 +28,7 @@
 <div id="wrap"><canvas id="c" tabindex="-1"></canvas><div id="ld"><div id="tx">Lade Spiel …</div><div id="pb"><div id="pf"></div></div></div></div>
 <script>
 // Lädt das Spiel direkt aus deinem GitHub-Repo (raw.githubusercontent.com, Commit fest verdrahtet). Keine Werbung, keine Tracker.
-const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/43158057988fcfb07c91688ae05adbfdb50282d7/aquapark-io/";
+const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/93484440014cf59e7ad18cdd2c3b7006ffca1232/aquapark-io/";
 const ORIGIN = new URL(BASE).origin;
 
 // --- Netz-Sperre: nur dein Repo (raw.githubusercontent.com), blob: und data: sind erlaubt. Alles andere (z. B. Unity-Analytics api.uca.cloud) wird blockiert.
@@ -76,6 +76,8 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
       get('Build/AquaparkIo.loader.js', 'text').then(x => { bump(); return x; }),
       get('Build/AquaparkIo.framework.js', 'blob').then(x => { bump(); return x; })
     ]);
+    const bridgeTxt = await get('poki-sdk.js', 'text');
+    const bs = document.createElement('script'); bs.textContent = bridgeTxt; document.body.appendChild(bs);
     const dataBlob = new Blob(await Promise.all(dataParts));
     const wasmBlob = new Blob(await Promise.all(wasmParts));
     const s = document.createElement("script"); s.textContent = loaderTxt; document.body.appendChild(s);
