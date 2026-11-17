@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Rainbow Obby</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
+  #application-canvas { width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
+</style>
+</head>
+<body>
+<canvas id="application-canvas"></canvas>
+<script>
+// Poki-SDK-Platzhalter: keine Werbung, Belohnung sofort gewährt.
+(() => {
+  const ok = (v) => () => Promise.resolve(v);
+  const noop = () => {};
+  window.PokiSDK = new Proxy({
+    init: ok(), initWithVideoHB: ok(), commercialBreak: ok(), rewardedBreak: ok(true),
+    displayAd: noop, destroyAd: noop, isAdBlocked: () => false, getURLParam: () => "",
+    getLanguage: () => "en", getIsoLanguage: () => "en", shareableURL: ok(""), setDebug: noop,
+    gameLoadingStart: noop, gameLoadingFinished: noop, gameLoadingProgress: noop,
+    gameplayStart: noop, gameplayStop: noop, happyTime: noop,
+  }, { get: (t, k) => (k in t ? t[k] : noop) });
+})();
+// Solo-Modus: der Server (Colyseus) ist nicht erreichbar. Eine lokale Scheinverbindung beantwortet die Aufrufe,
+// damit das Spiel allein laeuft. Andere Spieler gibt es nicht.
+(() => {
+  const noop = () => {};
+  function makeRoom(name) {
+    return {
+      name, sessionId: "solo", id: "solo-" + name, state: { players: new Map() },
+      onMessage: () => noop, onStateChange: noop, onError: noop, onLeave: noop,
+      send: noop, leave: () => Promise.resolve(), removeAllListeners: noop,
+    };
+  }
+  class FakeClient {
+    constructor() {}
+    create(name) { return Promise.resolve(makeRoom(name)); }
+    joinOrCreate(name) { return Promise.resolve(makeRoom(name)); }
+    joinById(id) { return Promise.resolve(makeRoom(id)); }
+    reconnect() { return Promise.reject(new Error("solo")); }
+  }
+  window.Colyseus = { Client: FakeClient };
+})();
+</script>
+<script src="playcanvas-stable.min.js"></script>
+<script src="__settings__.js"></script>
+<script src="__modules__.js"></script>
+<script src="__start__.js"></script>
+<script src="__loading__.js"></script>
+</body>
+</html>

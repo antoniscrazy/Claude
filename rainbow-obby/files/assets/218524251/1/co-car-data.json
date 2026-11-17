@@ -1,0 +1,74 @@
+{
+    "8": {
+        "carName": "1",
+        "carPhysicsAssetId": 218524641,
+        "carClientAssetId": 218524647,
+        "maxEngineForce": 5000,
+        "maxBrakingForce": 100,
+        "radius": 0.4
+    },
+    "7": {
+        "carName": "2",
+        "carPhysicsAssetId": 218524653,
+        "carClientAssetId": 218524656,
+        "maxEngineForce": 5000,
+        "maxBrakingForce": 100,
+        "radius": 0.4
+    },
+    "6": {
+        "carName": "3",
+        "carPhysicsAssetId": 218524642,
+        "carClientAssetId": 218524659,
+        "maxEngineForce": 5000,
+        "maxBrakingForce": 100,
+        "radius": 0.4
+    },
+    "5": {
+        "carName": "4",
+        "carPhysicsAssetId": 218524648,
+        "carClientAssetId": 218524654,
+        "maxEngineForce": 5000,
+        "maxBrakingForce": 100,
+        "radius": 0.4
+    },
+    "4": {
+        "carName": "5",
+        "carPhysicsAssetId": 218524657,
+        "carClientAssetId": 218524651,
+        "maxEngineForce": 5000,
+        "maxBrakingForce": 100,
+        "radius": 0.4
+    },
+    "3": {
+        "carName": "6",
+        "carPhysicsAssetId": 218524658,
+        "carClientAssetId": 218524652,
+        "maxEngineForce": 5000,
+        "maxBrakingForce": 100,
+        "radius": 0.4
+    },
+    "2": {
+        "carName": "7",
+        "carPhysicsAssetId": 218524644,
+        "carClientAssetId": 218524650,
+        "maxEngineForce": 5000,
+        "maxBrakingForce": 100,
+        "radius": 0.4
+    },
+    "1": {
+        "carName": "8",
+        "carPhysicsAssetId": 218524645,
+        "carClientAssetId": 218524655,
+        "maxEngineForce": 5000,
+        "maxBrakingForce": 100,
+        "radius": 0.4
+    },
+    "0": {
+        "carName": "9",
+        "carPhysicsAssetId": 218524649,
+        "carClientAssetId": 218524646,
+        "maxEngineForce": 5000,
+        "maxBrakingForce": 100,
+        "radius": 0.4
+    }
+}
