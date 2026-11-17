@@ -9,7 +9,7 @@ const OUT=process.argv[2];fs.mkdirSync(OUT,{recursive:true});
  const tCreate=Date.now();const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
  await p.route('**/*supabase*/**',r=>r.fulfill({status:200,contentType:'application/json',body:'[]'}));
  await p.route(/https:\/\/[^/]*netlify\.app\/.*/,r=>r.abort('aborted'));
- await p.addInitScript(()=>{try{localStorage.setItem('moki-intro-v1','1')}catch(e){}});
+ await p.addInitScript(()=>{try{localStorage.setItem('moki-intro-v2','1')}catch(e){}});
  await p.addInitScript(()=>{window.__ZOOM=1.3333});await p.addInitScript(OVERLAY);
  await p.goto('file:///home/user/Claude/moki/moki.html');await p.waitForSelector('.tile');await p.waitForTimeout(700);
  const off=(Date.now()-tCreate)/1000;const d=driver(p);d.reset();
