@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Crazy Cattle 3D</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #111; color: #fff; font-family: sans-serif; overflow: hidden; }
+  body { display: flex; flex-direction: column; }
+  #bar { flex: 0 0 auto; display: flex; justify-content: flex-end; padding: 6px 12px; background: #111; }
+  #wrap { flex: 1 1 auto; position: relative; min-height: 0; }
+  #canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; background: #000; outline: none; touch-action: none; }
+  #ld { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); text-align: center; width: 70%; max-width: 360px; }
+  #pb { height: 10px; border-radius: 5px; background: rgba(255,255,255,.15); overflow: hidden; margin-top: 8px; }
+  #pf { height: 100%; width: 0; background: #00e5a8; }
+  #moki-back {
+    padding: 9px 16px; border-radius: 999px;
+    background: linear-gradient(90deg, #00e5a8, #ffd23f);
+    color: #04201a; font: 800 14px "Segoe UI", system-ui, sans-serif;
+    text-decoration: none; box-shadow: 0 3px 12px rgba(0, 0, 0, .5); opacity: .92;
+  }
+  #moki-back:hover { opacity: 1; transform: scale(1.05); }
+</style>
+</head>
+<body>
+<div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
+<div id="wrap"><canvas id="canvas" tabindex="-1"></canvas><div id="ld"><div id="tx">Lade Spiel …</div><div id="pb"><div id="pf"></div></div></div></div>
+<script>
+// Laedt das Spiel (Godot 4 Web-Export) direkt aus deinem GitHub-Repo (raw.githubusercontent.com, Commit fest verdrahtet).
+const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/d84c0e8fce256a12312a818bc1ed07da2b3899b3/crazy-cattle/";
+const ORIGIN = new URL(BASE).origin;
+
+// Netz-Sperre: nur dein Repo, blob: und data: erlaubt.
+(function () {
+  function ok(u) { try { var x = new URL(String(u), location.href); return x.protocol === "blob:" || x.protocol === "data:" || x.origin === ORIGIN || x.protocol === "about:"; } catch (e) { return true; } }
+  var f = window.fetch;
+  // .wasm mit korrektem Dateityp ausliefern (raw liefert application/octet-stream, instantiateStreaming braucht application/wasm)
+  window.fetch = function (r, o) {
+    var u = r && r.url || r;
+    if (!ok(u)) return Promise.reject(new TypeError("blocked"));
+    if (/\.wasm(\?|$)/.test(String(u))) {
+      return f.call(window, r, o).then(function (res) { return res.arrayBuffer().then(function (b) { return new Response(b, { status: 200, headers: { "Content-Type": "application/wasm" } }); }); });
+    }
+    return f.apply(this, arguments);
+  };
+  var xo = XMLHttpRequest.prototype.open, xs = XMLHttpRequest.prototype.send;
+  XMLHttpRequest.prototype.open = function (m, u) { this.__bl = !ok(u); return xo.apply(this, arguments); };
+  XMLHttpRequest.prototype.send = function () {
+    if (!this.__bl) return xs.apply(this, arguments);
+    var x = this; setTimeout(function () { x.dispatchEvent(new ProgressEvent("error")); x.dispatchEvent(new ProgressEvent("loadend")); }, 0);
+  };
+  if (navigator.sendBeacon) navigator.sendBeacon = function () { return false; };
+  // Audio-Worklets: raw liefert text/plain -> ueber Blob-URL mit JS-Dateityp laden
+  if (window.AudioWorklet) {
+    var am = AudioWorklet.prototype.addModule;
+    AudioWorklet.prototype.addModule = function (url, opts) {
+      var self = this;
+      return fetch(url).then(function (r) { return r.text(); }).then(function (t) {
+        return am.call(self, URL.createObjectURL(new Blob([t], { type: "text/javascript" })), opts);
+      });
+    };
+  }
+})();
+
+const tx = document.getElementById("tx"), pf = document.getElementById("pf");
+(async () => {
+  try {
+    const js = await fetch(BASE + "CrazyCattle3D.js").then(r => { if (!r.ok) throw new Error("CrazyCattle3D.js: " + r.status); return r.text(); });
+    const s = document.createElement("script"); s.textContent = js; document.body.appendChild(s);
+    const engine = new Engine({
+      args: [], canvasResizePolicy: 2, ensureCrossOriginIsolationHeaders: false,
+      executable: BASE + "CrazyCattle3D", mainPack: BASE + "CrazyCattle3D.pck",
+      experimentalVK: false, focusCanvas: true, gdextensionLibs: [], serviceWorker: "",
+      fileSizes: {}
+    });
+    tx.textContent = "Lade …";
+    await engine.startGame({
+      executable: BASE + "CrazyCattle3D", mainPack: BASE + "CrazyCattle3D.pck",
+      canvas: document.getElementById("canvas"),
+      onProgress: function (cur, total) { if (total > 0) pf.style.width = Math.min(100, cur / total * 100) + "%"; }
+    });
+    document.getElementById("ld").remove();
+  } catch (e) { tx.textContent = "Fehler beim Laden: " + (e && e.message || e); }
+})();
+</script>
+</body>
+</html>
