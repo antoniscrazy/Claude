@@ -772,6 +772,18 @@ window.MOKI_GAMES = [
     description: "Schwing dich von Stange zu Stange und halte dich fest, damit du nicht abstürzt.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "country-balls-world-war",
+    title: "Country Balls World War",
+    url: "https://bejewelled-nougat-13436e.netlify.app",
+    category: "Strategie",
+    image: "country-balls-world-war.jpg",
+    emoji: "🌍",
+    colors: ["#5aa0f0", "#e8554a"],
+    description: "Erobere die Karte mit deinem Länder-Ball: Schicke Truppen los und nimm das Gebiet der Gegner ein.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
