@@ -663,6 +663,18 @@ window.MOKI_GAMES = [
     description: "Spring mit einem bunten Schleim-Wesen über Hindernisse und komm so weit wie möglich. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "stickman-battle",
+    title: "Stickman Battle",
+    url: "https://glittery-llama-3441e7.netlify.app",
+    category: "Kampf & Schießen",
+    image: "stickman-battle.jpg",
+    emoji: "⚔️",
+    colors: ["#2a1850", "#e0204a"],
+    description: "Rot gegen Blau: Kämpfe als Stickman mit Lichtschwert, Speer und mehr gegen deinen Gegner. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
