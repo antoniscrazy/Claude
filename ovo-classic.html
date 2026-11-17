@@ -31,7 +31,9 @@ const SHIM = '<script>window.__GAME_BASE="' + BASE + '";window.open=function(){r
 fetch(BASE + "index.html")
   .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
   .then(html => {
-    html = html.replace("<head>", '<head><base href="' + BASE + '">' + SHIM);
+    // Gamepad-API im Srcdoc-Iframe gesperrt: getGamepads wirft pro Frame und macht den Bildschirm schwarz. Leere Liste zurueckgeben.
+const GP = '<script>Navigator.prototype.getGamepads=function(){return []};<\/script>';
+html = html.replace("<head>", '<head><base href="' + BASE + '">' + SHIM + GP);
     document.getElementById("game").srcdoc = html;
   })
   .catch(e => { document.body.append("Fehler beim Laden: " + e.message); });
