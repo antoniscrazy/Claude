@@ -481,6 +481,18 @@ window.MOKI_GAMES = [
     description: "Leite dein eigenes Flugzeug: bediene die Fluggäste, verdiene Geld und baue deine Fluglinie Stück für Stück aus.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "backrooms-recovery",
+    title: "Backrooms Recovery",
+    url: "https://candid-heliotrope-03a4ff.netlify.app",
+    category: "Abenteuer",
+    image: "backrooms-recovery.jpg",
+    emoji: "📺",
+    colors: ["#8a8f3a", "#1b2a8f"],
+    description: "Gruseliges Erkundungsspiel in den endlosen gelben Gängen der Backrooms: finde den Ausweg und entkomme den Kreaturen.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
