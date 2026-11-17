@@ -808,6 +808,18 @@ window.MOKI_GAMES = [
     description: "Fahre Fahrgäste durch die Stadt, verdiene Geld und baue deine Buslinie aus.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "paperio-2",
+    title: "Paper.io 2",
+    url: "https://kaleidoscopic-palmier-809b51.netlify.app",
+    category: "Strategie",
+    image: "paperio-2.jpg",
+    emoji: "🍉",
+    colors: ["#9be022", "#e8304a"],
+    description: "Erobere Fläche, indem du einen Pfad zeichnest und zurück zu deinem Gebiet fährst. Pass auf, dass dich niemand erwischt.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
