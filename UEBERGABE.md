@@ -61,3 +61,8 @@ ragdoll-hit, hills-of-steel (+ Admin-Modus, `hills-of-steel-admin`), perfect-hot
 - **Besser fuer kleine Spiele (< ca. 30 MB): eine einzige HTML mit allen Dateien eingebettet** (`tools/build_selfcontained.py` fuer PlayCanvas, `tools/build_selfcontained_c3.py` fuer Construct 3, Option `--debug` fuer Bildschirm-Log). Kein jsDelivr noetig.
 - WebKit zum Testen ist installiert worden (`playwright install webkit` + `install-deps`), iPad-Emulation: `devices['iPad Pro 11 landscape']`.
 - Der Nutzer will keine automatischen Loeschungen seiner Browserdaten (wurde vom System blockiert).
+
+## Neu (Sitzung Auto-Spiel)
+- Fertig, mit Launcher: **block-blast** (Unity), **harvest-simulator** (PlayCanvas/Poki-Build), **polytrack** (Low-Poly-Rennspiel, reines JS, ca. 5 MB, jsDelivr-Snapshot). Quelle Polytrack: 55gms/assets misc/polytrack; Audio/Modelle/Strecken lagen in Fremd-Repo `wergboy/NLP` (jsDelivr), wurden nach `polytrack/pt/` kopiert und die URLs im Bundle auf relativ umgeschrieben. Eigene Touch-Tasten (links/rechts/Gas/Bremse/R) in `polytrack/index.html`, erscheinen nur beim Fahren (Tacho sichtbar). Getestet in Chromium-iPad-Emulation: Gas per Touch -> 124 km/h. Auf echtem iPad ungetestet.
+- Auto-Kandidaten: HexGL ist ein Hover-Ship-Spiel, kein Auto. Nicht geprueft: madstunt-cars, escaperoad, drive-mad, moto-trap, turbo-moto-racer, stunt-car-extreme, supercar-legends, retro-highway.
+- Lehre: Quellen-Repos koennen Assets per jsDelivr aus Dritt-Repos laden (`grep -oE "https?://[^\"' )]+" bundle.js`) – diese mitkopieren. HTTrack-Spiegel haben meist riesige Google-Gadget-Skripte in index.html, die man entfernen kann.
