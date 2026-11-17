@@ -675,6 +675,18 @@ window.MOKI_GAMES = [
     description: "Rot gegen Blau: Kämpfe als Stickman mit Lichtschwert, Speer und mehr gegen deinen Gegner. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "longcat",
+    title: "Longcat",
+    url: "https://iridescent-malabi-14e27b.netlify.app",
+    category: "Abenteuer",
+    image: "longcat.jpg",
+    emoji: "🐱",
+    colors: ["#ffd400", "#e0865a"],
+    description: "Eine Katze, die immer länger wird: Lenk sie durch das Labyrinth, ohne dich zu verfangen. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
