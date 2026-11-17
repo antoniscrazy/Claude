@@ -517,6 +517,18 @@ window.MOKI_GAMES = [
     description: "Rolle und hüpfe mit dem roten Ball durch knifflige Level voller Fallen, Schalter und Hindernisse bis zum Ziel.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "stick-rush",
+    title: "Stick Rush",
+    url: "https://shimmering-zuccutto-6b0b8e.netlify.app",
+    category: "Kampf & Schießen",
+    image: "stick-rush.jpg",
+    emoji: "🔫",
+    colors: ["#8a2be2", "#2b5fd9"],
+    description: "Renne als Stickman durch die Level, schalte Gegner mit deiner Waffe aus und weiche den Kugeln geschickt aus.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
