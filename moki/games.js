@@ -784,6 +784,18 @@ window.MOKI_GAMES = [
     description: "Erobere die Karte mit deinem Länder-Ball: Schicke Truppen los und nimm das Gebiet der Gegner ein.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "american-football-real",
+    title: "American Football Real",
+    url: "https://endearing-pixie-4cfdca.netlify.app",
+    category: "Sport",
+    image: "american-football-real.jpg",
+    emoji: "🏈",
+    colors: ["#f08a1c", "#5ac832"],
+    description: "American Football im Realismus-Look: Wirf, fang und lauf zum Touchdown.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
