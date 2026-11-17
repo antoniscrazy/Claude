@@ -42,6 +42,15 @@ const AA_JSD = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@aab22db5e88567d4
     }
     return o.apply(this, [m, u].concat([].slice.call(arguments, 2)));
   };
+  var f = window.fetch;
+  window.fetch = function (r, o) {
+    var u = (r && r.url) || String(r);
+    if (/\/StreamingAssets\/aa\/(settings\.json|catalog\.bin)(\?|$)/.test(u)) {
+      var nu = AA_JSD + (/settings/.test(u) ? "settings.json" : "catalog.bin");
+      r = (typeof r === "string") ? nu : new Request(nu, r);
+    }
+    return f.call(this, r, o);
+  };
 })();
 
 // --- Netz-Sperre: nur dein Repo (raw.githubusercontent.com), blob: und data: sind erlaubt. Alles andere (z. B. Unity-Analytics api.uca.cloud) wird blockiert.
