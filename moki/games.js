@@ -578,6 +578,19 @@ window.MOKI_GAMES = [
     description: "Führe eine wachsende Menge kleiner Kämpfer gegen gegnerische Türme und Riesen. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "head-soccer",
+    title: "Head Soccer",
+    url: "https://starlit-druid-dcf41d.netlify.app",
+    category: "Sport",
+    image: "head-soccer.jpg",
+    wide: true,
+    emoji: "⚽",
+    colors: ["#1a8fd8", "#3fbf3f"],
+    description: "Fußball mit riesigen Köpfen: Schieße den Ball ins gegnerische Tor und gewinne das Duell. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
