@@ -760,6 +760,18 @@ window.MOKI_GAMES = [
     description: "Tippe auf die Kiwi, sammle Punkte und kaufe Verbesserungen, damit es immer schneller geht.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "plonky",
+    title: "Plonky",
+    url: "https://elaborate-praline-70cf78.netlify.app",
+    category: "Geschicklichkeit",
+    image: "plonky.jpg",
+    emoji: "🤸",
+    colors: ["#ffd000", "#3a8ae0"],
+    description: "Schwing dich von Stange zu Stange und halte dich fest, damit du nicht abstürzt.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
