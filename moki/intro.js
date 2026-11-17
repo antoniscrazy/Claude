@@ -95,6 +95,8 @@
       ["star", "Favoriten", "Tippe bei einem Spiel auf den Stern, dann findest du es unter „Favoriten“. Wird in deinem Browser gespeichert."],
       ["clock", "Zuletzt gespielt", "Deine letzten Spiele stehen oben auf der Startseite."],
       ["shuffle", "Zufall", "Der Knopf „Zufall“ öffnet ein zufälliges Spiel."],
+      ["share", "Freunde einladen", "Mit dem Teilen-Symbol auf jeder Kachel schickst du ein Spiel per Link an Freunde. Oben rechts lädst du sie zu Moki ein."],
+      ["trophy", "Wochenchallenge", "Jede Woche ein neues Spiel mit einer Aufgabe. Du markierst selbst, ob du sie geschafft hast, und sammelst eine Serie."],
       ["alle", "Bessere Kategorien", "Neu sortiert, zum Beispiel Geschicklichkeit sowie Kampf & Schießen."],
       ["tag", "NEU-Schilder", "Neue Spiele tragen 7 Tage lang ein NEU-Schild."],
       ["pen", "Studio", "Baue eigene Spiele im Studio, mit Baukasten oder Code, und veröffentliche sie unter „Kreationen“."],

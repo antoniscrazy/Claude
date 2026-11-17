@@ -26,6 +26,10 @@ const SVG = {
   sparkles: '<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/>',
   pen: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
+  share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>',
+  link: '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  trophy: '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-1.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98 1.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
   globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>'
 };
 const icon = n => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${SVG[n] || SVG.spiel}</svg>`;
@@ -57,10 +61,11 @@ function recordPlay(id) {
   store.set("moki-recent", recent);
 }
 const favBtn = g => `<span class="fav${favs.has(g.id) ? " on" : ""}" role="button" tabindex="0" data-fav="${g.id}" aria-pressed="${favs.has(g.id)}" aria-label="${esc(g.title)} ${favs.has(g.id) ? "aus Favoriten entfernen" : "zu Favoriten hinzufügen"}" title="${favs.has(g.id) ? "Aus Favoriten entfernen" : "Zu Favoriten"}">${icon("star")}</span>`;
+const shareBtn = g => `<span class="shr" role="button" tabindex="0" data-share="${g.id}" aria-label="${esc(g.title)} mit Freunden teilen" title="Mit Freunden teilen">${icon("share")}</span>`;
 let category = "Alle";
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const tile = g => `<a class="tile${g.wide ? " wide" : ""}" href="${g.url}" data-id="${g.id}" aria-label="${esc(g.title)}" title="${esc(g.title)}" style="background:linear-gradient(135deg,${g.colors[0]},${g.colors[1]})">${g.image ? `<img src="${g.image}" alt="" loading="lazy">` : `<span class="em">${g.emoji}</span>`}<span class="name">${esc(g.title)}</span>${isNew(g) ? `<span class="new">NEU</span>` : ""}${g.category ? favBtn(g) : ""}</a>`;
+const tile = g => `<a class="tile${g.wide ? " wide" : ""}" href="${g.url}" data-id="${g.id}" aria-label="${esc(g.title)}" title="${esc(g.title)}" style="background:linear-gradient(135deg,${g.colors[0]},${g.colors[1]})">${g.image ? `<img src="${g.image}" alt="" loading="lazy">` : `<span class="em">${g.emoji}</span>`}<span class="name">${esc(g.title)}</span>${isNew(g) ? `<span class="new">NEU</span>` : ""}${g.category ? favBtn(g) + shareBtn(g) : ""}</a>`;
 
 // ---- Spiel des Tages: wechselt jeden Tag um Mitternacht (deutsche Zeit), für alle gleich ----
 function berlinDay() {
@@ -139,7 +144,7 @@ function home() {
       ${cm.length > 5 ? `<button class="btn more" data-cat="__cre" type="button">Alle ${cm.length} Kreationen ansehen</button>` : ""}
     </section>`;
   app.innerHTML = `
-    ${!q && category === "Alle" ? heroHtml() : ""}
+    ${!q && category === "Alle" ? heroHtml() + challengeHtml() : ""}
     ${!q && category === "Alle" && rec.length ? `<section>
       <h2>${icon("clock")}Zuletzt gespielt</h2>
       <div class="grid">${rec.map(tile).join("")}</div>
@@ -163,7 +168,6 @@ document.addEventListener("click", e => {
 
 search.addEventListener("input", home);
 document.title = "Moki – Spiele";
-home();
 
 // Popup-Warnung vor Spielen mit "warning" in games.js
 function warnDialog(g) {
@@ -201,6 +205,10 @@ function openGame(g) {   // Popup bei Warnung, sonst direkt öffnen
   location.href = g.url;
 }
 document.addEventListener("click", e => {
+  const sh = e.target.closest("[data-share]");
+  if (sh) { e.preventDefault(); e.stopPropagation(); shareGame(sh.dataset.share); return; }
+  const ch = e.target.closest("[data-ch]");
+  if (ch) { e.preventDefault(); onChallenge(ch.dataset.ch); return; }
   const f = e.target.closest(".fav");
   if (f) { e.preventDefault(); e.stopPropagation(); onFav(f); return; }
   const t = e.target.closest("a[data-id]");
@@ -212,6 +220,7 @@ document.addEventListener("click", e => {
 });
 document.addEventListener("keydown", e => {
   if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("fav")) { e.preventDefault(); onFav(e.target); }
+  if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("shr")) { e.preventDefault(); shareGame(e.target.dataset.share); }
 });
 // Zufälliges Spiel
 const rnd = document.getElementById("rnd");
@@ -221,3 +230,122 @@ if (rnd) rnd.addEventListener("click", () => {
 });
 // Zurück-Taste des Browsers: Liste "Zuletzt gespielt" neu laden
 addEventListener("pageshow", e => { if (e.persisted) { recent = store.get("moki-recent", []).filter(id => known.has(id)); home(); } });
+
+// ====================================================================
+// Freunde einladen (Teilen) und Wochenchallenge
+// ====================================================================
+const mokiBase = () => ((window.MOKI_CFG && window.MOKI_CFG.mokiUrl) || location.href.split("#")[0]).replace(/\/?$/, "/");
+const gameLink = id => mokiBase() + "#/g/" + id;
+function mtoast(msg) {
+  const t = document.createElement("div"); t.className = "mtoast"; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.classList.add("out"), 2200); setTimeout(() => t.remove(), 2700);
+}
+function copyText(txt) {
+  const ok = () => mtoast("Link kopiert");
+  const fb = () => { const x = document.createElement("textarea"); x.value = txt; x.style.position = "fixed"; x.style.opacity = "0"; document.body.appendChild(x); x.select(); try { document.execCommand("copy"); ok(); } catch (e) { mtoast("Kopieren nicht möglich"); } x.remove(); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok, fb); else fb();
+}
+// Allgemeiner Teilen-Dialog: { head, title, image, text, url }
+function shareDialog(o) {
+  const msg = o.text + " " + o.url;
+  const enc = encodeURIComponent;
+  const el = document.createElement("div"); el.className = "modal";
+  el.innerHTML = `<div class="box shbox" role="dialog" aria-modal="true" aria-label="${esc(o.head)}">
+    <h3>${icon("share")}${esc(o.head)}</h3>
+    <div class="shgame">${o.image ? `<img src="${esc(o.image)}" alt="">` : ""}<div><b>${esc(o.title)}</b><span>${esc(o.sub || "")}</span></div></div>
+    <p class="shmsg">${esc(o.text)}</p>
+    <div class="shlink"><input type="text" readonly value="${esc(o.url)}" aria-label="Link"><button class="btn go" data-a="copy" type="button">${icon("link")}Kopieren</button></div>
+    <div class="shbtns">
+      <a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${enc(msg)}">WhatsApp</a>
+      <a class="btn" target="_blank" rel="noopener" href="https://t.me/share/url?url=${enc(o.url)}&text=${enc(o.text)}">Telegram</a>
+      <a class="btn" href="mailto:?subject=${enc(o.title)}&body=${enc(msg)}">E-Mail</a>
+      ${navigator.share ? `<button class="btn" data-a="native" type="button">Weitere …</button>` : ""}
+    </div>
+    <div class="acts"><button class="btn" data-a="no" type="button">Schließen</button></div></div>`;
+  const close = () => { el.remove(); removeEventListener("keydown", onKey); };
+  const onKey = e => { if (e.key === "Escape") close(); };
+  addEventListener("keydown", onKey);
+  el.addEventListener("click", e => {
+    if (e.target === el || e.target.closest("[data-a=no]")) return close();
+    if (e.target.closest("[data-a=copy]")) copyText(o.url);
+    if (e.target.closest("[data-a=native]")) navigator.share({ title: o.title, text: o.text, url: o.url }).catch(() => {});
+  });
+  document.body.appendChild(el);
+  el.querySelector("[data-a=copy]").focus();
+  return el;
+}
+function shareGame(id) {
+  const g = games.find(x => x.id === id); if (!g) return;
+  shareDialog({ head: "Mit Freunden spielen", title: g.title, sub: g.category, image: g.image, text: `Komm, wir zocken ${g.title} auf Moki. Läuft direkt im Browser, ohne Werbung.`, url: gameLink(g.id) });
+}
+const inv = document.getElementById("inv");
+if (inv) inv.addEventListener("click", () => shareDialog({ head: "Freunde einladen", title: "Moki", sub: games.length + " Spiele", image: "logo/moki-icon-512.png", text: `Ich spiele auf Moki: ${games.length} Spiele direkt im Browser, ohne Werbung.`, url: mokiBase() }));
+// Eingehender Link #/g/<id>: Einladung anzeigen
+function handleInvite() {
+  const m = /^#\/g\/([a-z0-9-]{1,60})\/?$/i.exec(location.hash); if (!m) return;
+  const clear = () => history.replaceState(null, "", location.pathname + location.search);
+  const g = games.find(x => x.id === m[1].toLowerCase());
+  if (!g) return clear();
+  const el = document.createElement("div"); el.className = "modal";
+  el.innerHTML = `<div class="box shbox" role="dialog" aria-modal="true"><h3>${icon("share")}Ein Freund hat dir ein Spiel geschickt</h3>
+    <div class="shgame big">${g.image ? `<img src="${esc(g.image)}" alt="">` : ""}<div><b>${esc(g.title)}</b><span>${esc(g.category || "")}</span></div></div>
+    <p class="shmsg">${esc(g.description)}</p>
+    <div class="acts"><button class="btn" data-a="no" type="button">Alle Spiele ansehen</button><a class="btn go" data-a="go" href="${g.url}">${icon("play")}Jetzt spielen</a></div></div>`;
+  const close = () => { el.remove(); clear(); };
+  el.addEventListener("click", e => {
+    if (e.target === el || e.target.closest("[data-a=no]")) return close();
+    if (e.target.closest("[data-a=go]")) { e.preventDefault(); clear(); openGame(g); }
+  });
+  document.body.appendChild(el); el.querySelector("[data-a=go]").focus();
+}
+addEventListener("hashchange", handleInvite);
+handleInvite();
+
+// ---- Wochenchallenge: jede Woche (Montag bis Sonntag, deutsche Zeit) ein Spiel mit einer Aufgabe ----
+const CHALLENGES = [
+  "Knack deinen eigenen Rekord.", "Spiel drei Runden hintereinander, ohne aufzugeben.", "Schaff eine Runde ohne einen einzigen Fehler.",
+  "Hol dir einen neuen persönlichen Bestwert.", "Spiel eine Runde mit nur einer Hand.", "Fordere einen Freund heraus und schlag seinen Wert.",
+  "Spiel so lange, bis du dein bestes Ergebnis geknackt hast.", "Übertriff deinen letzten Versuch, auch wenn es nur knapp ist.",
+  "Schaff deine beste Runde, die du bisher hattest.", "Spiel zehn Minuten am Stück und merk dir deinen besten Wert."
+];
+const weekIdx = (d = berlinDay()) => Math.floor((d + 3) / 7);   // Montag-Wochen (1.1.1970 war ein Donnerstag)
+function weekGame(w = weekIdx()) {
+  const pool = games.filter(g => g.daily !== false && g.image).sort((a, b) => hashId(a.id + "w") - hashId(b.id + "w"));
+  return pool[w % pool.length];
+}
+const weekTask = (w = weekIdx()) => CHALLENGES[(w * 7 + 3) % CHALLENGES.length];
+const chDone = () => store.get("moki-chal", {});
+function chStreak() {   // zusammenhängende erledigte Wochen bis jetzt (laufende Woche zählt nur, wenn erledigt)
+  const d = chDone(); let w = weekIdx(), n = 0;
+  if (!d[w]) w--;
+  while (d[w]) { n++; w--; }
+  return n;
+}
+function chLeft() {
+  const parts = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date());
+  const h = +parts.find(p => p.type === "hour").value % 24, mi = +parts.find(p => p.type === "minute").value;
+  const mins = ((weekIdx() + 1) * 7 - 3 - berlinDay()) * 1440 - (h * 60 + mi);
+  const dd = Math.floor(mins / 1440), hh = Math.floor((mins % 1440) / 60), mm = mins % 60;
+  return dd > 0 ? `noch ${dd} ${dd === 1 ? "Tag" : "Tage"} ${hh} Std.` : hh > 0 ? `noch ${hh} Std. ${mm} Min.` : `noch ${mm} Min.`;
+}
+function challengeHtml() {
+  const g = weekGame(), w = weekIdx(), done = !!chDone()[w], s = chStreak();
+  if (!g) return "";
+  return `<section class="chal${done ? " done" : ""}" aria-label="Wochenchallenge">
+    <div class="cimg">${g.image ? `<img src="${g.image}" alt="">` : ""}</div>
+    <div class="ctxt"><span class="chip">${icon("trophy")}Wochenchallenge</span><span class="cleft" id="chal-left">${chLeft()}</span>
+      <h2>${esc(g.title)}</h2><p>${esc(weekTask(w))}</p>
+      <small>${s ? `${icon("flame")} Serie: ${s} ${s === 1 ? "Woche" : "Wochen"} in Folge. ` : ""}Ob du es geschafft hast, sagst du selbst an. Moki kann die Ergebnisse der Spiele nicht messen.</small></div>
+    <div class="cact"><button class="btn go" data-ch="start" type="button">${icon("play")}Challenge starten</button>
+      <button class="btn" data-ch="done" type="button" aria-pressed="${done}">${icon("check")}${done ? "Geschafft" : "Als geschafft markieren"}</button>
+      <button class="btn" data-ch="invite" type="button">${icon("share")}Freund herausfordern</button></div></section>`;
+}
+function onChallenge(act) {
+  const g = weekGame(), w = weekIdx();
+  if (act === "start") return openGame(g);
+  if (act === "done") { const d = chDone(); d[w] ? delete d[w] : d[w] = 1; store.set("moki-chal", d); home(); if (d[w]) mtoast("Challenge geschafft. Stark!"); return; }
+  if (act === "invite") shareDialog({ head: "Freund herausfordern", title: g.title, sub: "Wochenchallenge", image: g.image, text: `Ich fordere dich heraus: ${weekTask(w)} Spiel ${g.title} auf Moki.`, url: gameLink(g.id) });
+}
+setInterval(() => { const el = document.getElementById("chal-left"); if (el) el.textContent = chLeft(); }, 60000);
+
+home();   // erster Aufbau erst hier, damit alle Funktionen oben bereit sind

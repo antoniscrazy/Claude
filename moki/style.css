@@ -243,3 +243,40 @@ html.playing body{overflow:hidden}
 .splash::after{width:300px;height:300px;background:#ffd23f;right:-70px;bottom:8%;animation-delay:-5s}
 .splash .btag{font-size:clamp(20px,3.6vw,30px)}
 @media(prefers-reduced-motion:reduce){.splash.out{transform:none;filter:none}}
+
+/* Teilen (Freunde einladen) */
+.shr{position:absolute;top:10px;left:52px;z-index:3;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:rgba(10,13,43,.6);backdrop-filter:blur(6px);color:#fff;cursor:pointer;opacity:0;transform:scale(.85);transition:opacity .15s,transform .15s,background .15s}
+.shr .i{width:17px;height:17px}
+.tile:hover .shr,.tile:focus-within .shr,.shr:focus-visible{opacity:1;transform:none}
+.shr:hover{background:var(--accent);color:#04201a;transform:scale(1.1)}
+@media (hover:none){.shr{opacity:.9;transform:none}}
+.shbox{max-width:520px;width:100%}
+.shbox h3{display:flex;align-items:center;gap:10px}
+.shgame{display:flex;align-items:center;gap:14px;margin:6px 0 14px}
+.shgame img{width:72px;height:72px;border-radius:18px;object-fit:cover;box-shadow:0 6px 16px #0008}
+.shgame.big img{width:110px;height:110px;border-radius:24px}
+.shgame b{display:block;font-size:19px}.shgame span{color:var(--muted);font-size:14px}
+.shmsg{margin-bottom:16px}
+.shlink{display:flex;gap:10px;margin-bottom:14px}
+.shlink input{flex:1;min-width:0;padding:11px 16px;border-radius:999px;border:2px solid transparent;background:var(--bg);color:var(--text);font:600 14px "Segoe UI",system-ui,sans-serif}
+.shlink .btn,.shbtns .btn{display:inline-flex;align-items:center;gap:8px}
+.shlink .i{width:16px;height:16px}
+.shbtns{display:flex;flex-wrap:wrap;gap:8px}
+.mtoast{position:fixed;left:50%;bottom:34px;z-index:300;transform:translateX(-50%);background:var(--accent);color:#04201a;font-weight:800;padding:12px 22px;border-radius:999px;box-shadow:0 10px 30px #000a;transition:opacity .4s,transform .4s}
+.mtoast.out{opacity:0;transform:translateX(-50%) translateY(10px)}
+/* Wochenchallenge */
+.chal{display:grid;grid-template-columns:150px 1fr auto;gap:26px;align-items:center;margin:-20px 0 48px;padding:22px 28px;border-radius:30px;background:linear-gradient(120deg,#141a4a,#1d2566);border:1px solid #ffffff1a;box-shadow:0 14px 40px #0008}
+.chal.done{border-color:var(--accent);box-shadow:0 14px 40px #0008,0 0 0 2px #00e5a844}
+.chal .cimg img{width:150px;height:150px;border-radius:26px;object-fit:cover;box-shadow:0 10px 26px #000a;display:block}
+.chal .chip{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;background:var(--accent);color:#04201a;font-weight:800;font-size:14px}
+.chal .chip .i{width:16px;height:16px}
+.chal .cleft{margin-left:12px;color:#cfd4ff;font-size:14px}
+.chal h2{font-size:32px;margin:12px 0 4px;letter-spacing:-.5px}
+.chal p{font-size:18px;color:#e6e9ff;margin-bottom:8px}
+.chal small{display:block;color:var(--muted);font-size:13px;line-height:1.4}
+.chal small .i{width:14px;height:14px;vertical-align:-2px;color:var(--accent2)}
+.chal .cact{display:flex;flex-direction:column;gap:10px}
+.chal .cact .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap}
+.chal .cact .i{width:16px;height:16px}
+.chal.done [data-ch=done]{background:var(--accent);color:#04201a}
+@media(max-width:900px){.chal{grid-template-columns:1fr;padding:20px;border-radius:24px;margin-top:-10px}.chal .cimg img{width:100px;height:100px}.chal h2{font-size:26px}.chal .cact{flex-direction:row;flex-wrap:wrap}}
