@@ -541,6 +541,18 @@ window.MOKI_GAMES = [
     description: "Zerlege Computer, Bildschirme und allerlei Gegenstände mit voller Wucht und lass den Frust einfach raus.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "tiny-towers",
+    title: "Tiny Towers",
+    url: "https://exquisite-clafoutis-ca2c3a.netlify.app",
+    category: "Strategie",
+    image: "tiny-towers.jpg",
+    emoji: "🏰",
+    colors: ["#e83fd0", "#7a1fc4"],
+    description: "Baue kleine Türme und beschieße damit anrückende Gegner. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
