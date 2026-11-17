@@ -565,6 +565,19 @@ window.MOKI_GAMES = [
     description: "Führe ein Restaurant im Eis: Bediene hungrige Gäste, bring das Essen rechtzeitig an den Tisch und sei schneller als die Pinguine. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "mob-control",
+    title: "Mob Control",
+    url: "https://glistening-biscochitos-6ec445.netlify.app",
+    category: "Strategie",
+    image: "mob-control.jpg",
+    wide: true,
+    emoji: "👾",
+    colors: ["#2aa8f0", "#ffc928"],
+    description: "Führe eine wachsende Menge kleiner Kämpfer gegen gegnerische Türme und Riesen. Ich habe das Spiel selbst nicht geöffnet, die Beschreibung basiert nur auf Namen und Bild.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
