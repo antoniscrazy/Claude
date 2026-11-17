@@ -505,6 +505,18 @@ window.MOKI_GAMES = [
     description: "Nimm Bestellungen auf, brate die Patties und stapele die Burger genau nach Wunsch der Kunden.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "red-ball-4",
+    title: "Red Ball 4",
+    url: "https://aesthetic-kataifi-56545f.netlify.app",
+    category: "Geschicklichkeit",
+    image: "red-ball-4.jpg",
+    emoji: "🔴",
+    colors: ["#ffb42a", "#e8301e"],
+    description: "Rolle und hüpfe mit dem roten Ball durch knifflige Level voller Fallen, Schalter und Hindernisse bis zum Ziel.",
+    added: "2026-11-17",
+    featured: false
   }
 ];
 
