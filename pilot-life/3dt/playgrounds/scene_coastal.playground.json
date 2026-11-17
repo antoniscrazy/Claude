@@ -1,0 +1,56 @@
+{
+  "type": "playground",
+  "version": 1,
+  "name": "scene_coastal",
+  "material": "terrain/green",
+  "nodes": [
+    {
+      "type": "group",
+      "name": "Root",
+      "children": [
+        {
+          "type": "landscape",
+          "ref": "landscapes/coastal-flat.landscape.json",
+          "components": [
+            {
+              "type": "landscapeExtender",
+              "distance": 800,
+              "mode": "dynamic",
+              "water": "river",
+              "priority": "ns"
+            }
+          ]
+        }
+      ],
+      "components": [
+        {
+          "type": "scene",
+          "background": "#add6f5",
+          "hemi": {
+            "sky": "#ffffff",
+            "ground": "#3a3a44",
+            "intensity": 0.9
+          },
+          "ambient": {
+            "color": "#ffffff",
+            "intensity": 0.35
+          },
+          "sun": {
+            "color": "#ffffff",
+            "intensity": 2.2,
+            "pos": [
+              5,
+              8,
+              5
+            ]
+          },
+          "fog": {
+            "color": "#add6f5",
+            "near": 100,
+            "far": 800
+          }
+        }
+      ]
+    }
+  ]
+}
