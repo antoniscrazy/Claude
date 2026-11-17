@@ -23,7 +23,7 @@
 <iframe id="game" allow="autoplay *; fullscreen *; gamepad *; clipboard-write *" allowfullscreen></iframe>
 <script>
 // Laedt das Spiel aus dem GitHub-Repo (jsDelivr, fester Commit). Kein lokaler Server noetig.
-const BASE = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@5e131241825143642fd179cb0f34464e721f1601/polytrack/";
+const BASE = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@fd1b4b29af466189318c5a1330e67bf5ccb752f2/polytrack/";
 // Netz-Sperre: Anfragen nur an eigene Herkunft / blob / data.
 const BLOCK = '<script>(function(){var ok=function(u){u=String(u||"");return /^(blob:|data:|about:)/.test(u)||u.indexOf("'+BASE+'")===0||!/^(https?:)?[/][/]/.test(u)};var xo=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(m,u){if(!ok(u))throw new Error("blocked");return xo.apply(this,arguments)};var f=window.fetch;window.fetch=function(u){return ok(u&&u.url||u)?f.apply(this,arguments):Promise.reject(new Error("blocked"))};navigator.sendBeacon=function(){return false}})()<\/script>';
 fetch(BASE + "index.html")
