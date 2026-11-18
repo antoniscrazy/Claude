@@ -337,3 +337,38 @@ html.playing body{overflow:hidden}
 #player{position:fixed;inset:0;z-index:900000;background:#000}
 #player iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 html.player-open,html.player-open body{overflow:hidden}
+
+/* ---- Tester-Programm ---- */
+#tfoot{margin:10px auto 28px;max-width:1500px;padding:0 28px;text-align:center}
+#tfoot .tf-in{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;justify-content:center;font-size:13px;color:var(--muted)}
+#tfoot .tf-link{background:none;border:0;color:var(--muted);font:600 13px "Segoe UI",system-ui,sans-serif;text-decoration:underline;cursor:pointer;padding:4px}
+#tfoot .tf-link:hover{color:var(--text)}
+#tfoot .tf-btn{background:var(--panel2);color:var(--text);border:0;border-radius:999px;padding:7px 14px;font:700 13px "Segoe UI",system-ui,sans-serif;cursor:pointer}
+#tfoot .tf-btn.on{background:var(--accent2);color:#3a2a00}
+.tmodal .box{max-width:460px;width:100%;background:var(--panel);border:1px solid #ffffff22;border-radius:var(--r);padding:24px}
+.tmodal h3{font-size:21px;margin-bottom:10px;color:var(--accent2)}
+.tmodal p{color:#dfe3ff;line-height:1.5;margin-bottom:10px}
+.tmodal .acts{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+.tf-lab{display:block;color:var(--muted);font-size:13px;margin:12px 0 6px}
+.tf-in-txt,#tp-msg{width:100%;padding:10px 12px;border-radius:12px;border:1px solid #ffffff22;background:var(--bg);color:var(--text);font:15px "Segoe UI",system-ui,sans-serif}
+.tf-err{color:#ff8a8a;font-size:13px;margin-top:8px;min-height:1em}
+.tf-steps{padding-left:20px;color:#dfe3ff;line-height:1.55;margin-bottom:6px}
+/* Kacheln im Tester-Modus */
+#app a.tdone,#app a.tbusy{filter:grayscale(1) brightness(.55);pointer-events:auto;cursor:not-allowed}
+#app a .tbadge{position:absolute;left:8px;bottom:8px;z-index:4;padding:4px 9px;border-radius:999px;font:800 11px "Segoe UI",system-ui,sans-serif;background:#0a0d2bdd;color:#fff;letter-spacing:.02em}
+#app a.tdone .tbadge{background:var(--accent);color:#04201a}
+/* Checkliste beim Spiel */
+#tpanel{position:fixed;left:12px;top:70px;width:290px;max-height:calc(100vh - 90px);overflow:auto;z-index:900001;background:#141a4af2;border:1px solid #ffffff2a;border-radius:18px;box-shadow:0 14px 40px #000c;font:14px "Segoe UI",system-ui,sans-serif;color:var(--text);backdrop-filter:blur(8px)}
+#tpanel .tp-head{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #ffffff1a;position:sticky;top:0;background:#141a4af2}
+#tpanel .tp-min{background:var(--panel2);color:var(--text);border:0;border-radius:8px;width:28px;height:28px;cursor:pointer;font-weight:800}
+#tpanel .tp-body{padding:12px 14px 16px}
+#tpanel.min .tp-body{display:none}
+#tpanel .tp-game{font-weight:800;margin-bottom:10px}
+#tpanel .tp-check{display:flex;gap:10px;align-items:center;padding:7px 0;cursor:pointer}
+#tpanel .tp-check input{width:18px;height:18px;accent-color:var(--accent)}
+#tpanel .tp-err{margin-top:6px;border-top:1px solid #ffffff1a;padding-top:10px}
+#tpanel #tp-errbox{margin-top:6px}
+#tpanel #tp-errbox input[type=file]{color:var(--muted);font-size:13px}
+#tpanel .tp-send{margin-top:14px;width:100%;padding:11px;border:0;border-radius:999px;font-weight:800;cursor:pointer}
+#tpanel .tp-send:disabled{opacity:.5}
+@media(max-width:900px){#tpanel{left:8px;right:8px;width:auto;top:auto;bottom:8px;max-height:55vh}}
