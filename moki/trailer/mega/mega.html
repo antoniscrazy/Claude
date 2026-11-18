@@ -1,0 +1,92 @@
+<!doctype html><meta charset="utf-8"><body style="margin:0;background:#000"><canvas id="c" width="1280" height="720"></canvas><script src="../gd.js"></script>
+<script>
+// Trailer zum Mega-Update (ca. 1:30). Zeitgesteuert: render(t) zeichnet Sekunde t.
+const W=1280,H=720,c=document.getElementById('c'),x=c.getContext('2d');
+const DUR=90, BG='#0a0d2b', ACC='#00e5a8', ACC2='#ffd23f', TXT='#eaf1ff', MUTED='#a3abe0';
+let GAMES=[],IMG={},LOGO=new Image();
+const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+const eo=t=>1-Math.pow(1-clamp(t),3);
+const lerp=(a,b,t)=>a+(b-a)*t;
+function fade(t,a,b,fi=.6,fo=.6){return clamp((t-a)/fi)*clamp((b-t)/fo);}
+function font(sz,w=800){return `${w} ${sz}px "Segoe UI",system-ui,sans-serif`;}
+function text(s,px,py,sz,col,align='center',w=800){x.font=font(sz,w);x.fillStyle=col;x.textAlign=align;x.textBaseline='middle';x.fillText(s,px,py);}
+function bg(t){
+  x.fillStyle=BG;x.fillRect(0,0,W,H);
+  // langsam wandernde Lichtflecken
+  for(let i=0;i<4;i++){const px=W*(.2+.2*i)+Math.sin(t*.4+i)*80,py=H*(.3+.15*(i%2))+Math.cos(t*.3+i)*60;
+    const g=x.createRadialGradient(px,py,0,px,py,380);g.addColorStop(0,i%2?'#00e5a833':'#ffd23f22');g.addColorStop(1,'#0000');
+    x.fillStyle=g;x.fillRect(0,0,W,H);}
+}
+function gameTile(g,px,py,w,h,a){
+  x.save();x.globalAlpha=a;x.beginPath();x.roundRect(px,py,w,h,18);x.clip();
+  const im=IMG[g.i];
+  if(im&&im.width){const s=Math.max(w/im.width,h/im.height);x.drawImage(im,px+(w-im.width*s)/2,py+(h-im.height*s)/2,im.width*s,im.height*s);}
+  else{x.fillStyle='#1d2566';x.fillRect(px,py,w,h);}
+  x.restore();
+}
+function logo(a,cy){
+  if(!LOGO.width)return;const h=150,w=LOGO.width*h/LOGO.height;
+  x.save();x.globalAlpha=a;x.drawImage(LOGO,W/2-w/2,cy-h/2,w,h);x.restore();
+}
+function render(t){
+  bg(t);
+  // Szene 1: Intro (0-6 s)
+  if(t<8){const a=fade(t,0,8,1.2,1.0);logo(a,H/2-40);text('Moki bekommt ein großes Update',W/2,H/2+120,36,MUTED,'center',600);}
+  // Szene 2: Titel (8-18 s)
+  if(t>=8&&t<20){const a=fade(t,8,20,.8,.8),k=eo((t-8)/1.2);
+    text('DAS MEGA-UPDATE',W/2,H/2-40,96*(0.9+0.1*k),ACC,'center',900);
+    text('Mehr Spiele. Bessere Spiele. Ohne Werbung.',W/2,H/2+60,38,TXT,'center',600);
+    x.globalAlpha=a;x.globalAlpha=1;}
+  // Szene 3: Spielewand (20-40 s): Kacheln fliegen rein
+  if(t>=20&&t<42){
+    const n=GAMES.length,cols=7,tw=170,th=110,gap=14;
+    const startX=(W-(cols*tw+(cols-1)*gap))/2;
+    for(let i=0;i<Math.min(n,35);i++){
+      const r=Math.floor(i/cols),cc=i%cols;
+      const delay=(i*0.18),k=eo((t-20-delay)/0.9);
+      if(k<=0)continue;
+      const tx=startX+cc*(tw+gap),ty=130+r*(th+gap)+lerp(60,0,k);
+      gameTile(GAMES[i],tx,ty,tw,th,k);
+    }
+    const a=fade(t,20,42,.8,.6);
+    x.globalAlpha=a;text('Viele neue Spiele',W/2,H-60,52,ACC2,'center',900);x.globalAlpha=1;
+  }
+  // Szene 4: Was ist neu (42-62 s)
+  if(t>=42&&t<62){
+    const items=[['Behobene Probleme','Spiele, die bisher nicht zuverlässig liefen, laufen wieder sauber.'],
+      ['Wiederhergestellt','Spiele, die gefehlt haben, sind zurück.'],
+      ['Wochenchallenge','Spielzeit sammeln und Fortschritt sehen.'],
+      ['Ohne Werbung','Moki bleibt, wie es ist.']];
+    items.forEach((it,i)=>{
+      const st=42+i*4.5,a=fade(t,st,st+4.5,.6,.6),k=eo((t-st)/.6);
+      if(a<=0)return;
+      x.globalAlpha=a;
+      const y=H/2-120+i*95+lerp(30,0,k);
+      text(it[0],W/2,y,46,ACC,'center',900);
+      text(it[1],W/2,y+38,26,TXT,'center',500);
+      x.globalAlpha=1;
+    });
+  }
+  // Szene 5: Termin (62-80 s)
+  if(t>=62&&t<80){const a=fade(t,62,80,.8,.8);
+    x.globalAlpha=a;
+    text('Das Mega-Update kommt früher',W/2,H/2-130,54,TXT,'center',900);
+    text('Freitag, 20. November 2026',W/2,H/2-40,64,ACC,'center',900);
+    text('um 11:30 Uhr',W/2,H/2+30,48,ACC2,'center',800);
+    text('Der Countdown läuft schon auf Moki.',W/2,H/2+110,26,MUTED,'center',500);
+    x.globalAlpha=1;}
+  // Szene 6: Abspann (80-90 s)
+  if(t>=80){const a=fade(t,80,90,.8,.4);
+    x.globalAlpha=a;logo(1,H/2-70);
+    text('Freitag, 20.11. · 11:30 Uhr',W/2,H/2+60,40,ACC2,'center',900);
+    text('Dein Moki',W/2,H/2+120,26,MUTED,'center',500);
+    x.globalAlpha=1;}
+}
+async function load(){
+  GAMES=(window.GD||[]).slice(0,35);
+  await Promise.all(GAMES.map(g=>new Promise(r=>{const i=new Image();i.onload=r;i.onerror=r;i.src='../../'+g.i;IMG[g.i]=i})));
+  await new Promise(r=>{LOGO.onload=r;LOGO.onerror=r;LOGO.src='../../logo/moki-logo.png';});
+  window.READY=true;
+}
+load();
+</script>
