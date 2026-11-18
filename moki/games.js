@@ -943,6 +943,18 @@ window.MOKI_GAMES = [
     description: "Finde alle versteckten Gegenstände im Wimmelbild, bevor die Zeit abläuft.",
     added: "2026-11-18",
     featured: false
+  },
+  {
+    id: "lucky-claw-machine",
+    title: "Lucky Claw Machine",
+    url: "#/play/lucky-claw-machine",
+    category: "Geschicklichkeit",
+    image: "lucky-claw-machine.jpg",
+    emoji: "🕹️",
+    colors: ["#ff5f8f", "#ffd23f"],
+    description: "Steuere den Greifer und versuche, das Plüschtier aus der Maschine zu holen.",
+    added: "2026-11-18",
+    featured: false
   }
 ];
 
