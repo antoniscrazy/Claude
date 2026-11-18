@@ -967,6 +967,18 @@ window.MOKI_GAMES = [
     description: "Lass das Tier von Punkt zu Punkt springen und halte den Schwung, ohne abzustürzen.",
     added: "2026-11-18",
     featured: false
+  },
+  {
+    id: "goods-master",
+    title: "Goods Master",
+    url: "#/play/goods-master",
+    category: "Strategie",
+    image: "goods-master.jpg",
+    emoji: "📦",
+    colors: ["#4a9be8", "#f0b429"],
+    description: "Sortiere und stapele Waren geschickt, damit das Lager immer voll bleibt.",
+    added: "2026-11-18",
+    featured: false
   }
 ];
 
