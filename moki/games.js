@@ -834,6 +834,18 @@ window.MOKI_GAMES = [
     description: "Lande das Flugzeug so sanft wie möglich auf der Piste.",
     added: "2026-11-18",
     featured: false
+  },
+  {
+    id: "ragdoll-fall",
+    title: "Ragdoll Fall",
+    url: "#/play/ragdoll-fall",
+    category: "Geschicklichkeit",
+    image: "ragdoll-fall.jpg",
+    emoji: "🤸",
+    colors: ["#ffb300", "#e25b2a"],
+    description: "Lass die Ragdoll-Figur fallen und sieh zu, wie sie auf dem Weg nach unten alles mitreißt.",
+    added: "2026-11-18",
+    featured: false
   }
 ];
 
