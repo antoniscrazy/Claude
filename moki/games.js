@@ -907,6 +907,18 @@ window.MOKI_GAMES = [
     description: "Spring mit dem Schleim-Wesen ins Wasser und sammle Punkte, ohne danebenzuplatschen.",
     added: "2026-11-18",
     featured: false
+  },
+  {
+    id: "stickman-climb-2",
+    title: "Stickman Climb 2",
+    url: "#/play/stickman-climb-2",
+    category: "Geschicklichkeit",
+    image: "stickman-climb-2.jpg",
+    emoji: "🧗",
+    colors: ["#4a8df0", "#2b2b2b"],
+    description: "Klettere als Stickman die Wand hoch und pass auf, dass du nicht abrutschst.",
+    added: "2026-11-18",
+    featured: false
   }
 ];
 
