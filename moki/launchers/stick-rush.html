@@ -29,7 +29,8 @@ const BLOCK = '<script>(function(){var ok=function(u){u=String(u||"");return /^(
 fetch(BASE + "index.html")
   .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
   .then(html => {
-    html = html.replace("<head>", () => '<head><base href="' + BASE + '">' + BLOCK);
+const FIX = '<script>(function(){var d=Object.getOwnPropertyDescriptor(HTMLImageElement.prototype,"src");var T="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAJ0lEQVR4nO3BAQ0AAADCoPdPbQ43oAAAAAAAAAAAAAAAAAAAAIB3A0BAAAGP8slRAAAAAElFTkSuQmCC";Object.defineProperty(HTMLImageElement.prototype,"src",{get:d.get,set:function(v){if(/(1e18febea|12215637f)\\.[a-z0-9.]*png/i.test(String(v)))v=T;return d.set.call(this,v)},configurable:true});})()<\/script>';
+    html = html.replace("<head>", () => '<head><base href="' + BASE + '">' + BLOCK + FIX);
     document.getElementById("game").srcdoc = html;
   })
   .catch(e => { document.body.append("Fehler beim Laden: " + e.message); });
