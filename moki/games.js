@@ -871,6 +871,18 @@ window.MOKI_GAMES = [
     description: "Ein Sandkasten, in dem du Sand, Wasser, Feuer und viele andere Stoffe mischen und beobachten kannst.",
     added: "2026-11-18",
     featured: false
+  },
+  {
+    id: "idle-success",
+    title: "Idle Success",
+    url: "#/play/idle-success",
+    category: "Simulation",
+    image: "idle-success.jpg",
+    emoji: "💵",
+    colors: ["#2ecc71", "#f1c40f"],
+    description: "Baue dein Geschäft Schritt für Schritt auf und lass dein Geld im Leerlauf wachsen.",
+    added: "2026-11-18",
+    featured: false
   }
 ];
 
