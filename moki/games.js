@@ -48,7 +48,7 @@ window.MOKI_GAMES = [
   {
     id: "my-perfect-hotel",
     title: "My Perfect Hotel",
-    url: "https://frolicking-cocada-f60e06.netlify.app",
+    url: "#/play/my-perfect-hotel",
     category: "Simulation",
     image: "my-perfect-hotel.jpg",
     emoji: "🏨",
@@ -95,7 +95,7 @@ window.MOKI_GAMES = [
   {
     id: "angry-birds",
     title: "Angry Birds",
-    url: "https://elegant-stardust-e6917d.netlify.app",
+    url: "#/play/angry-birds",
     category: "Geschicklichkeit",
     image: "angry-birds.jpg",
     wide: true,
@@ -352,7 +352,7 @@ window.MOKI_GAMES = [
   {
     id: "robo-cleaner-simulator",
     title: "Robo Cleaner Simulator",
-    url: "https://dreamy-nasturtium-0d121e.netlify.app",
+    url: "#/play/robo-cleaner-simulator",
     category: "Simulation",
     image: "robo-cleaner-simulator.jpg",
     emoji: "🤖",
@@ -619,7 +619,7 @@ window.MOKI_GAMES = [
   {
     id: "master-chess",
     title: "Master Chess",
-    url: "https://grand-cranachan-c3c882.netlify.app",
+    url: "#/play/master-chess",
     category: "Strategie",
     image: "master-chess.jpg",
     emoji: "♟️",
@@ -776,7 +776,7 @@ window.MOKI_GAMES = [
   {
     id: "country-balls-world-war",
     title: "Country Balls World War",
-    url: "https://bejewelled-nougat-13436e.netlify.app",
+    url: "#/play/country-balls-world-war",
     category: "Strategie",
     image: "country-balls-world-war.jpg",
     emoji: "🌍",
