@@ -858,6 +858,19 @@ window.MOKI_GAMES = [
     description: "Schiebe die Zahlkacheln zusammen, bis du die 2048 erreichst.",
     added: "2026-11-18",
     featured: false
+  },
+  {
+    id: "sandboxels",
+    title: "Sandboxels",
+    url: "#/play/sandboxels",
+    category: "Simulation",
+    image: "sandboxels.jpg",
+    wide: true,
+    emoji: "🏖️",
+    colors: ["#2a6fd6", "#f4d03f"],
+    description: "Ein Sandkasten, in dem du Sand, Wasser, Feuer und viele andere Stoffe mischen und beobachten kannst.",
+    added: "2026-11-18",
+    featured: false
   }
 ];
 
