@@ -8,6 +8,7 @@
 //   SUPABASE_KEY        anon/publishable Key (Zugriff nur über die gate_* Funktionen)
 //   DB_SECRET           Admin-Geheimnis der gate_* Datenbankfunktionen
 //   POKI_URL, CRAZY_URL Adressen der beiden Proxys
+//   MOKI_URL            (optional) Adresse von Moki, für die Links in der Moki-Verwaltung
 const http = require("http");
 const crypto = require("crypto");
 
@@ -21,6 +22,7 @@ const SITES = {
   poki: { name: "Poki", url: (process.env.POKI_URL || "").replace(/\/$/, "") },
   crazygames: { name: "CrazyGames", url: (process.env.CRAZY_URL || "").replace(/\/$/, "") },
 };
+const MOKI_URL = (process.env.MOKI_URL || "https://mokiorg.netlify.app").replace(/\/$/, "");
 const configured = ADMIN_PASSWORD && SECRET && SB_URL && SB_KEY && DB_SECRET;
 
 // ---------- Tokens ----------
@@ -189,6 +191,7 @@ async function adminPage(newCodes, err) {
   const links = Object.values(SITES).filter((s) => s.url).map((s) => `<a href="${esc(s.url)}" class="mut">${esc(s.name)}</a>`).join(" · ");
   return shell("Zugangscodes", `
     <div class="top"><h1>Zugangscodes</h1><form method="post" action="/logout"><button class="sec">Abmelden</button></form></div>
+    <p><a class="btn" href="/moki">Moki: Spiele und Geräte verwalten</a></p>
     ${fresh}${err ? `<div class="err">${esc(err)}</div>` : ""}${reqCard}
     <div class="card"><h2>Neuen Code erstellen</h2>
       <form method="post" action="/create"><div class="row">
@@ -203,6 +206,41 @@ async function adminPage(newCodes, err) {
       <tbody>${rows || `<tr><td colspan="5" class="mut">Noch keine Codes.</td></tr>`}</tbody></table></div></div>
     <p class="mut">${links}</p>
     <script>setInterval(function(){var a=document.activeElement;if(!a||a.tagName!=='INPUT')location.reload()},15000)</script>`);
+}
+
+// ---------- Moki-Verwaltung: selbstgemachte Spiele löschen, Geräte sperren ----------
+async function mokiPage(msg, err) {
+  const [list, bans] = await Promise.all([
+    rpc("moki_admin_list", { p_admin: DB_SECRET }),
+    rpc("moki_admin_bans", { p_admin: DB_SECRET }),
+  ]);
+  const hid = (id, act) => `<input type="hidden" name="id" value="${esc(id)}"><input type="hidden" name="act" value="${act}">`;
+  const rows = list.map((c) => {
+    const pub = c.status === "published";
+    return `<tr>
+      <td><b>${esc(c.title)}</b><div class="mut">${esc(c.description || "")}</div>${pub ? `<a class="mut" href="${esc(MOKI_URL)}/#/spiel/${esc(c.slug)}" target="_blank" rel="noopener">Ansehen</a>` : ""}</td>
+      <td>${esc(c.creator)}<div class="mut">Gerät ${esc(c.owner)} · ${c.owner_games} Spiele</div>${c.banned ? `<span class="tag t-bad">gesperrt</span>` : ""}</td>
+      <td><span class="tag ${pub ? "t-ok" : ""}">${pub ? "Veröffentlicht" : "Entwurf"}</span><div class="mut">${esc(dtf.format(Date.parse(c.created_at)))}</div></td>
+      <td>
+        ${pub ? `<form method="post" action="/moki/act">${hid(c.id, "unpublish")}<button class="sec">Zurückziehen</button></form>` : ""}
+        <form method="post" action="/moki/act" onsubmit="return confirm('Dieses Spiel endgültig löschen?')">${hid(c.id, "delete")}<button class="bad">Löschen</button></form>
+        ${c.banned ? "" : `<details><summary class="mut">Gerät sperren</summary><form method="post" action="/moki/act" onsubmit="return confirm('Dieses Gerät sperren? Es kann dann keine Spiele mehr speichern oder veröffentlichen.')">
+          ${hid(c.id, "ban")}<label for="r${esc(c.id)}">Grund (optional)</label><input id="r${esc(c.id)}" name="reason" maxlength="200">
+          <label><input type="checkbox" name="del" value="1" checked style="width:auto"> Alle Spiele dieses Geräts löschen</label><button class="bad">Sperren</button></form></details>`}
+      </td></tr>`;
+  }).join("");
+  const banRows = bans.map((b) => `<tr><td>${esc(b.creator || "(ohne Name)")}<div class="mut">Gerät ${esc(b.owner)}</div></td>
+      <td>${esc(b.reason || "")}</td><td class="mut">${esc(dtf.format(Date.parse(b.banned_at)))}</td><td>${b.games} Spiele</td>
+      <td><form method="post" action="/moki/act">${hid(b.id, "unban")}<button class="sec">Entsperren</button></form></td></tr>`).join("");
+  return shell("Moki-Spiele", `
+    <div class="top"><h1>Moki-Spiele</h1><form method="post" action="/logout"><button class="sec">Abmelden</button></form></div>
+    <p><a href="/" class="mut">&larr; Zugangscodes</a></p>
+    ${msg ? `<div class="okbox">${esc(msg)}</div>` : ""}${err ? `<div class="err">${esc(err)}</div>` : ""}
+    <div class="card"><h2>Selbstgemachte Spiele (${list.length})</h2><div class="scroll"><table><thead><tr><th>Spiel</th><th>Ersteller</th><th>Status</th><th></th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="4" class="mut">Noch keine Spiele.</td></tr>`}</tbody></table></div></div>
+    <div class="card"><h2>Gesperrte Geräte (${bans.length})</h2><div class="scroll"><table><thead><tr><th>Ersteller</th><th>Grund</th><th>Seit</th><th>Spiele</th><th></th></tr></thead>
+      <tbody>${banRows || `<tr><td colspan="5" class="mut">Keine gesperrten Geräte.</td></tr>`}</tbody></table></div>
+      <p class="mut">Ein Gerät ist der Schlüssel im Browser. Wer den Browser-Speicher löscht, bekommt einen neuen Schlüssel. Die Sperre ist also nicht wasserdicht.</p></div>`);
 }
 
 // ---------- Sperrseiten im Weltraum-Design ----------
@@ -386,6 +424,25 @@ const server = http.createServer(async (req, res) => {
       return redirect(res, "/", { "set-cookie": cookie(req, "ga", sign({ exp: Date.now() + 12 * 3600e3 }, "admin"), 12 * 3600) });
     }
     if (p === "/logout" && req.method === "POST") return redirect(res, "/", { "set-cookie": cookie(req, "ga", "", 0) });
+
+    if (p === "/moki" && req.method === "GET") {
+      if (!admin) return redirect(res, "/");
+      return send(res, 200, await mokiPage(url.searchParams.get("msg"), url.searchParams.get("err")));
+    }
+    if (p === "/moki/act" && req.method === "POST") {
+      if (!admin) return redirect(res, "/");
+      const f = await readForm(req);
+      if (!/^[0-9a-f-]{36}$/.test(f.id || "")) return redirect(res, "/moki");
+      let msg = "";
+      if (f.act === "delete") { await rpc("moki_admin_delete", { p_admin: DB_SECRET, p_id: f.id }); msg = "Spiel gelöscht."; }
+      else if (f.act === "unpublish") { await rpc("moki_admin_unpublish", { p_admin: DB_SECRET, p_id: f.id }); msg = "Spiel zurückgezogen."; }
+      else if (f.act === "ban") {
+        const r = await rpc("moki_admin_ban", { p_admin: DB_SECRET, p_id: f.id, p_reason: String(f.reason || "").slice(0, 200), p_delete_games: f.del === "1" });
+        msg = "Gerät gesperrt (" + ((r && r.changed) || 0) + " Spiele " + (f.del === "1" ? "gelöscht" : "zurückgezogen") + ").";
+      }
+      else if (f.act === "unban") { await rpc("moki_admin_unban", { p_admin: DB_SECRET, p_id: f.id }); msg = "Gerät entsperrt."; }
+      return redirect(res, "/moki?msg=" + encodeURIComponent(msg));
+    }
 
     if (["/create", "/revoke", "/delete"].includes(p) && req.method === "POST") {
       if (!admin) return redirect(res, "/");
