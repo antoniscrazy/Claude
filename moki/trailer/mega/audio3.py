@@ -40,11 +40,11 @@ for b in range(0,beats,4):
     for m in(69,72,76):
         add(saw(440*2**((m-69)/12),B*4,.04),b*B,1)
 # Risers und Einsaetze
-for at in (3.0,7.5,20.0,42.0,54.0,66.0,80.0):
+for at in (5.0,12.0,24.0,34.0,46.0,56.0,68.0,82.0):
     if at-2.0>0: add(rise(2.0),at-2.0,1)
     add(crash(),at,1)
-add(boom(),0.0,1); add(boom(),7.5,.9); add(boom(),80.0,.9)
-for at in (20.0,30.0,42.0,54.0,66.0): add(boom(),at,.6)
+add(boom(),0.0,1); add(boom(),5.0,1); add(boom(),82.0,.9)
+for at in (12.0,24.0,46.0,56.0,68.0): add(boom(),at,.6)
 m=np.max(np.abs(out)); out=out/m*0.9 if m>0 else out
 fade=int(sr*1.0); out[-fade:]*=np.linspace(1,0,fade)
 pcm=(out*32767).astype('<i2')
