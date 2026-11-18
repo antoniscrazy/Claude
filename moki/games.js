@@ -955,6 +955,18 @@ window.MOKI_GAMES = [
     description: "Steuere den Greifer und versuche, das Plüschtier aus der Maschine zu holen.",
     added: "2026-11-18",
     featured: false
+  },
+  {
+    id: "buck-bounce",
+    title: "Buck Bounce",
+    url: "#/play/buck-bounce",
+    category: "Geschicklichkeit",
+    image: "buck-bounce.jpg",
+    emoji: "🦌",
+    colors: ["#f0a040", "#6a3d1e"],
+    description: "Lass das Tier von Punkt zu Punkt springen und halte den Schwung, ohne abzustürzen.",
+    added: "2026-11-18",
+    featured: false
   }
 ];
 
