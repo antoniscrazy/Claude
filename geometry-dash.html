@@ -56,10 +56,11 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
     const fw = await get("Build/GeometryDashLite.framework.js", "blob");
     const cfgRaw = await get("Build/GeometryDashLite.json", "json");
     pf.style.width = "30%";
+    const fwData = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(new Blob([fw], { type: "text/javascript" })); });
     const cfg = Object.assign({}, cfgRaw, {
       dataUrl: BASE + "Build/GeometryDashLite.data",
       wasmCodeUrl: BASE + "Build/GeometryDashLite.wasm",
-      wasmFrameworkUrl: URL.createObjectURL(new Blob([fw], { type: "text/javascript" })),
+      wasmFrameworkUrl: fwData,
       streamingAssetsUrl: BASE + "StreamingAssets"
     });
     const cfgUrl = URL.createObjectURL(new Blob([JSON.stringify(cfg)], { type: "application/json" }));
