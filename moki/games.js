@@ -822,6 +822,18 @@ window.MOKI_GAMES = [
     description: "Wirf die Wurst in die Luft, dreh sie und lande sie sicher.",
     added: "2026-11-18",
     featured: false
+  },
+  {
+    id: "slope",
+    title: "Slope",
+    url: "#/play/slope",
+    category: "Geschicklichkeit",
+    image: "slope.jpg",
+    emoji: "🟩",
+    colors: ["#0a1a0a", "#39ff14"],
+    description: "Rolle eine Kugel durch ein neonfarbenes Gitter-Level, ohne von der Strecke zu fallen.",
+    added: "2026-11-18",
+    featured: false
   }
 ];
 
