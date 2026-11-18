@@ -405,6 +405,29 @@ html.player-open,html.player-open body{overflow:hidden}
 .chal.done .cpbar i{background:var(--accent)}
 @media(max-width:900px){.chal .cprog{min-width:0;width:100%}}
 
+/* Ankuendigungs-Popup */
+.ann{position:fixed;inset:0;z-index:950000;display:grid;place-items:center;padding:20px;background:#05060fb8;backdrop-filter:blur(6px);opacity:0;transition:opacity .3s}
+.ann.in{opacity:1}.ann.out{opacity:0}
+.ann-card{position:relative;overflow:hidden;width:100%;max-width:480px;padding:30px 28px 26px;border-radius:30px;text-align:center;color:var(--text);background:linear-gradient(160deg,#1b2170,#0d1030 60%,#2a1766);border:2px solid transparent;background-clip:padding-box;box-shadow:0 0 0 2px #00e5a8,0 0 0 6px #00e5a822,0 30px 80px #000c;transform:translateY(20px) scale(.96);transition:transform .45s cubic-bezier(.3,1.5,.5,1)}
+.ann.in .ann-card{transform:none}
+.ann-glow{position:absolute;inset:-40%;background:conic-gradient(from 0deg,transparent,#ffd23f22,transparent 30%,#00e5a822,transparent 70%);animation:annspin 10s linear infinite;pointer-events:none}
+@keyframes annspin{to{transform:rotate(360deg)}}
+.ann-card>*:not(.ann-glow){position:relative}
+.ann-top{display:flex;justify-content:center}
+.ann-chip{display:inline-block;padding:6px 14px;border-radius:999px;background:var(--accent2);color:#3a2a00;font-weight:800;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.ann-emoji{font-size:64px;line-height:1;margin:16px 0 4px;animation:annbob 2.4s ease-in-out infinite}
+@keyframes annbob{50%{transform:translateY(-6px) rotate(4deg)}}
+.ann-title{font-size:30px;line-height:1.15;margin:6px 0 10px;letter-spacing:-.4px;background:linear-gradient(90deg,#00e5a8,#fff,#ffd23f);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ann-body{color:#dfe3ff;font-size:17px;line-height:1.55;white-space:pre-wrap;margin:0 0 22px}
+.ann-acts{display:flex;flex-direction:column;gap:10px;align-items:center}
+.ann-link{display:inline-block;padding:13px 26px;border-radius:999px;background:var(--panel2);color:var(--text);font-weight:800;font-size:15px;text-decoration:none}
+.ann-link:hover{filter:brightness(1.2)}
+.ann-close{position:relative;overflow:hidden;min-width:200px;padding:14px 26px;border:0;border-radius:999px;font:800 16px "Segoe UI",system-ui,sans-serif;background:#ffffff1a;color:#8fa0c4;cursor:not-allowed;transition:background .3s,color .3s,transform .15s}
+.ann-close.ready{background:linear-gradient(90deg,#00e5a8,#2fe0c0);color:#04201a;cursor:pointer}
+.ann-close.ready:hover{transform:translateY(-2px)}
+.ann-close span{position:relative;z-index:1}
+@media(max-width:600px){.ann-title{font-size:24px}.ann-emoji{font-size:52px}.ann-body{font-size:15px}}
+
 </style>
 </head>
 <body>
@@ -2376,6 +2399,99 @@ playerFromHash();
   const app = document.getElementById("app");
   if (app) new MutationObserver(() => { if (card() && card().querySelector(".cprog") && !card().dataset.cprogLoaded) { card().dataset.cprogLoaded = "1"; refresh(); } }).observe(app, { childList: true });
   if (document.readyState === "loading") addEventListener("DOMContentLoaded", refresh); else refresh();
+})();
+
+</script>
+<script>
+// Ankuendigungen: Popup beim naechsten Oeffnen von Moki. Schliessen erst nach 3 Sekunden.
+(function () {
+  "use strict";
+  const CFG = window.MOKI_CFG || {};
+  const SEEN = "moki-ann-seen";
+  const WAIT = 3;   // Sekunden bis zum Schliessen
+
+  function seen() { try { return JSON.parse(localStorage.getItem(SEEN) || "[]"); } catch (e) { return []; } }
+  function markSeen(id) {
+    try { const s = seen(); if (!s.includes(id)) { s.push(id); localStorage.setItem(SEEN, JSON.stringify(s.slice(-200))); } } catch (e) {}
+  }
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  async function fetchActive() {
+    try {
+      const r = await fetch(CFG.sbUrl + "/rest/v1/rpc/moki_announcements_active", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: CFG.sbKey, Authorization: "Bearer " + CFG.sbKey },
+        body: "{}"
+      });
+      if (!r.ok) return [];
+      const j = await r.json();
+      return Array.isArray(j) ? j : [];
+    } catch (e) { return []; }
+  }
+
+  // Erst zeigen, wenn Intro, Update-Uebersicht und Spiel-Player zu sind
+  function busy() {
+    const up = document.querySelector("#upd.open");
+    const intro = document.documentElement.classList.contains("intro-on");
+    const pl = document.getElementById("player");
+    const tr = document.getElementById("trlfs");
+    return !!(up || intro || pl || tr);
+  }
+  function waitFree() {
+    return new Promise(res => { const t = setInterval(() => { if (!busy()) { clearInterval(t); res(); } }, 500); });
+  }
+
+  function show(a) {
+    return new Promise(res => {
+      const el = document.createElement("div");
+      el.className = "ann";
+      el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true"); el.setAttribute("aria-label", a.title);
+      const link = a.link_url ? `<a class="ann-link" href="${esc(a.link_url)}" target="_blank" rel="noopener">${esc(a.link_label || "Mehr")}</a>` : "";
+      el.innerHTML = `<div class="ann-card">
+          <div class="ann-glow" aria-hidden="true"></div>
+          <div class="ann-top"><span class="ann-chip">Ankündigung</span></div>
+          <div class="ann-emoji" aria-hidden="true">${esc(a.emoji || "📣")}</div>
+          <h2 class="ann-title">${esc(a.title)}</h2>
+          <p class="ann-body">${esc(a.body)}</p>
+          <div class="ann-acts">${link}<button type="button" class="ann-close" disabled><span>Schließen</span><i></i></button></div>
+        </div>`;
+      document.body.appendChild(el);
+      const btn = el.querySelector(".ann-close"), lbl = btn.querySelector("span");
+      let left = WAIT;
+      const tick = () => {
+        if (left > 0) { lbl.textContent = "Schließen (" + left + ")"; left--; setTimeout(tick, 1000); }
+        else { lbl.textContent = "Verstanden"; btn.disabled = false; btn.classList.add("ready"); }
+      };
+      tick();
+      const close = () => {
+        if (btn.disabled) return;
+        markSeen(a.id);
+        el.classList.add("out");
+        setTimeout(() => { el.remove(); res(); }, 320);
+      };
+      btn.addEventListener("click", close);
+      const onKey = e => { if (e.key === "Escape") close(); };
+      addEventListener("keydown", onKey);
+      // Aufraeumen bei Schliessen
+      const obs = new MutationObserver(() => { if (!document.body.contains(el)) { removeEventListener("keydown", onKey); obs.disconnect(); } });
+      obs.observe(document.body, { childList: true });
+      requestAnimationFrame(() => el.classList.add("in"));
+      btn.focus({ preventScroll: true });
+    });
+  }
+
+  async function run() {
+    const all = await fetchActive();
+    const todo = all.filter(a => !seen().includes(a.id));
+    if (!todo.length) return;
+    await waitFree();
+    for (const a of todo) {
+      await show(a);
+      await new Promise(r => setTimeout(r, 400));
+    }
+  }
+  if (document.readyState === "loading") addEventListener("DOMContentLoaded", () => setTimeout(run, 900));
+  else setTimeout(run, 900);
 })();
 
 </script>

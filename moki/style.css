@@ -382,3 +382,26 @@ html.player-open,html.player-open body{overflow:hidden}
 .chal .cpm{display:block;margin-top:6px;color:var(--muted);font-size:12px}
 .chal.done .cpbar i{background:var(--accent)}
 @media(max-width:900px){.chal .cprog{min-width:0;width:100%}}
+
+/* Ankuendigungs-Popup */
+.ann{position:fixed;inset:0;z-index:950000;display:grid;place-items:center;padding:20px;background:#05060fb8;backdrop-filter:blur(6px);opacity:0;transition:opacity .3s}
+.ann.in{opacity:1}.ann.out{opacity:0}
+.ann-card{position:relative;overflow:hidden;width:100%;max-width:480px;padding:30px 28px 26px;border-radius:30px;text-align:center;color:var(--text);background:linear-gradient(160deg,#1b2170,#0d1030 60%,#2a1766);border:2px solid transparent;background-clip:padding-box;box-shadow:0 0 0 2px #00e5a8,0 0 0 6px #00e5a822,0 30px 80px #000c;transform:translateY(20px) scale(.96);transition:transform .45s cubic-bezier(.3,1.5,.5,1)}
+.ann.in .ann-card{transform:none}
+.ann-glow{position:absolute;inset:-40%;background:conic-gradient(from 0deg,transparent,#ffd23f22,transparent 30%,#00e5a822,transparent 70%);animation:annspin 10s linear infinite;pointer-events:none}
+@keyframes annspin{to{transform:rotate(360deg)}}
+.ann-card>*:not(.ann-glow){position:relative}
+.ann-top{display:flex;justify-content:center}
+.ann-chip{display:inline-block;padding:6px 14px;border-radius:999px;background:var(--accent2);color:#3a2a00;font-weight:800;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.ann-emoji{font-size:64px;line-height:1;margin:16px 0 4px;animation:annbob 2.4s ease-in-out infinite}
+@keyframes annbob{50%{transform:translateY(-6px) rotate(4deg)}}
+.ann-title{font-size:30px;line-height:1.15;margin:6px 0 10px;letter-spacing:-.4px;background:linear-gradient(90deg,#00e5a8,#fff,#ffd23f);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ann-body{color:#dfe3ff;font-size:17px;line-height:1.55;white-space:pre-wrap;margin:0 0 22px}
+.ann-acts{display:flex;flex-direction:column;gap:10px;align-items:center}
+.ann-link{display:inline-block;padding:13px 26px;border-radius:999px;background:var(--panel2);color:var(--text);font-weight:800;font-size:15px;text-decoration:none}
+.ann-link:hover{filter:brightness(1.2)}
+.ann-close{position:relative;overflow:hidden;min-width:200px;padding:14px 26px;border:0;border-radius:999px;font:800 16px "Segoe UI",system-ui,sans-serif;background:#ffffff1a;color:#8fa0c4;cursor:not-allowed;transition:background .3s,color .3s,transform .15s}
+.ann-close.ready{background:linear-gradient(90deg,#00e5a8,#2fe0c0);color:#04201a;cursor:pointer}
+.ann-close.ready:hover{transform:translateY(-2px)}
+.ann-close span{position:relative;z-index:1}
+@media(max-width:600px){.ann-title{font-size:24px}.ann-emoji{font-size:52px}.ann-body{font-size:15px}}
