@@ -931,6 +931,18 @@ window.MOKI_GAMES = [
     description: "Lass den Schleim über die Hindernisse springen und halte den Ball in Bewegung.",
     added: "2026-11-18",
     featured: false
+  },
+  {
+    id: "hidden-objects",
+    title: "Find Hidden Objects",
+    url: "#/play/hidden-objects",
+    category: "Strategie",
+    image: "hidden-objects.jpg",
+    emoji: "🔍",
+    colors: ["#f4b860", "#5a8f5a"],
+    description: "Finde alle versteckten Gegenstände im Wimmelbild, bevor die Zeit abläuft.",
+    added: "2026-11-18",
+    featured: false
   }
 ];
 
