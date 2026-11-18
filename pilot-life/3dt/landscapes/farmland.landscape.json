@@ -1,0 +1,90 @@
+{
+  "type": "landscape",
+  "set": "L",
+  "tileSize": 100,
+  "style": "green",
+  "material": "terrain/green",
+  "seed": 1337,
+  "grid": [
+    3,
+    5
+  ],
+  "tiles": [
+    {
+      "id": "terrain_l_b_03",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "id": "terrain_l_c_04",
+      "x": 1,
+      "y": 0
+    },
+    {
+      "id": "terrain_l_b_04",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "id": "terrain_l_b_02",
+      "x": 0,
+      "y": 1
+    },
+    {
+      "id": "terrain_l_f_12",
+      "x": 1,
+      "y": 1
+    },
+    {
+      "id": "terrain_l_b_02",
+      "x": 2,
+      "y": 1
+    },
+    {
+      "id": "terrain_l_c_01",
+      "x": 0,
+      "y": 2
+    },
+    {
+      "id": "terrain_l_a_01",
+      "x": 1,
+      "y": 2
+    },
+    {
+      "id": "terrain_l_b_04",
+      "x": 2,
+      "y": 2
+    },
+    {
+      "id": "terrain_l_b_03",
+      "x": 0,
+      "y": 3
+    },
+    {
+      "id": "terrain_l_a_01",
+      "x": 1,
+      "y": 3
+    },
+    {
+      "id": "terrain_l_b_08",
+      "x": 2,
+      "y": 3
+    },
+    {
+      "id": "terrain_l_c_11",
+      "x": 0,
+      "y": 4
+    },
+    {
+      "id": "terrain_l_c_06",
+      "x": 1,
+      "y": 4
+    },
+    {
+      "id": "terrain_l_c_01",
+      "x": 2,
+      "y": 4
+    }
+  ],
+  "elements": []
+}

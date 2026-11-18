@@ -1,0 +1,109 @@
+{
+  "type": "landscape",
+  "set": "L",
+  "tileSize": 100,
+  "style": "green",
+  "material": "terrain/summer",
+  "seed": 1337,
+  "grid": [
+    3,
+    5
+  ],
+  "tiles": [
+    {
+      "id": "terrain_l_b_03",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "id": "terrain_l_d_18",
+      "x": 1,
+      "y": 0
+    },
+    {
+      "id": "terrain_l_b_04",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "id": "terrain_l_a_01",
+      "x": 0,
+      "y": 1
+    },
+    {
+      "id": "terrain_l_a_01",
+      "x": 1,
+      "y": 1
+    },
+    {
+      "id": "terrain_l_d_16",
+      "x": 2,
+      "y": 1
+    },
+    {
+      "id": "terrain_l_a_01",
+      "x": 0,
+      "y": 2
+    },
+    {
+      "id": "terrain_l_a_01",
+      "x": 1,
+      "y": 2
+    },
+    {
+      "id": "terrain_l_a_01",
+      "x": 2,
+      "y": 2
+    },
+    {
+      "id": "terrain_l_b_13",
+      "x": 0,
+      "y": 3
+    },
+    {
+      "id": "terrain_l_a_01",
+      "x": 1,
+      "y": 3
+    },
+    {
+      "id": "terrain_l_a_01",
+      "x": 2,
+      "y": 3
+    },
+    {
+      "id": "terrain_l_c_11",
+      "x": 0,
+      "y": 4
+    },
+    {
+      "id": "terrain_l_d_02",
+      "x": 1,
+      "y": 4
+    },
+    {
+      "id": "terrain_l_a_01",
+      "x": 2,
+      "y": 4
+    }
+  ],
+  "elements": [
+    {
+      "id": "mountain_l_a_29",
+      "pos": [
+        64.62648140477359,
+        0,
+        106.70678931103578
+      ],
+      "scale": 1.85
+    },
+    {
+      "id": "mountain_l_a_30",
+      "pos": [
+        223.03718109771017,
+        0,
+        210.22526947156678
+      ],
+      "scale": 1.85
+    }
+  ]
+}
