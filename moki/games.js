@@ -821,6 +821,18 @@ window.MOKI_GAMES = [
     description: "Springe über Hindernisse und lava-Felder bis zur Ziellinie.",
     added: "2026-11-18",
     featured: false
+  },
+  {
+    id: "sausage-flip",
+    title: "Sausage Flip",
+    url: "#/play/sausage-flip",
+    category: "Geschicklichkeit",
+    image: "sausage-flip.jpg",
+    emoji: "🌭",
+    colors: ["#ffd800", "#9a3020"],
+    description: "Wirf die Wurst in die Luft, dreh sie und lande sie sicher.",
+    added: "2026-11-18",
+    featured: false
   }
 ];
 
