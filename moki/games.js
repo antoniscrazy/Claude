@@ -375,18 +375,6 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
-    id: "monkey-mart",
-    title: "Monkey Mart",
-    url: "https://rainbow-fox-7a138f.netlify.app",
-    category: "Simulation",
-    image: "monkey-mart.jpg",
-    emoji: "🐵",
-    colors: ["#3bb3f0", "#4cc84a"],
-    description: "Führe einen Supermarkt als Affe: Ernte Obst und Gemüse, fülle die Regale und bediene die Kunden.",
-    added: "2026-11-16",
-    featured: false
-  },
-  {
     id: "block-blast",
     title: "Block Blast",
     url: "#/play/block-blast",
