@@ -4,10 +4,11 @@ const {chromium}=require('playwright');const fs=require('fs'),path=require('path
  const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--no-sandbox']});
  const p=await b.newPage({viewport:{width:1280,height:720}});
  p.on('pageerror',e=>console.log('ERR',e.message));
- await p.goto('file://'+path.resolve(__dirname,'mega.html'));
+ await p.goto('file://'+path.resolve(__dirname,process.argv[3]||'mega.html'));
  await p.waitForFunction('window.READY',{timeout:60000});
  const N=90*30;
- for(let f=0;f<N;f++){
+ const only=process.argv[4]?process.argv[4].split(',').map(Number):null;
+ for(let f=0;f<N;f++){ if(only&&!only.includes(f))continue;
   await p.evaluate(t=>render(t),f/30);
   const el=await p.$('canvas');
   await el.screenshot({path:`${out}/f${String(f).padStart(4,'0')}.jpg`,type:'jpeg',quality:90});
