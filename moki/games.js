@@ -919,6 +919,18 @@ window.MOKI_GAMES = [
     description: "Klettere als Stickman die Wand hoch und pass auf, dass du nicht abrutschst.",
     added: "2026-11-18",
     featured: false
+  },
+  {
+    id: "blumgi-bounce",
+    title: "Blumgi Bounce",
+    url: "#/play/blumgi-bounce",
+    category: "Geschicklichkeit",
+    image: "blumgi-bounce.jpg",
+    emoji: "🟢",
+    colors: ["#3ad0a0", "#f2c94c"],
+    description: "Lass den Schleim über die Hindernisse springen und halte den Ball in Bewegung.",
+    added: "2026-11-18",
+    featured: false
   }
 ];
 
