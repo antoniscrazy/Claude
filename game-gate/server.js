@@ -232,7 +232,7 @@ async function mokiPage(msg, err) {
   const banRows = bans.map((b) => `<tr><td>${esc(b.creator || "(ohne Name)")}<div class="mut">Gerät ${esc(b.owner)}</div></td>
       <td>${esc(b.reason || "")}</td><td class="mut">${esc(dtf.format(Date.parse(b.banned_at)))}</td><td>${b.games} Spiele</td>
       <td><form method="post" action="/moki/act">${hid(b.id, "unban")}<button class="sec">Entsperren</button></form></td></tr>`).join("");
-  const testerHtml = await testerSection();
+  const testerHtml = (await announcementsSection()) + (await testerSection());
   return shell("Moki-Spiele", `
     <div class="top"><h1>Moki-Spiele</h1><form method="post" action="/logout"><button class="sec">Abmelden</button></form></div>
     ${testerHtml}
@@ -272,6 +272,26 @@ async function testerSection() {
     <div class="card"><h2>Tester (${(o.testers || []).length})</h2><div class="scroll"><table><tbody>${testers || none("Noch keine Tester.")}</tbody></table></div></div>
     <div class="card"><h2>Bestätigt getestet (${(o.confirmed || []).length})</h2><div class="scroll"><table><tbody>${confirmed || none("Noch kein Spiel bestätigt.")}</tbody></table></div></div>
     <div class="card"><h2>Gerade in Prüfung (${(o.claims || []).length})</h2><div class="scroll"><table><tbody>${claims || none("Keine laufenden Prüfungen.")}</tbody></table></div></div>`;
+}
+
+// ---------- Ankuendigungen fuer Moki (Popup beim naechsten Oeffnen) ----------
+async function announcementsSection() {
+  const list = await rpc("moki_admin_announcements", { p_admin: DB_SECRET });
+  const rows = (list || []).map((a) => `<tr><td>${a.emoji ? esc(a.emoji) + " " : ""}<b>${esc(a.title)}</b><div class="mut" style="white-space:pre-wrap">${esc(a.body)}</div>${a.link_url ? `<div class="mut">Link: ${esc(a.link_label || "Mehr")} → ${esc(a.link_url)}</div>` : ""}</td>
+    <td class="mut">${esc(dtf.format(Date.parse(a.created_at)))}</td>
+    <td>${a.active ? `<span class="tag t-ok">aktiv</span>` : `<span class="tag">aus</span>`}</td>
+    <td><form method="post" action="/moki/ann"><input type="hidden" name="id" value="${esc(a.id)}"><input type="hidden" name="act" value="${a.active ? "off" : "on"}"><button class="sec">${a.active ? "Ausschalten" : "Einschalten"}</button></form>
+    <form method="post" action="/moki/ann" onsubmit="return confirm('Ankündigung löschen?')"><input type="hidden" name="id" value="${esc(a.id)}"><input type="hidden" name="act" value="delete"><button class="bad">Löschen</button></form></td></tr>`).join("");
+  return `<div class="card" style="border-color:var(--gold, #ffd23f)"><h2>Ankündigungen</h2>
+    <p class="mut">Erscheinen als Popup, wenn jemand Moki das nächste Mal öffnet. Der Schließen-Knopf wird nach 3 Sekunden freigegeben.</p>
+    <form method="post" action="/moki/ann"><input type="hidden" name="act" value="create">
+      <div class="row"><div style="flex:0 0 90px"><label for="an-e">Symbol</label><input id="an-e" name="emoji" maxlength="8" placeholder="🎉"></div>
+      <div><label for="an-t">Überschrift</label><input id="an-t" name="title" maxlength="80" required placeholder="z. B. Neues Update ist da"></div></div>
+      <label for="an-b">Text</label><textarea id="an-b" name="body" maxlength="600" rows="4" required style="width:100%;font:inherit;border-radius:8px;border:1px solid var(--line);background:#14151a;color:var(--text);padding:10px 12px"></textarea>
+      <div class="row"><div><label for="an-l">Link-Text (optional)</label><input id="an-l" name="link_label" maxlength="40" placeholder="z. B. Jetzt spielen"></div>
+      <div><label for="an-u">Link-Adresse (optional)</label><input id="an-u" name="link_url" maxlength="300" placeholder="https://… oder #/play/…"></div></div>
+      <p><button>Ankündigung veröffentlichen</button></p></form>
+    <div class="scroll"><table><tbody>${rows || `<tr><td class="mut">Noch keine Ankündigungen.</td></tr>`}</tbody></table></div></div>`;
 }
 
 // ---------- Sperrseiten im Weltraum-Design ----------
@@ -459,6 +479,21 @@ const server = http.createServer(async (req, res) => {
     if (p === "/moki" && req.method === "GET") {
       if (!admin) return redirect(res, "/");
       return send(res, 200, await mokiPage(url.searchParams.get("msg"), url.searchParams.get("err")));
+    }
+    if (p === "/moki/ann" && req.method === "POST") {
+      if (!admin) return redirect(res, "/");
+      const f = await readForm(req);
+      let msg = "";
+      if (f.act === "create") {
+        const title = String(f.title || "").trim().slice(0, 80), body = String(f.body || "").trim().slice(0, 600);
+        if (!title || !body) return redirect(res, "/moki?err=" + encodeURIComponent("Überschrift und Text sind Pflicht."));
+        await rpc("moki_admin_announcement_create", { p_admin: DB_SECRET, p_title: title, p_body: body, p_link_url: String(f.link_url || "").slice(0, 300), p_link_label: String(f.link_label || "").slice(0, 40), p_emoji: String(f.emoji || "").slice(0, 8) });
+        msg = "Ankündigung veröffentlicht.";
+      } else if (/^[0-9a-f-]{36}$/.test(f.id || "")) {
+        if (f.act === "on" || f.act === "off") { await rpc("moki_admin_announcement_set", { p_admin: DB_SECRET, p_id: f.id, p_active: f.act === "on" }); msg = f.act === "on" ? "Eingeschaltet." : "Ausgeschaltet."; }
+        else if (f.act === "delete") { await rpc("moki_admin_announcement_delete", { p_admin: DB_SECRET, p_id: f.id }); msg = "Gelöscht."; }
+      }
+      return redirect(res, "/moki?msg=" + encodeURIComponent(msg));
     }
     if (p === "/moki/act" && req.method === "POST") {
       if (!admin) return redirect(res, "/");
