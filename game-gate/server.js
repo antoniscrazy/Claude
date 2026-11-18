@@ -232,8 +232,10 @@ async function mokiPage(msg, err) {
   const banRows = bans.map((b) => `<tr><td>${esc(b.creator || "(ohne Name)")}<div class="mut">Gerät ${esc(b.owner)}</div></td>
       <td>${esc(b.reason || "")}</td><td class="mut">${esc(dtf.format(Date.parse(b.banned_at)))}</td><td>${b.games} Spiele</td>
       <td><form method="post" action="/moki/act">${hid(b.id, "unban")}<button class="sec">Entsperren</button></form></td></tr>`).join("");
+  const testerHtml = await testerSection();
   return shell("Moki-Spiele", `
     <div class="top"><h1>Moki-Spiele</h1><form method="post" action="/logout"><button class="sec">Abmelden</button></form></div>
+    ${testerHtml}
     <p><a href="/" class="mut">&larr; Zugangscodes</a></p>
     ${msg ? `<div class="okbox">${esc(msg)}</div>` : ""}${err ? `<div class="err">${esc(err)}</div>` : ""}
     <div class="card"><h2>Selbstgemachte Spiele (${list.length})</h2><div class="scroll"><table><thead><tr><th>Spiel</th><th>Ersteller</th><th>Status</th><th></th></tr></thead>
@@ -241,6 +243,35 @@ async function mokiPage(msg, err) {
     <div class="card"><h2>Gesperrte Geräte (${bans.length})</h2><div class="scroll"><table><thead><tr><th>Ersteller</th><th>Grund</th><th>Seit</th><th>Spiele</th><th></th></tr></thead>
       <tbody>${banRows || `<tr><td colspan="5" class="mut">Keine gesperrten Geräte.</td></tr>`}</tbody></table></div>
       <p class="mut">Ein Gerät ist der Schlüssel im Browser. Wer den Browser-Speicher löscht, bekommt einen neuen Schlüssel. Die Sperre ist also nicht wasserdicht.</p></div>`);
+}
+
+// ---------- Tester-Programm: Bewerbungen, Tester, Meldungen, bestaetigte Spiele ----------
+const TESTER_CHECKS = { laedt: "Spiel lädt", start: "Startbildschirm erscheint", steuerung: "Steuerung funktioniert", fluessig: "Läuft flüssig", kein_fehler: "Kein Absturz / keine Fehlermeldung" };
+async function testerSection() {
+  const o = await rpc("moki_admin_tester_overview", { p_admin: DB_SECRET });
+  const dt = (t) => esc(dtf.format(Date.parse(t)));
+  const apps = (o.applications || []).map((a) => `<tr><td>${esc(a.name)}</td><td class="mut">Gerät ${esc(a.device)} · ${dt(a.created_at)}</td>
+    <td><form method="post" action="/moki/act"><input type="hidden" name="id" value="${esc(a.id)}"><input type="hidden" name="act" value="app_accept"><button>Annehmen</button></form>
+    <form method="post" action="/moki/act" onsubmit="return confirm('Bewerbung ablehnen? Das Gerät ist dann 48 Stunden gesperrt.')"><input type="hidden" name="id" value="${esc(a.id)}"><input type="hidden" name="act" value="app_reject"><button class="bad">Ablehnen</button></form></td></tr>`).join("");
+  const testers = (o.testers || []).map((t) => `<tr><td>${esc(t.name || "(ohne Name)")}</td><td class="mut">Gerät ${esc(t.device)} · seit ${dt(t.accepted_at)} · ${t.reports} Meldungen</td>
+    <td><form method="post" action="/moki/act" onsubmit="return confirm('Tester-Rang wirklich entziehen?')"><input type="hidden" name="id" value="${esc(t.device)}"><input type="hidden" name="act" value="revoke"><button class="bad">Rang entziehen</button></form></td></tr>`).join("");
+  const reports = (o.reports || []).map((r) => {
+    const checks = Object.entries(TESTER_CHECKS).map(([k, label]) => `<li>${r.checklist && r.checklist[k] ? "✔" : "✘"} ${esc(label)}</li>`).join("");
+    const shot = r.screenshot && /^data:image\//.test(r.screenshot) ? `<a href="${esc(r.screenshot)}" target="_blank" rel="noopener"><img src="${esc(r.screenshot)}" alt="Screenshot" style="max-width:260px;border-radius:8px;display:block;margin:6px 0"></a>` : "";
+    return `<tr><td><b>${esc(r.game_id)}</b><div class="mut">von ${esc(r.tester_name || "?")} · Gerät ${esc(r.device)} · ${dt(r.created_at)}</div></td>
+      <td><ul style="margin:4px 0;padding-left:18px">${checks}</ul>${r.message ? `<div>${esc(r.message)}</div>` : ""}${shot}
+      ${r.has_error ? `<span class="tag t-bad">Fehler gemeldet</span>` : `<span class="tag t-ok">ohne Fehler</span>`}</td>
+      <td><form method="post" action="/moki/act">${`<input type="hidden" name="id" value="${esc(r.id)}"><input type="hidden" name="act" value="report_ok">`}<button>Funktioniert (bestätigen)</button></form>
+      <form method="post" action="/moki/act"><input type="hidden" name="id" value="${esc(r.id)}"><input type="hidden" name="act" value="report_bad"><button class="sec">Nicht bestätigt</button></form></td></tr>`;
+  }).join("");
+  const confirmed = (o.confirmed || []).map((g) => `<tr><td><b>${esc(g)}</b></td><td><form method="post" action="/moki/act"><input type="hidden" name="id" value="${esc(g)}"><input type="hidden" name="act" value="unconfirm"><button class="sec">Als ungetestet zurücksetzen</button></form></td></tr>`).join("");
+  const claims = (o.claims || []).map((c) => `<tr><td><b>${esc(c.game_id)}</b></td><td class="mut">Gerät ${esc(c.device)} prüft gerade</td><td><form method="post" action="/moki/act"><input type="hidden" name="id" value="${esc(c.game_id)}"><input type="hidden" name="act" value="release"><button class="sec">Prüfung freigeben</button></form></td></tr>`).join("");
+  const none = (t) => `<tr><td colspan="3" class="mut">${t}</td></tr>`;
+  return `<div class="card" style="border-color:var(--acc)"><h2>Tester-Bewerbungen (${(o.applications || []).length})</h2><div class="scroll"><table><tbody>${apps || none("Keine offenen Bewerbungen.")}</tbody></table></div></div>
+    <div class="card"><h2>Meldungen zur Prüfung (${(o.reports || []).length})</h2><div class="scroll"><table><tbody>${reports || none("Keine offenen Meldungen.")}</tbody></table></div></div>
+    <div class="card"><h2>Tester (${(o.testers || []).length})</h2><div class="scroll"><table><tbody>${testers || none("Noch keine Tester.")}</tbody></table></div></div>
+    <div class="card"><h2>Bestätigt getestet (${(o.confirmed || []).length})</h2><div class="scroll"><table><tbody>${confirmed || none("Noch kein Spiel bestätigt.")}</tbody></table></div></div>
+    <div class="card"><h2>Gerade in Prüfung (${(o.claims || []).length})</h2><div class="scroll"><table><tbody>${claims || none("Keine laufenden Prüfungen.")}</tbody></table></div></div>`;
 }
 
 // ---------- Sperrseiten im Weltraum-Design ----------
@@ -432,7 +463,9 @@ const server = http.createServer(async (req, res) => {
     if (p === "/moki/act" && req.method === "POST") {
       if (!admin) return redirect(res, "/");
       const f = await readForm(req);
-      if (!/^[0-9a-f-]{36}$/.test(f.id || "")) return redirect(res, "/moki");
+      const isUuid = /^[0-9a-f-]{36}$/.test(f.id || "");
+      const idOk = isUuid || /^[a-z0-9-]{1,60}$/i.test(f.id || "") || /^[0-9a-f]{8}$/.test(f.id || "");
+      if (!idOk) return redirect(res, "/moki");
       let msg = "";
       if (f.act === "delete") { await rpc("moki_admin_delete", { p_admin: DB_SECRET, p_id: f.id }); msg = "Spiel gelöscht."; }
       else if (f.act === "unpublish") { await rpc("moki_admin_unpublish", { p_admin: DB_SECRET, p_id: f.id }); msg = "Spiel zurückgezogen."; }
@@ -441,6 +474,17 @@ const server = http.createServer(async (req, res) => {
         msg = "Gerät gesperrt (" + ((r && r.changed) || 0) + " Spiele " + (f.del === "1" ? "gelöscht" : "zurückgezogen") + ").";
       }
       else if (f.act === "unban") { await rpc("moki_admin_unban", { p_admin: DB_SECRET, p_id: f.id }); msg = "Gerät entsperrt."; }
+      else if (f.act === "app_accept" || f.act === "app_reject") {
+        await rpc("moki_admin_decide_application", { p_admin: DB_SECRET, p_id: f.id, p_accept: f.act === "app_accept", p_note: "" });
+        msg = f.act === "app_accept" ? "Bewerbung angenommen." : "Bewerbung abgelehnt (Gerät 48 Stunden gesperrt).";
+      }
+      else if (f.act === "revoke") { await rpc("moki_admin_revoke_tester", { p_admin: DB_SECRET, p_hash_prefix: f.id }); msg = "Tester-Rang entzogen."; }
+      else if (f.act === "report_ok" || f.act === "report_bad") {
+        await rpc("moki_admin_decide_report", { p_admin: DB_SECRET, p_id: f.id, p_ok: f.act === "report_ok", p_note: "" });
+        msg = f.act === "report_ok" ? "Spiel als funktioniert bestätigt." : "Meldung abgelehnt, das Spiel kann wieder geprüft werden.";
+      }
+      else if (f.act === "unconfirm") { await rpc("moki_admin_unconfirm", { p_admin: DB_SECRET, p_game: f.id }); msg = "Spiel ist wieder ungetestet."; }
+      else if (f.act === "release") { await rpc("moki_admin_release_claim", { p_admin: DB_SECRET, p_game: f.id }); msg = "Prüfung freigegeben."; }
       return redirect(res, "/moki?msg=" + encodeURIComponent(msg));
     }
 
