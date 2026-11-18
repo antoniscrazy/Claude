@@ -444,7 +444,7 @@ function openPlayer(id) {
   if (!html) { if (location.hash.startsWith("#/play/")) history.replaceState(null, "", location.pathname + location.search); return; }
   closePlayer(true);
   const el = document.createElement("div"); el.id = "player"; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", "Spiel");
-  el.innerHTML = `<iframe title="Spiel" allow="autoplay; fullscreen; gamepad; pointer-lock"></iframe>`;
+  el.innerHTML = `<iframe title="Spiel" allow="autoplay *; fullscreen *; gamepad *; pointer-lock *; clipboard-write *"></iframe>`;
   el.querySelector("iframe").srcdoc = html;
   document.body.appendChild(el);
   document.documentElement.classList.add("player-open");

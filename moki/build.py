@@ -2,7 +2,11 @@
 import base64,re,json,os
 _L={}
 for _f in sorted(os.listdir("launchers")):
-    if _f.endswith(".html"): _L[_f[:-5]]=open(os.path.join("launchers",_f),encoding="utf-8").read()
+    if _f.endswith(".html"):
+        _h=open(os.path.join("launchers",_f),encoding="utf-8").read()
+        # Eingebettete iframes bekommen alle Berechtigungen (sonst "gamepad is disallowed by permissions policy")
+        _h=re.sub(r'<iframe\b[^>]*>',lambda m: re.sub(r' allow="[^"]*"','',m.group(0)).replace('<iframe','<iframe allow="autoplay *; fullscreen *; gamepad *; pointer-lock *; clipboard-write *"',1),_h)
+        _L[_f[:-5]]=_h
 _LJ=json.dumps(_L,ensure_ascii=False).replace("<","\\u003c").replace(">","\\u003e").replace("\u2028","\\u2028").replace("\u2029","\\u2029")
 r=lambda f:open(f,encoding="utf-8").read()
 h=r("index.html").replace('<link rel="stylesheet" href="style.css">',"<style>\n"+r("style.css")+"\n</style>")
@@ -10,10 +14,6 @@ g=r("games.js")
 g=re.sub(r'"([\w-]+\.jpg)"',lambda m:'"data:image/jpeg;base64,'+base64.b64encode(open(m.group(1),"rb").read()).decode()+'"',g)
 h=h.replace('<script src="games.js"></script>',"<script>\n"+g+"\n</script>").replace('<script src="app.js"></script>',"<script>window.MOKI_LAUNCH="+_LJ+";</script>\n<script>\n"+re.sub(r'"(trailer-poster\.jpg)"',lambda m:'"data:image/jpeg;base64,'+base64.b64encode(open(m.group(1),"rb").read()).decode()+'"',r("app.js"))+"\n</script>").replace('<script src="intro.js"></script>',"<script>\n"+r("intro.js")+"\n</script>").replace('<script src="creations.js"></script>',"<script>\n"+r("creations.js")+"\n</script>").replace('<script src="config.js"></script>',"<script>\n"+r("config.js")+"\nwindow.MOKI_ENGINE = "+json.dumps(r("motifs.js")+"\n"+r("engine.js")).replace("<","\\u003c")+";\n</script>")
 i=h.rindex("</body>");h=h[:i]+"<script>\n"+r("nf.js")+"\n</script>\n"+h[i:]
-_L={}
-for _f in sorted(os.listdir("launchers")):
-    if _f.endswith(".html"): _L[_f[:-5]]=open(os.path.join("launchers",_f),encoding="utf-8").read()
-_lj=json.dumps(_L,ensure_ascii=False).replace("<","\\u003c").replace(">","\\u003e").replace("\u2028","\\u2028").replace("\u2029","\\u2029")
 open("moki.html","w",encoding="utf-8").write(h)
 
 
