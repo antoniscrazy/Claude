@@ -26,7 +26,7 @@ window.MOKI_GAMES = [
   {
     id: "ragdoll-hit",
     title: "Ragdoll Hit",
-    url: "https://beautiful-mochi-ba28f3.netlify.app",
+    url: "play/ragdoll-hit.html",
     category: "Kampf & Schießen",
     image: "ragdoll-hit.jpg",
     emoji: "🪓",
@@ -37,7 +37,7 @@ window.MOKI_GAMES = [
   {
     id: "hills-of-steel",
     title: "Hills of Steel",
-    url: "https://strong-basbousa-d83044.netlify.app",
+    url: "play/hills-of-steel.html",
     category: "Fahren",
     image: "hills-of-steel.jpg",
     emoji: "🪖",
@@ -59,7 +59,7 @@ window.MOKI_GAMES = [
   {
     id: "level-devil",
     title: "Level Devil",
-    url: "https://imaginative-donut-66def2.netlify.app",
+    url: "play/level-devil.html",
     category: "Geschicklichkeit",
     image: "level-devil.jpg",
     emoji: "😈",
@@ -70,7 +70,7 @@ window.MOKI_GAMES = [
   {
     id: "fruit-ninja",
     title: "Fruit Ninja",
-    url: "https://sparkling-druid-1ff914.netlify.app",
+    url: "play/fruit-ninja.html",
     category: "Geschicklichkeit",
     image: "fruit-ninja.jpg",
     emoji: "🍉",
@@ -81,7 +81,7 @@ window.MOKI_GAMES = [
   {
     id: "slice-master",
     title: "Slice Master",
-    url: "https://warm-alfajores-0ead0a.netlify.app",
+    url: "play/slice-master.html",
     category: "Geschicklichkeit",
     image: "slice-master.jpg",
     wide: true,
@@ -107,7 +107,7 @@ window.MOKI_GAMES = [
   {
     id: "subway-surfers",
     title: "Subway Surfers",
-    url: "https://animated-phoenix-4f21a5.netlify.app",
+    url: "play/subway-surfers.html",
     category: "Geschicklichkeit",
     image: "subway-surfers.jpg",
     emoji: "🛹",
@@ -118,7 +118,7 @@ window.MOKI_GAMES = [
   {
     id: "kick-the-buddy",
     title: "Kick The Buddy",
-    url: "https://adorable-vacherin-7971d2.netlify.app",
+    url: "play/kick-the-buddy.html",
     category: "Simulation",
     image: "kick-the-buddy.jpg",
     emoji: "🥊",
@@ -129,7 +129,7 @@ window.MOKI_GAMES = [
   {
     id: "mad-skills-motocross-2",
     title: "Mad Skills Motocross 2",
-    url: "https://extraordinary-swan-0b9692.netlify.app",
+    url: "play/mad-skills-motocross-2.html",
     category: "Fahren",
     image: "mad-skills-motocross-2.jpg",
     emoji: "🏍️",
@@ -140,7 +140,7 @@ window.MOKI_GAMES = [
   {
     id: "drift-hunters",
     title: "Drift Hunters",
-    url: "https://majestic-conkies-554239.netlify.app",
+    url: "play/drift-hunters.html",
     category: "Fahren",
     image: "drift-hunters.jpg",
     wide: true,
@@ -152,7 +152,7 @@ window.MOKI_GAMES = [
   {
     id: "zombie-rush",
     title: "Zombie Rush",
-    url: "https://papaya-gingersnap-c86667.netlify.app",
+    url: "play/zombie-rush.html",
     category: "Kampf & Schießen",
     image: "zombie-rush.jpg",
     emoji: "🧟",
@@ -163,7 +163,7 @@ window.MOKI_GAMES = [
   {
     id: "stickman-gta",
     title: "Stickman GTA City",
-    url: "https://zingy-boba-cfd1ee.netlify.app",
+    url: "play/stickman-gta.html",
     category: "Abenteuer",
     image: "stickman-gta.jpg",
     emoji: "🚗",
@@ -174,7 +174,7 @@ window.MOKI_GAMES = [
   {
     id: "war-of-sticks",
     title: "War of Sticks",
-    url: "https://tourmaline-cuchufli-2c8f47.netlify.app",
+    url: "play/war-of-sticks.html",
     category: "Strategie",
     image: "war-of-sticks.jpg",
     emoji: "⚔️",
@@ -185,7 +185,7 @@ window.MOKI_GAMES = [
   {
     id: "johnny-trigger",
     title: "Johnny Trigger",
-    url: "https://joyful-creponne-358186.netlify.app",
+    url: "play/johnny-trigger.html",
     category: "Kampf & Schießen",
     image: "johnny-trigger.jpg",
     emoji: "🎯",
@@ -196,7 +196,7 @@ window.MOKI_GAMES = [
   {
     id: "rogue-sergeant",
     title: "Rogue Sergeant",
-    url: "https://hilarious-wisp-aa726f.netlify.app",
+    url: "play/rogue-sergeant.html",
     category: "Kampf & Schießen",
     image: "rogue-sergeant.jpg",
     emoji: "🪖",
@@ -207,7 +207,7 @@ window.MOKI_GAMES = [
   {
     id: "ultimate-car-driving",
     title: "Ultimate Car Driving",
-    url: "https://verdant-seahorse-941e1c.netlify.app",
+    url: "play/ultimate-car-driving.html",
     category: "Fahren",
     image: "ultimate-car-driving.jpg",
     emoji: "🚘",
@@ -218,7 +218,7 @@ window.MOKI_GAMES = [
   {
     id: "tank-stars",
     title: "Tank Stars",
-    url: "https://musical-pastelito-cd2ae0.netlify.app",
+    url: "play/tank-stars.html",
     category: "Kampf & Schießen",
     image: "tank-stars.jpg",
     wide: true,
@@ -230,7 +230,7 @@ window.MOKI_GAMES = [
   {
     id: "open-panzer-front",
     title: "Open Panzer Front",
-    url: "https://hilarious-meringue-cdb547.netlify.app",
+    url: "play/open-panzer-front.html",
     category: "Kampf & Schießen",
     image: "open-panzer-front.jpg",
     emoji: "🪖",
@@ -241,7 +241,7 @@ window.MOKI_GAMES = [
   {
     id: "neon-swing",
     title: "Neon Swing",
-    url: "https://guileless-gelato-033ea9.netlify.app",
+    url: "play/neon-swing.html",
     category: "Geschicklichkeit",
     image: "neon-swing.jpg",
     emoji: "⚡",
@@ -253,7 +253,7 @@ window.MOKI_GAMES = [
   {
     id: "golf-orbit",
     title: "Golf Orbit",
-    url: "https://reliable-fudge-a0e83d.netlify.app",
+    url: "play/golf-orbit.html",
     category: "Sport",
     image: "golf-orbit.jpg",
     wide: true,
@@ -266,7 +266,7 @@ window.MOKI_GAMES = [
   {
     id: "bowmasters",
     title: "Bowmasters",
-    url: "https://cool-bunny-e1dc46.netlify.app",
+    url: "play/bowmasters.html",
     category: "Kampf & Schießen",
     image: "bowmasters.jpg",
     wide: true,
@@ -279,7 +279,7 @@ window.MOKI_GAMES = [
   {
     id: "crossy-road",
     title: "Crossy Road",
-    url: "https://curious-beijinho-be5348.netlify.app",
+    url: "play/crossy-road.html",
     category: "Geschicklichkeit",
     image: "crossy-road.jpg",
     emoji: "🐔",
@@ -291,7 +291,7 @@ window.MOKI_GAMES = [
   {
     id: "cookie-clicker",
     title: "Cookie Clicker",
-    url: "https://candid-banoffee-c39448.netlify.app",
+    url: "play/cookie-clicker.html",
     category: "Simulation",
     image: "cookie-clicker.jpg",
     emoji: "🍪",
@@ -303,7 +303,7 @@ window.MOKI_GAMES = [
   {
     id: "solar-smash",
     title: "Solar Smash",
-    url: "https://bejewelled-bombolone-9a36cd.netlify.app",
+    url: "play/solar-smash.html",
     category: "Simulation",
     image: "solar-smash.jpg",
     emoji: "🌍",
@@ -315,7 +315,7 @@ window.MOKI_GAMES = [
   {
     id: "stick-war-legacy",
     title: "Stick War Legacy",
-    url: "https://peppy-donut-3fac2d.netlify.app",
+    url: "play/stick-war-legacy.html",
     category: "Strategie",
     image: "stick-war-legacy.jpg",
     wide: true,
@@ -328,7 +328,7 @@ window.MOKI_GAMES = [
   {
     id: "count-control-legends",
     title: "Count Control Legends",
-    url: "https://warm-concha-b50fcb.netlify.app",
+    url: "play/count-control-legends.html",
     category: "Geschicklichkeit",
     image: "count-control-legends.jpg",
     emoji: "🔢",
@@ -340,7 +340,7 @@ window.MOKI_GAMES = [
   {
     id: "eggy-car",
     title: "Eggy Car",
-    url: "https://jovial-nasturtium-a88a4c.netlify.app",
+    url: "play/eggy-car.html",
     category: "Fahren",
     image: "eggy-car.jpg",
     emoji: "🥚",
@@ -364,7 +364,7 @@ window.MOKI_GAMES = [
   {
     id: "harvest-simulator",
     title: "Harvest Simulator",
-    url: "https://dapper-pika-23b279.netlify.app",
+    url: "play/harvest-simulator.html",
     category: "Simulation",
     image: "harvest-simulator.jpg",
     emoji: "🌾",
@@ -388,7 +388,7 @@ window.MOKI_GAMES = [
   {
     id: "doodle-jump",
     title: "Doodle Jump",
-    url: "https://effortless-cat-739e33.netlify.app",
+    url: "play/doodle-jump.html",
     category: "Geschicklichkeit",
     image: "doodle-jump.jpg",
     emoji: "🦘",
@@ -412,7 +412,7 @@ window.MOKI_GAMES = [
   {
     id: "block-blast",
     title: "Block Blast",
-    url: "https://rad-cucurucho-e9fe35.netlify.app",
+    url: "play/block-blast.html",
     category: "Strategie",
     image: "block-blast.jpg",
     emoji: "🧱",
@@ -424,7 +424,7 @@ window.MOKI_GAMES = [
   {
     id: "stickman-hook",
     title: "Stickman Hook",
-    url: "https://whimsical-halva-a0947e.netlify.app",
+    url: "play/stickman-hook.html",
     category: "Geschicklichkeit",
     image: "stickman-hook.jpg",
     emoji: "🪢",
@@ -436,7 +436,7 @@ window.MOKI_GAMES = [
   {
     id: "flappy-bird",
     title: "Flappy Bird",
-    url: "https://elegant-haupia-ca12cc.netlify.app",
+    url: "play/flappy-bird.html",
     category: "Geschicklichkeit",
     image: "flappy-bird.jpg",
     emoji: "🐤",
@@ -448,7 +448,7 @@ window.MOKI_GAMES = [
   {
     id: "retro-bowl",
     title: "Retro Bowl",
-    url: "https://leafy-horse-51c752.netlify.app",
+    url: "play/retro-bowl.html",
     category: "Sport",
     image: "retro-bowl.jpg",
     emoji: "🏈",
@@ -460,7 +460,7 @@ window.MOKI_GAMES = [
   {
     id: "idle-restaurants",
     title: "Idle Restaurants",
-    url: "https://fancy-marzipan-d45c81.netlify.app",
+    url: "play/idle-restaurants.html",
     category: "Simulation",
     image: "idle-restaurants.jpg",
     wide: true,
@@ -473,7 +473,7 @@ window.MOKI_GAMES = [
   {
     id: "airplane-manager",
     title: "Airplane Manager",
-    url: "https://fanciful-blini-ea6ec0.netlify.app",
+    url: "play/airplane-manager.html",
     category: "Simulation",
     image: "airplane-manager.jpg",
     emoji: "✈️",
@@ -485,7 +485,7 @@ window.MOKI_GAMES = [
   {
     id: "backrooms-recovery",
     title: "Backrooms Recovery",
-    url: "https://candid-heliotrope-03a4ff.netlify.app",
+    url: "play/backrooms-recovery.html",
     category: "Abenteuer",
     image: "backrooms-recovery.jpg",
     emoji: "📺",
@@ -497,7 +497,7 @@ window.MOKI_GAMES = [
   {
     id: "papas-burgeria",
     title: "Papa's Burgeria",
-    url: "https://coruscating-choux-ab10fc.netlify.app",
+    url: "play/papas-burgeria.html",
     category: "Simulation",
     image: "papas-burgeria.jpg",
     emoji: "🍔",
@@ -509,7 +509,7 @@ window.MOKI_GAMES = [
   {
     id: "red-ball-4",
     title: "Red Ball 4",
-    url: "https://aesthetic-kataifi-56545f.netlify.app",
+    url: "play/red-ball-4.html",
     category: "Geschicklichkeit",
     image: "red-ball-4.jpg",
     emoji: "🔴",
@@ -521,7 +521,7 @@ window.MOKI_GAMES = [
   {
     id: "stick-rush",
     title: "Stick Rush",
-    url: "https://shimmering-zuccutto-6b0b8e.netlify.app",
+    url: "play/stick-rush.html",
     category: "Kampf & Schießen",
     image: "stick-rush.jpg",
     emoji: "🔫",
@@ -533,7 +533,7 @@ window.MOKI_GAMES = [
   {
     id: "smash-it",
     title: "Smash It",
-    url: "https://serene-paprenjak-4157e9.netlify.app",
+    url: "play/smash-it.html",
     category: "Simulation",
     image: "smash-it.jpg",
     emoji: "💥",
@@ -545,7 +545,7 @@ window.MOKI_GAMES = [
   {
     id: "tiny-towers",
     title: "Tiny Towers",
-    url: "https://exquisite-clafoutis-ca2c3a.netlify.app",
+    url: "play/tiny-towers.html",
     category: "Strategie",
     image: "tiny-towers.jpg",
     emoji: "🏰",
@@ -557,7 +557,7 @@ window.MOKI_GAMES = [
   {
     id: "penguin-diner",
     title: "Penguin Diner",
-    url: "https://playful-cannoli-ce6045.netlify.app",
+    url: "play/penguin-diner.html",
     category: "Simulation",
     image: "penguin-diner.jpg",
     emoji: "🐧",
@@ -569,7 +569,7 @@ window.MOKI_GAMES = [
   {
     id: "mob-control",
     title: "Mob Control",
-    url: "https://glistening-biscochitos-6ec445.netlify.app",
+    url: "play/mob-control.html",
     category: "Strategie",
     image: "mob-control.jpg",
     wide: true,
@@ -582,7 +582,7 @@ window.MOKI_GAMES = [
   {
     id: "head-soccer",
     title: "Head Soccer",
-    url: "https://starlit-druid-dcf41d.netlify.app",
+    url: "play/head-soccer.html",
     category: "Sport",
     image: "head-soccer.jpg",
     wide: true,
@@ -595,7 +595,7 @@ window.MOKI_GAMES = [
   {
     id: "stick-defenders",
     title: "Stick Defenders",
-    url: "https://gorgeous-faun-4ca736.netlify.app",
+    url: "play/stick-defenders.html",
     category: "Kampf & Schießen",
     image: "stick-defenders.jpg",
     emoji: "🔫",
@@ -607,7 +607,7 @@ window.MOKI_GAMES = [
   {
     id: "ragdoll-chaos",
     title: "Ragdoll Chaos",
-    url: "https://resilient-pudding-bb7e4a.netlify.app",
+    url: "play/ragdoll-chaos.html",
     category: "Simulation",
     image: "ragdoll-chaos.jpg",
     emoji: "🤸",
@@ -631,7 +631,7 @@ window.MOKI_GAMES = [
   {
     id: "ping-pong-go",
     title: "Ping Pong Go!",
-    url: "https://exquisite-caramel-d34b0e.netlify.app",
+    url: "play/ping-pong-go.html",
     category: "Sport",
     image: "ping-pong-go.jpg",
     emoji: "🏓",
@@ -643,7 +643,7 @@ window.MOKI_GAMES = [
   {
     id: "murder",
     title: "Murder",
-    url: "https://superb-taiyaki-cff38a.netlify.app",
+    url: "play/murder.html",
     category: "Abenteuer",
     image: "murder.jpg",
     emoji: "👑",
@@ -655,7 +655,7 @@ window.MOKI_GAMES = [
   {
     id: "blumgi-slime",
     title: "Blumgi Slime",
-    url: "https://spontaneous-croquembouche-afe750.netlify.app",
+    url: "play/blumgi-slime.html",
     category: "Geschicklichkeit",
     image: "blumgi-slime.jpg",
     emoji: "🟢",
@@ -667,7 +667,7 @@ window.MOKI_GAMES = [
   {
     id: "stickman-battle",
     title: "Stickman Battle",
-    url: "https://glittery-llama-3441e7.netlify.app",
+    url: "play/stickman-battle.html",
     category: "Kampf & Schießen",
     image: "stickman-battle.jpg",
     emoji: "⚔️",
@@ -679,7 +679,7 @@ window.MOKI_GAMES = [
   {
     id: "longcat",
     title: "Longcat",
-    url: "https://iridescent-malabi-14e27b.netlify.app",
+    url: "play/longcat.html",
     category: "Abenteuer",
     image: "longcat.jpg",
     emoji: "🐱",
@@ -691,7 +691,7 @@ window.MOKI_GAMES = [
   {
     id: "ovo-classic",
     title: "OvO Classic",
-    url: "https://magical-cobbler-f45d25.netlify.app",
+    url: "play/ovo-classic.html",
     category: "Geschicklichkeit",
     image: "ovo-classic.jpg",
     emoji: "🏃",
@@ -703,7 +703,7 @@ window.MOKI_GAMES = [
   {
     id: "beach-boxing-simulator",
     title: "Beach Boxing Simulator",
-    url: "https://silver-mousse-0052e4.netlify.app",
+    url: "play/beach-boxing-simulator.html",
     category: "Simulation",
     image: "beach-boxing-simulator.jpg",
     emoji: "🥊",
@@ -715,7 +715,7 @@ window.MOKI_GAMES = [
   {
     id: "idle-mining-empire",
     title: "Idle Mining Empire",
-    url: "https://statuesque-rolypoly-81a7bc.netlify.app",
+    url: "play/idle-mining-empire.html",
     category: "Simulation",
     image: "idle-mining-empire.jpg",
     wide: true,
@@ -728,7 +728,7 @@ window.MOKI_GAMES = [
   {
     id: "car-circle",
     title: "Car Circle",
-    url: "https://starlit-dragon-20074a.netlify.app",
+    url: "play/car-circle.html",
     category: "Fahren",
     image: "car-circle.jpg",
     emoji: "🚗",
@@ -740,7 +740,7 @@ window.MOKI_GAMES = [
   {
     id: "pilot-life",
     title: "Pilot Life",
-    url: "https://chipper-faun-27923c.netlify.app",
+    url: "play/pilot-life.html",
     category: "Simulation",
     image: "pilot-life.jpg",
     emoji: "✈️",
@@ -752,7 +752,7 @@ window.MOKI_GAMES = [
   {
     id: "kiwi-clicker",
     title: "Kiwi Clicker",
-    url: "https://resplendent-strudel-efd4c0.netlify.app",
+    url: "play/kiwi-clicker.html",
     category: "Simulation",
     image: "kiwi-clicker.jpg",
     emoji: "🥝",
@@ -764,7 +764,7 @@ window.MOKI_GAMES = [
   {
     id: "plonky",
     title: "Plonky",
-    url: "https://elaborate-praline-70cf78.netlify.app",
+    url: "play/plonky.html",
     category: "Geschicklichkeit",
     image: "plonky.jpg",
     emoji: "🤸",
@@ -788,7 +788,7 @@ window.MOKI_GAMES = [
   {
     id: "american-football-real",
     title: "American Football Real",
-    url: "https://endearing-pixie-4cfdca.netlify.app",
+    url: "play/american-football-real.html",
     category: "Sport",
     image: "american-football-real.jpg",
     emoji: "🏈",
@@ -800,7 +800,7 @@ window.MOKI_GAMES = [
   {
     id: "capitalist-bus-driver",
     title: "Capitalist Bus Driver",
-    url: "https://celadon-paprenjak-c6cf40.netlify.app",
+    url: "play/capitalist-bus-driver.html",
     category: "Simulation",
     image: "capitalist-bus-driver.jpg",
     emoji: "🚌",
@@ -812,7 +812,7 @@ window.MOKI_GAMES = [
   {
     id: "paperio-2",
     title: "Paper.io 2",
-    url: "https://kaleidoscopic-palmier-809b51.netlify.app",
+    url: "play/paperio-2.html",
     category: "Strategie",
     image: "paperio-2.jpg",
     emoji: "🍉",
@@ -824,7 +824,7 @@ window.MOKI_GAMES = [
   {
     id: "idle-startup-tycoon",
     title: "Idle Startup Tycoon",
-    url: "https://fabulous-dieffenbachia-cf4a62.netlify.app",
+    url: "play/idle-startup-tycoon.html",
     category: "Simulation",
     image: "idle-startup-tycoon.jpg",
     wide: true,
