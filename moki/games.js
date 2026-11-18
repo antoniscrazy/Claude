@@ -823,6 +823,18 @@ window.MOKI_GAMES = [
     added: "2026-11-18",
     featured: false
   },
+  {
+    id: "perfect-landing",
+    title: "Perfect Landing",
+    url: "#/play/perfect-landing",
+    category: "Simulation",
+    image: "perfect-landing.jpg",
+    emoji: "✈️",
+    colors: ["#ffb300", "#c62828"],
+    description: "Lande das Flugzeug so sanft wie möglich auf der Piste.",
+    added: "2026-11-18",
+    featured: false
+  }
 ];
 
 // Weitere Seiten (erscheinen als eigener Bereich unter den Spielen)
