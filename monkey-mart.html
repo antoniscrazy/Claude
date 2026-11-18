@@ -32,7 +32,7 @@ fetch(BASE + "index.html")
   .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
   .then(html => {
     // Portal-Datenabrufe (poki.io) blockieren: Beacons und fetch/XHR tun nichts.
-const POKIBLOCK = '<script>(function(){var P=/poki\\.io/;var f=window.fetch;window.fetch=function(r,o){var u=(r&&r.url)||String(r);if(P.test(u))return Promise.resolve(new Response("",{status:204}));return f.call(this,r,o)};if(navigator.sendBeacon)navigator.sendBeacon=function(){return true};var oo=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(m,u){this._pb=P.test(String(u));return oo.apply(this,arguments)};var ss=XMLHttpRequest.prototype.send;XMLHttpRequest.prototype.send=function(){if(this._pb)return;return ss.apply(this,arguments)};})();<\/script>';
+const POKIBLOCK = '<script>(function(){var P=/poki\\.io/;var f=window.fetch;window.fetch=function(r,o){var u=(r&&r.url)||String(r);if(P.test(u))return Promise.resolve(new Response("",{status:204}));return f.call(this,r,o)};if(navigator.sendBeacon)navigator.sendBeacon=function(){return true};var oo=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(m,u){this._pb=P.test(String(u));return oo.apply(this,arguments)};var ss=XMLHttpRequest.prototype.send;XMLHttpRequest.prototype.send=function(){if(this._pb)return;return ss.apply(this,arguments)};Navigator.prototype.getGamepads=function(){return []};})();<\/script>';
 html = html.replace("<head>", '<head><base href="' + BASE + '">' + SHIM + POKIBLOCK);
     document.getElementById("game").srcdoc = html;
   })
