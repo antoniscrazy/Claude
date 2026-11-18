@@ -28,11 +28,16 @@ async function getText(u) { const r = await fetch(u); if (!r.ok) throw new Error
     const linkRe = /<link\b[^>]*>/gi, cssRe = /\brel="stylesheet"/i, hrefRe = /\bhref="([^"]+)"/i;
     const srcs = [...html.matchAll(scriptRe)].map(m => m[2]).filter(isLocal);
     const hrefs = [...html.matchAll(linkRe)].filter(m => cssRe.test(m[0])).map(m => (m[0].match(hrefRe) || [])[1]).filter(x => x && isLocal(x));
-    const all = [...new Set([...srcs, ...hrefs])], texts = {}; let done = 0;
+    // Engine laedt ammo.wasm.js zur Laufzeit als <script src>; raw.githubusercontent liefert .js als text/plain (nosniff blockiert das). Deshalb einbetten.
+    const extra = ["files/assets/204170790/1/ammo.wasm.js"];
+    const all = [...new Set([...srcs, ...hrefs, ...extra])], texts = {}; let done = 0;
     await Promise.all(all.map(async s => { texts[s] = await getText(BASE + s.replace(/^\.\//, "")); pf.style.width = (++done / Math.max(1, all.length) * 80) + "%"; }));
     html = html.replace(scriptRe, (m, a, s, b) => (!isLocal(s) || texts[s] === undefined) ? m : "<script" + a + b + ">" + texts[s].replace(/<\/script/gi, "<\\/script") + "<\/script>");
     html = html.replace(linkRe, m => { if (!cssRe.test(m)) return m; const h = (m.match(hrefRe) || [])[1]; if (!h || !isLocal(h) || texts[h] === undefined) return m; return "<style>" + texts[h].replace(/<\/style/gi, "<\\/style") + "<\/style>"; });
-    const inject = '<base href="' + BASE + '"><script>' + GUARD + '<\/script>';
+    const lj = {}; for (const s of extra) if (texts[s] !== undefined) lj[s] = texts[s];
+    const PATCH = "(function(){var M=window.__LJ||{};function pick(v){var k=String(v);return Object.keys(M).filter(function(p){return k.indexOf(p)>=0})[0];}function inl(el,key){el.textContent=M[key];setTimeout(function(){el.dispatchEvent(new Event(\"load\"))},0);}var d=Object.getOwnPropertyDescriptor(HTMLScriptElement.prototype,\"src\");Object.defineProperty(HTMLScriptElement.prototype,\"src\",{get:d.get,set:function(v){var key=pick(v);if(key){inl(this,key);return;}return d.set.call(this,v)},configurable:true});var sa=Element.prototype.setAttribute;Element.prototype.setAttribute=function(n,v){if(this.tagName===\"SCRIPT\"&&String(n).toLowerCase()===\"src\"){var key=pick(v);if(key){inl(this,key);return;}}return sa.apply(this,arguments)};})();";
+    const ljTag = "<script>window.__LJ=" + JSON.stringify(lj).replace(/</g, "\\u003c") + ";<\/script><script>" + PATCH + "<\/script>";
+    const inject = '<base href="' + BASE + '"><script>' + GUARD + '<\/script>' + ljTag;
     html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, m => m + inject) : inject + html;
     pf.style.width = "95%";
     frame.onload = () => { document.getElementById("ld").remove(); };
