@@ -798,6 +798,29 @@ window.MOKI_GAMES = [
     description: "Baue dein eigenes Start-up auf: Stelle Mitarbeiter ein, entwickle Apps und werde zum Tech-Chef.",
     added: "2026-11-17",
     featured: false
+  },
+  {
+    id: "mad-stick",
+    title: "Mad Stick",
+    url: "#/play/mad-stick",
+    category: "Kampf & Schießen",
+    image: "mad-stick.jpg",
+    emoji: "🔫",
+    colors: ["#8fc8e8", "#3a3a52"],
+    description: "Ein Stickman mit Pistole in einer Stadt voller Gegner. Schieße dich durch die Level.",
+    added: "2026-11-18",
+    featured: false
+  },
+  {
+    id: "eparkour",
+    title: "Stickman Parkour 3",
+    url: "#/play/eparkour",
+    category: "Geschicklichkeit",
+    emoji: "🏃",
+    colors: ["#ff7a1a", "#5fd0ff"],
+    description: "Springe über Hindernisse und lava-Felder bis zur Ziellinie.",
+    added: "2026-11-18",
+    featured: false
   }
 ];
 
