@@ -26,7 +26,7 @@ window.MOKI_GAMES = [
   {
     id: "ragdoll-hit",
     title: "Ragdoll Hit",
-    url: "play/ragdoll-hit.html",
+    url: "#/play/ragdoll-hit",
     category: "Kampf & Schießen",
     image: "ragdoll-hit.jpg",
     emoji: "🪓",
@@ -37,7 +37,7 @@ window.MOKI_GAMES = [
   {
     id: "hills-of-steel",
     title: "Hills of Steel",
-    url: "play/hills-of-steel.html",
+    url: "#/play/hills-of-steel",
     category: "Fahren",
     image: "hills-of-steel.jpg",
     emoji: "🪖",
@@ -59,7 +59,7 @@ window.MOKI_GAMES = [
   {
     id: "level-devil",
     title: "Level Devil",
-    url: "play/level-devil.html",
+    url: "#/play/level-devil",
     category: "Geschicklichkeit",
     image: "level-devil.jpg",
     emoji: "😈",
@@ -70,7 +70,7 @@ window.MOKI_GAMES = [
   {
     id: "fruit-ninja",
     title: "Fruit Ninja",
-    url: "play/fruit-ninja.html",
+    url: "#/play/fruit-ninja",
     category: "Geschicklichkeit",
     image: "fruit-ninja.jpg",
     emoji: "🍉",
@@ -81,7 +81,7 @@ window.MOKI_GAMES = [
   {
     id: "slice-master",
     title: "Slice Master",
-    url: "play/slice-master.html",
+    url: "#/play/slice-master",
     category: "Geschicklichkeit",
     image: "slice-master.jpg",
     wide: true,
@@ -107,7 +107,7 @@ window.MOKI_GAMES = [
   {
     id: "subway-surfers",
     title: "Subway Surfers",
-    url: "play/subway-surfers.html",
+    url: "#/play/subway-surfers",
     category: "Geschicklichkeit",
     image: "subway-surfers.jpg",
     emoji: "🛹",
@@ -118,7 +118,7 @@ window.MOKI_GAMES = [
   {
     id: "kick-the-buddy",
     title: "Kick The Buddy",
-    url: "play/kick-the-buddy.html",
+    url: "#/play/kick-the-buddy",
     category: "Simulation",
     image: "kick-the-buddy.jpg",
     emoji: "🥊",
@@ -129,7 +129,7 @@ window.MOKI_GAMES = [
   {
     id: "mad-skills-motocross-2",
     title: "Mad Skills Motocross 2",
-    url: "play/mad-skills-motocross-2.html",
+    url: "#/play/mad-skills-motocross-2",
     category: "Fahren",
     image: "mad-skills-motocross-2.jpg",
     emoji: "🏍️",
@@ -140,7 +140,7 @@ window.MOKI_GAMES = [
   {
     id: "drift-hunters",
     title: "Drift Hunters",
-    url: "play/drift-hunters.html",
+    url: "#/play/drift-hunters",
     category: "Fahren",
     image: "drift-hunters.jpg",
     wide: true,
@@ -152,7 +152,7 @@ window.MOKI_GAMES = [
   {
     id: "zombie-rush",
     title: "Zombie Rush",
-    url: "play/zombie-rush.html",
+    url: "#/play/zombie-rush",
     category: "Kampf & Schießen",
     image: "zombie-rush.jpg",
     emoji: "🧟",
@@ -163,7 +163,7 @@ window.MOKI_GAMES = [
   {
     id: "stickman-gta",
     title: "Stickman GTA City",
-    url: "play/stickman-gta.html",
+    url: "#/play/stickman-gta",
     category: "Abenteuer",
     image: "stickman-gta.jpg",
     emoji: "🚗",
@@ -174,7 +174,7 @@ window.MOKI_GAMES = [
   {
     id: "war-of-sticks",
     title: "War of Sticks",
-    url: "play/war-of-sticks.html",
+    url: "#/play/war-of-sticks",
     category: "Strategie",
     image: "war-of-sticks.jpg",
     emoji: "⚔️",
@@ -185,7 +185,7 @@ window.MOKI_GAMES = [
   {
     id: "johnny-trigger",
     title: "Johnny Trigger",
-    url: "play/johnny-trigger.html",
+    url: "#/play/johnny-trigger",
     category: "Kampf & Schießen",
     image: "johnny-trigger.jpg",
     emoji: "🎯",
@@ -196,7 +196,7 @@ window.MOKI_GAMES = [
   {
     id: "rogue-sergeant",
     title: "Rogue Sergeant",
-    url: "play/rogue-sergeant.html",
+    url: "#/play/rogue-sergeant",
     category: "Kampf & Schießen",
     image: "rogue-sergeant.jpg",
     emoji: "🪖",
@@ -207,7 +207,7 @@ window.MOKI_GAMES = [
   {
     id: "ultimate-car-driving",
     title: "Ultimate Car Driving",
-    url: "play/ultimate-car-driving.html",
+    url: "#/play/ultimate-car-driving",
     category: "Fahren",
     image: "ultimate-car-driving.jpg",
     emoji: "🚘",
@@ -218,7 +218,7 @@ window.MOKI_GAMES = [
   {
     id: "tank-stars",
     title: "Tank Stars",
-    url: "play/tank-stars.html",
+    url: "#/play/tank-stars",
     category: "Kampf & Schießen",
     image: "tank-stars.jpg",
     wide: true,
@@ -230,7 +230,7 @@ window.MOKI_GAMES = [
   {
     id: "open-panzer-front",
     title: "Open Panzer Front",
-    url: "play/open-panzer-front.html",
+    url: "#/play/open-panzer-front",
     category: "Kampf & Schießen",
     image: "open-panzer-front.jpg",
     emoji: "🪖",
@@ -241,7 +241,7 @@ window.MOKI_GAMES = [
   {
     id: "neon-swing",
     title: "Neon Swing",
-    url: "play/neon-swing.html",
+    url: "#/play/neon-swing",
     category: "Geschicklichkeit",
     image: "neon-swing.jpg",
     emoji: "⚡",
@@ -253,7 +253,7 @@ window.MOKI_GAMES = [
   {
     id: "golf-orbit",
     title: "Golf Orbit",
-    url: "play/golf-orbit.html",
+    url: "#/play/golf-orbit",
     category: "Sport",
     image: "golf-orbit.jpg",
     wide: true,
@@ -266,7 +266,7 @@ window.MOKI_GAMES = [
   {
     id: "bowmasters",
     title: "Bowmasters",
-    url: "play/bowmasters.html",
+    url: "#/play/bowmasters",
     category: "Kampf & Schießen",
     image: "bowmasters.jpg",
     wide: true,
@@ -279,7 +279,7 @@ window.MOKI_GAMES = [
   {
     id: "crossy-road",
     title: "Crossy Road",
-    url: "play/crossy-road.html",
+    url: "#/play/crossy-road",
     category: "Geschicklichkeit",
     image: "crossy-road.jpg",
     emoji: "🐔",
@@ -291,7 +291,7 @@ window.MOKI_GAMES = [
   {
     id: "cookie-clicker",
     title: "Cookie Clicker",
-    url: "play/cookie-clicker.html",
+    url: "#/play/cookie-clicker",
     category: "Simulation",
     image: "cookie-clicker.jpg",
     emoji: "🍪",
@@ -303,7 +303,7 @@ window.MOKI_GAMES = [
   {
     id: "solar-smash",
     title: "Solar Smash",
-    url: "play/solar-smash.html",
+    url: "#/play/solar-smash",
     category: "Simulation",
     image: "solar-smash.jpg",
     emoji: "🌍",
@@ -315,7 +315,7 @@ window.MOKI_GAMES = [
   {
     id: "stick-war-legacy",
     title: "Stick War Legacy",
-    url: "play/stick-war-legacy.html",
+    url: "#/play/stick-war-legacy",
     category: "Strategie",
     image: "stick-war-legacy.jpg",
     wide: true,
@@ -328,7 +328,7 @@ window.MOKI_GAMES = [
   {
     id: "count-control-legends",
     title: "Count Control Legends",
-    url: "play/count-control-legends.html",
+    url: "#/play/count-control-legends",
     category: "Geschicklichkeit",
     image: "count-control-legends.jpg",
     emoji: "🔢",
@@ -340,7 +340,7 @@ window.MOKI_GAMES = [
   {
     id: "eggy-car",
     title: "Eggy Car",
-    url: "play/eggy-car.html",
+    url: "#/play/eggy-car",
     category: "Fahren",
     image: "eggy-car.jpg",
     emoji: "🥚",
@@ -364,7 +364,7 @@ window.MOKI_GAMES = [
   {
     id: "harvest-simulator",
     title: "Harvest Simulator",
-    url: "play/harvest-simulator.html",
+    url: "#/play/harvest-simulator",
     category: "Simulation",
     image: "harvest-simulator.jpg",
     emoji: "🌾",
@@ -388,7 +388,7 @@ window.MOKI_GAMES = [
   {
     id: "doodle-jump",
     title: "Doodle Jump",
-    url: "play/doodle-jump.html",
+    url: "#/play/doodle-jump",
     category: "Geschicklichkeit",
     image: "doodle-jump.jpg",
     emoji: "🦘",
@@ -412,7 +412,7 @@ window.MOKI_GAMES = [
   {
     id: "block-blast",
     title: "Block Blast",
-    url: "play/block-blast.html",
+    url: "#/play/block-blast",
     category: "Strategie",
     image: "block-blast.jpg",
     emoji: "🧱",
@@ -424,7 +424,7 @@ window.MOKI_GAMES = [
   {
     id: "stickman-hook",
     title: "Stickman Hook",
-    url: "play/stickman-hook.html",
+    url: "#/play/stickman-hook",
     category: "Geschicklichkeit",
     image: "stickman-hook.jpg",
     emoji: "🪢",
@@ -436,7 +436,7 @@ window.MOKI_GAMES = [
   {
     id: "flappy-bird",
     title: "Flappy Bird",
-    url: "play/flappy-bird.html",
+    url: "#/play/flappy-bird",
     category: "Geschicklichkeit",
     image: "flappy-bird.jpg",
     emoji: "🐤",
@@ -448,7 +448,7 @@ window.MOKI_GAMES = [
   {
     id: "retro-bowl",
     title: "Retro Bowl",
-    url: "play/retro-bowl.html",
+    url: "#/play/retro-bowl",
     category: "Sport",
     image: "retro-bowl.jpg",
     emoji: "🏈",
@@ -460,7 +460,7 @@ window.MOKI_GAMES = [
   {
     id: "idle-restaurants",
     title: "Idle Restaurants",
-    url: "play/idle-restaurants.html",
+    url: "#/play/idle-restaurants",
     category: "Simulation",
     image: "idle-restaurants.jpg",
     wide: true,
@@ -473,7 +473,7 @@ window.MOKI_GAMES = [
   {
     id: "airplane-manager",
     title: "Airplane Manager",
-    url: "play/airplane-manager.html",
+    url: "#/play/airplane-manager",
     category: "Simulation",
     image: "airplane-manager.jpg",
     emoji: "✈️",
@@ -485,7 +485,7 @@ window.MOKI_GAMES = [
   {
     id: "backrooms-recovery",
     title: "Backrooms Recovery",
-    url: "play/backrooms-recovery.html",
+    url: "#/play/backrooms-recovery",
     category: "Abenteuer",
     image: "backrooms-recovery.jpg",
     emoji: "📺",
@@ -497,7 +497,7 @@ window.MOKI_GAMES = [
   {
     id: "papas-burgeria",
     title: "Papa's Burgeria",
-    url: "play/papas-burgeria.html",
+    url: "#/play/papas-burgeria",
     category: "Simulation",
     image: "papas-burgeria.jpg",
     emoji: "🍔",
@@ -509,7 +509,7 @@ window.MOKI_GAMES = [
   {
     id: "red-ball-4",
     title: "Red Ball 4",
-    url: "play/red-ball-4.html",
+    url: "#/play/red-ball-4",
     category: "Geschicklichkeit",
     image: "red-ball-4.jpg",
     emoji: "🔴",
@@ -521,7 +521,7 @@ window.MOKI_GAMES = [
   {
     id: "stick-rush",
     title: "Stick Rush",
-    url: "play/stick-rush.html",
+    url: "#/play/stick-rush",
     category: "Kampf & Schießen",
     image: "stick-rush.jpg",
     emoji: "🔫",
@@ -533,7 +533,7 @@ window.MOKI_GAMES = [
   {
     id: "smash-it",
     title: "Smash It",
-    url: "play/smash-it.html",
+    url: "#/play/smash-it",
     category: "Simulation",
     image: "smash-it.jpg",
     emoji: "💥",
@@ -545,7 +545,7 @@ window.MOKI_GAMES = [
   {
     id: "tiny-towers",
     title: "Tiny Towers",
-    url: "play/tiny-towers.html",
+    url: "#/play/tiny-towers",
     category: "Strategie",
     image: "tiny-towers.jpg",
     emoji: "🏰",
@@ -557,7 +557,7 @@ window.MOKI_GAMES = [
   {
     id: "penguin-diner",
     title: "Penguin Diner",
-    url: "play/penguin-diner.html",
+    url: "#/play/penguin-diner",
     category: "Simulation",
     image: "penguin-diner.jpg",
     emoji: "🐧",
@@ -569,7 +569,7 @@ window.MOKI_GAMES = [
   {
     id: "mob-control",
     title: "Mob Control",
-    url: "play/mob-control.html",
+    url: "#/play/mob-control",
     category: "Strategie",
     image: "mob-control.jpg",
     wide: true,
@@ -582,7 +582,7 @@ window.MOKI_GAMES = [
   {
     id: "head-soccer",
     title: "Head Soccer",
-    url: "play/head-soccer.html",
+    url: "#/play/head-soccer",
     category: "Sport",
     image: "head-soccer.jpg",
     wide: true,
@@ -595,7 +595,7 @@ window.MOKI_GAMES = [
   {
     id: "stick-defenders",
     title: "Stick Defenders",
-    url: "play/stick-defenders.html",
+    url: "#/play/stick-defenders",
     category: "Kampf & Schießen",
     image: "stick-defenders.jpg",
     emoji: "🔫",
@@ -607,7 +607,7 @@ window.MOKI_GAMES = [
   {
     id: "ragdoll-chaos",
     title: "Ragdoll Chaos",
-    url: "play/ragdoll-chaos.html",
+    url: "#/play/ragdoll-chaos",
     category: "Simulation",
     image: "ragdoll-chaos.jpg",
     emoji: "🤸",
@@ -631,7 +631,7 @@ window.MOKI_GAMES = [
   {
     id: "ping-pong-go",
     title: "Ping Pong Go!",
-    url: "play/ping-pong-go.html",
+    url: "#/play/ping-pong-go",
     category: "Sport",
     image: "ping-pong-go.jpg",
     emoji: "🏓",
@@ -643,7 +643,7 @@ window.MOKI_GAMES = [
   {
     id: "murder",
     title: "Murder",
-    url: "play/murder.html",
+    url: "#/play/murder",
     category: "Abenteuer",
     image: "murder.jpg",
     emoji: "👑",
@@ -655,7 +655,7 @@ window.MOKI_GAMES = [
   {
     id: "blumgi-slime",
     title: "Blumgi Slime",
-    url: "play/blumgi-slime.html",
+    url: "#/play/blumgi-slime",
     category: "Geschicklichkeit",
     image: "blumgi-slime.jpg",
     emoji: "🟢",
@@ -667,7 +667,7 @@ window.MOKI_GAMES = [
   {
     id: "stickman-battle",
     title: "Stickman Battle",
-    url: "play/stickman-battle.html",
+    url: "#/play/stickman-battle",
     category: "Kampf & Schießen",
     image: "stickman-battle.jpg",
     emoji: "⚔️",
@@ -679,7 +679,7 @@ window.MOKI_GAMES = [
   {
     id: "longcat",
     title: "Longcat",
-    url: "play/longcat.html",
+    url: "#/play/longcat",
     category: "Abenteuer",
     image: "longcat.jpg",
     emoji: "🐱",
@@ -691,7 +691,7 @@ window.MOKI_GAMES = [
   {
     id: "ovo-classic",
     title: "OvO Classic",
-    url: "play/ovo-classic.html",
+    url: "#/play/ovo-classic",
     category: "Geschicklichkeit",
     image: "ovo-classic.jpg",
     emoji: "🏃",
@@ -703,7 +703,7 @@ window.MOKI_GAMES = [
   {
     id: "beach-boxing-simulator",
     title: "Beach Boxing Simulator",
-    url: "play/beach-boxing-simulator.html",
+    url: "#/play/beach-boxing-simulator",
     category: "Simulation",
     image: "beach-boxing-simulator.jpg",
     emoji: "🥊",
@@ -715,7 +715,7 @@ window.MOKI_GAMES = [
   {
     id: "idle-mining-empire",
     title: "Idle Mining Empire",
-    url: "play/idle-mining-empire.html",
+    url: "#/play/idle-mining-empire",
     category: "Simulation",
     image: "idle-mining-empire.jpg",
     wide: true,
@@ -728,7 +728,7 @@ window.MOKI_GAMES = [
   {
     id: "car-circle",
     title: "Car Circle",
-    url: "play/car-circle.html",
+    url: "#/play/car-circle",
     category: "Fahren",
     image: "car-circle.jpg",
     emoji: "🚗",
@@ -740,7 +740,7 @@ window.MOKI_GAMES = [
   {
     id: "pilot-life",
     title: "Pilot Life",
-    url: "play/pilot-life.html",
+    url: "#/play/pilot-life",
     category: "Simulation",
     image: "pilot-life.jpg",
     emoji: "✈️",
@@ -752,7 +752,7 @@ window.MOKI_GAMES = [
   {
     id: "kiwi-clicker",
     title: "Kiwi Clicker",
-    url: "play/kiwi-clicker.html",
+    url: "#/play/kiwi-clicker",
     category: "Simulation",
     image: "kiwi-clicker.jpg",
     emoji: "🥝",
@@ -764,7 +764,7 @@ window.MOKI_GAMES = [
   {
     id: "plonky",
     title: "Plonky",
-    url: "play/plonky.html",
+    url: "#/play/plonky",
     category: "Geschicklichkeit",
     image: "plonky.jpg",
     emoji: "🤸",
@@ -788,7 +788,7 @@ window.MOKI_GAMES = [
   {
     id: "american-football-real",
     title: "American Football Real",
-    url: "play/american-football-real.html",
+    url: "#/play/american-football-real",
     category: "Sport",
     image: "american-football-real.jpg",
     emoji: "🏈",
@@ -800,7 +800,7 @@ window.MOKI_GAMES = [
   {
     id: "capitalist-bus-driver",
     title: "Capitalist Bus Driver",
-    url: "play/capitalist-bus-driver.html",
+    url: "#/play/capitalist-bus-driver",
     category: "Simulation",
     image: "capitalist-bus-driver.jpg",
     emoji: "🚌",
@@ -812,7 +812,7 @@ window.MOKI_GAMES = [
   {
     id: "paperio-2",
     title: "Paper.io 2",
-    url: "play/paperio-2.html",
+    url: "#/play/paperio-2",
     category: "Strategie",
     image: "paperio-2.jpg",
     emoji: "🍉",
@@ -824,7 +824,7 @@ window.MOKI_GAMES = [
   {
     id: "idle-startup-tycoon",
     title: "Idle Startup Tycoon",
-    url: "play/idle-startup-tycoon.html",
+    url: "#/play/idle-startup-tycoon",
     category: "Simulation",
     image: "idle-startup-tycoon.jpg",
     wide: true,

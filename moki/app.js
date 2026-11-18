@@ -437,3 +437,29 @@ function showTrailerOverlay(byClick) {   // byClick: kam von einem Klick, dann g
 if (/[?&]trailer(=1)?(&|$)/.test(location.search) && !document.documentElement.classList.contains("intro-on")) showTrailerOverlay();
 
 home();   // erster Aufbau erst hier, damit alle Funktionen oben bereit sind
+
+// ---- Eingebaute Spiele (Launcher-Huellen): Hash "#/play/<id>" oeffnet das Spiel im Vollbild-Player ----
+function openPlayer(id) {
+  const html = (window.MOKI_LAUNCH || {})[id];
+  if (!html) { if (location.hash.startsWith("#/play/")) history.replaceState(null, "", location.pathname + location.search); return; }
+  closePlayer(true);
+  const el = document.createElement("div"); el.id = "player"; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", "Spiel");
+  el.innerHTML = `<iframe title="Spiel" allow="autoplay; fullscreen; gamepad; pointer-lock"></iframe>`;
+  el.querySelector("iframe").srcdoc = html;
+  document.body.appendChild(el);
+  document.documentElement.classList.add("player-open");
+}
+function closePlayer(silent) {
+  const el = document.getElementById("player");
+  if (el) el.remove();
+  document.documentElement.classList.remove("player-open");
+  if (!silent && location.hash.startsWith("#/play/")) history.replaceState(null, "", location.pathname + location.search);
+}
+function playerFromHash() {
+  const m = /^#\/play\/([a-z0-9-]{1,60})\/?$/i.exec(location.hash);
+  if (m) openPlayer(m[1].toLowerCase()); else closePlayer(true);
+}
+addEventListener("hashchange", playerFromHash);
+addEventListener("message", e => { if (e.data === "moki-close") closePlayer(); });
+addEventListener("keydown", e => { if (e.key === "Escape" && document.getElementById("player")) closePlayer(); });
+playerFromHash();

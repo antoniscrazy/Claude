@@ -332,3 +332,8 @@ html.playing body{overflow:hidden}
 .shicon{display:block;width:72px;height:72px;border-radius:18px;overflow:hidden;box-shadow:0 6px 16px #0008}.shicon svg{width:100%;height:100%;display:block}
 .ubody .utease{margin-top:18px}
 .utease h3{margin:0 0 8px}
+
+/* Spiel-Player (eingebaute Launcher) */
+#player{position:fixed;inset:0;z-index:900000;background:#000}
+#player iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+html.player-open,html.player-open body{overflow:hidden}
