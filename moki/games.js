@@ -812,17 +812,6 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
-    id: "eparkour",
-    title: "Stickman Parkour 3",
-    url: "#/play/eparkour",
-    category: "Geschicklichkeit",
-    emoji: "🏃",
-    colors: ["#ff7a1a", "#5fd0ff"],
-    description: "Springe über Hindernisse und lava-Felder bis zur Ziellinie.",
-    added: "2026-11-18",
-    featured: false
-  },
-  {
     id: "sausage-flip",
     title: "Sausage Flip",
     url: "#/play/sausage-flip",
