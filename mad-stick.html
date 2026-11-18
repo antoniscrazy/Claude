@@ -65,6 +65,8 @@ window.pokiReady = true; window._cachedAdPositions = {};
   window.shareableURL = function () { window.unityGame.SendMessage(name, "shareableURLResolved", location.href); };
 })();
 
+// Yandex-Werte, die das Spiel erwartet (ohne Yandex-Anbindung: Standardwert "no data").
+window.environmentData = "no data"; window.cloudSaves = "no data";
 const tx = document.getElementById("tx"), pf = document.getElementById("pf");
 (async () => {
   try {
