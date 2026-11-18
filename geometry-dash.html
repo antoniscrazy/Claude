@@ -31,6 +31,8 @@
 // Keine Werbung, keine Tracker: Netz-Sperre fuer alles ausser dem eigenen Repo.
 const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/5dd6e88905e88c57ff5b668bb2102bc8043fd51a/geometry-dash/";
 const ORIGIN = new URL(BASE).origin;
+// Framework-Skript ueber jsDelivr (raw liefert text/plain und wird nicht als Skript ausgefuehrt)
+const FW_JSD = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@13713a571ecefa1f41998e67811220a4f757058d/geometry-dash/Build/GeometryDashLite.framework.js";
 
 (function () {
   function ok(u) { try { var x = new URL(String(u), location.href); return x.protocol === "blob:" || x.protocol === "data:" || x.origin === ORIGIN; } catch (e) { return true; } }
@@ -53,14 +55,12 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
     // Loader als Text einbinden (raw liefert text/plain, deshalb nicht als Skript laden)
     const loaderTxt = await get("Build/UnityLoader.js", "text");
     const s = document.createElement("script"); s.textContent = loaderTxt; document.body.appendChild(s);
-    const fw = await get("Build/GeometryDashLite.framework.js", "blob");
     const cfgRaw = await get("Build/GeometryDashLite.json", "json");
     pf.style.width = "30%";
-    const fwData = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(new Blob([fw], { type: "text/javascript" })); });
     const cfg = Object.assign({}, cfgRaw, {
       dataUrl: BASE + "Build/GeometryDashLite.data",
       wasmCodeUrl: BASE + "Build/GeometryDashLite.wasm",
-      wasmFrameworkUrl: fwData,
+      wasmFrameworkUrl: FW_JSD,
       streamingAssetsUrl: BASE + "StreamingAssets"
     });
     const cfgUrl = URL.createObjectURL(new Blob([JSON.stringify(cfg)], { type: "application/json" }));
