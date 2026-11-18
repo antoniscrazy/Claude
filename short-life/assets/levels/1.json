@@ -1,0 +1,16 @@
+﻿{
+	"bodyDensity": 1,
+	"bodyMassType": 1,
+	"bodyW": 96,
+	"bodyH": 24,
+	"driverDensity": 1,
+	"driverW": 32,
+	"driverH": 32,
+	"driverDy": -162,
+	"skinId": 1,
+	"driverDx": 45,
+	"gravityY": 1550,
+	"lengthImpulseCollideDestroy": 1800,
+	"lengthVectorSpeedToFall": 1350,
+	"scaleView": 0.888
+}

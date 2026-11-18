@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="30 30 40 40" display="block">
+    <style type="text/css">
+        rect { fill: #fff }
+    </style>
+    <rect x="48.5" y="30" ry="2.24" width="3" height="8" opacity=".077"/>
+    <rect x="48.5" y="30" ry="2.24" width="3" height="8" opacity=".154" transform="rotate(27.692 50 50)"/>
+    <rect x="48.5" y="30" ry="2.24" width="3" height="8" opacity=".231" transform="rotate(55.385 50 50)"/>
+    <rect x="48.5" y="30" ry="2.24" width="3" height="8" opacity=".308" transform="rotate(83.077 50 50)"/>
+    <rect x="48.5" y="30" ry="2.24" width="3" height="8" opacity=".385" transform="rotate(110.77 50 50)"/>
+    <rect x="48.5" y="30" ry="2.24" width="3" height="8" opacity=".462" transform="rotate(138.462 50 50)"/>
+    <rect x="48.5" y="30" ry="2.24" width="3" height="8" opacity=".538" transform="rotate(166.154 50 50)"/>
+    <rect x="48.5" y="30" ry="2.24" width="3" height="8" opacity=".615" transform="rotate(193.846 50 50)"/>
+    <rect x="48.5" y="30" ry="2.24" width="3" height="8" opacity=".692" transform="rotate(221.538 50 50)"/>
+    <rect x="48.5" y="30" ry="2.24" width="3" height="8" opacity=".769" transform="rotate(249.23 50 50)"/>
+    <rect x="48.5" y="30" ry="2.24" width="3" height="8" opacity=".846" transform="rotate(276.923 50 50)"/>
+    <rect x="48.5" y="30" ry="2.24" width="3" height="8" opacity=".923" transform="rotate(304.615 50 50)"/>
+    <rect x="48.5" y="30" ry="2.24" width="3" height="8" transform="rotate(332.308 50 50)"/>
+</svg>

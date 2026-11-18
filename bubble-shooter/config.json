@@ -1,0 +1,35 @@
+{
+	"PipesScore" : {
+		"1": 50,
+		"2": 100,
+		"3": 150
+	},
+	
+	"InitCoins": 0,
+	
+	"PlayOnPrice": 130,
+	
+	"GiftProgressTarget": 230,
+	
+	"Boosters": {
+		"InitCount": {
+			"Bomb": 0,
+			"Rainbow": 0,
+			"Rocket": 0,
+			"Lightning": 0
+		},
+		"Price": {
+			"Bomb": 60,
+			"Rainbow": 70,
+			"Rocket": 90,
+			"Lightning": 110
+		}
+	},
+	
+	"DeletedBubbles-Colors": [
+		[ 0 ,    [0,1,2] ],
+		[ 300 ,  [0,1,2,3] ],
+		[ 800 ,  [0,1,2,3,4] ],
+		[ 1400 , [0,1,2,3,4,5] ]
+	]
+}
