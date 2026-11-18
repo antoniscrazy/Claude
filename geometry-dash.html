@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Geometry Dash Lite</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #111; color: #fff; font-family: sans-serif; overflow: hidden; }
+  body { display: flex; flex-direction: column; }
+  #bar { flex: 0 0 auto; display: flex; justify-content: flex-end; padding: 6px 12px; background: #111; }
+  #wrap { flex: 1 1 auto; position: relative; min-height: 0; }
+  #c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; background: #000; outline: none; touch-action: none; }
+  #ld { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); text-align: center; width: 70%; max-width: 360px; }
+  #pb { height: 10px; border-radius: 5px; background: rgba(255,255,255,.15); overflow: hidden; margin-top: 8px; }
+  #pf { height: 100%; width: 0; background: #00e5a8; }
+  /* Moki: Back-Button */
+  #moki-back {
+    padding: 9px 16px; border-radius: 999px;
+    background: linear-gradient(90deg, #00e5a8, #ffd23f);
+    color: #04201a; font: 800 14px "Segoe UI", system-ui, sans-serif;
+    text-decoration: none; box-shadow: 0 3px 12px rgba(0, 0, 0, .5); opacity: .92;
+  }
+  #moki-back:hover { opacity: 1; transform: scale(1.05); }
+</style>
+</head>
+<body>
+<div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
+<div id="wrap"><canvas id="c" tabindex="-1"></canvas><div id="ld"><div id="tx">Lade Spiel …</div><div id="pb"><div id="pf"></div></div></div></div>
+<script>
+// Geometry Dash Lite (Unity 2019.4, klassische Loader-API). Dateien aus dem GitHub-Repo (raw, fester Commit).
+// Keine Werbung, keine Tracker: Netz-Sperre fuer alles ausser dem eigenen Repo.
+const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/5dd6e88905e88c57ff5b668bb2102bc8043fd51a/geometry-dash/";
+const ORIGIN = new URL(BASE).origin;
+
+(function () {
+  function ok(u) { try { var x = new URL(String(u), location.href); return x.protocol === "blob:" || x.protocol === "data:" || x.origin === ORIGIN; } catch (e) { return true; } }
+  var open = XMLHttpRequest.prototype.open, send = XMLHttpRequest.prototype.send;
+  XMLHttpRequest.prototype.open = function (m, u) { this._blocked = !ok(u); return open.apply(this, arguments); };
+  XMLHttpRequest.prototype.send = function () {
+    if (!this._blocked) return send.apply(this, arguments);
+    var x = this; setTimeout(function () { x.dispatchEvent(new ProgressEvent("error")); x.dispatchEvent(new ProgressEvent("loadend")); }, 0);
+  };
+  var f = window.fetch;
+  window.fetch = function (r) { return ok(r && r.url || r) ? f.apply(this, arguments) : Promise.reject(new TypeError("Failed to fetch")); };
+  if (navigator.sendBeacon) navigator.sendBeacon = function (u) { return ok(u); };
+  window.open = function () { return null; };
+})();
+
+const tx = document.getElementById("tx"), pf = document.getElementById("pf");
+(async () => {
+  try {
+    const get = (f, kind) => fetch(BASE + f).then(r => { if (!r.ok) throw new Error(f + ": " + r.status); return r[kind](); });
+    // Loader als Text einbinden (raw liefert text/plain, deshalb nicht als Skript laden)
+    const loaderTxt = await get("Build/UnityLoader.js", "text");
+    const s = document.createElement("script"); s.textContent = loaderTxt; document.body.appendChild(s);
+    const fw = await get("Build/GeometryDashLite.framework.js", "blob");
+    const cfgRaw = await get("Build/GeometryDashLite.json", "json");
+    pf.style.width = "30%";
+    const fwData = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(new Blob([fw], { type: "text/javascript" })); });
+    const cfg = Object.assign({}, cfgRaw, {
+      dataUrl: BASE + "Build/GeometryDashLite.data",
+      wasmCodeUrl: BASE + "Build/GeometryDashLite.wasm",
+      wasmFrameworkUrl: fwData,
+      streamingAssetsUrl: BASE + "StreamingAssets"
+    });
+    const cfgUrl = URL.createObjectURL(new Blob([JSON.stringify(cfg)], { type: "application/json" }));
+    tx.textContent = "Starte …";
+    UnityLoader.instantiate(document.getElementById("c"), cfgUrl, { onProgress: p => { pf.style.width = (30 + p * 70) + "%"; } });
+    setTimeout(() => { const ld = document.getElementById("ld"); if (ld) ld.remove(); }, 3000);
+  } catch (e) { tx.textContent = "Fehler beim Laden: " + (e.message || e); }
+})();
+</script>
+</body>
+</html>
