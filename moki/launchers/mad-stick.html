@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
+<script>
+// Yandex-Globals MUESSEN vor dem Unity-Loader existieren (sonst ReferenceError: environmentData is not defined beim Start).
+window.environmentData = JSON.stringify({ language: "de", domain: "de", browserLang: "de", deviceType: "desktop", isMobile: false, isDesktop: true, isTablet: false, isTV: false, appID: "", payload: "", platform: navigator.platform, browser: "Other" });
+window.cloudSaves = "no data"; window.paymentsData = "no data"; window.playerData = "no data";
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Mad Stick</title>
@@ -65,6 +70,7 @@ window.pokiReady = true; window._cachedAdPositions = {};
   window.shareableURL = function () { window.unityGame.SendMessage(name, "shareableURLResolved", location.href); };
 })();
 
+// Yandex-Werte, die das Spiel erwartet (ohne Yandex-Anbindung: Standardwert "no data").
 const tx = document.getElementById("tx"), pf = document.getElementById("pf");
 (async () => {
   try {
