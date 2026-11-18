@@ -372,3 +372,13 @@ html.player-open,html.player-open body{overflow:hidden}
 #tpanel .tp-send{margin-top:14px;width:100%;padding:11px;border:0;border-radius:999px;font-weight:800;cursor:pointer}
 #tpanel .tp-send:disabled{opacity:.5}
 @media(max-width:900px){#tpanel{left:8px;right:8px;width:auto;top:auto;bottom:8px;max-height:55vh}}
+
+/* Wochenchallenge: Fortschrittsbalken */
+.chal .cprog{min-width:230px}
+.chal .cpt{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;color:#cfd4ff;margin-bottom:6px}
+.chal .cpt b{font-size:20px;color:var(--accent2)}
+.chal .cpbar{height:12px;border-radius:999px;background:#ffffff1a;overflow:hidden}
+.chal .cpbar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .6s ease}
+.chal .cpm{display:block;margin-top:6px;color:var(--muted);font-size:12px}
+.chal.done .cpbar i{background:var(--accent)}
+@media(max-width:900px){.chal .cprog{min-width:0;width:100%}}

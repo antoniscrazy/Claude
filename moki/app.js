@@ -334,13 +334,13 @@ function chLeft() {
 function challengeHtml() {
   const g = weekGame(), w = weekIdx(), done = !!chDone()[w], s = chStreak();
   if (!g) return "";
-  return `<section class="chal${done ? " done" : ""}" aria-label="Wochenchallenge">
+  return `<section class="chal${done ? " done" : ""}" data-game="${g.id}" aria-label="Wochenchallenge">
     <div class="cimg">${g.image ? `<img src="${g.image}" alt="">` : ""}</div>
     <div class="ctxt"><span class="chip">${icon("trophy")}Wochenchallenge</span><span class="cleft" id="chal-left">${chLeft()}</span>
       <h2>${esc(g.title)}</h2><p>${esc(weekTask(w))}</p>
-      <small>${s ? `${icon("flame")} Serie: ${s} ${s === 1 ? "Woche" : "Wochen"} in Folge. ` : ""}Ob du es geschafft hast, sagst du selbst an. Moki kann die Ergebnisse der Spiele nicht messen.</small></div>
+      <small>${s ? `${icon("flame")} Serie: ${s} ${s === 1 ? "Woche" : "Wochen"} in Folge. ` : ""}Moki zählt deine Spielzeit in diesem Spiel. Der Balken zeigt, wie weit du bist.</small></div>
     <div class="cact"><button class="btn go" data-ch="start" type="button">${icon("play")}Challenge starten</button>
-      <button class="btn" data-ch="done" type="button" aria-pressed="${done}">${icon("check")}${done ? "Geschafft" : "Als geschafft markieren"}</button>
+      <div class="cprog" aria-live="polite"><div class="cpt"><span>Fortschritt</span><b>0 %</b></div><div class="cpbar"><i style="width:0%"></i></div><small class="cpm">Spielzeit in diesem Spiel</small></div>
       <button class="btn" data-ch="invite" type="button">${icon("share")}Freund herausfordern</button></div></section>`;
 }
 function onChallenge(act) {

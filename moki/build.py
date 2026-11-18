@@ -13,7 +13,7 @@ h=r("index.html").replace('<link rel="stylesheet" href="style.css">',"<style>\n"
 g=r("games.js")
 g=re.sub(r'"([\w-]+\.jpg)"',lambda m:'"data:image/jpeg;base64,'+base64.b64encode(open(m.group(1),"rb").read()).decode()+'"',g)
 h=h.replace('<script src="games.js"></script>',"<script>\n"+g+"\n</script>").replace('<script src="app.js"></script>',"<script>window.MOKI_LAUNCH="+_LJ+";</script>\n<script>\n"+re.sub(r'"(trailer-poster\.jpg)"',lambda m:'"data:image/jpeg;base64,'+base64.b64encode(open(m.group(1),"rb").read()).decode()+'"',r("app.js"))+"\n</script>").replace('<script src="intro.js"></script>',"<script>\n"+r("intro.js")+"\n</script>").replace('<script src="creations.js"></script>',"<script>\n"+r("creations.js")+"\n</script>").replace('<script src="config.js"></script>',"<script>\n"+r("config.js")+"\nwindow.MOKI_ENGINE = "+json.dumps(r("motifs.js")+"\n"+r("engine.js")).replace("<","\\u003c")+";\n</script>")
-i=h.rindex("</body>");h=h[:i]+"<script>\n"+r("tester.js")+"\n</script>\n<script>\n"+r("nf.js")+"\n</script>\n"+h[i:]
+i=h.rindex("</body>");h=h[:i]+"<script>\n"+r("challenge.js")+"\n</script>\n<script>\n"+r("tester.js")+"\n</script>\n<script>\n"+r("nf.js")+"\n</script>\n"+h[i:]
 open("moki.html","w",encoding="utf-8").write(h)
 
 
