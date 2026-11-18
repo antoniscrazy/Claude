@@ -4,23 +4,12 @@ window.MOKI_GAMES = [
   {
     id: "drive-mad",
     title: "Drive Mad",
-    url: "https://tranquil-crisp-0b9532.netlify.app",
+    url: "#/play/drive-mad",
     category: "Fahren",
     image: "drive-mad.jpg",
     emoji: "🚗",
     colors: ["#ff7a18", "#af002d"],
     description: "Fahre dein Auto durch knifflige Level voller Rampen und Hindernisse und erreiche die Ziellinie.",
-    featured: false
-  },
-  {
-    id: "geometry-dash",
-    title: "Geometry Dash",
-    url: "https://friendly-fenglisu-b0d7a5.netlify.app",
-    category: "Geschicklichkeit",
-    image: "geometry-dash.jpg",
-    emoji: "🟨",
-    colors: ["#f5a500", "#1b9ad6"],
-    description: "Springe im Takt der Musik über Stacheln und Hindernisse, ohne anzustoßen.",
     featured: false
   },
   {
@@ -371,18 +360,6 @@ window.MOKI_GAMES = [
     colors: ["#5fb83a", "#d9542b"],
     description: "Fahre einen Mähdrescher über die Felder, ernte Sonnenblumen und Co. und kaufe mit dem Geld Verbesserungen.",
     added: "2026-11-16",
-    featured: false
-  },
-  {
-    id: "voxelcraft",
-    title: "VoxelCraft",
-    url: "https://sage-beijinho-7ca6f4.netlify.app",
-    category: "Abenteuer",
-    image: "voxelcraft.jpg",
-    wide: true,
-    emoji: "⛏️",
-    colors: ["#3d8c2f", "#6b4423"],
-    description: "Ein Minecraft-ähnliches Spiel aus Blöcken: abbauen, bauen und die Welt erkunden.",
     featured: false
   },
   {
