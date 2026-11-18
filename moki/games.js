@@ -846,6 +846,18 @@ window.MOKI_GAMES = [
     description: "Lass die Ragdoll-Figur fallen und sieh zu, wie sie auf dem Weg nach unten alles mitreißt.",
     added: "2026-11-18",
     featured: false
+  },
+  {
+    id: "2048-merge",
+    title: "2048",
+    url: "#/play/2048-merge",
+    category: "Strategie",
+    image: "2048-merge.jpg",
+    emoji: "🔢",
+    colors: ["#f8f1e4", "#edc22e"],
+    description: "Schiebe die Zahlkacheln zusammen, bis du die 2048 erreichst.",
+    added: "2026-11-18",
+    featured: false
   }
 ];
 
