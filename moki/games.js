@@ -823,18 +823,6 @@ window.MOKI_GAMES = [
     added: "2026-11-18",
     featured: false
   },
-  {
-    id: "slope",
-    title: "Slope",
-    url: "#/play/slope",
-    category: "Geschicklichkeit",
-    image: "slope.jpg",
-    emoji: "🟩",
-    colors: ["#0a1a0a", "#39ff14"],
-    description: "Rolle eine Kugel durch ein neonfarbenes Gitter-Level, ohne von der Strecke zu fallen.",
-    added: "2026-11-18",
-    featured: false
-  }
 ];
 
 // Weitere Seiten (erscheinen als eigener Bereich unter den Spielen)
