@@ -895,6 +895,18 @@ window.MOKI_GAMES = [
     description: "Ernte, verkaufe und erweitere deinen Hof in einer Schleife aus Anbau und Ertrag.",
     added: "2026-11-18",
     featured: false
+  },
+  {
+    id: "blumgi-splash",
+    title: "Blumgi Splash",
+    url: "#/play/blumgi-splash",
+    category: "Geschicklichkeit",
+    image: "blumgi-splash.jpg",
+    emoji: "💦",
+    colors: ["#3ab0ff", "#8be08b"],
+    description: "Spring mit dem Schleim-Wesen ins Wasser und sammle Punkte, ohne danebenzuplatschen.",
+    added: "2026-11-18",
+    featured: false
   }
 ];
 
