@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mall Tycoon 2D</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="sidebar">
+            <div class="stats-panel">
+                <h2>Mall Stats</h2>
+                <div class="stat-item">
+                    <span>Money:</span>
+                    <span id="money">$10000</span>
+                </div>
+                <div class="stat-item">
+                    <span>Daily Income:</span>
+                    <span id="daily-income">$0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Shops:</span>
+                    <span id="shop-count">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Customers:</span>
+                    <span id="customer-count">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Day:</span>
+                    <span id="day">1</span>
+                </div>
+                <div class="stat-item">
+                    <span>Review:</span>
+                    <span id="review">★★★☆☆ (3.0)</span>
+                </div>
+                <div class="stat-item">
+                    <span>Spills:</span>
+                    <span id="spills-count">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Janitors:</span>
+                    <span id="janitors-count">0</span>
+                </div>
+            </div>
+
+            <div class="events-panel">
+                <h2>Events</h2>
+                <div id="events"></div>
+            </div>
+
+            <div class="build-panel">
+                <h2>Build</h2>
+                <button class="build-btn" data-type="floor">Floor ($50)</button>
+                <button class="build-btn" data-type="shop-food">Food Shop ($500)</button>
+                <button class="build-btn" data-type="shop-clothing">Clothing Shop ($800)</button>
+                <button class="build-btn" data-type="shop-electronics">Electronics ($1200)</button>
+                <button class="build-btn" data-type="shop-entertainment">Entertainment ($1000)</button>
+                <button class="build-btn" data-type="shop-jewelry">Jewelry Store ($1500)</button>
+                <button class="build-btn" data-type="shop-books">Bookstore ($600)</button>
+                <button class="build-btn" data-type="shop-sports">Sports Store ($900)</button>
+                <button class="build-btn" data-type="shop-beauty">Beauty Salon ($1100)</button>
+                <button class="build-btn" data-type="entrance" id="entrance-btn">Entrance (Free)</button>
+            </div>
+
+            <div class="decoration-panel">
+                <h2>Decorations</h2>
+                <button class="build-btn" data-type="decoration-bench">Bench ($100)</button>
+                <button class="build-btn" data-type="decoration-plant">Plant ($50)</button>
+                <button class="build-btn" data-type="decoration-fountain">Fountain ($300)</button>
+                <button class="build-btn" data-type="decoration-art">Art Display ($200)</button>
+                <button class="build-btn" data-type="decoration-trashbin">Trash Bin ($75)</button>
+            </div>
+
+            <div class="staff-panel">
+                <h2>Staff</h2>
+                <button class="build-btn" data-type="janitor">Hire Janitor ($500)</button>
+                <button class="build-btn" data-type="chef">Hire Chef ($600)</button>
+                <button class="build-btn" id="staff-management-btn">Manage Staff</button>
+            </div>
+
+            <div class="staff-management-panel" id="staff-management-panel" style="display: none;">
+                <h2>Staff Management</h2>
+                <div class="staff-list" id="staff-list">
+                    <!-- Staff will be dynamically added here -->
+                </div>
+                <button class="close-btn" id="close-staff-panel">Close</button>
+            </div>
+
+            <div class="breakroom-panel">
+                <h2>Break Rooms</h2>
+                <button class="build-btn" data-type="breakroom">Break Room ($300)</button>
+                <button class="build-btn" data-type="breakroom-coffee">Coffee Machine ($150)</button>
+                <button class="build-btn" data-type="breakroom-vending">Vending Machine ($100)</button>
+                <button class="build-btn" data-type="breakroom-table">Table ($80)</button>
+                <button class="build-btn" data-type="breakroom-sofa">Sofa ($120)</button>
+                <button class="build-btn" data-type="breakroom-tv">TV ($200)</button>
+            </div>
+
+            <div class="kitchen-panel">
+                <h2>Kitchens</h2>
+                <button class="build-btn" data-type="kitchen">Kitchen ($400)</button>
+                <button class="build-btn" data-type="kitchen-stove">Stove ($200)</button>
+                <button class="build-btn" data-type="kitchen-fridge">Fridge ($150)</button>
+                <button class="build-btn" data-type="kitchen-counter">Counter ($100)</button>
+                <button class="build-btn" data-type="kitchen-sink">Sink ($120)</button>
+                <button class="build-btn" data-type="kitchen-oven">Oven ($250)</button>
+            </div>
+
+            <div class="utilities-panel">
+                <h2>Utilities</h2>
+                <button class="build-btn" data-type="utility-customerservice" id="customerservice-btn">Customer Service ($400)</button>
+                <button class="build-btn" data-type="stairs" id="stairs-btn">Stairs ($300)</button>
+                <button class="build-btn" data-type="elevator" id="elevator-btn">Elevator ($500)</button>
+            </div>
+
+            <div class="floor-panel">
+                <h2>Floor</h2>
+                <div class="floor-controls">
+                    <button class="build-btn" id="floor-down-btn">↓ Floor</button>
+                    <span id="current-floor">Floor 0</span>
+                    <button class="build-btn" id="floor-up-btn">↑ Floor</button>
+                </div>
+            </div>
+
+            <div class="save-panel">
+                <h2>Save/Load</h2>
+                <div id="save-slots-container"></div>
+            </div>
+
+            <div class="shop-list-panel">
+                <h2>Shops</h2>
+                <div id="shop-list"></div>
+            </div>
+        </div>
+
+        <div class="game-area">
+            <canvas id="gameCanvas"></canvas>
+            <div class="controls-hint">
+                <p>Click to place selected item | Scroll to zoom | Drag to pan | Click customer for info</p>
+            </div>
+            <button id="minimap-toggle" class="minimap-toggle">Toggle Mini-map (M)</button>
+            <div id="customer-info-panel" class="customer-info-panel" style="display: none;">
+                <h3>Customer Info</h3>
+                <div id="customer-info-content"></div>
+                <button id="close-customer-info">Close</button>
+            </div>
+            <div id="tutorial-panel" class="tutorial-panel" style="display: none;">
+                <h3 id="tutorial-title">Tutorial</h3>
+                <div id="tutorial-content"></div>
+                <div class="tutorial-buttons">
+                    <button id="tutorial-prev" style="display: none;">Previous</button>
+                    <button id="tutorial-next">Next</button>
+                    <button id="tutorial-skip">Skip Tutorial</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
+
