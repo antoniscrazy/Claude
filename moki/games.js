@@ -883,6 +883,18 @@ window.MOKI_GAMES = [
     description: "Baue dein Geschäft Schritt für Schritt auf und lass dein Geld im Leerlauf wachsen.",
     added: "2026-11-18",
     featured: false
+  },
+  {
+    id: "harvest-loop",
+    title: "Harvest Loop",
+    url: "#/play/harvest-loop",
+    category: "Simulation",
+    image: "harvest-loop.jpg",
+    emoji: "🌾",
+    colors: ["#7cc84a", "#e8b53a"],
+    description: "Ernte, verkaufe und erweitere deinen Hof in einer Schleife aus Anbau und Ertrag.",
+    added: "2026-11-18",
+    featured: false
   }
 ];
 
