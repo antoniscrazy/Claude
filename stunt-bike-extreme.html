@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Stunt Bike Extreme</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #111; color: #fff; font-family: sans-serif; overflow: hidden; }
+  body { display: flex; flex-direction: column; }
+  #bar { flex: 0 0 auto; display: flex; justify-content: flex-end; padding: 6px 12px; background: #111; }
+  #wrap { flex: 1 1 auto; position: relative; min-height: 0; }
+  #c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; background: #000; outline: none; touch-action: none; }
+  #ld { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); text-align: center; width: 70%; max-width: 360px; }
+  #pb { height: 10px; border-radius: 5px; background: rgba(255,255,255,.15); overflow: hidden; margin-top: 8px; }
+  #pf { height: 100%; width: 0; background: #00e5a8; }
+  /* Moki: Back-Button */
+  #moki-back {
+    padding: 9px 16px; border-radius: 999px;
+    background: linear-gradient(90deg, #00e5a8, #ffd23f);
+    color: #04201a; font: 800 14px "Segoe UI", system-ui, sans-serif;
+    text-decoration: none; box-shadow: 0 3px 12px rgba(0, 0, 0, .5); opacity: .92;
+  }
+  #moki-back:hover { opacity: 1; transform: scale(1.05); }
+</style>
+</head>
+<body>
+<div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
+<div id="wrap"><canvas id="c" tabindex="-1"></canvas><div id="ld"><div id="tx">Lade Spiel …</div><div id="pb"><div id="pf"></div></div></div></div>
+<script>
+// Lädt das Spiel direkt aus deinem GitHub-Repo (raw.githubusercontent.com, Commit fest verdrahtet). Keine Werbung, keine Tracker.
+const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/adc9b9c76bd33aa1e547c877338f3ed777c8b63a/stunt-bike-extreme/";
+const ORIGIN = new URL(BASE).origin;
+
+// --- Netz-Sperre: nur dein Repo (raw.githubusercontent.com), blob: und data: sind erlaubt. Alles andere (z. B. Unity-Analytics api.uca.cloud) wird blockiert.
+(function () {
+  function ok(u) { try { var x = new URL(String(u), location.href); return x.protocol === "blob:" || x.protocol === "data:" || x.origin === ORIGIN || x.protocol === "about:" || x.protocol === "file:" && false; } catch (e) { return true; } }
+  var open = XMLHttpRequest.prototype.open, send = XMLHttpRequest.prototype.send;
+  XMLHttpRequest.prototype.open = function (m, u) { this._blocked = !ok(u); return open.apply(this, arguments); };
+  XMLHttpRequest.prototype.send = function () {
+    if (!this._blocked) return send.apply(this, arguments);
+    var x = this; setTimeout(function () { x.dispatchEvent(new ProgressEvent("error")); x.dispatchEvent(new ProgressEvent("loadend")); }, 0);
+  };
+  var f = window.fetch;
+  window.fetch = function (r) { return ok(r && r.url || r) ? f.apply(this, arguments) : Promise.reject(new TypeError("Failed to fetch")); };
+  if (navigator.sendBeacon) navigator.sendBeacon = function (u) { return ok(u); };
+  window.open = function () { return null; };
+})();
+
+// --- Poki-SDK durch Platzhalter ersetzen: keine Werbung; Belohnungen gelten sofort als angesehen.
+window.PokiSDK = {
+  init: function () { return Promise.resolve(); }, setDebug: function () {},
+  gameLoadingStart: function () {}, gameLoadingFinished: function () {}, gameplayStart: function () {}, gameplayStop: function () {},
+  commercialBreak: function () { return Promise.resolve(); }, rewardedBreak: function () { return Promise.resolve(true); },
+  displayAd: function () {}, destroyAd: function () {}, customEvent: function () {}, measure: function () {}, logError: function () {},
+  isAdBlocked: function () { return false; }, getLanguage: function () { return "en"; }, getURLParam: function () { return ""; },
+  shareableURL: function () { return Promise.resolve(location.href); }, enableEventTracking: function () {}
+};
+window.d0cum3nt = { URLPoki: "https://poki.com/" }; // vom Spiel erwartet (Seiten-Adresse fuer Poki-Pruefung)
+window.pokiReady = true; window._cachedAdPositions = {};
+(function () {
+  var name = null;
+  window.initPokiBridge = function (n) { name = n; var t = setInterval(function () { if (window.unityGame) { clearInterval(t); window.unityGame.SendMessage(n, "ready"); } }, 100); };
+  window.commercialBreak = function () { Promise.resolve().then(function () { window.unityGame.SendMessage(name, "commercialBreakCompleted"); }); };
+  window.rewardedBreak = function () { Promise.resolve(true).then(function (r) { window.unityGame.SendMessage(name, "rewardedBreakCompleted", r.toString()); }); };
+  window.shareableURL = function () { window.unityGame.SendMessage(name, "shareableURLResolved", location.href); };
+})();
+
+const tx = document.getElementById("tx"), pf = document.getElementById("pf");
+(async () => {
+  try {
+    const get = (f, kind) => fetch(BASE + f).then(r => { if (!r.ok) throw new Error(f + ": " + r.status); return r[kind](); });
+    let done = 0; const bump = () => { done++; pf.style.width = (done / 9 * 70) + "%"; };
+    const wasmParts = [1,2,3,4,5].map(i => get('Build/StuntBike.wasm.part' + i, 'blob').then(x => { bump(); return x; }));
+    const [loaderTxt, fw, dataBlob] = await Promise.all([
+      get('Build/StuntBike.loader.js', 'text').then(x => { bump(); return x; }),
+      get('Build/StuntBike.framework.js', 'blob').then(x => { bump(); return x; }),
+      get('Build/StuntBike.data', 'blob').then(x => { bump(); return x; })
+    ]);
+    const wasmBlob = new Blob(await Promise.all(wasmParts));
+    const s = document.createElement("script"); s.textContent = loaderTxt; document.body.appendChild(s);
+    tx.textContent = "Starte …";
+    const inst = await createUnityInstance(document.getElementById("c"), {
+      dataUrl: URL.createObjectURL(new Blob([dataBlob], { type: "application/octet-stream" })),
+      codeUrl: URL.createObjectURL(new Blob([wasmBlob], { type: "application/wasm" })),
+      frameworkUrl: URL.createObjectURL(new Blob([fw], { type: "text/javascript" })),
+      streamingAssetsUrl: BASE + "StreamingAssets",
+      companyName: "Stunt Bike Extreme", productName: "Stunt Bike Extreme", productVersion: "1.0.0"
+    }, p => { pf.style.width = (70 + p * 30) + "%"; });
+    window.unityGame = inst; window.unityGame = inst;
+    document.getElementById("ld").remove();
+  } catch (e) { tx.textContent = "Fehler beim Laden: " + (e.message || e); }
+})();
+</script>
+</body>
+</html>
