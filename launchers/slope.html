@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><title>Slope</title><style>html,body{margin:0;height:100%;background:#111;color:#fff;font-family:sans-serif;overflow:hidden}
+body{display:flex;flex-direction:column}
+#bar{flex:0 0 auto;display:flex;justify-content:flex-end;padding:6px 12px;background:#111}
+#moki-back{padding:9px 16px;border-radius:999px;background:linear-gradient(90deg,#00e5a8,#ffd23f);color:#04201a;font:800 14px "Segoe UI",system-ui,sans-serif;text-decoration:none;box-shadow:0 3px 12px rgba(0,0,0,.5);opacity:.92}
+#moki-back:hover{opacity:1}
+#wrap{flex:1 1 auto;position:relative;min-height:0}
+#f,#gameContainer{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}
+#ld{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;width:70%;max-width:360px;z-index:2}
+#pb{height:10px;border-radius:5px;background:rgba(255,255,255,.15);overflow:hidden;margin-top:8px}
+#pf{height:100%;width:0;background:#00e5a8}</style></head>
+<body>
+<div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
+<div id="wrap"><div id="gameContainer"></div><div id="ld"><div id="tx">Lade Spiel …</div><div id="pb"><div id="pf"></div></div></div></div>
+<script>
+
+const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/df0fc00663e663ad8c24da300eab177d4fc7279c/slope/";
+const tx = document.getElementById("tx"), pf = document.getElementById("pf");
+async function getText(u) { const r = await fetch(u); if (!r.ok) throw new Error(u.slice(BASE.length) + ": " + r.status); return r.text(); }
+(async () => {
+  try {
+    const loader = await getText(BASE + "Build/UnityLoader.js");
+    const s = document.createElement("script"); s.textContent = loader; document.body.appendChild(s);
+    pf.style.width = "20%";
+    UnityLoader.instantiate("gameContainer", BASE + "Build/slope_27Sept.json", {
+      onProgress: (inst, p) => { pf.style.width = (p === "complete" ? 100 : 60) + "%"; if (p === "complete") document.getElementById("ld").remove(); },
+      Module: { onRuntimeInitialized: () => { document.getElementById("ld").remove(); } }
+    });
+  } catch (e) { tx.textContent = "Fehler beim Laden: " + (e.message || e); }
+})();
+</script>
+</body></html>
