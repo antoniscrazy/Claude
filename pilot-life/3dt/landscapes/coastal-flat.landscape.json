@@ -1,0 +1,135 @@
+{
+  "type": "landscape",
+  "set": "L",
+  "tileSize": 100,
+  "style": "green",
+  "material": "terrain/green",
+  "seed": 1337,
+  "grid": [
+    3,
+    6
+  ],
+  "tiles": [
+    {
+      "id": "terrain_l_a_01",
+      "x": 0,
+      "y": 0,
+      "rot": 270
+    },
+    {
+      "id": "terrain_l_a_01",
+      "x": 1,
+      "y": 0,
+      "rot": 270
+    },
+    {
+      "id": "terrain_l_a_01",
+      "x": 2,
+      "y": 0,
+      "rot": 270
+    },
+    {
+      "id": "river_l_a_01",
+      "x": 0,
+      "y": 1,
+      "rot": 270
+    },
+    {
+      "id": "river_l_a_02_r",
+      "x": 1,
+      "y": 1,
+      "water": true,
+      "rot": 90
+    },
+    {
+      "id": "river_l_a_01",
+      "x": 2,
+      "y": 1,
+      "rot": 270
+    },
+    {
+      "id": "terrain_l_b_09",
+      "x": 0,
+      "y": 2
+    },
+    {
+      "id": "terrain_l_a_01",
+      "x": 1,
+      "y": 2
+    },
+    {
+      "id": "terrain_l_c_10",
+      "x": 2,
+      "y": 2
+    },
+    {
+      "id": "terrain_l_b_07",
+      "x": 0,
+      "y": 3
+    },
+    {
+      "id": "terrain_l_a_01",
+      "x": 1,
+      "y": 3
+    },
+    {
+      "id": "terrain_l_a_01",
+      "x": 2,
+      "y": 3
+    },
+    {
+      "id": "river_end_l_d_01",
+      "x": 0,
+      "y": 4,
+      "rot": 180
+    },
+    {
+      "id": "river_end_l_d_01",
+      "x": 1,
+      "y": 4,
+      "rot": 180
+    },
+    {
+      "id": "river_end_l_d_01",
+      "x": 2,
+      "y": 4,
+      "rot": 180
+    },
+    {
+      "id": "river_l_full_water",
+      "x": 0,
+      "y": 5
+    },
+    {
+      "id": "river_l_full_water",
+      "x": 1,
+      "y": 5
+    },
+    {
+      "id": "river_l_full_water",
+      "x": 2,
+      "y": 5
+    }
+  ],
+  "elements": [
+    {
+      "id": "mountain_m_a_09",
+      "pos": [
+        242.3,
+        0,
+        261.27
+      ],
+      "scale": 3,
+      "rot": [
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "water": {
+    "level": -1.6,
+    "color": "#6ae8ee",
+    "opacity": 0.75
+  }
+}
