@@ -1167,6 +1167,28 @@ window.MOKI_GAMES = [
     description: "Rase durch den Tunnel und weiche den Hindernissen im richtigen Moment aus.",
     added: "2026-11-19",
     featured: false
+  },
+  {
+    id: "tombofthemask",
+    title: "Tomb of the Mask",
+    url: "#/play/tombofthemask",
+    category: "Geschicklichkeit",
+    image: "tombofthemask.png",
+    colors: ["#ffd23f", "#4a0e6b"],
+    description: "Sammle Punkte in den Gräbern und entkomme den Fallen, ohne die Maske zu verlieren.",
+    added: "2026-11-19",
+    featured: false
+  },
+  {
+    id: "balatro",
+    title: "Balatro",
+    url: "#/play/balatro",
+    category: "Strategie",
+    image: "balatro.jpg",
+    colors: ["#c0392b", "#1b2a4a"],
+    description: "Baue mit Pokerkarten Kombinationen und Joker-Karten, um Punkte zu erreichen.",
+    added: "2026-11-19",
+    featured: false
   }
 ];
 
