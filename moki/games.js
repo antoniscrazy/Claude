@@ -1129,8 +1129,8 @@ window.MOKI_GAMES = [
     title: "HexGL",
     url: "#/play/hexgl",
     category: "Fahren",
-    emoji: "🛸",
-    colors: ["#00e5ff", "#101820"],
+    image: "hexgl.jpg",
+        colors: ["#00e5ff", "#101820"],
     description: "Rase mit dem Gleiter durch futuristische Strecken, so schnell du kannst.",
     added: "2026-11-19",
     featured: false
