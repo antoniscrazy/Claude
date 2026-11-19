@@ -9,7 +9,7 @@
   let on = true; try { on = localStorage.getItem("moki-men") !== "0"; } catch (e) {}
 
   const cv = document.createElement("canvas"); cv.id = "xm-men"; cv.setAttribute("aria-hidden", "true"); document.body.appendChild(cv);
-  const ctx = cv.getContext("2d"); let W = 0, H = 0, dpr = 1;
+  const mainCtx = cv.getContext("2d"); let ctx = mainCtx; const MODE = { on: false, s: 1 }; let W = 0, H = 0, dpr = 1;
   function size() { dpr = Math.min(devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + "px"; cv.style.height = H + "px"; }
   size(); addEventListener("resize", size);
 
@@ -20,6 +20,7 @@
   const PSEL = ".tile,.advb,.door,.atree,.agift,.cat,.logo,.hero,.challenge,.xmcd";
   let plats = [], floor = { l: -1e5, r: 1e5, t: 0, b: 1e5, floor: 1, el: null }, HB = 90;
   function scan() {
+    if (MODE.on) { HB = 0; floor.t = MODE.ground; plats = MODE.plats().concat([floor]); return; }
     const hd = document.querySelector("header"); HB = hd ? hd.getBoundingClientRect().bottom : 90; floor.t = H - 2;
     plats = [];
     document.querySelectorAll(PSEL).forEach(e => {
@@ -62,18 +63,22 @@
       this.scarf = Array.from({ length: 7 }, () => [this.x, this.y]);
     }
     speak(txt, d) { this.say = txt || pick(SAY); this.sayT = d || 2.2; }
-    set(s, extra) { this.state = s; this.t = 0; if (extra) Object.assign(this, extra); }
+    set(s, extra) { this.state = s; this.t = 0; if (s !== "air" && s !== "ext") { this.rot = 0; this.flip = 0; this.sx = 1; } if (extra) Object.assign(this, extra); }
     // Zustand "aus der Luft"
-    launch(vx, vy) { this.vx = vx; this.vy = vy; this.gr = undefined; this.set("air"); }
+    launch(vx, vy) { this.ext = null; this.hidden = false; this.pp = null; this.rot = 0; this.sx = 1; this.pairS = null; this.vx = vx; this.vy = vy; this.gr = undefined; this.set("air"); }
     update(dt, mouse) {
       this.t += dt; if (this.sayT > 0) this.sayT -= dt; else this.say = null;
       const s = this.state;
+      if (s === "ext") { const r = this.ext ? this.ext(dt) : false; if (r === false && this.state === "ext") this.endExt(); return; }
       if (s === "limp") return this.limp(dt);
       let P = this.gr === undefined ? null : platOf(this);
       if (s === "air") {
+        if (this.flip) this.rot += this.flip * dt;
         const py = this.y; this.vy += G * dt; this.x += this.vx * dt; this.y += this.vy * dt;
         if (this.x < 14) { this.x = 14; this.vx = Math.abs(this.vx) * .3; } if (this.x > W - 14) { this.x = W - 14; this.vx = -Math.abs(this.vx) * .3; }
         if (this.vy >= 0) for (const p of plats) if (this.x > p.l - 3 && this.x < p.r + 3 && py <= p.t + 2 && this.y >= p.t) {
+          if (p.bounce) { this.y = p.t; this.bn = (this.bn || 0) + 1; const out = this.bn >= 7; this.vy = -(out ? 560 : rnd(860, 1060)); this.vx = out ? this.dir * 170 : rnd(-30, 30); this.flip = out ? 0 : rnd(6, 11) * (Math.random() < .5 ? -1 : 1); if (out) { this.bn = 0; this.rot = 0; } p.sq = .28; return; }
+          this.rot = 0; this.flip = 0;
           if (this.vy > 1250) { this.y = p.t; this.toLimp(this.vx * .4, -this.vy * .25); this.speak("Aua!", 1.6); return; }
           this.y = p.t; this.gr = p.el; this.vy = 0; this.vx = 0; this.land = .25; this.set("idle"); this.timer = rnd(.3, 1); return;
         }
@@ -109,6 +114,11 @@
       this.x = clamp(this.x, 10, W - 10);
     }
     idle() { this.set("idle"); this.timer = rnd(.4, 1.6); }
+    endExt() {
+      this.ext = null; this.hidden = false; this.pp = null; this.rot = 0; this.sx = 1; this.flip = 0; this.pairS = null;
+      let best = null, bd = 1e9; for (const q of plats) if (this.x > q.l - 6 && this.x < q.r + 6) { const d = Math.abs(q.t - this.y); if (d < bd && d < 40) { bd = d; best = q; } }
+      if (best) { this.y = best.t; this.gr = best.el; this.land = 0; this.idle(); } else this.launch(0, 0);
+    }
     atEdge(P) {
       const r = Math.random();
       if (r < .5) { this.dir *= -1; this.timer = rnd(1, 3); this.set("walk"); this.timer = rnd(1.5, 3.5); }
@@ -116,6 +126,7 @@
       else this.launch(this.dir * rnd(60, 130), -rnd(300, 520));
     }
     decide(P, mouse) {
+      if (MODE.on && MODE.decide && MODE.decide(this, P, mouse)) return;
       const cur = mouse && mouse.in ? Math.hypot(mouse.x - this.x, mouse.y - (this.y - 30)) : 1e9;
       const r = Math.random();
       if (cur < 170 && r < .5) { this.dir = mouse.x < this.x ? -1 : 1; this.set("wave"); this.timer = rnd(1.6, 3); if (Math.random() < .5) this.speak(); return; }
@@ -140,13 +151,14 @@
       if (!c.length) return false;
       const T = pick(c), tx = clamp(this.x, T.l + 10, T.r - 10), tgt = clamp(T.l + 10 + Math.random() * Math.max(1, T.r - T.l - 20), T.l + 10, T.r - 10);
       const side = T.r < P.l + 4 ? P.l + 4 : T.l > P.r - 4 ? P.r - 4 : clamp(tgt, P.l + 6, P.r - 6);
-      this.goTo(clamp(side, P.l + 4, P.r - 4), p => {
+      this.goTo(clamp(side, P.l + 4, P.r - 4), () => this.leapTo(T, tgt), false);
+      return true;
+    }
+    leapTo(T, tgt) {
         const q = plats.find(z => z.el === T.el); if (!q) return this.idle();
         const ty = q.t, apex = Math.min(this.y, ty) - rnd(35, 70), vy = -Math.sqrt(2 * G * (this.y - apex)), tt = (-vy + Math.sqrt(vy * vy + 2 * G * (ty - this.y))) / G, gx = clamp(tgt, q.l + 8, q.r - 8), vx = (gx - this.x) / tt;
         if (Math.abs(vx) > 330 || !isFinite(vx)) return this.idle();
         this.dir = vx < 0 ? -1 : 1; this.launch(vx, vy);
-      }, false);
-      return true;
     }
     // Klettern an der Seite der Kachel darueber
     tryClimb(P) {
@@ -178,7 +190,7 @@
     toLimp(vx, vy) {
       const J = this.pose(), k = .008, N = (p, ax, ay) => ({ x: p[0], y: p[1], px: p[0] - ax * k, py: p[1] - ay * k });
       this.nodes = { hd: N(J.hd, vx, vy), nk: N(J.nk, vx, vy), hp: N(J.hp, vx, vy), h0: N(J.hn[0], vx, vy), h1: N(J.hn[1], vx, vy), f0: N(J.ft[0], vx, vy), f1: N(J.ft[1], vx, vy) };
-      this.state = "limp"; this.t = 0; this.limpT = 0; this.gr = undefined;
+      this.state = "limp"; this.t = 0; this.limpT = 0; this.gr = undefined; this.ext = null; this.hidden = false; this.pp = null; this.rot = 0; this.sx = 1; this.pairS = null;
     }
     limp(dt) {
       const n = this.nodes, all = Object.values(n), steps = 2, h = dt / steps;
@@ -223,10 +235,11 @@
         J.sh = [J.nk[0], J.nk[1] + 3]; J.kn = [0, 1].map(i => { const f = J.ft[i], m = [(J.hp[0] + f[0]) / 2, (J.hp[1] + f[1]) / 2]; return [m[0] + (i ? 3 : -3), m[1] - 1]; });
         J.el = [0, 1].map(i => { const h = J.hn[i], m = [(J.sh[0] + h[0]) / 2, (J.sh[1] + h[1]) / 2]; return [m[0] + (i ? -2 : 2), m[1] + 1]; }); J.floppy = 1; return J;
       }
-      let sitting = false, armsUp = false, climbing = false;
-      if (s === "walk" || s === "goto") {
+      let sitting = false, armsUp = false, climbing = false; const pp = s === "ext" ? this.pp : null;
+      if (pp === "sit" || pp === "warm" || pp === "ride" || pp === "slide") sitting = true;
+      if (s === "walk" || s === "goto" || pp === "skate" || pp === "push") {
         const s0 = Math.sin(this.ph), c0 = Math.cos(this.ph);
-        f0 = [x + s0 * 13 * d, y - Math.max(0, c0) * 6]; f1 = [x - s0 * 13 * d, y - Math.max(0, -c0) * 6]; hipY = y - LEG + Math.abs(s0) * 1.8; lean = 2;
+        f0 = [x + s0 * 13 * d, y - Math.max(0, c0) * 6]; f1 = [x - s0 * 13 * d, y - Math.max(0, -c0) * 6]; hipY = y - LEG + Math.abs(s0) * 1.8; lean = pp === "push" ? 7 : 2;
         J.hand = [s0, -s0];
       } else if (s === "air" || s === "cheer") {
         const up = this.vy < 0, fl = Math.sin(t * 16);
@@ -240,13 +253,18 @@
         climbing = true;
       } else if (s === "pull") {
         const u = clamp(t / .45, 0, 1); hipY = y - LEG * (.45 + .55 * u); lean = 4 * d;
+      } else if (pp === "crouch") { hipY = y - LEG * .62; lean = 3;
       } else { hipY = y - LEG + Math.sin(t * 2.2 + this.ph) * .7 - this.land * 7 * (this.land > 0 ? 1 : 0); }
       const hp = [x, hipY], nk = [x + lean * d, hipY - TOR + (sitting ? 2 : 0)], hd = [nk[0] + lean * .4 * d, nk[1] - HR - 3];
       J.hp = hp; J.nk = nk; J.hd = hd; const sh = [nk[0], nk[1] + 3]; J.sh = sh;
       if (sitting) {
         const hp2 = [x, y - 6], kn0 = [x + d * 11, y - 6], kn1 = [x + d * 11, y - 7]; J.hp = hp2; J.nk = [x + d * 2, y - 6 - TOR + 2]; J.hd = [J.nk[0] + d, J.nk[1] - HR - 3]; J.sh = [J.nk[0], J.nk[1] + 3];
         J.kn = [kn0, kn1]; J.ft = [[x + d * 12 + Math.sin(t * 3) * 3, y + 7], [x + d * 12 + Math.sin(t * 3 + 1.6) * 3, y + 7]];
-        J.hn = [[x - d * 6, y - 2], [x - d * 3, y - 1]]; J.el = [ik(J.sh[0], J.sh[1], J.hn[0][0], J.hn[0][1], 9.5, 9.5, d), ik(J.sh[0], J.sh[1], J.hn[1][0], J.hn[1][1], 9.5, 9.5, d)]; return J;
+        J.hn = [[x - d * 6, y - 2], [x - d * 3, y - 1]];
+        if (pp === "warm") J.hn = [[J.sh[0] + d * 13, J.sh[1] + 5], [J.sh[0] + d * 11, J.sh[1] + 8]];
+        else if (pp === "ride") J.hn = [[J.sh[0] + d * 7, J.sh[1] - 6], [J.sh[0] + d * 7, J.sh[1] - 2]];
+        else if (pp === "slide") J.hn = [[J.sh[0] - 11, J.sh[1] - 13], [J.sh[0] + 11, J.sh[1] - 13]];
+        J.el = [ik(J.sh[0], J.sh[1], J.hn[0][0], J.hn[0][1], 9.5, 9.5, d), ik(J.sh[0], J.sh[1], J.hn[1][0], J.hn[1][1], 9.5, 9.5, d)]; return J;
       }
       if (climbing) {
         const cw = this.wall ? this.wall.cw : 1, a = this.cp, hx = x + cw * 9, q = k => .5 + .5 * Math.sin(a + k * Math.PI);
@@ -269,13 +287,22 @@
         const u = clamp(t / .6, 0, 1); h0 = u < .5 ? [sh[0] - d * 11, sh[1] - 11] : [sh[0] + d * 15, sh[1] - 6]; h1 = [sh[0] + d * 6, sh[1] + 12];
       } else if (s === "pull") {
         h0 = [sh[0] + d * 9, sh[1] + 10]; h1 = [sh[0] - d * 9, sh[1] + 10];
+      } else if (pp === "hi5") { h0 = [sh[0] + d * 14, sh[1] - 13]; h1 = [sh[0] - d * 6, sh[1] + 14];
+      } else if (pp === "hug") { h0 = [sh[0] + d * 12, sh[1] + 3]; h1 = [sh[0] + d * 10, sh[1] - 1];
+      } else if (pp === "skate") { h0 = [sh[0] - d * 14, sh[1] + 6]; h1 = [sh[0] + d * 14, sh[1] + 6];
+      } else if (pp === "push") { h0 = [sh[0] + d * 15, sh[1] + 11]; h1 = [sh[0] + d * 13, sh[1] + 14];
+      } else if (pp === "cheer") { h0 = [sh[0] - 12, sh[1] - 15 + Math.sin(t * 16) * 3]; h1 = [sh[0] + 12, sh[1] - 15 - Math.sin(t * 16) * 3];
+      } else if (pp === "crouch") { h0 = [sh[0] + d * 8, sh[1] - 4]; h1 = [sh[0] + d * 6, sh[1] - 6];
+      } else if (pp === "throw") { const u = clamp((t % .7) / .7, 0, 1); h0 = u < .5 ? [sh[0] - d * 11, sh[1] - 11] : [sh[0] + d * 15, sh[1] - 6]; h1 = [sh[0] + d * 6, sh[1] + 12];
       } else if (swing) { h0 = [sh[0] - swing[0] * 9 * d, sh[1] + 14]; h1 = [sh[0] - swing[1] * 9 * d, sh[1] + 14]; }
       else { h0 = [sh[0] - 7, sh[1] + 14.5]; h1 = [sh[0] + 7, sh[1] + 14.5]; }
       J.hn = [h0, h1]; J.el = J.hn.map(h => ik(sh[0], sh[1], h[0], h[1], 9.5, 9.5, d)); return J;
     }
     // ---------- Zeichnen ----------
     draw() {
-      const J = this.pose(), o = this.o, d = J.d, st = this.state;
+      if (this.hidden) return;
+      const J = this.pose(), o = this.o, d = J.d, st = this.state, tr = (this.rot || 0) !== 0 || (this.sx !== undefined && this.sx !== 1);
+      if (tr) { const cx = this.x, cy = this.y - LEG * .8; ctx.save(); ctx.translate(cx, cy); ctx.rotate(this.rot || 0); ctx.scale(this.sx === undefined ? 1 : this.sx, 1); ctx.translate(-cx, -cy); }
       // Schatten
       if (st !== "limp" && st !== "air" && st !== "climb") { ctx.fillStyle = "rgba(0,0,0,.22)"; ctx.beginPath(); ctx.ellipse(this.x, this.y + 1, 13, 3, 0, 0, 7); ctx.fill(); }
       // Schal (hinten)
@@ -295,6 +322,8 @@
       else { ctx.beginPath(); ctx.arc(hd[0] + lookX - 2.7, hd[1] - 1.2, 1.2, 0, 7); ctx.arc(hd[0] + lookX + 2.7, hd[1] - 1.2, 1.2, 0, 7); ctx.fill(); }
       ctx.strokeStyle = INK; ctx.lineWidth = 1.4; ctx.beginPath(); if (st === "air" || st === "cheer" || st === "dance") ctx.arc(hd[0] + lookX, hd[1] + 1.8, 2.8, .1, Math.PI - .1); else ctx.arc(hd[0] + lookX, hd[1] + 2.4, 2, .2, Math.PI - .2); ctx.stroke();
       this.drawHat(J);
+      if (tr) ctx.restore();
+      if (this.team !== undefined) { ctx.fillStyle = this.team ? "#3da5ff" : "#ff5d6c"; ctx.strokeStyle = INK; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(J.hd[0] - 5, J.hd[1] - HR - 21); ctx.lineTo(J.hd[0] + 5, J.hd[1] - HR - 21); ctx.lineTo(J.hd[0], J.hd[1] - HR - 14); ctx.closePath(); ctx.fill(); ctx.stroke(); }
       // Sprechblase
       if (this.say) this.bubble(J);
     }
@@ -345,7 +374,7 @@
     for (let i = balls.length - 1; i >= 0; i--) {
       const b = balls[i]; b.life -= dt; b.vy += 1200 * dt; const py = b.y; b.x += b.vx * dt; b.y += b.vy * dt;
       let hit = b.life <= 0 || b.x < -20 || b.x > W + 20 || b.y > H + 20;
-      if (!hit) for (const m of men) if (m !== b.own && m.state !== "limp") { if (Math.hypot(b.x - m.x, b.y - (m.y - 30)) < 17) { m.toLimp(b.vx * .6, b.vy * .6 - 150); m.speak(pick(["Autsch!", "Treffer!", "Oh nein!", "Hey!"]), 1.6); hit = true; b.hitMan = 1; break; } }
+      if (!hit) for (const m of men) if (m !== b.own && m.state !== "limp" && !m.hidden && !(m.team !== undefined && b.own && b.own.team === m.team)) { if (Math.hypot(b.x - m.x, b.y - (m.y - 30)) < 17) { m.toLimp(b.vx * .6, b.vy * .6 - 150); m.speak(pick(["Autsch!", "Treffer!", "Oh nein!", "Hey!"]), 1.6); hit = true; b.hitMan = 1; break; } }
       if (!hit) for (const p of plats) if (b.x > p.l && b.x < p.r && py < p.t && b.y >= p.t - 1) { hit = true; break; }
       if (hit) { puff(b.x, b.y, b.hitMan ? 14 : 9); balls.splice(i, 1); }
     }
@@ -357,27 +386,29 @@
   let drag = null, supp = 0, setCur = false;
   const popup = () => document.querySelector(".advm,.modal,.agiftv,#player");
   function near(m, x, y) {
+    if (m.hidden) return false;
     if (m.state === "limp" && m.nodes) { return Object.values(m.nodes).some(p => Math.hypot(p.x - x, p.y - y) < 17); }
     return x > m.x - 14 && x < m.x + 14 && y > m.y - LEG - TOR - 22 && y < m.y + 6;
   }
-  addEventListener("pointermove", e => {
-    const now = performance.now(), dt = Math.max(1, now - mouse.lt); mouse.vx = (e.clientX - mouse.lx) / dt * 1000; mouse.vy = (e.clientY - mouse.ly) / dt * 1000; mouse.lx = e.clientX; mouse.ly = e.clientY; mouse.lt = now;
-    mouse.x = e.clientX; mouse.y = e.clientY; mouse.in = e.pointerType !== "touch";
-    if (drag) { drag.man.nodes.nk.x = e.clientX; drag.man.nodes.nk.y = e.clientY; return; }
-    if (e.pointerType === "mouse" && on && !busy() && !popup()) { const h = men.some(m => near(m, e.clientX, e.clientY)); if (h) { document.body.style.cursor = "grab"; setCur = true; } else if (setCur) { document.body.style.cursor = ""; setCur = false; } }
+  const pt = e => MODE.on ? [e.clientX / MODE.s, e.clientY / MODE.s] : [e.clientX, e.clientY];
+  addEventListener("pointermove", e => { const [X, Y] = pt(e);
+    const now = performance.now(), dt = Math.max(1, now - mouse.lt); mouse.vx = (X - mouse.lx) / dt * 1000; mouse.vy = (Y - mouse.ly) / dt * 1000; mouse.lx = X; mouse.ly = Y; mouse.lt = now;
+    mouse.x = X; mouse.y = Y; mouse.in = e.pointerType !== "touch";
+    if (drag) { drag.man.nodes.nk.x = X; drag.man.nodes.nk.y = Y; return; }
+    if (e.pointerType === "mouse" && on && !busy() && !popup()) { const h = men.some(m => near(m, X, Y)); if (h) { document.body.style.cursor = "grab"; setCur = true; } else if (setCur) { document.body.style.cursor = ""; setCur = false; } }
   }, { passive: true });
   document.addEventListener("mouseleave", () => { mouse.in = false; });
-  addEventListener("pointerdown", e => {
-    if (!on || busy() || popup() || e.button > 0) return;
-    const m = men.find(q => near(q, e.clientX, e.clientY)); if (!m) return;
+  addEventListener("pointerdown", e => { const [X, Y] = pt(e);
+    if ((!on && !MODE.on) || busy() || (popup() && !MODE.on) || e.button > 0) return;
+    const m = men.find(q => near(q, X, Y)); if (!m) return;
     e.preventDefault(); e.stopPropagation();
     if (e.pointerType === "touch") { if (m.state !== "limp") { m.launch(0, -640); m.speak(); } return; }
     if (m.state !== "limp" || !m.nodes) m.toLimp(0, 0);
-    m.held = true; m.nodes.nk.pin = true; m.nodes.nk.x = e.clientX; m.nodes.nk.y = e.clientY; drag = { man: m, x: e.clientX, y: e.clientY, t: performance.now() };
+    m.held = true; m.nodes.nk.pin = true; m.nodes.nk.x = X; m.nodes.nk.y = Y; drag = { man: m, x: X, y: Y, t: performance.now() };
     document.body.style.cursor = "grabbing"; m.speak(pick(["Huch!", "Hilfe!", "Wheee!"]), 1.4);
   }, true);
-  addEventListener("pointerup", e => {
-    if (!drag) return; const m = drag.man, n = m.nodes, click = Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 5 && performance.now() - drag.t < 250;
+  addEventListener("pointerup", e => { const [X, Y] = pt(e);
+    if (!drag) return; const m = drag.man, n = m.nodes, click = Math.hypot(X - drag.x, Y - drag.y) < 5 && performance.now() - drag.t < 250;
     m.held = false; n.nk.pin = false;
     if (click) { m.x = n.hp.x; m.y = Math.max(n.f0.y, n.f1.y); m.nodes = null; m.launch(0, -720); m.speak("Ho ho ho!"); }
     else { const k = .008; n.nk.px = n.nk.x - clamp(mouse.vx, -2200, 2200) * k; n.nk.py = n.nk.y - clamp(mouse.vy, -2200, 2200) * k; }
@@ -398,17 +429,25 @@
   function frame(now) {
     requestAnimationFrame(frame);
     const dt = Math.min((now - last) / 1000, .033); last = now;
-    if (!on || busy()) { if (shown) { cv.style.opacity = "0"; shown = false; } return; }
-    if (!shown) { cv.style.opacity = "1"; shown = true; }
+    if (MODE.on) { ctx = MODE.ctx; W = MODE.W; H = MODE.H; } else if (ctx !== mainCtx) { ctx = mainCtx; size(); }
+    if ((!on && !MODE.on) || busy()) { if (shown) { cv.style.opacity = "0"; shown = false; } return; }
+    const want = !MODE.on; if (shown !== want) { cv.style.opacity = want ? "1" : "0"; shown = want; }
     try {
-      scan(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+      scan();
+      if (MODE.on) MODE.begin(dt); else { ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H); }
       men.forEach(m => { const ox = m.x; m.update(dt, mouse); m.vxs = (m.x - ox) / Math.max(dt, .001); });
       stepBalls(dt);
       men.forEach(m => m.draw());
       ctx.fillStyle = "#fff"; balls.forEach(b => { ctx.beginPath(); ctx.arc(b.x, b.y, 4.2, 0, 7); ctx.fill(); ctx.strokeStyle = "#b9cdf5"; ctx.lineWidth = 1; ctx.stroke(); });
       parts.forEach(p => { ctx.globalAlpha = 1 - p.t / p.life; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill(); }); ctx.globalAlpha = 1;
-    } catch (e) { on = false; cv.style.opacity = "0"; console.error(e); }
+      if (MODE.on) MODE.end(dt);
+    } catch (e) { console.error(e); if (MODE.on) { MODE.on = false; } else { on = false; cv.style.opacity = "0"; } }
   }
   requestAnimationFrame(frame);
+  window.MOKI_MEN_API = {
+    MODE, men, Man, OUT, rnd, pick, clamp, balls, parts, puff, ik, seg, LEG, TOR, HR, SKIN, INK,
+    add(type) { const m = new Man(men.length, type || pick(Object.keys(OUT))); m.vxs = 0; m.x = rnd(60, Math.max(120, W - 60)); m.y = -40; men.push(m); return m; },
+    get W() { return W; }, get H() { return H; }
+  };
   window.MOKI_MEN = { men, plats: () => plats, state: () => men.map(m => m.state) };
 })();

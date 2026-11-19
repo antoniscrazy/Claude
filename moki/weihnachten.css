@@ -229,3 +229,19 @@ body:has(#player) .xm-music,body:has(#player) .xm-flake{display:none}
 .xm-menbtn{position:fixed;left:68px;bottom:14px;z-index:99980;width:46px;height:46px;border-radius:50%;border:2px solid #f6c66788;background:#0d1a3aee;color:#ffe3a0;font-size:22px;cursor:pointer;box-shadow:0 6px 20px #0008;opacity:.75}
 .xm-menbtn.on{opacity:1;border-color:#f6c667}
 body:has(#player) .xm-menbtn,body:has(#player) #xm-men{display:none}
+
+/* ===== Spielplatz ===== */
+#xm-pg{position:fixed;inset:0;z-index:99991;background:#050a22;animation:xmfade .35s both;touch-action:none}
+#xm-pg canvas{position:absolute;inset:0}
+.pgbar{position:absolute;left:0;right:0;top:0;z-index:2;display:flex;align-items:center;gap:12px;padding:10px 14px;background:linear-gradient(180deg,#050a22ee,#050a2200);pointer-events:auto}
+.pgbar button{flex:none;border:1px solid #f6c66788;background:#0d1a3acc;color:#ffe3a0;font:700 13px system-ui,sans-serif;padding:8px 13px;border-radius:99px;cursor:pointer;white-space:nowrap;backdrop-filter:blur(6px)}
+.pgbar button:hover{background:#1c2f66}
+.pgbar button.on{background:#f6c667;color:#3a1e00;border-color:#f6c667}
+.pgbar button i{font-style:normal;opacity:.75;margin-left:2px}
+.pgtitle{color:#fff;font:800 17px system-ui,sans-serif;white-space:nowrap}
+.pgbtns{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;flex:1}
+.pgbtns::-webkit-scrollbar{display:none}
+.pghint{position:absolute;left:0;right:0;bottom:8px;text-align:center;color:#ffffffaa;font:600 12px system-ui,sans-serif;pointer-events:none;text-shadow:0 1px 4px #000}
+html.pg-on,html.pg-on body{overflow:hidden}
+#tfoot .pg-open{background:linear-gradient(135deg,#b3243a,#7a1a2c);color:#ffe3a0;border:1px solid #f6c667}
+@media(max-width:700px){.pgtitle{display:none}}
