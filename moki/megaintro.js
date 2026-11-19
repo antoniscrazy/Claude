@@ -306,6 +306,7 @@
   function finish() {
     if (ended) return; ended = true;
     markSeen();
+    try { if (window.mokiStat) window.mokiStat("intro", "done"); } catch (e) {}
     root.classList.add("site-in"); mi.classList.add("out");
     blocked.forEach(el => { try { el.inert = false; } catch (e) {} });
     removeEventListener("keydown", stopKeys, true);
