@@ -1063,8 +1063,8 @@ window.MOKI_GAMES = [
     title: "Hextris",
     url: "#/play/hextris",
     category: "Geschicklichkeit",
-    emoji: "⬢",
-    colors: ["#9b59b6", "#2ecc71"],
+    image: "hextris.png",
+        colors: ["#9b59b6", "#2ecc71"],
     description: "Drehe den sechseckigen Ring und passe die fallenden Blöcke zu ihrer Farbe an.",
     added: "2026-11-19",
     featured: false
