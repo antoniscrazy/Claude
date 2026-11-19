@@ -29,8 +29,7 @@
     const up = document.querySelector("#upd.open");
     const intro = document.documentElement.classList.contains("intro-on") || document.documentElement.classList.contains("mi-on");
     const pl = document.getElementById("player");
-    const tr = document.getElementById("trlfs");
-    return !!(up || intro || pl || tr);
+    return !!(up || intro || pl);
   }
   function waitFree() {
     return new Promise(res => { const t = setInterval(() => { if (!busy()) { clearInterval(t); res(); } }, 500); });

@@ -123,10 +123,9 @@
     $("ugo").focus({ preventScroll: true });
   }
 
-  // Nach dem Intro: Trailer im Vollbild (nur beim ersten Besuch), danach die Update-Uebersicht
+  // Nach dem Intro: die Update-Uebersicht
   function afterIntro() {
-    if (!trailerSeen() || /[?&]trailer/.test(location.search)) showTrailerOverlay().then(openUpdate);
-    else openUpdate();
+    openUpdate();
   }
 
   function leaveIntro(fast) {
