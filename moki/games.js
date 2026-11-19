@@ -1041,8 +1041,8 @@ window.MOKI_GAMES = [
     title: "Universal Paperclips",
     url: "#/play/universal-paperclips",
     category: "Simulation",
-    emoji: "📎",
-    colors: ["#c8d3dd", "#1e2a38"],
+    image: "universal-paperclips.jpg",
+        colors: ["#c8d3dd", "#1e2a38"],
     description: "Ein Idle-Spiel: Stelle Büroklammern her und baue dein Wirtschaftsimperium aus.",
     added: "2026-11-19",
     featured: false
