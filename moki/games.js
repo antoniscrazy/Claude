@@ -1008,8 +1008,8 @@ window.MOKI_GAMES = [
     title: "Cut the Rope",
     url: "#/play/cut-the-rope",
     category: "Strategie",
-    emoji: "🍬",
-    colors: ["#7bd389", "#e8553d"],
+    image: "cut-the-rope.jpg",
+        colors: ["#7bd389", "#e8553d"],
     description: "Schneide die Seile an der richtigen Stelle, damit das Bonbon die Figur erreicht.",
     added: "2026-11-19",
     featured: false
