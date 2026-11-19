@@ -136,6 +136,11 @@ th{color:var(--mut);font-weight:500}td form{display:inline}.tag{padding:2px 8px;
 .t-ok{color:var(--ok);border-color:var(--ok)}.t-bad{color:var(--bad);border-color:var(--bad)}
 .scroll{overflow-x:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
 a.btn{display:block;text-align:center;text-decoration:none;background:var(--acc);color:#0b0d14;font-weight:600;border-radius:8px;padding:14px;margin:8px 0}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:10px;margin:10px 0 16px}.kpi{background:#14151a;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.kpi b{display:block;font-size:1.35rem}.kpi span{color:var(--mut);font-size:.8rem}.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:16px}
+.bar{display:block;height:7px;border-radius:5px;background:var(--acc);margin:2px 0 8px}.hours{display:flex;align-items:flex-end;gap:2px;height:80px;margin-top:6px}.hours i{flex:1;background:var(--acc);border-radius:3px 3px 0 0;min-height:2px}
+.hl{display:flex;justify-content:space-between;color:var(--mut);font-size:.75rem}td.n,th.n{text-align:right;white-space:nowrap}
 `;
 const shell = (title, body, extraHead = "") =>
   `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>${CSS}</style>${extraHead}</head><body><main>${body}</main></body></html>`;
@@ -232,7 +237,7 @@ async function mokiPage(msg, err) {
   const banRows = bans.map((b) => `<tr><td>${esc(b.creator || "(ohne Name)")}<div class="mut">Gerät ${esc(b.owner)}</div></td>
       <td>${esc(b.reason || "")}</td><td class="mut">${esc(dtf.format(Date.parse(b.banned_at)))}</td><td>${b.games} Spiele</td>
       <td><form method="post" action="/moki/act">${hid(b.id, "unban")}<button class="sec">Entsperren</button></form></td></tr>`).join("");
-  const testerHtml = (await announcementsSection()) + (await testerSection());
+  const testerHtml = (await statsSection()) + (await announcementsSection()) + (await testerSection());
   return shell("Moki-Spiele", `
     <div class="top"><h1>Moki-Spiele</h1><form method="post" action="/logout"><button class="sec">Abmelden</button></form></div>
     ${testerHtml}
@@ -243,6 +248,35 @@ async function mokiPage(msg, err) {
     <div class="card"><h2>Gesperrte Geräte (${bans.length})</h2><div class="scroll"><table><thead><tr><th>Ersteller</th><th>Grund</th><th>Seit</th><th>Spiele</th><th></th></tr></thead>
       <tbody>${banRows || `<tr><td colspan="5" class="mut">Keine gesperrten Geräte.</td></tr>`}</tbody></table></div>
       <p class="mut">Ein Gerät ist der Schlüssel im Browser. Wer den Browser-Speicher löscht, bekommt einen neuen Schlüssel. Die Sperre ist also nicht wasserdicht.</p></div>`);
+}
+
+// ---------- Statistik: Aufrufe, Besuche, gespielte Spiele und Spielzeit (anonyme Tageszaehler aus moki_stats_daily) ----------
+const berlinDate = (d = new Date()) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin" }).format(d);
+const fmtShort = (sec) => { sec = Math.round(Number(sec) || 0); const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60); return h ? `${h} Std ${m} Min` : m ? `${m} Min ${sec % 60} Sek` : `${sec} Sek`; };
+async function statsSection() {
+  let rows;
+  try { rows = await rpc("moki_admin_stats", { p_admin: DB_SECRET, p_days: 14 }); }
+  catch (e) { return `<div class="card"><h2>Statistik</h2><div class="err">Statistik nicht erreichbar: ${esc(e.message)}</div></div>`; }
+  const days = []; for (let i = 0; i < 14; i++) days.push(berlinDate(new Date(Date.now() - i * 86400000)));
+  const today = days[0], week = days[6];
+  const on = (metric, day) => rows.filter((r) => r.metric === metric && r.day === day).reduce((a, r) => a + Number(r.n), 0);
+  const byKey = (metric, from) => { const m = new Map(); for (const r of rows) if (r.metric === metric && r.day >= from) m.set(r.key, (m.get(r.key) || 0) + Number(r.n)); return m; };
+  const sorted = (m) => [...m].sort((a, b) => b[1] - a[1]);
+  const kpi = (v, label) => `<div class="kpi"><b>${v}</b><span>${label}</span></div>`;
+  const t = (m) => on(m, today);
+  const kpis = kpi(t("view"), "Aufrufe heute") + kpi(t("session"), "Besuche heute") + kpi(t("newvisitor"), "Neue Besucher") + kpi(t("play"), "Spiele gestartet") + kpi(fmtShort(t("secs")), "Spielzeit gesamt") + kpi(t("intro"), "Einleitung gesehen") + kpi(t("random"), "Zufall-Klicks") + kpi(t("share"), "Geteilt");
+  const dayRows = days.map((d) => `<tr><td>${esc(d === today ? "Heute" : d.split("-").reverse().join("."))}</td><td class="n">${on("view", d)}</td><td class="n">${on("session", d)}</td><td class="n">${on("newvisitor", d)}</td><td class="n">${on("play", d)}</td><td class="n">${esc(fmtShort(on("secs", d)))}</td></tr>`).join("");
+  const p7 = byKey("play", week), s7 = byKey("secs", week), p1 = byKey("play", today), s1 = byKey("secs", today);
+  const gameRows = sorted(p7).slice(0, 20).map(([g, n]) => { const sec = s7.get(g) || 0; return `<tr><td><b>${esc(g)}</b></td><td class="n">${p1.get(g) || 0}</td><td class="n">${esc(fmtShort(s1.get(g) || 0))}</td><td class="n">${n}</td><td class="n">${esc(fmtShort(sec))}</td><td class="n">${esc(fmtShort(Math.round(sec / n)))}</td></tr>`; }).join("");
+  const list = (title, m) => { const a = sorted(m).slice(0, 8), max = Math.max(1, ...a.map((x) => x[1])); return `<div><h2>${title}</h2>${a.map(([k, v]) => `<div class="mut">${esc(k)} · ${v}</div><span class="bar" style="width:${Math.max(3, Math.round(v / max * 100))}%"></span>`).join("") || `<div class="mut">Noch keine Daten.</div>`}</div>`; };
+  const hv = byKey("hour", week), hmax = Math.max(1, ...hv.values());
+  const hours = Array.from({ length: 24 }, (_, i) => { const h = String(i).padStart(2, "0"), v = hv.get(h) || 0; return `<i style="height:${Math.max(2, Math.round(v / hmax * 100))}%" title="${h} Uhr: ${v}"></i>`; }).join("");
+  return `<div class="card"><h2>Statistik</h2><p class="mut">Anonyme Tageszähler ohne Personendaten, Tag nach deutscher Zeit. Die Spielzeit zählt nur, solange ein Spiel in Moki offen und der Tab sichtbar ist.</p>
+    <div class="kpis">${kpis}</div>
+    <h2>Letzte 14 Tage</h2><div class="scroll"><table><thead><tr><th>Tag</th><th class="n">Aufrufe</th><th class="n">Besuche</th><th class="n">Neu</th><th class="n">Spiele</th><th class="n">Spielzeit</th></tr></thead><tbody>${dayRows}</tbody></table></div>
+    <h2 style="margin-top:16px">Top-Spiele (nach Starts in 7 Tagen)</h2><div class="scroll"><table><thead><tr><th>Spiel</th><th class="n">Heute</th><th class="n">Zeit heute</th><th class="n">7 Tage</th><th class="n">Zeit 7 Tage</th><th class="n">Ø je Start</th></tr></thead><tbody>${gameRows || `<tr><td colspan="6" class="mut">Noch keine Daten.</td></tr>`}</tbody></table></div>
+    <div class="cols">${list("Geräte (7 Tage)", byKey("device", week))}${list("Kategorien (7 Tage)", byKey("cat", week))}${list("Herkunft (7 Tage)", byKey("ref", week))}</div>
+    <h2 style="margin-top:16px">Uhrzeiten der Besuche (7 Tage)</h2><div class="hours">${hours}</div><div class="hl"><span>0</span><span>6</span><span>12</span><span>18</span><span>23 Uhr</span></div></div>`;
 }
 
 // ---------- Tester-Programm: Bewerbungen, Tester, Meldungen, bestaetigte Spiele ----------
