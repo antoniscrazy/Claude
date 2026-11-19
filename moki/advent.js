@@ -345,6 +345,58 @@
     logo.insertAdjacentHTML("beforeend", '<svg class="xm-hat" viewBox="0 0 40 36" aria-hidden="true"><path d="M5 28C6 14 16 5 33 7C29 12 29 20 35 28Z" fill="#d93a49"/><path d="M5 28C6 14 16 5 33 7" fill="none" stroke="#ff8a94" stroke-width="1.6" stroke-linecap="round" opacity=".7"/><rect x="2" y="25" width="36" height="9" rx="4.5" fill="#fff"/><circle cx="34" cy="7" r="4.6" fill="#fff"/></svg>');
   }
 
+  // ---------- Schnee, der auf Spielen und Fenstern liegen bleibt, plus kleine Spielereien ----------
+  function play() {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const SEL = ".tile,.modal .box,.advm .card,.agiftv .gcard,.advb,.rz-card", POPUP = ".modal .box,.advm .card,.agiftv .gcard,.rz-card", MAX = 14, PER = 2;
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    const busy = () => document.hidden || document.getElementById("player") || root.classList.contains("mi-on") || root.classList.contains("rz-on");
+    const seen = el => { const r = el.getBoundingClientRect(); return r.width > 60 && r.top > 56 && r.top < innerHeight - 40 && r.right > 20 && r.left < innerWidth - 20; };
+    function melt(el) { el.classList.add("melt"); setTimeout(() => el.remove(), 900); }
+    function land() {
+      if (busy() || document.querySelectorAll(".xm-land").length >= MAX) return;
+      const pop = [...document.querySelectorAll(POPUP)].filter(el => { const r = el.getBoundingClientRect(); return r.width > 60 && r.top > -4 && r.top < innerHeight - 40; }), all = [...document.querySelectorAll(SEL)].filter(seen);
+      const pool = pop.length && Math.random() < .75 ? pop : all; if (!pool.length) return;
+      const t = pool[(Math.random() * pool.length) | 0]; if (t.querySelectorAll(":scope > .xm-land").length >= PER) return;
+      const w = rnd(12, 24), p = document.createElement("i"); p.className = "xm-land";
+      p.style.cssText = `left:${rnd(10, 82)}%;width:${w}px;height:${w * .5}px`; t.appendChild(p);
+      setTimeout(() => melt(p), rnd(6000, 11000));
+    }
+    (function loop() { land(); setTimeout(loop, rnd(900, 1900)); })();
+    // Beim Darueberfahren wird der Schnee von der Kachel geschuettelt
+    document.addEventListener("mouseover", e => {
+      const t = e.target.closest && e.target.closest(".tile"); if (!t || t._shk) return; t._shk = 1; setTimeout(() => { t._shk = 0; }, 900);
+      t.querySelectorAll(":scope > .xm-land").forEach(melt);
+      for (let i = 0; i < 6; i++) { const d = document.createElement("i"); d.className = "xm-drop"; d.style.cssText = `left:${rnd(8, 88)}%;animation-delay:${i * .05}s`; t.appendChild(d); setTimeout(() => d.remove(), 1100); }
+    });
+    // Schneeflocken-Puff beim Klicken
+    let lastPuff = 0;
+    document.addEventListener("click", e => {
+      const n = Date.now(); if (n - lastPuff < 250 || busy()) return; lastPuff = n;
+      for (let i = 0; i < 7; i++) { const a = Math.random() * 6.283, d = rnd(20, 48), f = document.createElement("i"); f.className = "xm-fx"; f.style.cssText = `left:${e.clientX}px;top:${e.clientY}px;--x:${Math.cos(a) * d}px;--y:${Math.sin(a) * d - 14}px;--c:#fff;width:5px;height:5px`; document.body.appendChild(f); setTimeout(() => f.remove(), 900); }
+    }, true);
+    // Sternschnuppe
+    (function shoot() {
+      setTimeout(() => {
+        if (!busy()) { const s = document.createElement("i"); s.className = "xm-shoot"; s.style.cssText = `left:${rnd(10, 60)}vw;top:${rnd(8, 30)}vh`; document.body.appendChild(s); setTimeout(() => s.remove(), 1500); }
+        shoot();
+      }, rnd(18000, 40000));
+    })();
+    // Schlitten mit Rentieren: anklicken bringt eine Gluecksflocke
+    (function sleigh() {
+      setTimeout(() => {
+        if (!busy() && !document.querySelector(".xm-sleigh")) {
+          const b = document.createElement("button"); b.type = "button"; b.className = "xm-sleigh"; b.setAttribute("aria-label", "Weihnachtsmann fangen"); b.innerHTML = "<span>🦌🦌🛷</span>"; b.style.top = rnd(70, 150) + "px";
+          b.addEventListener("click", () => { flakes++; setJ("moki-advent-flakes", flakes); stat("flake", "sleigh"); toast("Der Weihnachtsmann winkt! Glücksflocke +1 🎅"); if (category === "__advent") calendarView(); b.remove(); });
+          b.addEventListener("animationend", () => b.remove()); document.body.appendChild(b);
+        }
+        sleigh();
+      }, rnd(45000, 80000));
+    })();
+    setTimeout(() => { if (!busy() && !document.querySelector(".xm-sleigh")) { const b = document.createElement("button"); b.type = "button"; b.className = "xm-sleigh"; b.setAttribute("aria-label", "Weihnachtsmann fangen"); b.innerHTML = "<span>🦌🦌🛷</span>"; b.style.top = "90px"; b.addEventListener("click", () => { flakes++; setJ("moki-advent-flakes", flakes); stat("flake", "sleigh"); toast("Der Weihnachtsmann winkt! Glücksflocke +1 🎅"); if (category === "__advent") calendarView(); b.remove(); }); b.addEventListener("animationend", () => b.remove()); document.body.appendChild(b); } }, 12000);
+  }
+  play();
+
   garland(); snow(); hat();
   document.title = document.title.replace(/^Moki/, "Moki Weihnachten");
   try { unlockGames(); renderSide(); home(); } catch (e) {}
