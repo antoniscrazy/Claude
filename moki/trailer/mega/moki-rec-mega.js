@@ -1,64 +1,78 @@
-// Nimmt eine echte Sitzung auf moki.html auf (1920x1080). Supabase gemockt, externe Spiele-Adressen blockiert.
-// Aufruf: NODE_PATH=$(npm root -g) node moki-rec.js <ausgabeordner>
-const {chromium}=require('playwright');const fs=require('fs'),path=require('path');
+// Mega-Update-Trailer: Aufnahme einer echten Sitzung auf Moki (1920x1080) mit allen Neuerungen seit den ersten 50 Spielen:
+// Ankuendigungs-Popup, Wochenchallenge mit Spielzeit-Balken, 54 neue Spiele, Spiele direkt in Moki, Tester-Programm.
+// Datenbank (Supabase) gemockt. Spiele werden lokal aus den Git-Staenden geladen (statt von GitHub), es laufen also die echten Spiele.
+// Vorher: python3 prepare-moki.py   Aufruf: node moki-rec-mega.js <ausgabeordner>
+const {chromium}=require('playwright');const fs=require('fs'),path=require('path'),{execFileSync}=require('child_process');
 const {OVERLAY,driver}=require('../rec-lib.js');
 const OUT=process.argv[2];fs.mkdirSync(OUT,{recursive:true});
+const REPO='/home/user/Claude';
+const TYPES={html:'text/html',js:'text/plain',css:'text/css',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',webp:'image/webp',svg:'image/svg+xml',json:'application/json',mp3:'audio/mpeg',ogg:'audio/ogg',wav:'audio/wav',woff:'font/woff',woff2:'font/woff2',ico:'image/x-icon'};
 (async()=>{
  const b=await chromium.launch();
  const ctx=await b.newContext({viewport:{width:1920,height:1080},recordVideo:{dir:OUT,size:{width:1920,height:1080}}});
  const tCreate=Date.now();const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
- await p.route('**/*supabase*/**',r=>r.fulfill({status:200,contentType:'application/json',body:'[]'}));
- await p.route(/https:\/\/[^/]*netlify\.app\/.*/,r=>r.abort('aborted'));
+ // ---- Datenbank-Attrappe
+ let tester={state:'none'};
+ const CONFIRMED=['2048-merge','sandboxels','idle-success','drive-mad','longcat','plonky'];
+ await p.route('**/rest/v1/rpc/**',r=>{const fn=r.request().url().split('/rpc/')[1];let body=[];
+  if(fn==='moki_challenge_get')body=540;                       // 9 von 15 Minuten
+  else if(fn==='moki_announcements_active')body=[{id:'rec-1',title:'Das Mega-Update ist da!',emoji:'🎉',body:'54 neue Spiele, alle direkt in Moki, dazu Wochenchallenge mit Spielzeit-Balken und das Tester-Programm. Viel Spaß!'}];
+  else if(fn==='moki_tester_state')body=tester;
+  else if(fn==='moki_tester_board')body={confirmed:CONFIRMED,claims:[]};
+  else if(fn.startsWith('moki_tester_'))body=null;
+  r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)})});
+ // ---- Spiele lokal aus Git ausliefern (raw.githubusercontent.com/<user>/Claude/<sha>/<pfad>)
+ await p.route(/^https:\/\/raw\.githubusercontent\.com\/antoniscrazy\/Claude\/([0-9a-f]{40})\/(.+?)(\?.*)?$/,r=>{
+  const m=r.request().url().match(/Claude\/([0-9a-f]{40})\/([^?]+)/);
+  try{const buf=execFileSync('git',['-C',REPO,'show',m[1]+':'+decodeURIComponent(m[2])],{maxBuffer:1<<30});
+   const ext=(m[2].split('.').pop()||'').toLowerCase();r.fulfill({status:200,headers:{'content-type':TYPES[ext]||'application/octet-stream','access-control-allow-origin':'*'},body:buf})}
+  catch(e){r.fulfill({status:404,body:'nicht gefunden'})}});
+ await p.route(/^https?:\/\/(?!localhost)(?!raw\.githubusercontent\.com\/antoniscrazy)[^/]+\/.*/,r=>{if(/supabase/.test(r.request().url()))return r.fallback();r.abort('aborted')});
  await p.addInitScript(()=>{try{localStorage.setItem('moki-intro-v2','1')}catch(e){}});
  await p.addInitScript(()=>{window.__ZOOM=1.3333});await p.addInitScript(OVERLAY);
- await p.goto('file:///home/user/Claude/moki/_trailer-moki.html');await p.waitForSelector('.tile');await p.waitForTimeout(700);
+ await p.goto('file:///home/user/Claude/moki/_trailer-moki.html');await p.waitForSelector('.tile');await p.waitForTimeout(500);
  const off=(Date.now()-tCreate)/1000;const d=driver(p);d.reset();
  const {at,mv,mvEl,clk,cap,smoothScroll,sleep}=d;
- const tile=n=>`#app .grid .tile >> nth=${n}`;
- // Schritte (Zeiten = gewuenschter Start in Sekunden)
- await at(0.1,()=>cap('MOKI','101 Spiele, direkt im Browser, ohne Werbung',2800),'cap0');
- await at(0.5,()=>mvEl('.mega',900,0,0,0,true),'zum Timer');
- await at(1.4,()=>cap('MEGA-UPDATE-TIMER','Über 100 Spiele, Freitag um 11:30 Uhr',3200),'capmega');
- await at(5.2,()=>cap('SPIEL DES TAGES','Jeden Tag ein neues Spiel für alle',2600),'cap1');
- await at(5.6,async()=>{const y=await p.evaluate(()=>document.querySelector('.chal').getBoundingClientRect().top+scrollY-200);await smoothScroll(null,0,y,1200)},'scroll Challenge');
- await at(7.0,()=>cap('WOCHENCHALLENGE','Jede Woche ein Spiel, sammle Spielzeit',3000),'cap2');
- await at(7.4,()=>mvEl('.chal .cprog',900,0,0,0,true),'zum Fortschritt');
- await at(9.0,()=>mvEl('[data-ch=invite]',700,0,0,0,true),'zu Herausfordern');
- await at(10.0,()=>clk('[data-ch=invite]',300,0,true),'Herausfordern');
- await at(10.4,()=>cap('FREUNDE HERAUSFORDERN','Link und Nachricht per WhatsApp, Telegram oder Mail',3200,true),'cap3');
- await at(11.6,()=>clk('.shbox [data-a=copy]',900,0,true),'Kopieren');
- await at(13.8,()=>clk('.shbox [data-a=no]',700,0,true),'Schließen');
- await at(14.6,async()=>{const y=await p.evaluate(()=>document.querySelector('#app .grid .tile').getBoundingClientRect().top+scrollY-250);await smoothScroll(null,await p.evaluate(()=>scrollY),y,1400)},'scroll Grid');
- await at(16.2,()=>cap('101 SPIELE','Mit NEU-Schildern für frische Spiele',2600),'cap4');
- await at(16.6,()=>mvEl(tile(3),900,0,0,0,true),'Kachel');
- await at(17.8,()=>clk(`${tile(3)} >> .shr`,800,0,true),'Teilen-Symbol');
- await at(18.2,()=>cap('FREUNDE EINLADEN','Jedes Spiel mit einem Klick teilen',2800,true),'cap5');
- await at(20.2,()=>clk('.shbox [data-a=no]',800,0,true),'zu');
- await at(20.8,async()=>{await smoothScroll(null,await p.evaluate(()=>scrollY),0,500)},'nach oben');
- await at(21.4,()=>clk('#q',700,0,true),'Suche');
- await at(22.1,async()=>{await p.keyboard.type('stick',{delay:130})},'tippen');
- await at(22.2,()=>cap('SCHNELLE SUCHE','Tippen und sofort finden',2400),'cap6');
- await at(25.0,async()=>{await p.keyboard.press('Control+A');await p.keyboard.press('Backspace')},'leeren');
- await at(25.6,()=>cap('KATEGORIEN','Fahren, Kampf, Sport und mehr',3400),'cap7');
- await at(25.6,async()=>{await smoothScroll(null,await p.evaluate(()=>scrollY),0,300)},'nach oben2');
- await at(26.0,()=>clk('.cat[data-c="Fahren"]',900,0,true),'Fahren');
- await at(25.8,()=>clk('.cat[data-c="Geschicklichkeit"]',500,0,true),'Geschick');
- await at(26.6,()=>clk('.cat[data-c="Kampf & Schießen"]',500,0,true),'Kampf');
- await at(27.4,()=>clk('.cat[data-c="Strategie"]',500,0,true),'Strategie');
- await at(28.2,()=>clk('.cat[data-c="Sport"]',500,0,true),'Sport');
- await at(29.2,()=>clk('.cat[data-c="Alle"]',700,0,true),'Alle');
- await at(30.2,async()=>{const y=await p.evaluate(()=>document.querySelector('#app .grid .tile').getBoundingClientRect().top+scrollY-250);await p.evaluate(y=>window.scrollTo(0,y),y)},'hoch');
- await at(30.8,()=>cap('FAVORITEN','Deine Lieblingsspiele an einem Ort',5200),'cap8');
- await at(31.0,async()=>{for(const n of [0,1,2,3,4,5]){await mvEl(tile(n),450,0,0,0,true);await clk(`${tile(n)} >> .fav`,250,0,true);await sleep(100)}},'Favoriten setzen');
- await at(34.0,async()=>{await clk('.cat[data-c="__fav"]',900,0,true);await p.evaluate(()=>scrollTo(0,0));await mv(900,700,1200);await sleep(1800)},'Favoriten ansehen');
- await at(36.2,()=>clk('.cat[data-c="Alle"]',700,0,true),'Alle');
- await at(37.2,()=>cap('ZUFALLSSPIEL','Unentschlossen? Moki wählt für dich',2400),'cap9');
- await at(37.4,()=>clk('#rnd',1000,0,true),'Zufall');
- await at(39.8,()=>clk('#inv',900,0,true),'Einladen oben');
- await at(40.1,()=>cap('MOKI TEILEN','Lade Freunde mit einem Link ein',2600,true),'cap10');
- await at(42.8,()=>clk('.shbox [data-a=no]',700,0,true),'zu');
- await at(44.0,async()=>{await smoothScroll(null,await p.evaluate(()=>scrollY),5200,2200)},'Alle Spiele scrollen');
- await at(46.6,async()=>{},'Ende');
+ const tile=id=>`#app a[data-id="${id}"]`;
+ const scrollTo=async y=>{await smoothScroll(null,await p.evaluate(()=>scrollY),y,1200)};
+ const elY=(sel,off2=250)=>p.evaluate(([s,o])=>document.querySelector(s).getBoundingClientRect().top+scrollY-o,[sel,off2]);
+ const frameClick=async(frameSel,sel,dur=800)=>{const bb=await p.frameLocator(frameSel).locator(sel).boundingBox();await mv(bb.x+bb.width/2,bb.y+bb.height/2,dur);await sleep(80);await p.mouse.down();await sleep(60);await p.mouse.up()};
+ // ---- 1. Ankuendigung beim Oeffnen
+ await at(0.2,()=>cap('MEGA-UPDATE','Alles Neue seit den ersten 50 Spielen',3300),'cap0');
+ await at(1.8,()=>cap('ANKÜNDIGUNGEN','Neuigkeiten direkt beim Öffnen von Moki',3000,true),'cap-ann');
+ await at(5.4,async()=>{await p.waitForSelector('.ann-close.ready',{timeout:6000});await clk('.ann-close',900,0,true)},'Ankuendigung zu');
+ // ---- 2. Wochenchallenge
+ await at(7.6,async()=>{await scrollTo(await elY('.chal',200))},'scroll Challenge');
+ await at(8.8,()=>cap('WOCHENCHALLENGE','Spielzeit sammeln, Fortschritt im Balken',3600),'cap-ch');
+ await at(9.2,()=>mvEl('.chal .cpbar',1000,0,0,0,true),'zum Balken');
+ // ---- 3. Neue Spiele
+ await at(13.4,async()=>{await scrollTo(await elY('#app .grid .tile',260))},'scroll Grid');
+ await at(14.8,()=>cap('54 NEUE SPIELE','Frisch dazugekommen, mit NEU-Schild',3000),'cap-new');
+ await at(15.0,async()=>{for(const n of [1,4,7,10]){await mvEl(`#app .grid .tile >> nth=${n}`,520,0,0,0,true);await sleep(180)}},'Kacheln');
+ // ---- 4. Spiele direkt in Moki
+ await at(19.4,()=>cap('DIREKT AUF MOKI','Jedes Spiel läuft hier, ohne Umweg',3400),'cap-play');
+ await at(19.6,async()=>{await scrollTo(await elY(tile('hextris'),420))},'scroll Hextris');
+ await at(21.2,()=>clk(tile('hextris'),900,0,true),'Hextris oeffnen');
+ await at(25.2,async()=>{await mv(960,560,600);await p.mouse.down();await sleep(60);await p.mouse.up();await sleep(300);for(let i=0;i<7;i++){await p.keyboard.press(i%3?'ArrowLeft':'ArrowRight');await sleep(420)}},'spielen');
+ await at(29.6,()=>frameClick('#player iframe','#moki-back',900),'zurueck zu Moki');
+ // ---- 5. Tester-Programm
+ await at(31.4,async()=>{await smoothScroll(null,await p.evaluate(()=>scrollY),await p.evaluate(()=>document.documentElement.scrollHeight),1400)},'nach unten');
+ await at(33.0,()=>cap('TESTER-PROGRAMM','Hilf mit und teste neue Spiele',3000),'cap-test');
+ await at(33.4,()=>clk('[data-tf=apply]',900,0,true),'Tester werden');
+ await at(35.0,async()=>{await clk('#tf-name',500,0,true);await p.keyboard.type('Max',{delay:120})},'Name');
+ await at(36.8,async()=>{tester={state:'pending'};await clk('[data-a=send]',700,0,true)},'Bewerben');
+ await at(39.4,async()=>{tester={state:'tester',name:'Max',notice:'accepted'};await p.reload();await p.waitForSelector('.tmodal',{timeout:8000})},'angenommen');
+ await at(40.6,()=>cap('DU BIST TESTER','Mit Anleitung und Checkliste',2800,true),'cap-ok');
+ await at(44.4,async()=>{tester={state:'tester',name:'Max'};await clk('.tmodal [data-a=ok]',800,0,true)},'Los geht\'s');
+ await at(46.2,async()=>{await smoothScroll(null,await p.evaluate(()=>scrollY),await p.evaluate(()=>document.documentElement.scrollHeight),1000);await clk('[data-tf=mode]',800,0,true)},'Tester-Modus an');
+ await at(49.2,async()=>{await scrollTo(await elY('#app .grid .tile',260))},'zum Grid');
+ await at(50.4,()=>cap('TESTER-MODUS','Bereits getestete Spiele sind ausgegraut',3000),'cap-mode');
+ await at(52.8,async()=>{await scrollTo(await elY(tile('hextris'),420))},'scroll zum Spiel');
+ await at(54.6,()=>clk(tile('hextris'),900,0,true),'Spiel pruefen');
+ await at(58.4,async()=>{for(const k of ['laedt','start','steuerung','fluessig','kein_fehler']){await clk(`#tpanel [data-k="${k}"]`,420,0,true);await sleep(120)}},'Checkliste');
+ await at(62.0,()=>cap('CHECKLISTE','Haken setzen, Fehler mit Screenshot melden',2800,true),'cap-check');
+ await at(62.4,()=>clk('#tp-send',800,0,true),'Meldung abschicken');
+ await at(66.0,async()=>{},'Ende');
  const vid=p.video();await p.close();await ctx.close();const f=await vid.path();await b.close();
  fs.writeFileSync(path.join(OUT,'info.json'),JSON.stringify({file:f,offset:off,log:d.log}));
  console.log('Offset',off.toFixed(2),errs);d.log.forEach(l=>console.log(String(l[0]).padEnd(26),'soll',l[1],'start',l[2].toFixed(1),'ende',l[3].toFixed(1)));

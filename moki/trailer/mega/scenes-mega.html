@@ -23,7 +23,7 @@ function ring(cx,cy,r,w,prog,rot){x.save();x.translate(cx,cy);x.rotate(rot);cons
 function floaters(t,alpha,n=18){for(let i=0;i<n;i++){const g=GAMES[(i*7)%GAMES.length],s=70+rnd(i)*90,sp=8+rnd(i+3)*22,px=((rnd(i+9)*W+t*sp*(i%2?1:-1))%(W+200)+W+200)%(W+200)-100,py=rnd(i+20)*H+Math.sin(t*.6+i)*20;
  x.save();x.globalAlpha=alpha*(.5+.5*rnd(i+50));x.translate(px,py);x.rotate((rnd(i+7)-.5)*.5+Math.sin(t*.4+i)*.1);rr(-s/2,-s/2,s,s,s*.2);x.clip();cover(IMG[g.i],-s/2,-s/2,s,s);x.restore()}}
 // ---------- Intro (0 - 8)
-const WORDS=[[4.2,'101 SPIELE'],[5.0,'DIREKT IM BROWSER'],[5.8,'FREUNDE & CHALLENGE'],[6.6,'DAS MEGA-UPDATE']];
+const WORDS=[[4.2,'101 SPIELE'],[5.0,'54 NEUE SPIELE'],[5.8,'DIREKT AUF MOKI'],[6.6,'DAS MEGA-UPDATE']];
 function intro(t){
   bgDark(t);floaters(t,.14*eo(t/3));
   // Partikel, die zum Zentrum fliegen (0.3-3.6)
@@ -105,7 +105,7 @@ function wall(t){
       x.save();rr(cx-w/2,py+CH/2-h/2,w,h,26);x.clip();cover(IMG[g.i],cx-w/2,py+CH/2-h/2,w,h);
       if(near<.2){x.fillStyle=`rgba(10,13,43,${.45*(1-near*5)})`;x.fillRect(cx-w/2,py,w,h+500)}x.restore();
       if(near>.7){x.lineWidth=5;x.strokeStyle=ACC;rr(cx-w/2,py+CH/2-h/2,w,h,26);x.stroke()}
-      if(g.a>='2026-11-18'&&near>.15){rr(cx+w/2-62,py+CH/2-h/2+10,52,24,12);x.fillStyle='#ff3b6b';x.fill();txt('NEU',cx+w/2-36,py+CH/2-h/2+22,13,'#fff')}
+      if(g.n&&near>.15){rr(cx+w/2-62,py+CH/2-h/2+10,52,24,12);x.fillStyle='#ff3b6b';x.fill();txt('NEU',cx+w/2-36,py+CH/2-h/2+22,13,'#fff')}
     }}
   x.restore();
   const gg=x.createRadialGradient(W/2,H/2,150,W/2,H/2,H);gg.addColorStop(0,'rgba(5,6,15,.1)');gg.addColorStop(1,'rgba(5,6,15,.78)');x.fillStyle=gg;x.fillRect(0,0,W,H);
@@ -114,8 +114,8 @@ function wall(t){
     rr(-380,-110,760,220,40);x.fillStyle='rgba(10,13,43,.92)';x.fill();x.lineWidth=7;const bg2=x.createLinearGradient(-380,0,380,0);bg2.addColorStop(0,ACC);bg2.addColorStop(1,ACC2);x.strokeStyle=bg2;x.stroke();
     txt(String(n),-170,-6,150,'#fff','center',900);txt('SPIELE',-30,-24,54,ACC2,'left',900);txt('und es werden mehr',-30,28,26,MUTED,'left',500);x.restore()}
   if(t>3.2){const u=t-3.2,k=back(u/.35);x.save();x.translate(W/2,H/2+160);x.scale(k,k);
-    rr(-260,-40,520,80,40);x.fillStyle='#ff3b6b';x.fill();txt('50+ NEUE SPIELE',0,2,42,'#fff');x.restore()}
-  if(t>5.0){const u=t-5.0,k=back(u/.35);x.save();x.translate(W/2,H/2+160);x.scale(k,k);rr(-320,-40,640,80,40);x.fillStyle=ACC;x.fill();txt('PLUS FREUNDE & CHALLENGE',0,2,38,'#04201a');x.restore()}
+    rr(-260,-40,520,80,40);x.fillStyle='#ff3b6b';x.fill();txt('54 NEU IM UPDATE',0,2,42,'#fff');x.restore()}
+  if(t>5.0){const u=t-5.0,k=back(u/.35);x.save();x.translate(W/2,H/2+160);x.scale(k,k);rr(-320,-40,640,80,40);x.fillStyle=ACC;x.fill();txt('PLUS TESTER & CHALLENGE',0,2,38,'#04201a');x.restore()}
   vign(.4);flash(t<.12?(.12-t)*6:0);if(t>7.55)flash((t-7.55)/.45);
 }
 // ---------- Finale (0 - 6 lokal)
@@ -132,11 +132,11 @@ function finale(u){
   const T='MEGA-UPDATE';x.font='900 118px Inter,"Segoe UI","DejaVu Sans",sans-serif';const tw=x.measureText(T).width;let cx=W/2-tw/2;
   for(let i=0;i<T.length;i++){const ch=T[i],w=x.measureText(ch).width,k=back((u-.35-i*.045)/.3);if(k>0){x.save();x.translate(cx+w/2,468);x.scale(k,k);txt(ch,0,0,118,'#fff','center',900,['#0a0d2b',14]);x.restore()}cx+=w}
   // Funktions-Chips
-  const chips=['Neue Spiele','Freunde einladen','Wochenchallenge','Keine Werbung'];
-  chips.forEach((s2,i)=>{const k=back((u-1.4-i*.22)/.3);if(k<=0)return;const bw=[230,290,300,260][i],tx=W/2-570+i*0+[0,250,550,870][i]-0;
-    x.save();x.translate(W/2-(1080/2)+[0,250,550,870][i]+bw/2,560);x.scale(k,k);rr(-bw/2,-28,bw,56,28);x.fillStyle=i===3?ACC:'rgba(255,255,255,.12)';x.fill();x.lineWidth=3;x.strokeStyle=i===3?ACC:'rgba(255,255,255,.35)';x.stroke();txt(s2,0,2,28,i===3?'#04201a':'#fff','center',800);x.restore()});
+  const chips=['54 neue Spiele','Direkt auf Moki','Wochenchallenge','Tester-Programm'];
+  chips.forEach((s2,i)=>{const k=back((u-1.4-i*.22)/.3);if(k<=0)return;const bw=[250,250,290,290][i];
+    x.save();x.translate(W/2-580+[0,270,540,850][i]+bw/2,560);x.scale(k,k);rr(-bw/2,-28,bw,56,28);x.fillStyle=i===3?ACC:'rgba(255,255,255,.12)';x.fill();x.lineWidth=3;x.strokeStyle=i===3?ACC:'rgba(255,255,255,.35)';x.stroke();txt(s2,0,2,28,i===3?'#04201a':'#fff','center',800);x.restore()});
   // URL Schreibmaschine
-  const URL='Freitag · 20. November · 11:30 Uhr',n=clamp(Math.floor((u-2.6)/.07),0,URL.length);if(u>2.6){x.save();rr(W/2-400,622,800,64,32);x.fillStyle='rgba(10,13,43,.9)';x.fill();x.lineWidth=4;x.strokeStyle=ACC;x.stroke();txt(URL.slice(0,n)+((Math.floor(u*3)%2&&n<URL.length)?'|':''),W/2,655,34,ACC,'center',700);x.restore()}
+  const URL='Jetzt auf Moki spielen',n=clamp(Math.floor((u-2.6)/.07),0,URL.length);if(u>2.6){x.save();rr(W/2-300,622,600,64,32);x.fillStyle='rgba(10,13,43,.9)';x.fill();x.lineWidth=4;x.strokeStyle=ACC;x.stroke();txt(URL.slice(0,n)+((Math.floor(u*3)%2&&n<URL.length)?'|':''),W/2,655,36,ACC,'center',700);x.restore()}
   flash(1-u*4);vign(.35);if(u>5.5){x.fillStyle=`rgba(0,0,0,${(u-5.5)/.5})`;x.fillRect(0,0,W,H)}
 }
 // ---------- Teaser: geheimnisvoller Countdown (0 - 14 lokal)
@@ -153,22 +153,22 @@ function teaser(u){
   if(u>2.0){const sx2=((u*180)%(W+400))-200;const gg=x.createLinearGradient(sx2-160,0,sx2+160,0);gg.addColorStop(0,'rgba(255,255,255,0)');gg.addColorStop(.5,'rgba(255,255,255,.07)');gg.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=gg;x.fillRect(sx2-160,0,320,H)}
   // 0-2.4: Herzschlag + Satz
   if(u<4.6){const hb=Math.exp(-((u%1.0)*7))+Math.exp(-(((u+.75)%1.0)*9))*.6;x.save();x.translate(W/2,H/2);const gg=x.createRadialGradient(0,0,5,0,0,260);gg.addColorStop(0,`rgba(255,59,107,${.12+hb*.35})`);gg.addColorStop(1,'rgba(255,59,107,0)');x.fillStyle=gg;x.fillRect(-300,-300,600,600);x.restore();
-    const T='Es ist so weit.',n=clamp(Math.floor((u-.5)/.055),0,T.length),a=u>3.8?1-(u-3.8)/.8:1;if(u>.5){x.globalAlpha=clamp(a);txt(T.slice(0,n)+((Math.floor(u*3)%2&&n<T.length)?'|':''),W/2,H/2,44,'#d8dcff','center',500);x.globalAlpha=1}}
+    const T='Aber das ist erst der Anfang.',n=clamp(Math.floor((u-.5)/.055),0,T.length),a=u>3.8?1-(u-3.8)/.8:1;if(u>.5){x.globalAlpha=clamp(a);txt(T.slice(0,n)+((Math.floor(u*3)%2&&n<T.length)?'|':''),W/2,H/2,44,'#d8dcff','center',500);x.globalAlpha=1}}
   // ab 4.6: Countdown 14 Tage, laeuft in Echtzeit
   if(u>=4.6){const v=u-4.6,k=back(v/.5);const total=14*86400-Math.floor(v);const d=Math.floor(total/86400),h=Math.floor(total%86400/3600),m=Math.floor(total%3600/60),s=total%60;
     const blink=1-Math.min(1,(v%1)*8); // Sekunden-Impuls
     x.save();x.translate(W/2,H/2-30);x.scale(k,k);
     const gl=(u>11.8)?(rnd(Math.floor(u*30))>.8?1:0):0; if(gl)x.translate((rnd(Math.floor(u*60))-.5)*24,0);
-    const labels=['WOCHENTAG','TAG','MONAT','UHRZEIT'],vals=['FR','20','NOV','11:30'];
+    const labels=['TAGE','STUNDEN','MINUTEN','SEKUNDEN'],vals=[d,h,m,s];
     for(let i=0;i<4;i++){const bx=-445+i*230;x.save();x.translate(bx+100,0);
       rr(-100,-110,200,200,30);x.fillStyle='rgba(8,10,34,.92)';x.fill();x.lineWidth=4;x.strokeStyle=i===3?`rgba(255,210,63,${.5+.5*blink})`:'rgba(120,100,255,.55)';x.shadowColor=i===3?ACC2:'#6a5aff';x.shadowBlur=i===3?30*blink+8:14;x.stroke();x.shadowBlur=0;
-      const off=i===3?blink*14:0;txt(String(vals[i]),0,-12+off*0,i===3?66:104,'#fff','center',900);
-      txt(labels[i],0,66,20,'#a3abe0','center',700);x.restore()}
+      const off=i===3?blink*14:0;txt(String(vals[i]).padStart(2,'0'),0,-12+off*0,104,'#fff','center',900);
+      txt(labels[i],0,66,20,'#a3abe0','center',700);if(i<3)txt(':',115,-14,80,'rgba(255,255,255,.35)','center',900);x.restore()}
     // RGB-Versatz bei Glitch
-    if(gl){x.globalCompositeOperation='lighter';x.globalAlpha=.35;x.translate(8,0);txt('FR 20 NOV 11:30',0,-12,60,'rgba(255,0,80,.6)');x.globalCompositeOperation='source-over';x.globalAlpha=1}
+    if(gl){x.globalCompositeOperation='lighter';x.globalAlpha=.35;x.translate(8,0);txt('14 : 00 : 00 : 00',0,-12,60,'rgba(255,0,80,.6)');x.globalCompositeOperation='source-over';x.globalAlpha=1}
     x.restore();
     // Texte
-    const lines=[[6.2,'101 SPIELE',86,'#fff'],[8.0,'DAS MEGA-UPDATE',74,ACC2],[10.0,'FREITAG  ·  20.11.2026  ·  11:30 UHR',44,ACC],[12.0,'SEI DABEI.',70,'#fff']];
+    const lines=[[6.2,'100+ SPIELE',86,'#fff'],[8.0,'DAS MEGA-UPDATE',74,ACC2],[10.0,'02.12.2026  ·  00:00 UHR',48,ACC],[12.0,'SEI DABEI.',70,'#fff']];
     for(let i=0;i<lines.length;i++){const[a,tx,sz,col]=lines[i],e=i<lines.length-1?lines[i+1][0]:99;if(u<a||u>=e)continue;const uu=u-a,inK=eo(uu/.25),out=u>e-.18?(u-(e-.18))/.18:0;
       x.save();x.translate(W/2,H/2+190);x.globalAlpha=1-out;x.scale(1+(1-inK)*1.6,1+(1-inK)*1.6);const j=(rnd(Math.floor(u*50))>.88&&uu<.9)?(rnd(Math.floor(u*50)+3)-.5)*26:0;x.translate(j,0);
       txt(tx,0,0,sz,col,'center',900,['#02030a',14]);x.restore()}
@@ -183,7 +183,7 @@ function teaser(u){
 }
 function render(t,set){
   x.setTransform(1.5,0,0,1.5,0,0);x.globalAlpha=1;x.clearRect(0,0,W,H);
-  if(set==='A'){if(t<8)intro(t);else ads(t-8)}else if(set==='B'){if(t<8)wall(t);else finale(t-8)}else teaser(t)
+  if(set==='A'){if(t<8)intro(t);else wall(t-8)}else finale(t)
 }
 load();
 </script>
