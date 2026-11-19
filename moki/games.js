@@ -1085,8 +1085,8 @@ window.MOKI_GAMES = [
     title: "Stickman Bike",
     url: "#/play/stickman-bike",
     category: "Sport",
-    emoji: "🚴",
-    colors: ["#f5a623", "#2c3e50"],
+    image: "stickman-bike.jpg",
+        colors: ["#f5a623", "#2c3e50"],
     description: "Fahre mit dem Stickman-Rad über Rampen und Hindernisse und halte das Gleichgewicht.",
     added: "2026-11-19",
     featured: false
