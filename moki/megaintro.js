@@ -110,7 +110,7 @@
   const cats = [...groups.keys()].sort((a, b) => { const ia = ORDER.indexOf(a), ib = ORDER.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || groups.get(a).length - groups.get(b).length; });
 
   // ---------- Zeitplan ----------
-  const T_TITLE = 5.2, T_SHOW = 10.0;
+  const T_TITLE = 5.2, T_INFO = 10.0, T_SHOW = T_INFO + 8.4;   // Logo, Titel, "Das ist neu", dann alle Spiele nach Kategorien
   const plan = []; let tt = T_SHOW, done = 0;
   cats.forEach(name => {
     const list = groups.get(name), step = list.length > 20 ? 0.11 : 0.15;
@@ -118,7 +118,7 @@
     plan.push({ name, list, step, card, tiles, end, exit, done0: done, col: CATCOL[name] || [MINT, GOLD] });
     done += list.length; tt = exit;
   });
-  const T_WALL = tt, DUR = T_WALL + 8.6;
+  const T_GONE = tt, T_WALL = T_GONE + 7.0, DUR = T_WALL + 8.6;   // nach den Kategorien: die Spiele, die raus sind, dann die Wand
 
   // ---------- Zeichnen ----------
   function fitText(s, x, y, maxW, size, col, a = 1, sc = 1, weight = 900, glow = true, outline = true) {
@@ -246,6 +246,83 @@
     }
     if (t < seg.card + .03 || (seg === plan[0] && t < T_SHOW + .3)) flash(t, seg.card, .5, .25);
   }
+  // Szene "Das ist neu": die wichtigsten Neuerungen als Karten, eine nach der anderen
+  const INFO = [
+    ["54 neue Spiele", "Seit den ersten 50 Spielen dazugekommen", MINT, "54"],
+    ["Alle Spiele direkt in Moki", "Ohne Umweg, im selben Fenster", BLUE, "play"],
+    ["Wochenchallenge", "Spielzeit sammeln, Fortschritt im Balken", GOLD, "ring"],
+    ["Tester-Programm", "Hilf mit, neue Spiele zu testen", PINK, "check"],
+    ["Zufallsspiel", "Mit Animation über alle Spiele", VIO, "?"],
+    ["Keine Werbung", "Weiterhin keine Banner und Pop-ups", MINT, "ad"]
+  ];
+  function infoIcon(kind, cx, cy, r, col) {
+    ctx.save(); ctx.translate(cx, cy);
+    const g = ctx.createLinearGradient(-r, -r, r, r); g.addColorStop(0, col); g.addColorStop(1, hexA(col, .55)); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.strokeStyle = "#fff"; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.lineWidth = r * .2; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    if (kind === "play") { ctx.beginPath(); ctx.moveTo(-r * .22, -r * .38); ctx.lineTo(r * .42, 0); ctx.lineTo(-r * .22, r * .38); ctx.closePath(); ctx.fill(); }
+    else if (kind === "ring") { ctx.beginPath(); ctx.arc(0, 0, r * .46, -1.57, -1.57 + 6.283 * .72); ctx.stroke(); }
+    else if (kind === "check") { ctx.beginPath(); ctx.moveTo(-r * .42, 0); ctx.lineTo(-r * .1, r * .34); ctx.lineTo(r * .46, -r * .32); ctx.stroke(); }
+    else if (kind === "ad") { ctx.font = `900 ${r * .72}px ${FONT}`; ctx.fillText("AD", 0, 1); ctx.beginPath(); ctx.moveTo(-r * .58, -r * .5); ctx.lineTo(r * .58, r * .5); ctx.stroke(); }
+    else { ctx.font = `900 ${r * (kind.length > 1 ? .8 : 1.1)}px ${FONT}`; ctx.fillText(kind, 0, 2); }
+    ctx.restore();
+  }
+  function sceneInfo(t) {
+    const u = t - T_INFO; bg(t, MINT); sparks(t, .9, 60); rays(t, GOLD, .05);
+    const k0 = clamp(u / .3), titleY = H * .13;
+    fitText("DAS IST NEU", W / 2, titleY, W * .9, Math.min(W, H * 1.7) * .09, GOLD, k0 * 3, 1 + (1 - eo4(k0)) * 1.6);
+    shock(t, T_INFO, W / 2, titleY, GOLD, .5); flash(t, T_INFO, .45, .25);
+    const cols = W >= 900 ? 2 : 1, rows = Math.ceil(INFO.length / cols), gap = Math.min(W, H) * .025, top = H * .25, ah = H * .72;
+    const cw = Math.min((W * .92 - gap * (cols - 1)) / cols, 620), ch = Math.min((ah - gap * (rows - 1)) / rows, 130);
+    const x0 = (W - (cw * cols + gap * (cols - 1))) / 2, y0 = top + (ah - (ch * rows + gap * (rows - 1))) / 2;
+    INFO.forEach((it, i) => {
+      const at = .9 + i * .8, k = (u - at) / .45; if (k <= 0) return;
+      const c = i % cols, r = Math.floor(i / cols), x = x0 + c * (cw + gap), y = y0 + r * (ch + gap), slide = (1 - eo4(k)) * (c ? 1 : -1) * W * .35, a = clamp(k * 3);
+      ctx.save(); ctx.globalAlpha = a; ctx.translate(slide, 0);
+      ctx.fillStyle = "rgba(10,13,43,.9)"; ctx.beginPath(); ctx.roundRect(x, y, cw, ch, ch * .24); ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = hexA(it[2], .85); ctx.stroke();
+      const ir = ch * .3; infoIcon(it[3], x + ch * .2 + ir, y + ch / 2, ir, it[2]);
+      const tx = x + ch * .2 + ir * 2 + ch * .2, tw = cw - (tx - x) - ch * .2;
+      ctx.restore();
+      ctx.save(); ctx.translate(slide, 0);
+      fitText(it[0], tx + tw / 2, y + ch * .38, tw, Math.min(ch * .3, W * .05), "#fff", a, 1, 900, false, false);
+      fitText(it[1], tx + tw / 2, y + ch * .72, tw, Math.min(ch * .19, W * .035), "#a3abe0", a, 1, 500, false, false);
+      ctx.restore();
+      if (k > 0 && k < .15) shock(t, T_INFO + at, x + cw / 2, y + ch / 2, it[2], .25);
+    });
+    if (u > 7.9) { ctx.fillStyle = `rgba(5,6,15,${clamp((u - 7.9) / .5)})`; ctx.fillRect(0, 0, W, H); }
+  }
+  // Szene "Leider raus": die Spiele, die es nicht ins Update geschafft haben
+  const GONE = window.MOKI_GONE || [];
+  function sceneGone(t) {
+    const u = t - T_GONE; bg(t, "#ff4d4d"); sparks(t, .6, 50);
+    const k0 = clamp(u / .3), RED = "#ff6b6b";
+    fitText("LEIDER RAUS", W / 2, H * .14, W * .92, Math.min(W, H * 1.7) * .1, RED, k0 * 3, 1 + (1 - eo4(k0)) * 1.8);
+    shock(t, T_GONE, W / 2, H * .14, RED, .6); flash(t, T_GONE, .5, .3);
+    if (u > .8) fitText(GONE.length + " Spiele haben es nicht ins Update geschafft", W / 2, H * .24, W * .9, Math.min(W * .045, 40), "#e6e9ff", eo((u - .8) / .5), 1, 700, false);
+    const s = Math.min(W * (W < 700 ? .27 : .22), H * .3, 250), gap = s * .25, total = GONE.length * s + (GONE.length - 1) * gap, x0 = (W - total) / 2, y = H * .33;
+    GONE.forEach((g, i) => {
+      const at = 1.4 + i * .5, k = (u - at) / .4; if (k <= 0) return;
+      const x = x0 + i * (s + gap);
+      tile(g, x, y, s, clamp(k * 3), (1 - clamp(k)) * .5 * (i % 2 ? 1 : -1), back(k));
+      // grau und abgedunkelt
+      ctx.save(); ctx.globalAlpha = clamp(k * 3); ctx.translate(x + s / 2, y + s / 2); ctx.scale(back(k), back(k)); ctx.rotate((1 - clamp(k)) * .5 * (i % 2 ? 1 : -1)); ctx.translate(-s / 2, -s / 2);
+      ctx.beginPath(); ctx.roundRect(0, 0, s, s, s * .2); ctx.clip();
+      ctx.globalCompositeOperation = "saturation"; ctx.fillStyle = "#000"; ctx.fillRect(0, 0, s, s); ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "rgba(5,6,15,.5)"; ctx.fillRect(0, 0, s, s); ctx.restore();
+      // Stempel "RAUS"
+      const sk = (u - at - .35) / .25;
+      if (sk > 0) {
+        const sc = 1 + (1 - eo4(sk)) * 1.6; ctx.save(); ctx.globalAlpha = clamp(sk * 3); ctx.translate(x + s / 2, y + s / 2); ctx.rotate(-.2); ctx.scale(sc, sc);
+        ctx.lineWidth = Math.max(3, s * .03); ctx.strokeStyle = RED; ctx.fillStyle = "rgba(5,6,15,.55)"; const bw = s * .86, bh = s * .3; ctx.beginPath(); ctx.roundRect(-bw / 2, -bh / 2, bw, bh, bh * .2); ctx.fill(); ctx.stroke(); ctx.restore();
+        fitText("RAUS", x + s / 2, y + s / 2, s * .7, s * .22, RED, clamp(sk * 3), sc, 900, false, false);
+      }
+      fitText(g.title, x + s / 2, y + s + s * .16, s * 1.1, Math.min(s * .15, 30), "#e6e9ff", clamp(k * 2), 1, 800, false);
+    });
+    const ry = y + s + s * .45;
+    const lines = [["Netlify hat meine Accounts gesperrt.", 3.4, "#fff"], ["Auf die Dateien dieser Spiele habe ich keinen Zugriff mehr.", 4.2, "#cfd6ff"], ["Alle anderen Spiele sind weiter dabei.", 5.2, MINT]];
+    lines.forEach(([txt, at, col], i) => { if (u > at) fitText(txt, W / 2, ry + i * Math.min(W * .055, 52), W * .92, Math.min(W * .042, 36), col, eo((u - at) / .5), 1, i === 2 ? 800 : 600, false); });
+    if (u > 6.5) { ctx.fillStyle = `rgba(5,6,15,${clamp((u - 6.5) / .5)})`; ctx.fillRect(0, 0, W, H); }
+  }
   // Szene 4: Spielewand mit Zaehler und Finale (T_WALL - DUR)
   function sceneWall(t) {
     const u = t - T_WALL; bg(t); sparks(t, .7, 60);
@@ -293,9 +370,9 @@
   }
   function render(t) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalAlpha = 1;
-    const k = Math.exp(-((t % .46875) / .46875) * 6), sh = (t >= T_TITLE && t < T_TITLE + 3 ? 10 : t >= T_SHOW && t < T_WALL ? 3 : 0) * k;
+    const k = Math.exp(-((t % .46875) / .46875) * 6), sh = (t >= T_TITLE && t < T_TITLE + 3 ? 10 : t >= T_SHOW && t < T_GONE ? 3 : 0) * k;
     ctx.save(); ctx.translate(Math.sin(t * 91) * sh, Math.cos(t * 77) * sh);
-    if (t < T_TITLE) sceneLogo(t); else if (t < T_SHOW) sceneTitle(t); else if (t < T_WALL) sceneShow(t); else sceneWall(t);
+    if (t < T_TITLE) sceneLogo(t); else if (t < T_INFO) sceneTitle(t); else if (t < T_SHOW) sceneInfo(t); else if (t < T_GONE) sceneShow(t); else if (t < T_WALL) sceneGone(t); else sceneWall(t);
     ctx.restore();
     const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .4, W / 2, H / 2, Math.max(W, H) * .8); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,.55)"); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
     if (t < .6) { ctx.fillStyle = `rgba(0,0,0,${1 - t / .6})`; ctx.fillRect(0, 0, W, H); }
@@ -316,9 +393,9 @@
 
   // ---------- Start ----------
   async function start() {
-    const imgs = Promise.all(games.map(g => loadImg(g.image).then(i => { IMG.set(g.image, i); })));
+    const imgs = Promise.all([...games, ...(window.MOKI_GONE || [])].map(g => loadImg(g.image).then(i => { IMG.set(g.image, i); })));
     await Promise.race([imgs, new Promise(r => setTimeout(r, 6000))]);
-    if (TEST) { window.__MOKI_MI = { render, DUR, T_TITLE, T_SHOW, T_WALL, plan, finish }; render(0); return; }
+    if (TEST) { window.__MOKI_MI = { render, DUR, T_TITLE, T_INFO, T_SHOW, T_GONE, T_WALL, plan, finish }; render(0); return; }
     let t = 0, last = performance.now();
     const hard = setTimeout(finish, (DUR + 20) * 1000);   // Notbremse, falls etwas haengt
     (function frame(now) {

@@ -1192,6 +1192,13 @@ window.MOKI_GAMES = [
   }
 ];
 
+// Spiele, die es nicht ins Mega-Update geschafft haben (werden in der Einleitung gezeigt, stehen nicht in der Spieleliste)
+window.MOKI_GONE = [
+  { id: "geometry-dash", title: "Geometry Dash", image: "geometry-dash.jpg" },
+  { id: "voxelcraft", title: "VoxelCraft", image: "voxelcraft.jpg" },
+  { id: "monkey-mart", title: "Monkey Mart", image: "monkey-mart.jpg" }
+];
+
 // Weitere Seiten (erscheinen als eigener Bereich unter den Spielen)
 window.MOKI_SITES = [
   {
