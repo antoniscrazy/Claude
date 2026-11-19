@@ -1079,6 +1079,94 @@ window.MOKI_GAMES = [
     description: "Entkomme aus dem Haus der Oma, bevor sie dich erwischt. Achtung, nichts für schwache Nerven.",
     added: "2026-11-19",
     featured: false
+  },
+  {
+    id: "stickman-bike",
+    title: "Stickman Bike",
+    url: "#/play/stickman-bike",
+    category: "Sport",
+    emoji: "🚴",
+    colors: ["#f5a623", "#2c3e50"],
+    description: "Fahre mit dem Stickman-Rad über Rampen und Hindernisse und halte das Gleichgewicht.",
+    added: "2026-11-19",
+    featured: false
+  },
+  {
+    id: "tube-jumpers",
+    title: "Tube Jumpers",
+    url: "#/play/tube-jumpers",
+    category: "Geschicklichkeit",
+    emoji: "🫧",
+    colors: ["#00c6ff", "#0072ff"],
+    description: "Springe von Röhre zu Röhre und halte dich so lange wie möglich oben.",
+    added: "2026-11-19",
+    featured: false
+  },
+  {
+    id: "dadish",
+    title: "Dadish",
+    url: "#/play/dadish",
+    category: "Abenteuer",
+    emoji: "🥬",
+    colors: ["#e74c3c", "#27ae60"],
+    description: "Hilf Dadish, durch die Level zu hüpfen und seinen Nachwuchs zu finden.",
+    added: "2026-11-19",
+    featured: false
+  },
+  {
+    id: "stickman-run",
+    title: "Stickman Run",
+    url: "#/play/stickman-run",
+    category: "Geschicklichkeit",
+    emoji: "🏃",
+    colors: ["#8e44ad", "#2980b9"],
+    description: "Lauf als Stickman durch die Strecke und weiche den Hindernissen aus.",
+    added: "2026-11-19",
+    featured: false
+  },
+  {
+    id: "hexgl",
+    title: "HexGL",
+    url: "#/play/hexgl",
+    category: "Fahren",
+    emoji: "🛸",
+    colors: ["#00e5ff", "#101820"],
+    description: "Rase mit dem Gleiter durch futuristische Strecken, so schnell du kannst.",
+    added: "2026-11-19",
+    featured: false
+  },
+  {
+    id: "circloo",
+    title: "Circloo",
+    url: "#/play/circloo",
+    category: "Denken",
+    emoji: "⭕",
+    colors: ["#ffd23f", "#1e1e2f"],
+    description: "Bewege dich durch die Kreise und löse jedes Level mit cleveren Wegen.",
+    added: "2026-11-19",
+    featured: false
+  },
+  {
+    id: "roller",
+    title: "Roller",
+    url: "#/play/roller",
+    category: "Geschicklichkeit",
+    emoji: "🎳",
+    colors: ["#ff7eb3", "#5b2a86"],
+    description: "Rolle die Kugel über den Parcours, ohne von der Strecke zu fallen.",
+    added: "2026-11-19",
+    featured: false
+  },
+  {
+    id: "tunnel-rush",
+    title: "Tunnel Rush",
+    url: "#/play/tunnel-rush",
+    category: "Fahren",
+    emoji: "🌀",
+    colors: ["#00e5a8", "#0a0d2b"],
+    description: "Rase durch den Tunnel und weiche den Hindernissen im richtigen Moment aus.",
+    added: "2026-11-19",
+    featured: false
   }
 ];
 
