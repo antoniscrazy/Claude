@@ -1,9 +1,9 @@
 {
 "companyName": "SnowStromStudio",
 "productName": "Happy Wheels",
-"dataUrl": "MBuild.data.unityweb",
-"wasmCodeUrl": "MBuild.wasm.code.unityweb",
-"wasmFrameworkUrl": "MBuild.wasm.framework.unityweb",
+"dataUrl": "MBuild.data",
+"wasmCodeUrl": "MBuild.wasm.code",
+"wasmFrameworkUrl": "MBuild.wasm.framework",
 "TOTAL_MEMORY": 134217728,
 "graphicsAPI": ["WebGL 2.0", "WebGL 1.0"],
 "webglContextAttributes": {"preserveDrawingBuffer": false},
