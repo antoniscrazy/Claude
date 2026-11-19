@@ -1030,8 +1030,8 @@ window.MOKI_GAMES = [
     title: "Gym Stack",
     url: "#/play/gym-stack",
     category: "Geschicklichkeit",
-    emoji: "🏋️",
-    colors: ["#f5a623", "#4a4a4a"],
+    image: "gym-stack.jpg",
+        colors: ["#f5a623", "#4a4a4a"],
     description: "Staple die Gewichte so genau wie möglich, damit der Turm nicht umfällt.",
     added: "2026-11-19",
     featured: false
