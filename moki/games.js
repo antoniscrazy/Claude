@@ -1118,8 +1118,8 @@ window.MOKI_GAMES = [
     title: "Stickman Run",
     url: "#/play/stickman-run",
     category: "Geschicklichkeit",
-    emoji: "🏃",
-    colors: ["#8e44ad", "#2980b9"],
+    image: "stickman-run.jpg",
+        colors: ["#8e44ad", "#2980b9"],
     description: "Lauf als Stickman durch die Strecke und weiche den Hindernissen aus.",
     added: "2026-11-19",
     featured: false
