@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><title>Granny</title><style>html,body{margin:0;height:100%;background:#111;color:#fff;font-family:sans-serif;overflow:hidden}body{display:flex;flex-direction:column}#bar{flex:0 0 auto;display:flex;justify-content:flex-end;padding:6px 12px;background:#111}#moki-back{padding:9px 16px;border-radius:999px;background:linear-gradient(90deg,#00e5a8,#ffd23f);color:#04201a;font:800 14px 'Segoe UI',system-ui,sans-serif;text-decoration:none;box-shadow:0 3px 12px rgba(0,0,0,.5);opacity:.92}#wrap{flex:1 1 auto;position:relative;min-height:0}#c{position:absolute;inset:0;width:100%;height:100%;display:block;background:#000;outline:none;touch-action:none}#ld{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;width:70%;max-width:360px}#pb{height:10px;border-radius:5px;background:rgba(255,255,255,.15);overflow:hidden;margin-top:8px}#pf{height:100%;width:0;background:#00e5a8}</style></head>
 <body>
-<div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
+<div id="bar"><a id="moki-back" href="#" onclick="parent.postMessage('moki-close','*');return false;">&larr; Back to Moki</a></div>
 <div id="wrap"><canvas id="c" tabindex="-1"></canvas><div id="ld"><div id="tx">Lade Spiel …</div><div id="pb"><div id="pf"></div></div></div></div>
 <script>
 const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/a64abeef3acee4d6cb6d6d410ae7ca5ac7b73fea/granny/";

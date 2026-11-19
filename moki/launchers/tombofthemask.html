@@ -10,7 +10,7 @@ body{display:flex;flex-direction:column}
 #pb{height:10px;border-radius:5px;background:rgba(255,255,255,.15);overflow:hidden;margin-top:8px}
 #pf{height:100%;width:0;background:#00e5a8}</style></head>
 <body>
-<div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
+<div id="bar"><a id="moki-back" href="#" onclick="parent.postMessage('moki-close','*');return false;">&larr; Back to Moki</a></div>
 <div id="wrap"><div id="gameContainer" style="position:absolute;inset:0"></div><div id="ld"><div id="tx">Lade Spiel …</div><div id="pb"><div id="pf"></div></div></div></div>
 <script>
 
