@@ -57,10 +57,8 @@
     { d: "M12 120V70C12 52 22 44 38 44S64 52 64 70V120", t0: 0, t1: .55 },
     { d: "M64 70C64 52 74 44 90 44S116 52 116 70V120", t0: .45, t1: 1.0 },
     { d: "M154 82A38 38 0 0 1 230 82A38 38 0 0 1 154 82", t0: .92, t1: 1.6 },
-    { d: "M268 12V120", t0: 1.5, t1: 1.85 },
-    { d: "M268 90L304 48", t0: 1.75, t1: 2.05 },
-    { d: "M286 74L310 120", t0: 1.95, t1: 2.3 },
-    { d: "M350 44V120", t0: 2.2, t1: 2.55 }
+    { d: "M268 12V120V90L304 48L286 70L310 120", t0: 1.5, t1: 2.5 },   // das K: ein einziger durchgehender Strich (ganzer Stamm, Arm bis zur Spitze, zurueck, Bein)
+    { d: "M350 44V120", t0: 2.45, t1: 2.75 }
   ];
   const svgNS = "http://www.w3.org/2000/svg", msvg = document.createElementNS(svgNS, "svg");
   msvg.setAttribute("aria-hidden", "true"); msvg.style.cssText = "position:absolute;width:0;height:0;overflow:hidden";
@@ -74,16 +72,21 @@
     if (!act) return null;
     const pt = act.sg.el.getPointAtLength(act.sg.len * eio(act.p)); return map([pt.x, pt.y]);
   }
+  const lc = document.createElement("canvas"), lx = lc.getContext("2d");
   function drawLogo(cx, cy, w, tl) {
     if (tl <= 0) return;
-    const sc = w / 392, map = LS(cx, cy, w);
-    ctx.save(); ctx.translate(cx, cy); ctx.scale(sc, sc); ctx.translate(-182, -65);
-    const gr = ctx.createLinearGradient(0, 0, 362, 0); gr.addColorStop(0, MINT); gr.addColorStop(1, GOLD);
-    ctx.strokeStyle = gr; ctx.fillStyle = gr; ctx.lineWidth = 24; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.shadowColor = MINT; ctx.shadowBlur = 26;
-    SEGS.forEach(sg => { const p = eio((tl - sg.t0) / (sg.t1 - sg.t0)); if (p <= 0.002) return; ctx.setLineDash([sg.len + 2, sg.len + 2]); ctx.lineDashOffset = (sg.len + 2) * (1 - p); ctx.stroke(sg.p2d); });
-    ctx.setLineDash([]);
-    if (tl > 2.55) { const k = back((tl - 2.55) / .38); ctx.save(); ctx.translate(350, 6 - (1 - clamp((tl - 2.55) / .38)) * 40); ctx.scale(k, k); ctx.beginPath(); ctx.arc(0, 0, 14, 0, 7); ctx.fill(); ctx.restore(); }
-    if (tl > 1.62) { const k = back((tl - 1.62) / .4); ctx.save(); ctx.translate(195, 82); ctx.scale(k, k); ctx.translate(-195, -82); ctx.fillStyle = "#fff"; ctx.strokeStyle = "#fff"; ctx.lineWidth = 7; ctx.shadowColor = "#fff"; ctx.shadowBlur = 14; ctx.beginPath(); ctx.moveTo(183, 66); ctx.lineTo(207, 82); ctx.lineTo(183, 98); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore(); }
+    const sc = w / 392, map = LS(cx, cy, w), pad = 50, cw = Math.ceil((w + pad * 2) * dpr), ch = Math.ceil((170 * sc + pad * 2) * dpr);
+    if (lc.width !== cw || lc.height !== ch) { lc.width = cw; lc.height = ch; }
+    lx.setTransform(1, 0, 0, 1, 0, 0); lx.clearRect(0, 0, cw, ch);
+    lx.setTransform(dpr * sc, 0, 0, dpr * sc, dpr * (pad + 14 * sc), dpr * (pad + 20 * sc));
+    const gr = lx.createLinearGradient(0, 0, 362, 0); gr.addColorStop(0, MINT); gr.addColorStop(1, GOLD);
+    lx.strokeStyle = gr; lx.fillStyle = gr; lx.lineWidth = 24; lx.lineCap = "round"; lx.lineJoin = "round";
+    SEGS.forEach(sg => { const p = eio((tl - sg.t0) / (sg.t1 - sg.t0)); if (p <= 0.002) return; lx.setLineDash([sg.len + 2, sg.len + 2]); lx.lineDashOffset = (sg.len + 2) * (1 - p); lx.stroke(sg.p2d); });
+    lx.setLineDash([]);
+    if (tl > 2.75) { const k = back((tl - 2.75) / .38); lx.save(); lx.translate(350, 6 - (1 - clamp((tl - 2.75) / .38)) * 40); lx.scale(k, k); lx.beginPath(); lx.arc(0, 0, 14, 0, 7); lx.fill(); lx.restore(); }
+    if (tl > 1.62) { const k = back((tl - 1.62) / .4); lx.save(); lx.translate(195, 82); lx.scale(k, k); lx.translate(-195, -82); lx.fillStyle = "#fff"; lx.strokeStyle = "#fff"; lx.lineWidth = 7; lx.beginPath(); lx.moveTo(183, 66); lx.lineTo(207, 82); lx.lineTo(183, 98); lx.closePath(); lx.fill(); lx.stroke(); lx.restore(); }
+    ctx.save(); ctx.shadowColor = MINT; ctx.shadowBlur = 26;
+    ctx.drawImage(lc, cx - w / 2 - pad, cy - 85 * sc - pad, cw / dpr, ch / dpr);
     ctx.restore();
     // Funkenspur und leuchtende Stiftspitze
     const h = headAt(tl, map);
@@ -161,13 +164,13 @@
     ctx.save(); ctx.globalAlpha = (1 - k) * .8; ctx.strokeStyle = col; ctx.lineWidth = 10 * (1 - k) + 1.5;
     ctx.beginPath(); ctx.arc(x, y, eo(k) * Math.max(W, H) * max, 0, 7); ctx.stroke(); ctx.restore();
   }
-  function tile(g, x, y, s, a = 1, rot = 0, sc = 1) {
-    const im = IMG.get(g.image);
-    ctx.save(); ctx.globalAlpha = clamp(a); ctx.translate(x + s / 2, y + s / 2); ctx.rotate(rot); ctx.scale(sc, sc); ctx.translate(-s / 2, -s / 2);
-    ctx.shadowColor = "rgba(0,0,0,.55)"; ctx.shadowBlur = s * .14; ctx.shadowOffsetY = s * .05;
-    ctx.beginPath(); ctx.roundRect(0, 0, s, s, s * .2); ctx.clip();
-    if (im) { const k = Math.max(s / im.width, s / im.height); ctx.drawImage(im, (s - im.width * k) / 2, (s - im.height * k) / 2, im.width * k, im.height * k); }
-    else { const c = g.colors || ["#1d2566", "#0d1030"]; const gr = ctx.createLinearGradient(0, 0, s, s); gr.addColorStop(0, c[0]); gr.addColorStop(1, c[1]); ctx.fillStyle = gr; ctx.fillRect(0, 0, s, s); }
+  function tile(g, x, y, s, a = 1, rot = 0, sc = 1, h = s, shadow = true) {
+    const im = IMG.get(g.image), m = Math.min(s, h);
+    ctx.save(); ctx.globalAlpha = clamp(a); ctx.translate(x + s / 2, y + h / 2); ctx.rotate(rot); ctx.scale(sc, sc); ctx.translate(-s / 2, -h / 2);
+    if (shadow) { ctx.shadowColor = "rgba(0,0,0,.55)"; ctx.shadowBlur = m * .14; ctx.shadowOffsetY = m * .05; }
+    ctx.beginPath(); ctx.roundRect(0, 0, s, h, m * .2); ctx.clip();
+    if (im) { const k = Math.max(s / im.width, h / im.height); ctx.drawImage(im, (s - im.width * k) / 2, (h - im.height * k) / 2, im.width * k, im.height * k); }
+    else { const c = g.colors || ["#1d2566", "#0d1030"]; const gr = ctx.createLinearGradient(0, 0, s, h); gr.addColorStop(0, c[0]); gr.addColorStop(1, c[1]); ctx.fillStyle = gr; ctx.fillRect(0, 0, s, h); }
     ctx.restore();
   }
   function grid(n, aw, ah) {
@@ -184,7 +187,7 @@
   const T_PEN = 1.3;
   function sceneLogo(t) {
     bg(t); sparks(t, clamp(t / 1.2), 80);
-    const cx = W / 2, cy = H / 2, w = logoW(), start = LS(cx, cy, w)([12, 120]), hit = T_PEN + 2.9;
+    const cx = W / 2, cy = H / 2, w = logoW(), start = LS(cx, cy, w)([12, 120]), hit = T_PEN + 3.15;
     if (t < T_PEN + .2) {   // Partikel ziehen sich zum Startpunkt des Stifts zusammen
       for (let i = 0; i < 120; i++) {
         const a0 = rnd(i) * 6.283, d0 = Math.max(W, H) * (.3 + rnd(i + 1) * .5), s = clamp((t - .1 - rnd(i + 2) * .8) / 1.1); if (s <= 0) continue;
@@ -246,12 +249,18 @@
   // Szene 4: Spielewand mit Zaehler und Finale (T_WALL - DUR)
   function sceneWall(t) {
     const u = t - T_WALL; bg(t); sparks(t, .7, 60);
-    const N = games.length, cols = Math.ceil(Math.sqrt(N * W / H)), rows = Math.ceil(N / cols), s = Math.max(W / cols, H / rows) * 1.0;
+    const N = games.length, rows = Math.max(3, Math.round(Math.sqrt(N * H / W))), base = Math.floor(N / rows), extra = N - base * rows, th = H / rows;
     const fade = u > 3.6 ? 1 - .72 * eo((u - 3.6) / .8) : 1;
-    for (let i = 0; i < cols * rows; i++) {
-      const c = i % cols, r = Math.floor(i / cols), x = (W - cols * s) / 2 + c * s, y = (H - rows * s) / 2 + r * s;
-      const d = Math.hypot(x + s / 2 - W / 2, y + s / 2 - H / 2) / Math.hypot(W / 2, H / 2), k = (u - .15 - d * .9) / .35; if (k <= 0) continue;
-      tile(games[(i * 7 + (i >= N ? 3 : 0)) % N], x + s * .04, y + s * .04, s * .92, clamp(k * 2.5) * fade, 0, back(k));
+    // Jedes Spiel genau einmal, der Bildschirm ist komplett gefuellt: Reihen mit base oder base+1 Kacheln (gleichmaessig verteilt).
+    // Der Schritt ist teilerfremd zu N, damit alle verschieden sind und keine Nachbarn gleich.
+    const STEP = [7, 11, 13, 17, 19].find(k => N % k !== 0);
+    let idx = 0;
+    for (let r = 0; r < rows; r++) {
+      const cnt = base + (Math.floor((r + 1) * extra / rows) - Math.floor(r * extra / rows)), tw = W / cnt;
+      for (let c = 0; c < cnt; c++, idx++) {
+        const x = c * tw, y = r * th, d = Math.hypot(x + tw / 2 - W / 2, y + th / 2 - H / 2) / Math.hypot(W / 2, H / 2), k = (u - .15 - d * .9) / .35; if (k <= 0) continue;
+        tile(games[(idx * STEP) % N], x + 1.5, y + 1.5, tw - 3, clamp(k * 2.5) * fade, 0, back(k), th - 3);
+      }
     }
     ctx.fillStyle = `rgba(5,6,15,${.35 + .2 * (1 - fade)})`; ctx.fillRect(0, 0, W, H);
     flash(t, T_WALL, .8, .4); shock(t, T_WALL, W / 2, H / 2, MINT, 1);
@@ -276,10 +285,10 @@
     // Logo zum Schluss: wird noch einmal in einem Zug gezeichnet
     const lu = u - 3.7;
     if (lu > 0) {
-      const w = logoW(), lh = w * 340 / 784, pu = lu > 2.9 ? 1 + .03 * Math.exp(-(((lu - 2.9) % .46875) / .46875) * 5) : 1;
+      const w = logoW(), lh = w * 340 / 784, pu = lu > 3.15 ? 1 + .03 * Math.exp(-(((lu - 3.15) % .46875) / .46875) * 5) : 1;
       rays(t, MINT, .1 * eo((lu - 1.8) / .8)); drawLogo(W / 2, H / 2 - lh * .1, w * pu, lu);
-      shock(t, T_WALL + 6.6, W / 2, H / 2, MINT, .9); flash(t, T_WALL + 6.6, .5, .4);
-      fitText("Willkommen bei Moki", W / 2, H / 2 + lh * .6, W * .9, Math.min(W * .06, 56), "#fff", eo((lu - 3.2) / .5), 1, 800);
+      shock(t, T_WALL + 6.85, W / 2, H / 2, MINT, .9); flash(t, T_WALL + 6.85, .5, .4);
+      fitText("Willkommen bei Moki", W / 2, H / 2 + lh * .6, W * .9, Math.min(W * .06, 56), "#fff", eo((lu - 3.4) / .5), 1, 800);
     }
   }
   function render(t) {

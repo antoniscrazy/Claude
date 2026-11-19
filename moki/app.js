@@ -144,7 +144,7 @@ function home() {
       ${cm.length > 5 ? `<button class="btn more" data-cat="__cre" type="button">Alle ${cm.length} Kreationen ansehen</button>` : ""}
     </section>`;
   app.innerHTML = `
-    ${!q && category === "Alle" ? megaHtml() + heroHtml() + challengeHtml() + trailerHtml() : ""}
+    ${!q && category === "Alle" ? heroHtml() + challengeHtml() + trailerHtml() : ""}
     ${!q && category === "Alle" && rec.length ? `<section>
       <h2>${icon("clock")}Zuletzt gespielt</h2>
       <div class="grid">${rec.map(tile).join("")}</div>
@@ -351,39 +351,13 @@ function onChallenge(act) {
 }
 setInterval(() => { const el = document.getElementById("chal-left"); if (el) el.textContent = chLeft(); }, 60000);
 
-// ---- Timer bis zum Mega-Update: 2. Dezember 2026, 00:00 Uhr deutsche Zeit (Dezember = UTC+1) ----
-const MEGA_AT = new Date("2026-12-02T00:00:00+01:00").getTime();
-const megaWhen = () => "Am 2. Dezember 2026 um 00:00 Uhr. Der Timer läuft schon.";
-function megaParts() {
-  const ms = MEGA_AT - Date.now();
-  if (ms <= 0) return null;
-  const s = Math.floor(ms / 1000);
-  return { d: Math.floor(s / 86400), h: Math.floor(s % 86400 / 3600), m: Math.floor(s % 3600 / 60), s: s % 60 };
-}
-function megaDigits() {
-  const p = megaParts() || { d: 0, h: 0, m: 0, s: 0 };
-  const box = (k, label) => `<div class="mdig"><b data-mega="${k}">${String(p[k]).padStart(2, "0")}</b><span>${label}</span></div>`;
-  return `<div class="mtimer" role="timer" aria-label="Zeit bis zum Mega-Update">${box("d", "Tage")}${box("h", "Std.")}${box("m", "Min.")}${box("s", "Sek.")}</div>`;
-}
-function megaHtml() {
-  if (!megaParts()) return "";
-  return `<section class="mega" aria-label="Mega-Update">
-    <div class="mtxt"><span class="chip">${icon("sparkles")}Mega-Update</span><h2>Über 100 Spiele kommen</h2><p>${esc(megaWhen())}</p></div>
-    <div class="mq" aria-hidden="true"><i>?</i><i>?</i><i>?</i><i>?</i></div>${megaDigits()}</section>`;
-}
-setInterval(() => {
-  const p = megaParts();
-  if (!p) { document.querySelectorAll(".mega").forEach(e => e.remove()); return; }
-  document.querySelectorAll("[data-mega]").forEach(e => { e.textContent = String(p[e.dataset.mega]).padStart(2, "0"); });
-}, 1000);
-
 // ---- Moki-Trailer: YouTube, laedt erst nach dem Klick (vorher wird nichts von YouTube geladen) ----
 const TRAILER_ID = "QjldhlgWFlk";
 function trailerHtml() {
   return `<section class="trl" aria-label="Moki-Trailer">
     <button class="trlv" type="button" data-trl="play" aria-label="Moki-Trailer abspielen"><img src="trailer-poster.jpg" alt=""><span class="trlp">${icon("play")}</span></button>
     <div class="trlt"><span class="chip">${icon("flame")}Trailer</span><h2>Der Moki-Trailer</h2>
-      <p>Alle Funktionen, die neuen Spiele und ein Blick auf das Mega-Update.</p>
+      <p>Alle Funktionen und die neuen Spiele im Überblick.</p>
       <small>Das Video liegt bei YouTube. Erst wenn du auf Play drückst, öffnet es sich im Vollbild und es wird etwas von dort geladen.</small>
       <a class="btn" href="https://www.youtube.com/watch?v=${TRAILER_ID}" target="_blank" rel="noopener">Auf YouTube ansehen</a></div></section>`;
 }
