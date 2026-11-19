@@ -1151,8 +1151,8 @@ window.MOKI_GAMES = [
     title: "Roller",
     url: "#/play/roller",
     category: "Geschicklichkeit",
-    emoji: "🎳",
-    colors: ["#ff7eb3", "#5b2a86"],
+    image: "roller.jpg",
+        colors: ["#ff7eb3", "#5b2a86"],
     description: "Rolle die Kugel über den Parcours, ohne von der Strecke zu fallen.",
     added: "2026-11-19",
     featured: false
