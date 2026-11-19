@@ -11,9 +11,7 @@
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-  const STEPS = 70;                       // so viele Kacheln laeuft der Generator bis zum Gewinner
-  const T_FAST = 38, T_SLOW = 340;        // Zeit pro Kachel am Anfang / ganz am Ende (ms)
-  const stepTimes = (() => { const t = [0]; for (let k = 1; k <= STEPS; k++) t.push(t[k - 1] + T_FAST + (T_SLOW - T_FAST) * Math.pow(k / STEPS, 3)); return t; })();
+  const TAIL = 22, MIN_STEPS = 55;     // die letzten 22 Kacheln werden immer langsamer, davor mindestens 33 schnelle
 
   window.mokiSpin = function (winner, done) {
     if (running) return;
@@ -57,7 +55,12 @@
       cur = i; look(at(i));
     };
 
-    const start = ((w - STEPS) % n + n) % n;
+    // Der Lauf startet sofort bei der Kachel, die gerade in der Bildschirmmitte liegt, und endet beim Gewinner
+    let s0 = 0, bd = 1e9;
+    tiles.forEach((tl, i) => { const r = tl.getBoundingClientRect(), d = Math.abs(r.top + r.height / 2 - innerHeight / 2) + Math.abs(r.left + r.width / 2 - innerWidth / 2) * .3; if (d < bd) { bd = d; s0 = i; } });
+    let STEPS = ((w - s0) % n + n) % n; if (STEPS < MIN_STEPS) STEPS += n;
+    const head = STEPS - TAIL, stepTimes = [0];
+    for (let k = 1; k <= STEPS; k++) { const iv = k <= head ? 26 + 40 * Math.pow(k / head, 2) : 90 + 250 * Math.pow((k - head) / TAIL, 3); stepTimes.push(stepTimes[k - 1] + iv); }
     const cleanup = () => {
       cancelAnimationFrame(raf);
       evs.forEach(ev => removeEventListener(ev, stop, { capture: true, passive: false }));
@@ -70,21 +73,19 @@
     const hard = setTimeout(cleanup, 45000);   // Notbremse
 
     (async function run() {
-      // 1) Kamera faehrt zum Startpunkt, die Seite tritt zurueck
-      look(tiles[start]); await sleep(1000);
-      // 2) Der Generator laeuft, wird immer langsamer
+      // Der Generator laeuft sofort los und wird zum Ende immer langsamer
       const t0 = performance.now();
       let k = -1;
       await new Promise(res => {
         (function frame() {
           const el = performance.now() - t0;
           let s = k < 0 ? 0 : k; while (s < STEPS && stepTimes[s + 1] <= el) s++;
-          if (s !== k) { k = s; mark((start + k) % n); }
+          if (s !== k) { k = s; mark((s0 + k) % n); }
           if (k >= STEPS && el >= stepTimes[STEPS] + 450) res(); else requestAnimationFrame(frame);
         })();
       });
       // 3) Gewinner: alles andere tritt zurueck, die Kachel fliegt gross in die Mitte
-      const wt = tiles[w]; wt.classList.add("rz-win"); tiles.forEach(t => { if (t !== wt) t.classList.add("rz-dim"); });
+      const wt = tiles[w]; wt.classList.add("rz-win");
       look(wt); await sleep(900);
       const r = wt.getBoundingClientRect(), size = Math.min(innerWidth * .8, innerHeight * .5, 440);
       const card = document.createElement("div"); card.className = "rz-card";

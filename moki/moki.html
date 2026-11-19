@@ -411,17 +411,14 @@ html.mi-on body>*:not(#mi):not(script):not(style){visibility:hidden}
 #mi canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .mi-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
-/* Zufallsspiel-Animation (randomspin.js) */
+/* Zufallsspiel-Animation (randomspin.js): alle Spiele bleiben in voller Farbe, der Generator laeuft nur mit wachsenden Nachbarn darueber */
 #rz{position:fixed;inset:0;z-index:99990;cursor:progress}
-html.rz-on body>header,html.rz-on aside{opacity:.3;transition:opacity .4s}
-html.rz-on #mainGrid .tile{transition:transform .16s cubic-bezier(.2,.8,.2,1),opacity .25s,filter .25s,box-shadow .2s;opacity:.38;filter:saturate(.5) brightness(.7);transform:scale(.93)}
-html.rz-on #mainGrid .tile.rz-seen{opacity:.6;filter:saturate(.8) brightness(.85)}
-html.rz-on #mainGrid .tile.rz-n2{opacity:.8;filter:none;transform:scale(1.04)}
-html.rz-on #mainGrid .tile.rz-l1{opacity:.85;filter:none;transform:scale(1.1)}
-html.rz-on #mainGrid .tile.rz-n1{opacity:.95;filter:none;transform:scale(1.16)}
-html.rz-on #mainGrid .tile.rz-h{opacity:1;filter:none;transform:scale(1.34);z-index:6;box-shadow:0 0 0 4px #00e5a8,0 0 44px #00e5a8bb,0 22px 44px #000c}
-html.rz-on #mainGrid .tile.rz-dim{opacity:.1;filter:blur(2px) saturate(.3);transform:scale(.9)}
-html.rz-on #mainGrid .tile.rz-win{opacity:1;filter:none;transform:scale(1.34);z-index:6;box-shadow:0 0 0 5px #ffd23f,0 0 60px #ffd23fcc}
+html.rz-on #mainGrid .tile{transition:transform .14s cubic-bezier(.2,.8,.2,1),box-shadow .14s}
+html.rz-on #mainGrid .tile.rz-n2{transform:scale(1.05)}
+html.rz-on #mainGrid .tile.rz-l1{transform:scale(1.09);z-index:2}
+html.rz-on #mainGrid .tile.rz-n1{transform:scale(1.15);z-index:3}
+html.rz-on #mainGrid .tile.rz-h{transform:scale(1.34);z-index:6;box-shadow:0 0 0 4px #00e5a8,0 0 44px #00e5a8bb,0 22px 44px #000c}
+html.rz-on #mainGrid .tile.rz-win{transform:scale(1.34);z-index:6;box-shadow:0 0 0 5px #ffd23f,0 0 60px #ffd23fcc}
 .rz-card{position:fixed;z-index:99995;width:var(--s);display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;color:#fff;pointer-events:none}
 .rz-card .rz-img{width:var(--s);height:var(--s);border-radius:calc(var(--s) * .2);overflow:hidden;background:#0a0d2b;box-shadow:0 0 0 6px #ffd23f,0 0 80px #ffd23fcc,0 30px 80px #000}
 .rz-card .rz-img img{width:100%;height:100%;object-fit:cover;display:block}
@@ -432,7 +429,7 @@ html.rz-on #mainGrid .tile.rz-win{opacity:1;filter:none;transform:scale(1.34);z-
 .rz-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#00e5a8,#ffd23f)}
 .rz-card.rz-go .rz-bar i{animation:rzbar 2.3s linear forwards}
 .rz-card.rz-go .rz-img{animation:rzpulse .9s ease-in-out infinite alternate}
-.rz-fx{position:fixed;inset:0;z-index:99994;pointer-events:none;overflow:hidden;background:radial-gradient(circle at 50% 45%,#0a0d2bcc,#05060fee);animation:rzfade .5s both}
+.rz-fx{position:fixed;inset:0;z-index:99994;pointer-events:none;overflow:hidden;background:radial-gradient(circle at 50% 45%,#0a0d2b55,#05060fb0);animation:rzfade .5s both}
 .rz-ring{position:absolute;width:80px;height:80px;margin:-40px 0 0 -40px;border-radius:50%;border:5px solid #ffd23f;opacity:0;animation:rzring 1.4s ease-out forwards}
 .rz-spark{position:absolute;width:10px;height:10px;margin:-5px;border-radius:50%;background:var(--c);opacity:0;animation:rzspark 1.5s ease-out forwards}
 @keyframes rzbar{to{width:100%}}
@@ -2135,9 +2132,7 @@ playerFromHash();
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-  const STEPS = 70;                       // so viele Kacheln laeuft der Generator bis zum Gewinner
-  const T_FAST = 38, T_SLOW = 340;        // Zeit pro Kachel am Anfang / ganz am Ende (ms)
-  const stepTimes = (() => { const t = [0]; for (let k = 1; k <= STEPS; k++) t.push(t[k - 1] + T_FAST + (T_SLOW - T_FAST) * Math.pow(k / STEPS, 3)); return t; })();
+  const TAIL = 22, MIN_STEPS = 55;     // die letzten 22 Kacheln werden immer langsamer, davor mindestens 33 schnelle
 
   window.mokiSpin = function (winner, done) {
     if (running) return;
@@ -2181,7 +2176,12 @@ playerFromHash();
       cur = i; look(at(i));
     };
 
-    const start = ((w - STEPS) % n + n) % n;
+    // Der Lauf startet sofort bei der Kachel, die gerade in der Bildschirmmitte liegt, und endet beim Gewinner
+    let s0 = 0, bd = 1e9;
+    tiles.forEach((tl, i) => { const r = tl.getBoundingClientRect(), d = Math.abs(r.top + r.height / 2 - innerHeight / 2) + Math.abs(r.left + r.width / 2 - innerWidth / 2) * .3; if (d < bd) { bd = d; s0 = i; } });
+    let STEPS = ((w - s0) % n + n) % n; if (STEPS < MIN_STEPS) STEPS += n;
+    const head = STEPS - TAIL, stepTimes = [0];
+    for (let k = 1; k <= STEPS; k++) { const iv = k <= head ? 26 + 40 * Math.pow(k / head, 2) : 90 + 250 * Math.pow((k - head) / TAIL, 3); stepTimes.push(stepTimes[k - 1] + iv); }
     const cleanup = () => {
       cancelAnimationFrame(raf);
       evs.forEach(ev => removeEventListener(ev, stop, { capture: true, passive: false }));
@@ -2194,21 +2194,19 @@ playerFromHash();
     const hard = setTimeout(cleanup, 45000);   // Notbremse
 
     (async function run() {
-      // 1) Kamera faehrt zum Startpunkt, die Seite tritt zurueck
-      look(tiles[start]); await sleep(1000);
-      // 2) Der Generator laeuft, wird immer langsamer
+      // Der Generator laeuft sofort los und wird zum Ende immer langsamer
       const t0 = performance.now();
       let k = -1;
       await new Promise(res => {
         (function frame() {
           const el = performance.now() - t0;
           let s = k < 0 ? 0 : k; while (s < STEPS && stepTimes[s + 1] <= el) s++;
-          if (s !== k) { k = s; mark((start + k) % n); }
+          if (s !== k) { k = s; mark((s0 + k) % n); }
           if (k >= STEPS && el >= stepTimes[STEPS] + 450) res(); else requestAnimationFrame(frame);
         })();
       });
       // 3) Gewinner: alles andere tritt zurueck, die Kachel fliegt gross in die Mitte
-      const wt = tiles[w]; wt.classList.add("rz-win"); tiles.forEach(t => { if (t !== wt) t.classList.add("rz-dim"); });
+      const wt = tiles[w]; wt.classList.add("rz-win");
       look(wt); await sleep(900);
       const r = wt.getBoundingClientRect(), size = Math.min(innerWidth * .8, innerHeight * .5, 440);
       const card = document.createElement("div"); card.className = "rz-card";
