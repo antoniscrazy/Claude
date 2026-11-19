@@ -223,3 +223,9 @@ body:has(#player) .xm-music,body:has(#player) .xm-flake{display:none}
 .tile:hover::after{animation:xmcap .5s ease-in-out}
 @keyframes xmcap{30%{transform:translateY(-3px)}60%{transform:translateY(1px)}}
 @media(prefers-reduced-motion:reduce){.xm-sleigh,.xm-shoot{display:none}}
+
+/* ===== Strichmaennchen ===== */
+#xm-men{position:fixed;inset:0;z-index:99984;pointer-events:none;transition:opacity .4s}
+.xm-menbtn{position:fixed;left:68px;bottom:14px;z-index:99980;width:46px;height:46px;border-radius:50%;border:2px solid #f6c66788;background:#0d1a3aee;color:#ffe3a0;font-size:22px;cursor:pointer;box-shadow:0 6px 20px #0008;opacity:.75}
+.xm-menbtn.on{opacity:1;border-color:#f6c667}
+body:has(#player) .xm-menbtn,body:has(#player) #xm-men{display:none}
