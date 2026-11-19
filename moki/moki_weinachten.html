@@ -640,6 +640,8 @@ body:has(#player) .xm-music,body:has(#player) .xm-flake{display:none}
 .tree svg.tstar{inset:auto;left:50%;top:-4%;width:19%;height:auto;aspect-ratio:1}
 .tree .orn,.tree .orn.slot{width:clamp(15px,1.9vw,21px);font-size:clamp(10px,1.2vw,13px)}
 
+.tile .xbadge{position:absolute;left:8px;top:8px;z-index:4;padding:3px 9px;border-radius:99px;background:linear-gradient(135deg,#c0334a,#8a1c2e);border:1px solid #f6c667;color:#ffe3a0;font:800 11px/1.3 system-ui;letter-spacing:.3px;box-shadow:0 2px 8px #0009;pointer-events:none}
+
 </style>
 </head>
 <body>
@@ -2005,7 +2007,7 @@ const shareBtn = g => `<span class="shr" role="button" tabindex="0" data-share="
 let category = "Alle";
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const tile = g => `<a class="tile${g.wide ? " wide" : ""}" href="${g.url}" data-id="${g.id}" aria-label="${esc(g.title)}" title="${esc(g.title)}" style="background:linear-gradient(135deg,${g.colors[0]},${g.colors[1]})">${g.image ? `<img src="${g.image}" alt="" loading="lazy">` : `<span class="em">${g.emoji}</span>`}<span class="name">${esc(g.title)}</span>${isNew(g) ? `<span class="new">NEU</span>` : ""}${g.category ? favBtn(g) + shareBtn(g) : ""}</a>`;
+const tile = g => `<a class="tile${g.wide ? " wide" : ""}" href="${g.url}" data-id="${g.id}" aria-label="${esc(g.title)}" title="${esc(g.title)}" style="background:linear-gradient(135deg,${g.colors[0]},${g.colors[1]})">${g.image ? `<img src="${g.image}" alt="" loading="lazy">` : `<span class="em">${g.emoji}</span>`}<span class="name">${esc(g.title)}</span>${isNew(g) ? `<span class="new">NEU</span>` : ""}${g.xmas ? `<span class="xbadge" title="Aus dem Adventskalender">🎄 Advent</span>` : ""}${g.category ? favBtn(g) + shareBtn(g) : ""}</a>`;
 
 // ---- Spiel des Tages: wechselt jeden Tag um Mitternacht (deutsche Zeit), für alle gleich ----
 function berlinDay() {
@@ -2760,6 +2762,14 @@ window.MOKI_LAUNCH=Object.assign(window.MOKI_LAUNCH||{},{"blumgi-ball": "\u003c!
     { g: "cut-the-rope", o: "🍬", t: "Letzte Besorgungen", s: "Alles eingepackt? Dann schneide heute noch das Seil durch und füttere das Monster mit Bonbons." },
     { g: null, o: "🎄", t: "Bescherung!", s: "Frohe Weihnachten! Dein Geschenk: ein Überraschungsspiel, ausgewählt vom Moki-Zufall. Viel Spaß beim Auspacken." }
   ];
+  // Spiele, die nur ueber den Kalender kommen, erscheinen in Liste und Kategorien, sobald das Tuerchen offen ist
+  function unlockGames() {
+    (window.MOKI_XMAS_GAMES || []).forEach(g => {
+      const d = DAYS.findIndex(x => x.g === g.id) + 1;
+      if (d < 1 || !opened.has(d) || d > Math.max(today(), 24) || games.some(x => x.id === g.id)) return;
+      games.push(Object.assign({ colors: ["#8a1c2e", "#17314a"], xmas: true }, g)); try { known.add(g.id); } catch (e) {}
+    });
+  }
   const findGame = id => games.find(g => g.id === id) || (window.MOKI_XMAS_GAMES || []).find(g => g.id === id);
 
   // ---------- Quiz: pro Tuerchen eine Frage (erste Antwort ist die richtige, die Reihenfolge wird pro Tag fest gemischt) ----------
@@ -2919,7 +2929,7 @@ window.MOKI_LAUNCH=Object.assign(window.MOKI_LAUNCH||{},{"blumgi-ball": "\u003c!
   function openDoor(day, btn) {
     if (day > today()) { toast(`Türchen ${day} öffnet sich am ${day}. Dezember.`); if (btn) btn.animate([{ transform: "translateX(0)" }, { transform: "translateX(-6px)" }, { transform: "translateX(6px)" }, { transform: "translateX(0)" }], { duration: 300 }); return; }
     const first = !opened.has(day);
-    if (first) { opened.add(day); saveOpen(opened); try { if (window.mokiStat) window.mokiStat("advent", String(day)); } catch (e) {} }
+    if (first) { opened.add(day); saveOpen(opened); unlockGames(); try { renderSide(); } catch (e) {} try { if (window.mokiStat) window.mokiStat("advent", String(day)); } catch (e) {} }
     if (btn && first) { btn.classList.remove("today"); btn.classList.add("open"); const b = btn.querySelector(".dback"); if (b) { b.style.visibility = "visible"; } }
     setTimeout(() => modal(day, first), first && btn ? 650 : 0);
   }
@@ -3059,7 +3069,7 @@ window.MOKI_LAUNCH=Object.assign(window.MOKI_LAUNCH||{},{"blumgi-ball": "\u003c!
 
   garland(); snow(); hat();
   document.title = document.title.replace(/^Moki/, "Moki Weihnachten");
-  try { renderSide(); home(); } catch (e) {}
+  try { unlockGames(); renderSide(); home(); } catch (e) {}
 })();
 
 </script>

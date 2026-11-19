@@ -65,7 +65,7 @@ const shareBtn = g => `<span class="shr" role="button" tabindex="0" data-share="
 let category = "Alle";
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const tile = g => `<a class="tile${g.wide ? " wide" : ""}" href="${g.url}" data-id="${g.id}" aria-label="${esc(g.title)}" title="${esc(g.title)}" style="background:linear-gradient(135deg,${g.colors[0]},${g.colors[1]})">${g.image ? `<img src="${g.image}" alt="" loading="lazy">` : `<span class="em">${g.emoji}</span>`}<span class="name">${esc(g.title)}</span>${isNew(g) ? `<span class="new">NEU</span>` : ""}${g.category ? favBtn(g) + shareBtn(g) : ""}</a>`;
+const tile = g => `<a class="tile${g.wide ? " wide" : ""}" href="${g.url}" data-id="${g.id}" aria-label="${esc(g.title)}" title="${esc(g.title)}" style="background:linear-gradient(135deg,${g.colors[0]},${g.colors[1]})">${g.image ? `<img src="${g.image}" alt="" loading="lazy">` : `<span class="em">${g.emoji}</span>`}<span class="name">${esc(g.title)}</span>${isNew(g) ? `<span class="new">NEU</span>` : ""}${g.xmas ? `<span class="xbadge" title="Aus dem Adventskalender">🎄 Advent</span>` : ""}${g.category ? favBtn(g) + shareBtn(g) : ""}</a>`;
 
 // ---- Spiel des Tages: wechselt jeden Tag um Mitternacht (deutsche Zeit), für alle gleich ----
 function berlinDay() {

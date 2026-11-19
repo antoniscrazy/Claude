@@ -40,6 +40,14 @@
     { g: "cut-the-rope", o: "🍬", t: "Letzte Besorgungen", s: "Alles eingepackt? Dann schneide heute noch das Seil durch und füttere das Monster mit Bonbons." },
     { g: null, o: "🎄", t: "Bescherung!", s: "Frohe Weihnachten! Dein Geschenk: ein Überraschungsspiel, ausgewählt vom Moki-Zufall. Viel Spaß beim Auspacken." }
   ];
+  // Spiele, die nur ueber den Kalender kommen, erscheinen in Liste und Kategorien, sobald das Tuerchen offen ist
+  function unlockGames() {
+    (window.MOKI_XMAS_GAMES || []).forEach(g => {
+      const d = DAYS.findIndex(x => x.g === g.id) + 1;
+      if (d < 1 || !opened.has(d) || d > Math.max(today(), 24) || games.some(x => x.id === g.id)) return;
+      games.push(Object.assign({ colors: ["#8a1c2e", "#17314a"], xmas: true }, g)); try { known.add(g.id); } catch (e) {}
+    });
+  }
   const findGame = id => games.find(g => g.id === id) || (window.MOKI_XMAS_GAMES || []).find(g => g.id === id);
 
   // ---------- Quiz: pro Tuerchen eine Frage (erste Antwort ist die richtige, die Reihenfolge wird pro Tag fest gemischt) ----------
@@ -199,7 +207,7 @@
   function openDoor(day, btn) {
     if (day > today()) { toast(`Türchen ${day} öffnet sich am ${day}. Dezember.`); if (btn) btn.animate([{ transform: "translateX(0)" }, { transform: "translateX(-6px)" }, { transform: "translateX(6px)" }, { transform: "translateX(0)" }], { duration: 300 }); return; }
     const first = !opened.has(day);
-    if (first) { opened.add(day); saveOpen(opened); try { if (window.mokiStat) window.mokiStat("advent", String(day)); } catch (e) {} }
+    if (first) { opened.add(day); saveOpen(opened); unlockGames(); try { renderSide(); } catch (e) {} try { if (window.mokiStat) window.mokiStat("advent", String(day)); } catch (e) {} }
     if (btn && first) { btn.classList.remove("today"); btn.classList.add("open"); const b = btn.querySelector(".dback"); if (b) { b.style.visibility = "visible"; } }
     setTimeout(() => modal(day, first), first && btn ? 650 : 0);
   }
@@ -339,5 +347,5 @@
 
   garland(); snow(); hat();
   document.title = document.title.replace(/^Moki/, "Moki Weihnachten");
-  try { renderSide(); home(); } catch (e) {}
+  try { unlockGames(); renderSide(); home(); } catch (e) {}
 })();
