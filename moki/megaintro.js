@@ -41,10 +41,11 @@
   const stopKeys = e => { e.preventDefault(); e.stopPropagation(); };
   addEventListener("keydown", stopKeys, true);
   mi.addEventListener("contextmenu", e => e.preventDefault());
-  let W = 0, H = 0, dpr = 1;
+  let W = 0, H = 0, dpr = 1, GL = null;   // GL: 3D-Darstellung (intro3d), sonst zeichnet dieses Skript alles in 2D
   function resize() {
     dpr = Math.min(devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight;
     cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    if (GL) { try { GL.resize(W, H); } catch (e) {} }
   }
   resize(); addEventListener("resize", resize);
 
@@ -131,6 +132,7 @@
     ctx.fillStyle = col; ctx.fillText(s, 0, 0); ctx.restore();
   }
   function bg(t, tint) {
+    if (GL) return;
     const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#05060f"); g.addColorStop(1, "#0b1238");
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     const k = Math.exp(-((t % .46875) / .46875) * 5);
@@ -140,6 +142,7 @@
   }
   function hexA(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; }
   function sparks(t, a = 1, n = 70) {
+    if (GL) return;
     ctx.save();
     for (let i = 0; i < n; i++) {
       const sp = 14 + rnd(i + 3) * 60, x = rnd(i) * W, y = ((rnd(i + 9) * H - t * sp) % H + H) % H, r = 1 + rnd(i + 5) * 2.4;
@@ -149,6 +152,7 @@
     ctx.restore();
   }
   function rays(t, col, a, n = 22) {
+    if (GL) return;
     if (a <= .003) return;
     ctx.save(); ctx.translate(W / 2, H / 2); ctx.rotate(t * .22);
     const len = Math.hypot(W, H);
@@ -158,7 +162,7 @@
     }
     ctx.restore();
   }
-  function flash(t, at, a = .7, d = .35) { const k = (t - at) / d; if (k < 0 || k > 1) return; ctx.save(); ctx.globalAlpha = a * (1 - k); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+  function flash(t, at, a = .7, d = .35) { const k = (t - at) / d; if (k < 0 || k > 1) return; ctx.save(); ctx.globalAlpha = a * (1 - k) * (GL ? .35 : 1); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, W, H); ctx.restore(); }
   function shock(t, at, x, y, col = "#fff", max = .8) {
     const k = (t - at) / 1.0; if (k < 0 || k > 1) return;
     ctx.save(); ctx.globalAlpha = (1 - k) * .8; ctx.strokeStyle = col; ctx.lineWidth = 10 * (1 - k) + 1.5;
@@ -188,7 +192,7 @@
   function sceneLogo(t) {
     bg(t); sparks(t, clamp(t / 1.2), 80);
     const cx = W / 2, cy = H / 2, w = logoW(), start = LS(cx, cy, w)([12, 120]), hit = T_PEN + 3.15;
-    if (t < T_PEN + .2) {   // Partikel ziehen sich zum Startpunkt des Stifts zusammen
+    if (!GL && t < T_PEN + .2) {   // Partikel ziehen sich zum Startpunkt des Stifts zusammen
       for (let i = 0; i < 120; i++) {
         const a0 = rnd(i) * 6.283, d0 = Math.max(W, H) * (.3 + rnd(i + 1) * .5), s = clamp((t - .1 - rnd(i + 2) * .8) / 1.1); if (s <= 0) continue;
         const e = eio(s), d = d0 * (1 - e), a = a0 + e * 2.4;
@@ -200,16 +204,16 @@
     const tl = t - T_PEN;
     if (tl > 2.0) rays(t, MINT, .09 * eo((tl - 2.0) / .8));
     const pu = t > hit ? 1 + .03 * Math.exp(-(((t - hit) % .46875) / .46875) * 5) : 1;
-    drawLogo(cx, cy, w * pu, tl);
-    shock(t, hit, cx, cy, "#fff"); shock(t, hit + .18, cx, cy, MINT); flash(t, hit, .7, .45);
+    if (!GL) { drawLogo(cx, cy, w * pu, tl); shock(t, hit, cx, cy, "#fff"); shock(t, hit + .18, cx, cy, MINT); }
+    flash(t, hit, GL ? .3 : .7, .45);
   }
   // Szene 2: Titel (5.2 - 10)
   function sceneTitle(t) {
     const u = t - T_TITLE; bg(t); sparks(t, 1, 80); rays(t, GOLD, .08);
     const w = Math.min(W * .5, 520), h = w * 340 / 784, ly = lerp(H / 2, H * .17, eio(u / .7)), ls = lerp(1, .6, eio(u / .7));
-    drawLogo(W / 2, ly, w * ls, 99);
+    if (!GL) drawLogo(W / 2, ly, w * ls, 99);
     const words = [["DAS", .7, H * .36, .09, "#fff"], ["MEGA", 1.15, H * .52, .2, MINT], ["UPDATE", 1.6, H * .7, .14, GOLD]];
-    words.forEach(([s, at, y, sz, col]) => { const k = clamp((u - at) / .25); if (k <= 0) return; fitText(s, W / 2, y, W * .9, Math.min(W, H * 1.7) * sz * 1.35, col, k * 3, 1 + (1 - eo(k)) * 1.6); shock(t, T_TITLE + at, W / 2, y, col, .5); });
+    if (!GL) words.forEach(([s, at, y, sz, col]) => { const k = clamp((u - at) / .25); if (k <= 0) return; fitText(s, W / 2, y, W * .9, Math.min(W, H * 1.7) * sz * 1.35, col, k * 3, 1 + (1 - eo(k)) * 1.6); shock(t, T_TITLE + at, W / 2, y, col, .5); });
     if (u > 2.7) fitText("Alle Spiele. Eine Seite. Keine Werbung.", W / 2, H * .87, W * .9, Math.min(W * .045, 44), "#cfd6ff", eo((u - 2.7) / .6), 1, 600, false);
     flash(t, T_TITLE + .7, .5); flash(t, T_TITLE + 1.15, .5); flash(t, T_TITLE + 1.6, .6);
   }
@@ -229,7 +233,7 @@
       shock(t, seg.card, W / 2, H * .5, col);
     } else {
       const ex = clamp((t - seg.end) / .3);
-      seg.list.forEach((g, i) => {
+      if (!GL) seg.list.forEach((g, i) => {
         const ti = seg.tiles + i * seg.step, k = (t - ti) / .32; if (k < 0) return;
         const [x, y, s] = tilePos(i, seg.list.length, L, cx, cy);
         const e = eo4(ex), sc = back(k) * (1 + e * .5), a = clamp(k * 3) * (1 - e), rot = (1 - clamp(k)) * (rnd(i + seg.card) - .5) * .9;
@@ -332,15 +336,15 @@
     // Der Schritt ist teilerfremd zu N, damit alle verschieden sind und keine Nachbarn gleich.
     const STEP = [7, 11, 13, 17, 19].find(k => N % k !== 0);
     let idx = 0;
-    for (let r = 0; r < rows; r++) {
+    if (!GL) for (let r = 0; r < rows; r++) {
       const cnt = base + (Math.floor((r + 1) * extra / rows) - Math.floor(r * extra / rows)), tw = W / cnt;
       for (let c = 0; c < cnt; c++, idx++) {
         const x = c * tw, y = r * th, d = Math.hypot(x + tw / 2 - W / 2, y + th / 2 - H / 2) / Math.hypot(W / 2, H / 2), k = (u - .15 - d * .9) / .35; if (k <= 0) continue;
         tile(games[(idx * STEP) % N], x + 1.5, y + 1.5, tw - 3, clamp(k * 2.5) * fade, 0, back(k), th - 3);
       }
     }
-    ctx.fillStyle = `rgba(5,6,15,${.35 + .2 * (1 - fade)})`; ctx.fillRect(0, 0, W, H);
-    flash(t, T_WALL, .8, .4); shock(t, T_WALL, W / 2, H / 2, MINT, 1);
+    if (!GL) { ctx.fillStyle = `rgba(5,6,15,${.35 + .2 * (1 - fade)})`; ctx.fillRect(0, 0, W, H); shock(t, T_WALL, W / 2, H / 2, MINT, 1); }
+    flash(t, T_WALL, GL ? .5 : .8, .4);
     // Zaehler
     if (u > .5 && u < 4.4) {
       const k = back((u - .5) / .4), n = Math.round(N * eo((u - .6) / 1.8)), pw = Math.min(W * .86, 760), ph = Math.min(H * .34, 250);
@@ -363,21 +367,25 @@
     const lu = u - 3.7;
     if (lu > 0) {
       const w = logoW(), lh = w * 340 / 784, pu = lu > 3.15 ? 1 + .03 * Math.exp(-(((lu - 3.15) % .46875) / .46875) * 5) : 1;
-      rays(t, MINT, .1 * eo((lu - 1.8) / .8)); drawLogo(W / 2, H / 2 - lh * .1, w * pu, lu);
-      shock(t, T_WALL + 6.85, W / 2, H / 2, MINT, .9); flash(t, T_WALL + 6.85, .5, .4);
+      if (!GL) { rays(t, MINT, .1 * eo((lu - 1.8) / .8)); drawLogo(W / 2, H / 2 - lh * .1, w * pu, lu); shock(t, T_WALL + 6.85, W / 2, H / 2, MINT, .9); }
+      flash(t, T_WALL + 6.85, GL ? .25 : .5, .4);
       fitText("Willkommen bei Moki", W / 2, H / 2 + lh * .6, W * .9, Math.min(W * .06, 56), "#fff", eo((lu - 3.4) / .5), 1, 800);
     }
   }
   function render(t) {
+    if (GL) { try { GL.render(t); } catch (e) { dropGL(); } }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalAlpha = 1;
-    const k = Math.exp(-((t % .46875) / .46875) * 6), sh = (t >= T_TITLE && t < T_TITLE + 3 ? 10 : t >= T_SHOW && t < T_GONE ? 3 : 0) * k;
+    if (GL) ctx.clearRect(0, 0, W, H);
+    const k = Math.exp(-((t % .46875) / .46875) * 6), sh = GL ? 0 : (t >= T_TITLE && t < T_TITLE + 3 ? 10 : t >= T_SHOW && t < T_GONE ? 3 : 0) * k;
     ctx.save(); ctx.translate(Math.sin(t * 91) * sh, Math.cos(t * 77) * sh);
     if (t < T_TITLE) sceneLogo(t); else if (t < T_INFO) sceneTitle(t); else if (t < T_SHOW) sceneInfo(t); else if (t < T_GONE) sceneShow(t); else if (t < T_WALL) sceneGone(t); else sceneWall(t);
     ctx.restore();
-    const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .4, W / 2, H / 2, Math.max(W, H) * .8); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,.55)"); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+    const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .4, W / 2, H / 2, Math.max(W, H) * .8); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, GL ? "rgba(0,0,0,0)" : "rgba(0,0,0,.55)"); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
     if (t < .6) { ctx.fillStyle = `rgba(0,0,0,${1 - t / .6})`; ctx.fillRect(0, 0, W, H); }
   }
 
+  // 3D abschalten und in 2D weitermachen (die Szenen sind reine Funktionen der Zeit, es gibt keinen Sprung)
+  function dropGL() { if (!GL) return; try { GL.dispose(); } catch (e) {} GL = null; }
   // ---------- Ende ----------
   let ended = false;
   function finish() {
@@ -388,18 +396,22 @@
     blocked.forEach(el => { try { el.inert = false; } catch (e) {} });
     removeEventListener("keydown", stopKeys, true);
     root.classList.remove("mi-on");
-    setTimeout(() => { mi.remove(); root.classList.remove("site-in"); }, 1300);
+    setTimeout(() => { if (GL) { try { GL.dispose(); } catch (e) {} } mi.remove(); root.classList.remove("site-in"); }, 1300);
   }
 
   // ---------- Start ----------
   async function start() {
     const imgs = Promise.all([...games, ...(window.MOKI_GONE || [])].map(g => loadImg(g.image).then(i => { IMG.set(g.image, i); })));
     await Promise.race([imgs, new Promise(r => setTimeout(r, 6000))]);
+    if (window.MOKI_INTRO3D_MOD && !/[?&]intro2d/.test(location.search)) {   // 3D, wenn WebGL da ist; sonst bleibt es bei 2D
+      try { GL = window.MOKI_INTRO3D_MOD.create({ host: mi, games, gone: GONE, images: IMG, segs: SEGS, T: { TITLE: T_TITLE, INFO: T_INFO, SHOW: T_SHOW, GONE: T_GONE, WALL: T_WALL, DUR }, plan }); } catch (e) { GL = null; }
+    }
     if (TEST) { window.__MOKI_MI = { render, DUR, T_TITLE, T_INFO, T_SHOW, T_GONE, T_WALL, plan, finish }; render(0); return; }
-    let t = 0, last = performance.now();
+    let t = 0, slow = 0, last = performance.now();
     const hard = setTimeout(finish, (DUR + 20) * 1000);   // Notbremse, falls etwas haengt
     (function frame(now) {
-      t += Math.min((now - last) / 1000, .1); last = now;   // Tab im Hintergrund: Zeit steht still
+      const dt = (now - last) / 1000; t += Math.min(dt, .1); last = now;   // Tab im Hintergrund: Zeit steht still
+      if (GL && dt > .12 && ++slow > 12) dropGL();   // zu langsam (schwacher Rechner): in 2D weiter
       try { render(Math.min(t, DUR)); } catch (e) { clearTimeout(hard); finish(); return; }
       if (t < DUR) requestAnimationFrame(frame); else { clearTimeout(hard); finish(); }
     })(last);

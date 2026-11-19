@@ -1,0 +1,6 @@
+{
+  "name": "moki-intro3d",
+  "private": true,
+  "description": "3D-Einleitung fuer Moki (Three.js). Bauen: bash build.sh. Das Ergebnis intro3d.bundle.js wird von build.py in moki.html eingebettet.",
+  "devDependencies": { "esbuild": "^0.28.2", "three": "0.169.0" }
+}
