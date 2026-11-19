@@ -34,7 +34,7 @@
     { g: "stickman-merge", o: "🌱", t: "Truppenverstärkung", s: "Zusammen ist man stärker. Heute verschmilzt du Strichmännchen zu einer ganzen Armee." },
     { g: "going-balls", o: "🔴", t: "Kugeln!", s: "Weihnachtskugeln rollen eigentlich nur vom Baum. Heute rollst du selbst eine, und zwar über gefährliche Bahnen." },
     { g: "crazycars", o: "🛷", t: "Winterfahrt", s: "Draußen ist es glatt. Drinnen darfst du Gas geben, so wild du willst." },
-    { g: "perfect-peel", o: "🐦", t: "Stress abbauen", s: "Noch vier Tage. Gegen Vorfreude-Stress hilft: etwas Ruhiges und Befriedigendes, zum Beispiel Schälen." },
+    { g: "subway-surfers", o: "🐦", t: "Stress abbauen", s: "Noch vier Tage. Gegen Vorfreude-Stress hilft: einfach mal losrennen." },
     { g: "rooftop-snipers", o: "🕯️", t: "Längste Nacht", s: "Um den 21. Dezember ist die längste Nacht des Jahres. Perfekt für eine ruhige Hand und die Dächer im Mondlicht." },
     { g: "tombofthemask", o: "🧣", t: "Vorfreude", s: "Nur noch zwei Nächte. Heute rast du durch ein Labyrinth und sammelst, was du kriegen kannst." },
     { g: "cut-the-rope", o: "🍬", t: "Letzte Besorgungen", s: "Alles eingepackt? Dann schneide heute noch das Seil durch und füttere das Monster mit Bonbons." },

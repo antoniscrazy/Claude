@@ -19,6 +19,5 @@ window.MOKI_XMAS_GAMES = [
   { id: "stickman-merge", title: "Stickman Merge", url: "#/play/stickman-merge", category: "Strategie", image: "xmas/stickman-merge.jpg", emoji: "🧍", description: "Vereine Strichmännchen zu stärkeren Kämpfern.", added: "2026-12-01" },
   { id: "crazycars", title: "Crazy Cars", url: "#/play/crazycars", category: "Fahren", image: "xmas/crazycars.jpg", emoji: "🚗", description: "Rase mit wilden Autos über die Strecke.", added: "2026-12-01" },
   { id: "going-balls", title: "Going Balls", url: "#/play/going-balls", category: "Geschicklichkeit", image: "xmas/going-balls.jpg", emoji: "🔴", description: "Rolle eine Kugel über gefährliche Bahnen.", added: "2026-12-01" },
-  { id: "perfect-peel", title: "Perfect Peel", url: "#/play/perfect-peel", category: "Geschicklichkeit", image: "xmas/perfect-peel.jpg", emoji: "🍊", description: "Schäle so sauber wie möglich.", added: "2026-12-01" },
   { id: "rooftop-snipers", title: "Rooftop Snipers", url: "#/play/rooftop-snipers", category: "Kampf & Schießen", image: "xmas/rooftop-snipers.jpg", emoji: "🎯", description: "Duelle auf den Dächern.", added: "2026-12-01" },
 ];
