@@ -31,7 +31,7 @@ const TYPES={html:'text/html',js:'text/plain',css:'text/css',png:'image/png',jpg
  await p.addInitScript(()=>{try{localStorage.setItem('moki-intro-v2','1')}catch(e){}});
  await p.addInitScript(()=>{window.__ZOOM=1.3333});await p.addInitScript(OVERLAY);
  // Fusszeile (Tester-Knopf) fuer die Aufnahme am unteren Bildrand festhalten (Seitenende ist unter Zoom nicht erreichbar)
- await p.addInitScript(()=>addEventListener('DOMContentLoaded',()=>{const st=document.createElement('style');st.textContent='#tfoot{position:fixed!important;left:0;right:0;bottom:0;z-index:40;background:#0a0d2bf2;border-top:2px solid #00e5a855}';document.head.appendChild(st)}));
+ await p.addInitScript(()=>addEventListener('DOMContentLoaded',()=>{const st=document.createElement('style');st.textContent='html,body{scroll-behavior:auto!important}#tfoot{position:fixed!important;left:0;right:0;bottom:0;z-index:40;background:#0a0d2bf2;border-top:2px solid #00e5a855}';document.head.appendChild(st)}));
  await p.goto('file:///home/user/Claude/moki/_trailer-moki.html');await p.waitForSelector('.tile');await p.waitForTimeout(500);
  const off=(Date.now()-tCreate)/1000;const d=driver(p);d.reset();
  const {at,mv,mvEl,clk,cap,smoothScroll,sleep}=d;
