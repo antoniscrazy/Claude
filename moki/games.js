@@ -997,7 +997,7 @@ window.MOKI_GAMES = [
     title: "Stackball",
     url: "#/play/stackball",
     category: "Geschicklichkeit",
-    emoji: "🔴",
+    image: "stackball.jpg",
     colors: ["#3da5ff", "#8b5cf6"],
     description: "Rolle den Ball nach unten und zerschlage die Plattformen, ohne auf einem schwarzen Feld zu landen.",
     added: "2026-11-19",
