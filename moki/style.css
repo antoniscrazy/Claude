@@ -405,3 +405,11 @@ html.player-open,html.player-open body{overflow:hidden}
 .ann-close.ready:hover{transform:translateY(-2px)}
 .ann-close span{position:relative;z-index:1}
 @media(max-width:600px){.ann-title{font-size:24px}.ann-emoji{font-size:52px}.ann-body{font-size:15px}}
+
+/* Mega-Intro (megaintro.js): Vollbild-Ebene, bis die Einleitung fertig ist */
+html.mi-on body{overflow:hidden}
+html.mi-on body>*:not(#mi):not(script):not(style){visibility:hidden}
+#mi{position:fixed;inset:0;z-index:2147483000;background:#05060f;transition:opacity .9s ease}
+#mi.out{opacity:0;pointer-events:none}
+#mi canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.mi-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}

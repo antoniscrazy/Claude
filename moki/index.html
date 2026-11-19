@@ -10,13 +10,13 @@
 <meta name="theme-color" content="#0a0d2b">
 <script>
 (function () {
-  // Intro läuft genau einmal. Gemerkt in localStorage (und zusätzlich per Cookie als Reserve).
-  var K = "moki-intro-v2", seen = false, q = location.search;
+  // Mega-Intro (Kino-Einleitung) läuft genau einmal pro Browser, nicht überspringbar. Gemerkt in localStorage (und per Cookie als Reserve).
+  var K = "moki-intro-v3", seen = false, q = location.search;
   try { seen = localStorage.getItem(K) === "1"; } catch (e) {}
   if (!seen) { try { seen = document.cookie.indexOf(K + "=1") > -1; } catch (e) {} }
   if (/[?&]intro(=1)?(&|$)/.test(q)) seen = false;   // zum Testen: moki.html?intro
   if (/^#\/spiel\//.test(location.hash)) seen = true;   // Spiel-Link von Freunden: kein Intro davor
-  if (!seen) document.documentElement.classList.add("intro-on");
+  if (!seen) document.documentElement.classList.add("mi-on");
 })();
 </script>
 <link rel="stylesheet" href="style.css">
@@ -81,6 +81,7 @@
 <script src="games.js"></script>
 <script src="app.js"></script>
 <script src="intro.js"></script>
+<script src="megaintro.js"></script>
 <script src="creations.js"></script>
 </body>
 </html>
