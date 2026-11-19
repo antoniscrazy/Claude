@@ -1052,8 +1052,8 @@ window.MOKI_GAMES = [
     title: "The World's Hardest Game",
     url: "#/play/worldshardestgame",
     category: "Geschicklichkeit",
-    emoji: "🟥",
-    colors: ["#e74c3c", "#2c3e50"],
+    image: "worldshardestgame.jpg",
+        colors: ["#e74c3c", "#2c3e50"],
     description: "Bewege den Punkt durch die Level, ohne die gefährlichen Kreise zu berühren.",
     added: "2026-11-19",
     featured: false
