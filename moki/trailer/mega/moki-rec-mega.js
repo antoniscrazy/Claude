@@ -56,7 +56,7 @@ const TYPES={html:'text/html',js:'text/plain',css:'text/css',png:'image/png',jpg
  await at(25.2,async()=>{await mv(960,560,600);await p.mouse.down();await sleep(60);await p.mouse.up();await sleep(300);for(let i=0;i<7;i++){await p.keyboard.press(i%3?'ArrowLeft':'ArrowRight');await sleep(420)}},'spielen');
  await at(29.6,()=>frameClick('#player iframe','#moki-back',900),'zurueck zu Moki');
  // ---- 5. Tester-Programm
- await at(31.4,async()=>{await smoothScroll(null,await p.evaluate(()=>scrollY),await p.evaluate(()=>document.documentElement.scrollHeight),1400)},'nach unten');
+ await at(31.4,async()=>{await smoothScroll(null,await p.evaluate(()=>scrollY),await p.evaluate(()=>document.documentElement.scrollHeight*2),1400)},'nach unten');
  await at(33.0,()=>cap('TESTER-PROGRAMM','Hilf mit und teste neue Spiele',3000),'cap-test');
  await at(33.4,()=>clk('[data-tf=apply]',900,0,true),'Tester werden');
  await at(35.0,async()=>{await clk('#tf-name',500,0,true);await p.keyboard.type('Max',{delay:120})},'Name');
@@ -64,7 +64,7 @@ const TYPES={html:'text/html',js:'text/plain',css:'text/css',png:'image/png',jpg
  await at(39.4,async()=>{tester={state:'tester',name:'Max',notice:'accepted'};await p.reload();await p.waitForSelector('.tmodal',{timeout:8000})},'angenommen');
  await at(40.6,()=>cap('DU BIST TESTER','Mit Anleitung und Checkliste',2800,true),'cap-ok');
  await at(44.4,async()=>{tester={state:'tester',name:'Max'};await clk('.tmodal [data-a=ok]',800,0,true)},'Los geht\'s');
- await at(46.2,async()=>{await smoothScroll(null,await p.evaluate(()=>scrollY),await p.evaluate(()=>document.documentElement.scrollHeight),1000);await clk('[data-tf=mode]',800,0,true)},'Tester-Modus an');
+ await at(46.2,async()=>{await smoothScroll(null,await p.evaluate(()=>scrollY),await p.evaluate(()=>document.documentElement.scrollHeight*2),1000);await clk('[data-tf=mode]',800,0,true)},'Tester-Modus an');
  await at(49.2,async()=>{await scrollTo(await elY('#app .grid .tile',260))},'zum Grid');
  await at(50.4,()=>cap('TESTER-MODUS','Bereits getestete Spiele sind ausgegraut',3000),'cap-mode');
  await at(52.8,async()=>{await scrollTo(await elY(tile('hextris'),420))},'scroll zum Spiel');
