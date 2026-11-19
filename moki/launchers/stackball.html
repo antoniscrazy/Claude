@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><title>Stackball</title><style>html,body{margin:0;height:100%;background:#111;color:#fff;font-family:sans-serif;overflow:hidden}
+body{display:flex;flex-direction:column}
+#bar{flex:0 0 auto;display:flex;justify-content:flex-end;padding:6px 12px;background:#111}
+#moki-back{padding:9px 16px;border-radius:999px;background:linear-gradient(90deg,#00e5a8,#ffd23f);color:#04201a;font:800 14px "Segoe UI",system-ui,sans-serif;text-decoration:none;box-shadow:0 3px 12px rgba(0,0,0,.5);opacity:.92}
+#moki-back:hover{opacity:1}
+#wrap{flex:1 1 auto;position:relative;min-height:0}
+#f,#gameContainer{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}
+#ld{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;width:70%;max-width:360px;z-index:2}
+#pb{height:10px;border-radius:5px;background:rgba(255,255,255,.15);overflow:hidden;margin-top:8px}
+#pf{height:100%;width:0;background:#00e5a8}</style></head>
+<body>
+<div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
+<div id="wrap"><iframe id="f" allow="autoplay; fullscreen; gamepad"></iframe><div id="ld"><div id="tx">Lade Spiel …</div><div id="pb"><div id="pf"></div></div></div></div>
+<script>
+// Laedt das Spiel aus dem GitHub-Repo (fester Commit). Lokale Skripte/CSS werden eingebettet, weil raw sie nicht ausfuehrt.
+
+const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/e8e8714a0ede0e9f44c2d3dbd2ae8432e94c47ac/stackball/";
+const ORIGIN = new URL(BASE).origin;
+const GUARD = "(" + "function guard(ORIGIN){\n function ok(u){ try{ var x=new URL(String(u), document.baseURI); return x.protocol==='blob:'||x.protocol==='data:'||x.origin===ORIGIN||x.protocol==='about:'; }catch(e){ return true; } }\n var oo=XMLHttpRequest.prototype.open, os=XMLHttpRequest.prototype.send;\n XMLHttpRequest.prototype.open=function(m,u){ this._b=!ok(u); return oo.apply(this,arguments); };\n XMLHttpRequest.prototype.send=function(){ if(!this._b) return os.apply(this,arguments); var x=this; setTimeout(function(){ x.dispatchEvent(new ProgressEvent('error')); x.dispatchEvent(new ProgressEvent('loadend')); },0); };\n var of=window.fetch; window.fetch=function(r){ return ok(r&&r.url||r) ? of.apply(this,arguments) : Promise.reject(new TypeError('Failed to fetch')); };\n if(navigator.sendBeacon) navigator.sendBeacon=function(u){ return ok(u); };\n window.open=function(){ return null; };\n try{ Navigator.prototype.getGamepads=function(){ return []; }; }catch(e){}\n var d=Object.getOwnPropertyDescriptor(HTMLScriptElement.prototype,'src');\n Object.defineProperty(HTMLScriptElement.prototype,'src',{configurable:true,enumerable:true,\n  get:function(){ return d.get.call(this); },\n  set:function(v){ var el=this, full=null; try{ full=new URL(String(v),document.baseURI).href; }catch(e){}\n   if(full && full.indexOf(ORIGIN)===0 && !el.__blobbed){ el.__blobbed=true;\n     fetch(full).then(function(r){ return r.text(); }).then(function(t){ d.set.call(el, URL.createObjectURL(new Blob([t],{type:'text/javascript'}))); });\n     return; }\n   d.set.call(el,v); }});\n var di=Object.getOwnPropertyDescriptor(HTMLImageElement.prototype,'src');\n Object.defineProperty(HTMLImageElement.prototype,'src',{configurable:true,enumerable:true,\n  get:function(){ return di.get.call(this); },\n  set:function(v){ try{ var f=new URL(String(v),document.baseURI).href; if(f.indexOf(ORIGIN)===0) this.crossOrigin='anonymous'; }catch(e){} di.set.call(this,v); }});\n var dl=Object.getOwnPropertyDescriptor(HTMLLinkElement.prototype,'href');\n if(dl) Object.defineProperty(HTMLLinkElement.prototype,'href',{configurable:true,enumerable:true,\n  get:function(){ return dl.get.call(this); },\n  set:function(v){ var el=this, full=null; try{ full=new URL(String(v),document.baseURI).href; }catch(e){}\n   if(full && full.indexOf(ORIGIN)===0){ fetch(full).then(function(r){ return r.text(); }).then(function(t){ dl.set.call(el, URL.createObjectURL(new Blob([t],{type:'text/css'}))); }); return; }\n   dl.set.call(el,v); }});\n}" + ")(" + JSON.stringify(ORIGIN) + ");";
+const tx = document.getElementById("tx"), pf = document.getElementById("pf"), frame = document.getElementById("f");
+const isLocal = s => !/^([a-z]+:)?\/\//i.test(s) && !/^data:/i.test(s);
+async function getText(u) { const r = await fetch(u); if (!r.ok) throw new Error(u.slice(BASE.length) + ": " + r.status); return r.text(); }
+(async () => {
+  try {
+    let html = await getText(BASE + "index.html");
+    const scriptRe = /<script\b([^>]*?)\bsrc="([^"]+)"([^>]*)>[\s\S]*?<\/script>/gi;
+    const linkRe = /<link\b[^>]*>/gi, cssRe = /\brel="stylesheet"/i, hrefRe = /\bhref="([^"]+)"/i;
+    const srcs = [...html.matchAll(scriptRe)].map(m => m[2]).filter(isLocal);
+    const hrefs = [...html.matchAll(linkRe)].filter(m => cssRe.test(m[0])).map(m => (m[0].match(hrefRe) || [])[1]).filter(x => x && isLocal(x));
+    const all = [...new Set([...srcs, ...hrefs])], texts = {}; let done = 0;
+    await Promise.all(all.map(async s => { texts[s] = await getText(BASE + s.replace(/^\.\//, "")); pf.style.width = (++done / Math.max(1, all.length) * 80) + "%"; }));
+    html = html.replace(scriptRe, (m, a, s, b) => (!isLocal(s) || texts[s] === undefined) ? m : "<script" + a + b + ">" + texts[s].replace(/<\/script/gi, "<\\/script") + "<\/script>");
+    html = html.replace(linkRe, m => { if (!cssRe.test(m)) return m; const h = (m.match(hrefRe) || [])[1]; if (!h || !isLocal(h) || texts[h] === undefined) return m; return "<style>" + texts[h].replace(/<\/style/gi, "<\\/style") + "<\/style>"; });
+    const inject = '<base href="' + BASE + '"><script>' + GUARD + '<\/script>';
+    html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, m => m + inject) : inject + html;
+    pf.style.width = "95%";
+    frame.onload = () => { document.getElementById("ld").remove(); };
+    frame.srcdoc = html;
+  } catch (e) { tx.textContent = "Fehler beim Laden: " + (e.message || e); }
+})();
+</script>
+</body></html>

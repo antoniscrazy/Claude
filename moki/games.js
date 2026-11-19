@@ -979,6 +979,106 @@ window.MOKI_GAMES = [
     description: "Sortiere und stapele Waren geschickt, damit das Lager immer voll bleibt.",
     added: "2026-11-18",
     featured: false
+  },
+  {
+    id: "helix-jump",
+    title: "Helix Jump",
+    url: "#/play/helix-jump",
+    category: "Geschicklichkeit",
+    image: "helix-jump.jpg",
+    emoji: "🌀",
+    colors: ["#ff5c8a", "#ffd23f"],
+    description: "Lass den Ball durch die Lücken des Turms springen und weiche den Hindernissen aus.",
+    added: "2026-11-19",
+    featured: false
+  },
+  {
+    id: "stackball",
+    title: "Stackball",
+    url: "#/play/stackball",
+    category: "Geschicklichkeit",
+    emoji: "🔴",
+    colors: ["#3da5ff", "#8b5cf6"],
+    description: "Rolle den Ball nach unten und zerschlage die Plattformen, ohne auf einem schwarzen Feld zu landen.",
+    added: "2026-11-19",
+    featured: false
+  },
+  {
+    id: "cut-the-rope",
+    title: "Cut the Rope",
+    url: "#/play/cut-the-rope",
+    category: "Strategie",
+    emoji: "🍬",
+    colors: ["#7bd389", "#e8553d"],
+    description: "Schneide die Seile an der richtigen Stelle, damit das Bonbon die Figur erreicht.",
+    added: "2026-11-19",
+    featured: false
+  },
+  {
+    id: "snake-pivot",
+    title: "Snake Pivot",
+    url: "#/play/snake-pivot",
+    category: "Geschicklichkeit",
+    emoji: "🐍",
+    colors: ["#56c271", "#1f4d2b"],
+    description: "Steuere die Schlange, sammle Punkte und vermeide die Wände und deinen eigenen Körper.",
+    added: "2026-11-19",
+    featured: false
+  },
+  {
+    id: "gym-stack",
+    title: "Gym Stack",
+    url: "#/play/gym-stack",
+    category: "Geschicklichkeit",
+    emoji: "🏋️",
+    colors: ["#f5a623", "#4a4a4a"],
+    description: "Staple die Gewichte so genau wie möglich, damit der Turm nicht umfällt.",
+    added: "2026-11-19",
+    featured: false
+  },
+  {
+    id: "universal-paperclips",
+    title: "Universal Paperclips",
+    url: "#/play/universal-paperclips",
+    category: "Simulation",
+    emoji: "📎",
+    colors: ["#c8d3dd", "#1e2a38"],
+    description: "Ein Idle-Spiel: Stelle Büroklammern her und baue dein Wirtschaftsimperium aus.",
+    added: "2026-11-19",
+    featured: false
+  },
+  {
+    id: "worldshardestgame",
+    title: "The World's Hardest Game",
+    url: "#/play/worldshardestgame",
+    category: "Geschicklichkeit",
+    emoji: "🟥",
+    colors: ["#e74c3c", "#2c3e50"],
+    description: "Bewege den Punkt durch die Level, ohne die gefährlichen Kreise zu berühren.",
+    added: "2026-11-19",
+    featured: false
+  },
+  {
+    id: "hextris",
+    title: "Hextris",
+    url: "#/play/hextris",
+    category: "Geschicklichkeit",
+    emoji: "⬢",
+    colors: ["#9b59b6", "#2ecc71"],
+    description: "Drehe den sechseckigen Ring und passe die fallenden Blöcke zu ihrer Farbe an.",
+    added: "2026-11-19",
+    featured: false
+  },
+  {
+    id: "granny",
+    title: "Granny",
+    url: "#/play/granny",
+    category: "Abenteuer",
+    emoji: "👵",
+    colors: ["#2b2b2b", "#8b0000"],
+    description: "Entkomme aus dem Haus der Oma, bevor sie dich erwischt. Achtung, nichts für schwache Nerven.",
+    added: "2026-11-19",
+    featured: false
   }
 ];
 
