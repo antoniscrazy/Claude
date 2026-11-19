@@ -22,7 +22,10 @@ assert _mi in h
 import base64 as _b64
 _mu=[("Jingle Bells","jingle-bells.mp3"),("Stille Nacht","stille-nacht.mp3"),("We Wish You a Merry Christmas","we-wish-you.mp3")]
 _mj="window.MOKI_XMAS_MUSIC="+json.dumps([{"n":n,"u":"data:audio/mpeg;base64,"+_b64.b64encode(open("musik/"+f,"rb").read()).decode()} for n,f in _mu if os.path.exists("musik/"+f)])+";"
-_xm="<script>\n"+_mj+"\n"+r("advent.js")+"\n</script>"
+_xg=re.sub(r'"(xmas/[\w-]+\.jpg)"',lambda m:'"data:image/jpeg;base64,'+base64.b64encode(open(m.group(1),"rb").read()).decode()+'"',r("xmasgames.js"))
+_xl={f[:-5]:re.sub(r'<iframe\b[^>]*>',lambda m:re.sub(r' allow="[^"]*"','',m.group(0)).replace('<iframe','<iframe allow="autoplay *; fullscreen *; gamepad *; pointer-lock *; clipboard-write *"',1),open("xmas/launchers/"+f,encoding="utf-8").read()) for f in sorted(os.listdir("xmas/launchers")) if f.endswith(".html")}
+_xj=json.dumps(_xl,ensure_ascii=False).replace("<","\\u003c").replace(">","\\u003e").replace("\u2028","\\u2028").replace("\u2029","\\u2029")
+_xm="<script>\n"+_mj+"\n"+_xg+"\nwindow.MOKI_LAUNCH=Object.assign(window.MOKI_LAUNCH||{},"+_xj+");\n"+r("advent.js")+"\n</script>"
 if os.path.exists("xmasintro.js"): _xm+="\n<script>\n"+r("xmasintro.js")+"\n</script>"
 x=h.replace(_mi,_xm).replace("moki-intro-v3","moki-xmas-intro-v1").replace("</head>","<style>\n"+r("weihnachten.css")+"\n</style>\n</head>",1)
 open("moki_weinachten.html","w",encoding="utf-8").write(x)

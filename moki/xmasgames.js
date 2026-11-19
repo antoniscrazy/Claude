@@ -1,0 +1,20 @@
+// Nur in der Weihnachts-Edition: Spiele, die ausschliesslich ueber den Adventskalender kommen (nicht in moki.html).
+window.MOKI_XMAS_GAMES = [
+  { id: "blumgi-ball", title: "Blumgi Ball", url: "#/play/blumgi-ball", category: "Geschicklichkeit", image: "xmas/blumgi-ball.jpg", emoji: "⚽", description: "Ein Ball, ein Blumgi und viel Geschick.", added: "2026-12-01" },
+  { id: "blumgi-merge", title: "Blumgi Merge", url: "#/play/blumgi-merge", category: "Strategie", image: "xmas/blumgi-merge.jpg", emoji: "🟢", description: "Verschmelze Schleime zu stärkeren Blumgis und zieh in den Kampf.", added: "2026-12-01" },
+  { id: "blumgi-paintball", title: "Blumgi Paintball", url: "#/play/blumgi-paintball", category: "Kampf & Schießen", image: "xmas/blumgi-paintball.jpg", emoji: "🎯", description: "Paintball-Duelle mit den Blumgis.", added: "2026-12-01" },
+  { id: "blumgi-soccer", title: "Blumgi Soccer", url: "#/play/blumgi-soccer", category: "Sport", image: "xmas/blumgi-soccer.jpg", emoji: "⚽", description: "Fußball mit den Blumgis.", added: "2026-12-01" },
+  { id: "dino-bros", title: "Dino Bros", url: "#/play/dino-bros", category: "Abenteuer", image: "xmas/dino-bros.jpg", emoji: "🦖", description: "Abenteuer mit zwei Dinos.", added: "2026-12-01" },
+  { id: "gobble", title: "Gobble", url: "#/play/gobble", category: "Geschicklichkeit", image: "xmas/gobble.jpg", emoji: "😋", description: "Schnapp dir alles, was du erwischen kannst.", added: "2026-12-01" },
+  { id: "hexellent", title: "Hexellent", url: "#/play/hexellent", category: "Denken", image: "xmas/hexellent.jpg", emoji: "⬡", description: "Ein Rätsel aus Sechsecken.", added: "2026-12-01" },
+  { id: "idle-cowshed", title: "Idle Cowshed", url: "#/play/idle-cowshed", category: "Simulation", image: "xmas/idle-cowshed.jpg", emoji: "🐄", description: "Baue deinen Kuhstall aus und lass ihn für dich arbeiten.", added: "2026-12-01" },
+  { id: "free-rider-jumps", title: "Free Rider Jumps", url: "#/play/free-rider-jumps", category: "Fahren", image: "xmas/free-rider-jumps.jpg", emoji: "🏍️", description: "Fahren und Springen auf kniffligen Strecken.", added: "2026-12-01" },
+  { id: "dune", title: "Dune", url: "#/play/dune", category: "Abenteuer", image: "xmas/dune.jpg", emoji: "🏜️", description: "Ein Spiel in der Wüste.", added: "2026-12-01" },
+  { id: "drift-boss", title: "Drift Boss", url: "#/play/drift-boss", category: "Fahren", image: "xmas/drift-boss.jpg", emoji: "🚗", description: "Driftest du durch jede Kurve, ohne abzustürzen?", added: "2026-12-01" },
+  { id: "monster-match", title: "Monster Match", url: "#/play/monster-match", category: "Denken", image: "xmas/monster-match.jpg", emoji: "👾", description: "Finde passende Monster und räume das Feld ab.", added: "2026-12-01" },
+  { id: "moto-trap", title: "Moto Trap", url: "#/play/moto-trap", category: "Fahren", image: "xmas/moto-trap.jpg", emoji: "🏍️", description: "Motorrad fahren zwischen vielen Hindernissen.", added: "2026-12-01" },
+  { id: "slime-dunk", title: "Slime Dunk", url: "#/play/slime-dunk", category: "Sport", image: "xmas/slime-dunk.jpg", emoji: "🏀", description: "Versenke den Ball als Schleim im Korb.", added: "2026-12-01" },
+  { id: "stack", title: "Stack", url: "#/play/stack", category: "Geschicklichkeit", image: "xmas/stack.jpg", emoji: "🧱", description: "Stapel Blöcke so hoch du kannst.", added: "2026-12-01" },
+  { id: "stick-fighter", title: "Stick Fighter", url: "#/play/stick-fighter", category: "Kampf & Schießen", image: "xmas/stick-fighter.jpg", emoji: "🥊", description: "Strichmännchen-Kämpfe.", added: "2026-12-01" },
+  { id: "stickman-merge", title: "Stickman Merge", url: "#/play/stickman-merge", category: "Strategie", image: "xmas/stickman-merge.jpg", emoji: "🧍", description: "Vereine Strichmännchen zu stärkeren Kämpfern.", added: "2026-12-01" },
+];

@@ -15,32 +15,32 @@
 
   // ---------- Inhalt: pro Tuerchen ein Spiel, ein Gruss, ein Schmuckstueck ----------
   const DAYS = [
-    { g: "cut-the-rope", o: "⭐", t: "Los geht's!", s: "Heute startet dein Moki-Advent: jeden Tag ein Türchen, ein Spiel und ein Schmuckstück für deinen Baum. Fang mit einem Bonbon an." },
-    { g: "cookie-clicker", o: "🍪", t: "Plätzchen-Zeit", s: "Passend zur Backzeit: ein Spiel, das nur aus Keksen besteht. Aber Vorsicht, es macht süchtig." },
-    { g: "slice-master", o: "☕", t: "Heißer Kakao", s: "Tipp für heute: Kakao kochen, Marshmallows rein und dann in Ruhe zocken. Mit Sahne ist es noch besser." },
-    { g: "helix-jump", o: "🌸", t: "Barbaratag", s: "Heute ist Barbaratag. Der Brauch: Kirschzweige schneiden, die bis Weihnachten blühen sollen. Dein Spiel geht dafür nur abwärts." },
-    { g: "doodle-jump", o: "🦌", t: "Rentier-Fakt", s: "Rentiere sind die einzigen Hirsche, bei denen auch die Weibchen ein Geweih tragen. Hüpf heute höher als jedes Rentier." },
-    { g: "goods-master", o: "🎅", t: "Nikolaustag", s: "Stiefel raus! Heute wird gestapelt und sortiert wie bei einem Nikolaus, der seinen Sack packt." },
-    { g: "tunnel-rush", o: "☃️", t: "Schnee-Witz", s: "Was sagt ein Schneemann zum anderen? „Riechst du auch Karotten?“ Heute rast du durch einen bunten Tunnel." },
-    { g: "fruit-ninja", o: "💡", t: "Lichterglanz", s: "Hast du heute schon Lichterketten gesehen? Moki hat dir eine übers Fenster gehängt. Zeit für einen scharfen Schnitt." },
-    { g: "crossy-road", o: "🎪", t: "Weihnachtsmarkt-Gefühl", s: "Gebrannte Mandeln, Gedränge, volle Straßen: Heute musst du einfach nur heil auf die andere Seite kommen." },
-    { g: "block-blast", o: "🧩", t: "Zehn Türchen offen", s: "Zehn Türchen sind auf. Zeit, in Ruhe zu planen und Blöcke so zu setzen, dass alles aufgeht." },
-    { g: "2048-merge", o: "🔔", t: "Zahlenzauber", s: "Elf Türchen und ein Spiel, in dem sich Zahlen verdoppeln, bis es nicht mehr weitergeht." },
-    { g: "lucky-claw-machine", o: "🎁", t: "Halbzeit!", s: "Halbzeit im Advent! Heute darfst du Geschenke greifen. Ruhig zielen und im richtigen Moment zupacken." },
-    { g: "golf-orbit", o: "❄️", t: "Schwung holen", s: "Heute zählt jeder Schwung: zielen, abschlagen und im Orbit landen. Wie ein Schneeball, nur weiter." },
-    { g: "papas-burgeria", o: "🍔", t: "Burger zum Advent", s: "Auch Weihnachtsmänner haben Hunger. Heute wird gebraten, gestapelt und serviert." },
-    { g: "snake-pivot", o: "🧶", t: "Schlangenlinien", s: "Lichterkette verknotet? Diese Schlange entwirrst du Kurve für Kurve." },
-    { g: "hextris", o: "🔷", t: "Sechs Ecken", s: "Schneeflocken haben sechs Ecken. Dieses Spiel auch. Dreh das Sechseck und sortiere die Farben." },
-    { g: "dadish", o: "🌱", t: "Dein Radieschen-Held", s: "Dadish sucht seine Kinder. Vielleicht findet er sie noch vor Weihnachten." },
-    { g: "stackball", o: "🔴", t: "Kugeln!", s: "Weihnachtskugeln fallen nicht und gehen auch nicht kaputt. Hier schon: heute geht es Ebene für Ebene nach unten." },
-    { g: "mad-skills-motocross-2", o: "🛷", t: "Winterfahrt", s: "Draußen ist es glatt. Drinnen darfst du springen, driften und Salti schlagen." },
-    { g: "angry-birds", o: "🐦", t: "Stress abbauen", s: "Noch vier Tage. Gegen Vorfreude-Stress hilft: ein paar Vögel durch die Luft schleudern." },
+    { g: "blumgi-ball", o: "⭐", t: "Los geht's!", s: "Heute startet dein Moki-Advent: jeden Tag ein Türchen, ein Spiel und ein Schmuckstück für deinen Baum." },
+    { g: "blumgi-merge", o: "🍪", t: "Plätzchen-Zeit", s: "Passend zur Backzeit: Heute wird gemischt und verschmolzen. Plätzchen gibt es bestimmt auch noch." },
+    { g: "blumgi-paintball", o: "☕", t: "Heißer Kakao", s: "Tipp für heute: Kakao kochen, Marshmallows rein und dann in Ruhe zocken. Mit Sahne ist es noch besser." },
+    { g: "blumgi-soccer", o: "🌸", t: "Barbaratag", s: "Heute ist Barbaratag. Der Brauch: Kirschzweige schneiden, die bis Weihnachten blühen sollen." },
+    { g: "dino-bros", o: "🦌", t: "Rentier-Fakt", s: "Rentiere sind die einzigen Hirsche, bei denen auch die Weibchen ein Geweih tragen. Dein heutiges Spiel ist urzeitlicher." },
+    { g: "gobble", o: "🎅", t: "Nikolaustag", s: "Stiefel raus! Heute ist Nikolaustag, und dein Türchen hat einen Happen für dich." },
+    { g: "hexellent", o: "☃️", t: "Schnee-Witz", s: "Was sagt ein Schneemann zum anderen? „Riechst du auch Karotten?“ Heute knobelst du mit Sechsecken." },
+    { g: "idle-cowshed", o: "💡", t: "Lichterglanz", s: "Hast du heute schon Lichterketten gesehen? Moki hat dir eine übers Fenster gehängt. Und im Stall wird gearbeitet." },
+    { g: "free-rider-jumps", o: "🎪", t: "Weihnachtsmarkt-Gefühl", s: "Gebrannte Mandeln, Gedränge, volle Straßen. Heute geht es dagegen auf zwei Rädern durch die Lüfte." },
+    { g: "dune", o: "🧩", t: "Zehn Türchen offen", s: "Zehn Türchen sind auf. Heute geht es in die Wüste. Zum Aufwärmen passend zum Winter." },
+    { g: "drift-boss", o: "🔔", t: "Zahlenzauber", s: "Elf Türchen sind offen und heute wird gedriftet. Ein Fehler in der Kurve, und du fliegst raus." },
+    { g: "monster-match", o: "🎁", t: "Halbzeit!", s: "Halbzeit im Advent! Heute darfst du Monster suchen und Paare finden. Ruhig kombinieren." },
+    { g: "moto-trap", o: "❄️", t: "Schwung holen", s: "Draußen ist es glatt, drinnen darfst du Gas geben. Heute zählt jede Kurve." },
+    { g: "slime-dunk", o: "🍔", t: "Schleim-Treffer", s: "Auch Weihnachtsmänner brauchen Bewegung. Heute geht es mit Schleim auf den Korb." },
+    { g: "stack", o: "🧶", t: "Stapelzeit", s: "Geschenke stapelt man am besten in der richtigen Reihenfolge. Heute übst du das mit Blöcken." },
+    { g: "stick-fighter", o: "🔷", t: "Winterkampf", s: "Schneeflocken haben sechs Ecken, Strichmännchen haben null. Heute wird trotzdem gekämpft." },
+    { g: "stickman-merge", o: "🌱", t: "Truppenverstärkung", s: "Zusammen ist man stärker. Heute verschmilzt du Strichmännchen zu einer ganzen Armee." },
+    { g: "helix-jump", o: "🔴", t: "Kugeln!", s: "Weihnachtskugeln fallen nicht und gehen auch nicht kaputt. Heute geht es Ebene für Ebene nach unten." },
+    { g: "doodle-jump", o: "🛷", t: "Winterfahrt", s: "Draußen ist es glatt. Drinnen darfst du springen, so hoch du kannst." },
+    { g: "subway-surfers", o: "🐦", t: "Stress abbauen", s: "Noch vier Tage. Gegen Vorfreude-Stress hilft: einfach mal losrennen." },
     { g: "balatro", o: "🕯️", t: "Längste Nacht", s: "Um den 21. Dezember ist die längste Nacht des Jahres. Perfekt für Karten und gemütliches Licht." },
-    { g: "subway-surfers", o: "🧣", t: "Vorfreude", s: "Nur noch zwei Nächte. Heute rennst du, weichst aus und sammelst wie beim letzten Einkauf." },
-    { g: "tombofthemask", o: "🍬", t: "Letzte Besorgungen", s: "Alles eingepackt? Dann kannst du heute durch das Labyrinth rasen und Punkte sammeln." },
+    { g: "tombofthemask", o: "🧣", t: "Vorfreude", s: "Nur noch zwei Nächte. Heute rast du durch ein Labyrinth und sammelst, was du kriegen kannst." },
+    { g: "cut-the-rope", o: "🍬", t: "Letzte Besorgungen", s: "Alles eingepackt? Dann schneide heute noch das Seil durch und füttere das Monster mit Bonbons." },
     { g: null, o: "🎄", t: "Bescherung!", s: "Frohe Weihnachten! Dein Geschenk: ein Überraschungsspiel, ausgewählt vom Moki-Zufall. Viel Spaß beim Auspacken." }
   ];
-  const findGame = id => games.find(g => g.id === id);
+  const findGame = id => games.find(g => g.id === id) || (window.MOKI_XMAS_GAMES || []).find(g => g.id === id);
 
   // ---------- Quiz: pro Tuerchen eine Frage (erste Antwort ist die richtige, die Reihenfolge wird pro Tag fest gemischt) ----------
   const QZ = [
