@@ -1,0 +1,9 @@
+{
+ "TOTAL_MEMORY": 268435456,
+ "dataUrl": "rooftop-snipers.data",
+ "asmCodeUrl": "rooftop-snipers.asm.code",
+ "asmMemoryUrl": "rooftop-snipers.asm.memory",
+ "asmFrameworkUrl": "rooftop-snipers.asm.framework",
+ "splashScreenStyle": "Dark",
+ "backgroundColor": "#BF6757"
+}
