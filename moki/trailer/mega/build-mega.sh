@@ -1,9 +1,9 @@
 #!/bin/bash
 # Baut den Mega-Update-Trailer (1920x1080): Intro + Spielewand, echte Moki-Aufnahme, Finale, Musik.
 # Vorher: python3 prepare-moki.py (erzeugt die temporaere Aufnahme-Seite _trailer-moki.html, danach wieder loeschen)
-# Aufruf: bash build-mega.sh <arbeitsordner> <ausgabe.mp4>   (LMOKI = Laenge der Moki-Aufnahme in Sekunden, Standard 68)
+# Aufruf: bash build-mega.sh <arbeitsordner> <ausgabe.mp4>   (LMOKI = Laenge der Moki-Aufnahme in Sekunden, Standard 88)
 set -e
-LMOKI=${LMOKI:-68}
+LMOKI=${LMOKI:-88}
 W=$1; OUT=$2; HERE="$(cd "$(dirname "$0")" && pwd)"; mkdir -p "$W"
 [ -d "$W/mrec" ] || node "$HERE/moki-rec-mega.js" "$W/mrec"
 [ -d "$W/ca" ] || node "$HERE/render-scenes-mega.js" A "$W/ca"
