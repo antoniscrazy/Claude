@@ -1162,8 +1162,8 @@ window.MOKI_GAMES = [
     title: "Tunnel Rush",
     url: "#/play/tunnel-rush",
     category: "Fahren",
-    emoji: "🌀",
-    colors: ["#00e5a8", "#0a0d2b"],
+    image: "tunnel-rush.jpg",
+        colors: ["#00e5a8", "#0a0d2b"],
     description: "Rase durch den Tunnel und weiche den Hindernissen im richtigen Moment aus.",
     added: "2026-11-19",
     featured: false
