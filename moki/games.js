@@ -1074,8 +1074,8 @@ window.MOKI_GAMES = [
     title: "Granny",
     url: "#/play/granny",
     category: "Abenteuer",
-    emoji: "👵",
-    colors: ["#2b2b2b", "#8b0000"],
+    image: "granny.jpg",
+        colors: ["#2b2b2b", "#8b0000"],
     description: "Entkomme aus dem Haus der Oma, bevor sie dich erwischt. Achtung, nichts für schwache Nerven.",
     added: "2026-11-19",
     featured: false
