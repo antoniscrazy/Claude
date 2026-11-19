@@ -1096,8 +1096,8 @@ window.MOKI_GAMES = [
     title: "Tube Jumpers",
     url: "#/play/tube-jumpers",
     category: "Geschicklichkeit",
-    emoji: "🫧",
-    colors: ["#00c6ff", "#0072ff"],
+    image: "tube-jumpers.jpg",
+        colors: ["#00c6ff", "#0072ff"],
     description: "Springe von Röhre zu Röhre und halte dich so lange wie möglich oben.",
     added: "2026-11-19",
     featured: false
