@@ -134,12 +134,12 @@
   function calendarView() {
     const td = today(), n = [...opened].filter(d => d <= Math.max(td, 24)).length, st = stars();
     const head = td === 0 ? `Der Kalender startet am 1. Dezember. Noch ${daysUntil()} ${daysUntil() === 1 ? "Tag" : "Tage"}.` : td < 24 ? `Heute ist Türchen ${td} dran.` : "Alle 24 Türchen sind offen. Frohe Weihnachten!";
-    const opts = games.slice().sort((a, b) => a.title.localeCompare(b.title, "de")).map(g => `<option value="${esc(g.id)}">${esc(g.title)}</option>`).join("");
+    const mine = DAYS.map((d, i) => opened.has(i + 1) && i + 1 <= td && findGame(d.g)).filter(Boolean), opts = mine.map(g => `<option value="${esc(g.id)}">${esc(g.title)}</option>`).join("");
     app.innerHTML = `<section class="adv"><div class="ahead"><div><h2>${icon("gift")}Adventskalender</h2><p>${head}</p></div><div class="acount">${n} von 24 Türchen geöffnet</div></div>
       ${cdHtml()}
       <div class="alay"><div><div class="doors">${DAYS.map(doorHtml).join("")}</div>
-        <div class="agift"><h3>🎁 Verschenke ein Spiel</h3><p>Such ein Spiel aus und gib deinen Namen ein. Dein Freund bekommt einen Link und packt das Geschenk bei Moki aus.</p>
-          <div class="agrow"><select id="ag-game" aria-label="Spiel zum Verschenken">${opts}</select><input id="ag-name" maxlength="24" placeholder="Dein Name" autocomplete="off" aria-label="Dein Name"><button class="btn go" id="ag-go" type="button">Geschenklink erstellen</button></div><div class="agout" id="ag-out" aria-live="polite"></div></div></div>
+        <div class="agift"><h3>🎁 Verschenke ein Spiel</h3><p>Verschenken kannst du nur Spiele aus Türchen, die du selbst schon geöffnet hast. Dein Freund bekommt einen Link und packt das Geschenk bei Moki aus.</p>
+          ${mine.length ? "" : "<p><b>Öffne zuerst ein Türchen, dann kannst du dessen Spiel verschenken.</b></p>"}<div class="agrow"${mine.length ? "" : " hidden"}><select id="ag-game" aria-label="Spiel zum Verschenken">${opts}</select><input id="ag-name" maxlength="24" placeholder="Dein Name" autocomplete="off" aria-label="Dein Name"><button class="btn go" id="ag-go" type="button">Geschenklink erstellen</button></div><div class="agout" id="ag-out" aria-live="polite"></div></div></div>
         <aside class="atree"><h3>Dein Weihnachtsbaum</h3><div class="astars"><span>⭐ ${st} ${st === 1 ? "Stern" : "Sterne"}</span><b>${titleFor(st)}</b></div><small>Jedes Türchen schenkt Schmuck, jede richtige Quizantwort einen Stern.</small>${treeHtml()}</aside></div></section>`;
   }
   window.MOKI_XMAS_HOME = () => {
@@ -274,15 +274,27 @@
     });
     MUS.i++; MUS.timer = setTimeout(() => { if (MUS.on) playSong(); }, (t - ac.currentTime) * 1000 + 600);
   }
+  // Echte Aufnahmen (werden vom Build eingebettet); ohne sie spielt der kleine Synthesizer darueber
+  const TR = Array.isArray(window.MOKI_XMAS_MUSIC) && window.MOKI_XMAS_MUSIC.length ? window.MOKI_XMAS_MUSIC : null;
+  let trI = 0, trA = null;
+  function trPlay() {
+    if (!trA) { trA = new Audio(); trA.volume = .5; trA.addEventListener("ended", () => { trI = (trI + 1) % TR.length; if (MUS.on) trPlay(); }); }
+    trA.src = TR[trI].u; trA.play().catch(() => { MUS.on = false; const bt = document.querySelector(".xm-music"); if (bt) { bt.classList.remove("on"); bt.setAttribute("aria-pressed", "false"); } toast("Die Musik konnte nicht starten."); });
+  }
   function musicBtn() {
     const b = document.createElement("button"); b.type = "button"; b.className = "xm-music"; b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", "Weihnachtsmusik an oder aus"); b.title = "Weihnachtsmusik"; b.innerHTML = "<span>♪</span>";
     b.addEventListener("click", () => {
+      if (TR) {
+        MUS.on = !MUS.on; b.setAttribute("aria-pressed", String(MUS.on)); b.classList.toggle("on", MUS.on);
+        if (MUS.on) { trPlay(); toast("♪ " + TR[trI].n); stat("music", "an"); } else if (trA) trA.pause();
+        return;
+      }
       if (!MUS.ctx) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) { toast("Dein Browser kann keine Musik abspielen."); return; } MUS.ctx = new AC(); const m = MUS.ctx.createGain(); m.gain.value = .38; const dl = MUS.ctx.createDelay(1); dl.delayTime.value = .24; const fb = MUS.ctx.createGain(); fb.gain.value = .3; dl.connect(fb); fb.connect(dl); m.connect(MUS.ctx.destination); m.connect(dl); dl.connect(MUS.ctx.destination); MUS.out = m; }
       MUS.on = !MUS.on; b.setAttribute("aria-pressed", String(MUS.on)); b.classList.toggle("on", MUS.on);
       if (MUS.on) { MUS.ctx.resume(); playSong(); toast("♪ " + SONGS[(MUS.i - 1 + SONGS.length) % SONGS.length].n); stat("music", "an"); } else { clearTimeout(MUS.timer); MUS.ctx.suspend(); }
     });
     document.body.appendChild(b);
-    const sync = () => { if (!MUS.ctx || !MUS.on) return; (document.getElementById("player") || document.hidden) ? MUS.ctx.suspend() : MUS.ctx.resume(); };
+    const sync = () => { if (TR) { if (!MUS.on || !trA) return; (document.getElementById("player") || document.hidden) ? trA.pause() : trA.play().catch(() => {}); return; } if (!MUS.ctx || !MUS.on) return; (document.getElementById("player") || document.hidden) ? MUS.ctx.suspend() : MUS.ctx.resume(); };
     addEventListener("hashchange", sync); document.addEventListener("visibilitychange", sync);
   }
   musicBtn();
