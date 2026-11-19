@@ -152,7 +152,7 @@ function home() {
     <section>
       <h2>${esc(title)}</h2>
       <p class="sub">${list.length} ${list.length === 1 ? "Spiel" : "Spiele"}</p>
-      ${list.length ? `<div class="grid">${list.map(tile).join("")}</div>` : `<p class="empty">${emptyMsg}</p>`}
+      ${list.length ? `<div class="grid" id="mainGrid">${list.map(tile).join("")}</div>` : `<p class="empty">${emptyMsg}</p>`}
     </section>
     ${creSec}
     ${!q && category === "Alle" && sites.length ? `<section>
@@ -226,7 +226,8 @@ document.addEventListener("keydown", e => {
 const rnd = document.getElementById("rnd");
 if (rnd) rnd.addEventListener("click", () => {
   const pool = games.filter(g => g.id !== (recent[0] || ""));
-  openGame(pool[Math.floor(Math.random() * pool.length)]);
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  if (window.mokiSpin) window.mokiSpin(pick, () => openGame(pick)); else openGame(pick);   // Animation in randomspin.js
 });
 // Zurück-Taste des Browsers: Liste "Zuletzt gespielt" neu laden
 addEventListener("pageshow", e => { if (e.persisted) { recent = store.get("moki-recent", []).filter(id => known.has(id)); home(); } });

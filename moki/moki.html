@@ -411,6 +411,36 @@ html.mi-on body>*:not(#mi):not(script):not(style){visibility:hidden}
 #mi canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .mi-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
+/* Zufallsspiel-Animation (randomspin.js) */
+#rz{position:fixed;inset:0;z-index:99990;cursor:progress}
+html.rz-on body>header,html.rz-on aside{opacity:.3;transition:opacity .4s}
+html.rz-on #mainGrid .tile{transition:transform .16s cubic-bezier(.2,.8,.2,1),opacity .25s,filter .25s,box-shadow .2s;opacity:.38;filter:saturate(.5) brightness(.7);transform:scale(.93)}
+html.rz-on #mainGrid .tile.rz-seen{opacity:.6;filter:saturate(.8) brightness(.85)}
+html.rz-on #mainGrid .tile.rz-n2{opacity:.8;filter:none;transform:scale(1.04)}
+html.rz-on #mainGrid .tile.rz-l1{opacity:.85;filter:none;transform:scale(1.1)}
+html.rz-on #mainGrid .tile.rz-n1{opacity:.95;filter:none;transform:scale(1.16)}
+html.rz-on #mainGrid .tile.rz-h{opacity:1;filter:none;transform:scale(1.34);z-index:6;box-shadow:0 0 0 4px #00e5a8,0 0 44px #00e5a8bb,0 22px 44px #000c}
+html.rz-on #mainGrid .tile.rz-dim{opacity:.1;filter:blur(2px) saturate(.3);transform:scale(.9)}
+html.rz-on #mainGrid .tile.rz-win{opacity:1;filter:none;transform:scale(1.34);z-index:6;box-shadow:0 0 0 5px #ffd23f,0 0 60px #ffd23fcc}
+.rz-card{position:fixed;z-index:99995;width:var(--s);display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;color:#fff;pointer-events:none}
+.rz-card .rz-img{width:var(--s);height:var(--s);border-radius:calc(var(--s) * .2);overflow:hidden;background:#0a0d2b;box-shadow:0 0 0 6px #ffd23f,0 0 80px #ffd23fcc,0 30px 80px #000}
+.rz-card .rz-img img{width:100%;height:100%;object-fit:cover;display:block}
+.rz-card b{font-size:clamp(24px,5vw,44px);font-weight:900;letter-spacing:-.5px;text-shadow:0 4px 20px #000}
+.rz-card small{color:#cfd6ff;font-size:clamp(14px,2.4vw,20px);margin-top:-6px}
+.rz-chip{position:absolute;top:-46px;padding:7px 18px;border-radius:999px;background:linear-gradient(90deg,#00e5a8,#ffd23f);color:#04201a;font-weight:900;font-size:14px;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap}
+.rz-bar{width:min(300px,70%);height:8px;border-radius:99px;background:#ffffff22;overflow:hidden;margin-top:6px}
+.rz-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#00e5a8,#ffd23f)}
+.rz-card.rz-go .rz-bar i{animation:rzbar 2.3s linear forwards}
+.rz-card.rz-go .rz-img{animation:rzpulse .9s ease-in-out infinite alternate}
+.rz-fx{position:fixed;inset:0;z-index:99994;pointer-events:none;overflow:hidden;background:radial-gradient(circle at 50% 45%,#0a0d2bcc,#05060fee);animation:rzfade .5s both}
+.rz-ring{position:absolute;width:80px;height:80px;margin:-40px 0 0 -40px;border-radius:50%;border:5px solid #ffd23f;opacity:0;animation:rzring 1.4s ease-out forwards}
+.rz-spark{position:absolute;width:10px;height:10px;margin:-5px;border-radius:50%;background:var(--c);opacity:0;animation:rzspark 1.5s ease-out forwards}
+@keyframes rzbar{to{width:100%}}
+@keyframes rzpulse{to{transform:scale(1.04)}}
+@keyframes rzfade{from{opacity:0}to{opacity:1}}
+@keyframes rzring{0%{transform:scale(1);opacity:.9}100%{transform:scale(14);opacity:0}}
+@keyframes rzspark{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--x),var(--y)) scale(.2);opacity:0}}
+
 </style>
 </head>
 <body>
@@ -1856,7 +1886,7 @@ function home() {
     <section>
       <h2>${esc(title)}</h2>
       <p class="sub">${list.length} ${list.length === 1 ? "Spiel" : "Spiele"}</p>
-      ${list.length ? `<div class="grid">${list.map(tile).join("")}</div>` : `<p class="empty">${emptyMsg}</p>`}
+      ${list.length ? `<div class="grid" id="mainGrid">${list.map(tile).join("")}</div>` : `<p class="empty">${emptyMsg}</p>`}
     </section>
     ${creSec}
     ${!q && category === "Alle" && sites.length ? `<section>
@@ -1930,7 +1960,8 @@ document.addEventListener("keydown", e => {
 const rnd = document.getElementById("rnd");
 if (rnd) rnd.addEventListener("click", () => {
   const pool = games.filter(g => g.id !== (recent[0] || ""));
-  openGame(pool[Math.floor(Math.random() * pool.length)]);
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  if (window.mokiSpin) window.mokiSpin(pick, () => openGame(pick)); else openGame(pick);   // Animation in randomspin.js
 });
 // Zurück-Taste des Browsers: Liste "Zuletzt gespielt" neu laden
 addEventListener("pageshow", e => { if (e.persisted) { recent = store.get("moki-recent", []).filter(id => known.has(id)); home(); } });
@@ -2081,6 +2112,124 @@ addEventListener("hashchange", playerFromHash);
 addEventListener("message", e => { if (e.data === "moki-close") closePlayer(); });
 addEventListener("keydown", e => { if (e.key === "Escape" && document.getElementById("player")) closePlayer(); });
 playerFromHash();
+
+</script>
+<script>
+// Zufallsspiel mit Animation: Der "Zufallsgenerator" laeuft ueber alle Spiele, die Kacheln in seiner Naehe werden groesser,
+// die Kamera (Scrollen) folgt ihm. Waehrenddessen ist die Seite gesperrt. Er wird langsamer und bleibt beim Gewinner stehen,
+// der gross in die Mitte kommt. Danach wird das Spiel geoeffnet. app.js ruft window.mokiSpin(gewinner, fertig) auf.
+(function () {
+  "use strict";
+  const root = document.documentElement;
+  let running = false;
+
+  const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+  const eio = t => { t = clamp(t); return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  const STEPS = 70;                       // so viele Kacheln laeuft der Generator bis zum Gewinner
+  const T_FAST = 38, T_SLOW = 340;        // Zeit pro Kachel am Anfang / ganz am Ende (ms)
+  const stepTimes = (() => { const t = [0]; for (let k = 1; k <= STEPS; k++) t.push(t[k - 1] + T_FAST + (T_SLOW - T_FAST) * Math.pow(k / STEPS, 3)); return t; })();
+
+  window.mokiSpin = function (winner, done) {
+    if (running) return;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) { done(); return; }
+    running = true;
+    // Immer in der Ansicht "Alle Spiele" ohne Suche, damit der Generator ueber alle Spiele laeuft
+    try {
+      if (category !== "Alle" || search.value.trim()) { category = "Alle"; search.value = ""; home(); }
+    } catch (e) { running = false; done(); return; }
+    const tiles = [...document.querySelectorAll("#mainGrid .tile[data-id]")];
+    const n = tiles.length, w = tiles.findIndex(t => t.dataset.id === winner.id);
+    if (n < 8 || w < 0) { running = false; done(); return; }
+
+    // ---------- Sperre ----------
+    const lock = document.createElement("div"); lock.id = "rz";
+    lock.setAttribute("aria-hidden", "true");
+    document.body.appendChild(lock);
+    root.classList.add("rz-on");
+    try { document.activeElement && document.activeElement.blur(); } catch (e) {}
+    const stop = e => { e.preventDefault(); e.stopPropagation(); };
+    const evs = ["wheel", "touchmove", "keydown", "keyup", "click", "mousedown", "contextmenu"];
+    evs.forEach(ev => addEventListener(ev, stop, { capture: true, passive: false }));
+    const sr = document.createElement("div"); sr.className = "mi-sr"; sr.setAttribute("role", "status"); sr.textContent = "Zufallsspiel wird ausgewählt"; document.body.appendChild(sr);
+
+    const center = el => { const r = el.getBoundingClientRect(); return r.top + scrollY + r.height / 2; };
+    let cam = scrollY, camTarget = scrollY, raf = 0;
+    const camLoop = () => {   // Kamera gleitet weich zum Ziel
+      cam += (camTarget - cam) * .16; scrollTo(0, cam);
+      raf = requestAnimationFrame(camLoop);
+    };
+    camLoop();
+    const look = el => { camTarget = Math.max(0, center(el) - innerHeight / 2); };
+
+    let cur = -1;
+    const mark = i => {
+      if (cur >= 0) tiles[cur].classList.add("rz-seen");
+      tiles.forEach(t => t.classList.remove("rz-h", "rz-n1", "rz-n2", "rz-l1"));
+      const at = k => tiles[((k % n) + n) % n];
+      at(i).classList.remove("rz-seen"); at(i).classList.add("rz-h");
+      at(i - 1).classList.add("rz-n1"); at(i - 2).classList.add("rz-n2"); at(i + 1).classList.add("rz-l1");
+      cur = i; look(at(i));
+    };
+
+    const start = ((w - STEPS) % n + n) % n;
+    const cleanup = () => {
+      cancelAnimationFrame(raf);
+      evs.forEach(ev => removeEventListener(ev, stop, { capture: true, passive: false }));
+      tiles.forEach(t => t.classList.remove("rz-h", "rz-n1", "rz-n2", "rz-l1", "rz-seen", "rz-win", "rz-dim"));
+      root.classList.remove("rz-on");
+      lock.remove(); sr.remove();
+      document.querySelectorAll(".rz-card,.rz-fx").forEach(e => e.remove());
+      running = false;
+    };
+    const hard = setTimeout(cleanup, 45000);   // Notbremse
+
+    (async function run() {
+      // 1) Kamera faehrt zum Startpunkt, die Seite tritt zurueck
+      look(tiles[start]); await sleep(1000);
+      // 2) Der Generator laeuft, wird immer langsamer
+      const t0 = performance.now();
+      let k = -1;
+      await new Promise(res => {
+        (function frame() {
+          const el = performance.now() - t0;
+          let s = k < 0 ? 0 : k; while (s < STEPS && stepTimes[s + 1] <= el) s++;
+          if (s !== k) { k = s; mark((start + k) % n); }
+          if (k >= STEPS && el >= stepTimes[STEPS] + 450) res(); else requestAnimationFrame(frame);
+        })();
+      });
+      // 3) Gewinner: alles andere tritt zurueck, die Kachel fliegt gross in die Mitte
+      const wt = tiles[w]; wt.classList.add("rz-win"); tiles.forEach(t => { if (t !== wt) t.classList.add("rz-dim"); });
+      look(wt); await sleep(900);
+      const r = wt.getBoundingClientRect(), size = Math.min(innerWidth * .8, innerHeight * .5, 440);
+      const card = document.createElement("div"); card.className = "rz-card";
+      card.innerHTML = `<span class="rz-chip">Dein Zufallsspiel</span><div class="rz-img"><img src="${esc(winner.image || "")}" alt=""></div><b>${esc(winner.title)}</b><small>${esc(winner.category || "")}</small><div class="rz-bar"><i></i></div>`;
+      card.style.setProperty("--s", size + "px");
+      document.body.appendChild(card);
+      const img = card.querySelector(".rz-img"), fx = document.createElement("div"); fx.className = "rz-fx";
+      // Flug von der Kachel in die Mitte (FLIP)
+      const cx = innerWidth / 2, cy = innerHeight / 2 - 30;
+      card.style.left = cx + "px"; card.style.top = cy + "px";
+      const dx = r.left + r.width / 2 - cx, dy = r.top + r.height / 2 - cy, sc0 = r.width / size;
+      card.animate([{ transform: `translate(-50%,-50%) translate(${dx}px,${dy}px) scale(${sc0})`, opacity: .2 }, { transform: "translate(-50%,-50%) scale(1.14) rotate(-3deg)", opacity: 1, offset: .65 }, { transform: "translate(-50%,-50%) scale(1) rotate(0)", opacity: 1 }], { duration: 900, easing: "cubic-bezier(.2,.9,.25,1)", fill: "forwards" });
+      await sleep(700);
+      // Ringe und Funken
+      document.body.appendChild(fx);
+      for (let i = 0; i < 3; i++) { const ring = document.createElement("i"); ring.className = "rz-ring"; ring.style.left = cx + "px"; ring.style.top = cy + "px"; ring.style.animationDelay = i * .18 + "s"; fx.appendChild(ring); }
+      for (let i = 0; i < 46; i++) {
+        const sp = document.createElement("i"); sp.className = "rz-spark"; const a = Math.random() * 6.283, d = 160 + Math.random() * Math.max(innerWidth, innerHeight) * .45;
+        sp.style.cssText = `left:${cx}px;top:${cy}px;--x:${Math.cos(a) * d}px;--y:${Math.sin(a) * d}px;--c:${["#00e5a8", "#ffd23f", "#ffffff", "#3da5ff", "#ff4d8d"][i % 5]};animation-delay:${Math.random() * .15}s`;
+        fx.appendChild(sp);
+      }
+      card.classList.add("rz-go");
+      await sleep(2300);
+      // 4) Spiel oeffnen
+      clearTimeout(hard); cleanup(); done();
+    })().catch(() => { clearTimeout(hard); cleanup(); done(); });
+  };
+})();
 
 </script>
 <script>
