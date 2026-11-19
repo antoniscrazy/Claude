@@ -390,7 +390,7 @@ html.mi-on body>*:not(#mi):not(script):not(style){visibility:hidden}
 .mi-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
 /* Zufallsspiel-Animation (randomspin.js): alle Spiele bleiben in voller Farbe, der Generator laeuft nur mit wachsenden Nachbarn darueber */
-#rz{position:fixed;inset:0;z-index:99990;cursor:progress}
+#rz{position:fixed;inset:0;z-index:99990;cursor:progress;background:radial-gradient(circle at 50% 45%,rgba(20,30,80,.78),rgba(4,7,22,.92));backdrop-filter:blur(5px);animation:rzbg .35s both}@keyframes rzbg{from{opacity:0}}
 html.rz-on #mainGrid .tile{transition:transform .14s cubic-bezier(.2,.8,.2,1),box-shadow .14s}
 html.rz-on #mainGrid .tile.rz-n2{transform:scale(1.05)}
 html.rz-on #mainGrid .tile.rz-l1{transform:scale(1.09);z-index:2}
