@@ -30,6 +30,15 @@ const TYPES={html:'text/html',js:'text/plain',css:'text/css',png:'image/png',jpg
  await p.route(/^https?:\/\/(?!localhost)(?!raw\.githubusercontent\.com\/antoniscrazy)[^/]+\/.*/,r=>{if(/supabase/.test(r.request().url()))return r.fallback();r.abort('aborted')});
  await p.addInitScript(()=>{try{localStorage.setItem('moki-intro-v2','1')}catch(e){}});
  await p.addInitScript(()=>{window.__ZOOM=1.3333});await p.addInitScript(OVERLAY);
+ // Unter dem Seiten-Zoom landen Klicks in Spielen verschoben (Faktor 0.75). Darum zeichnet die Aufnahme waehrend eines Spiels einen eigenen Cursor an der sichtbaren Stelle.
+ await p.addInitScript(()=>{addEventListener('DOMContentLoaded',()=>{const st=document.createElement('style');
+  if(window!==window.top){st.textContent='#mk-cur,.mk-rip{display:none!important}';document.head.appendChild(st);return}
+  st.textContent='html.player-open #mk-cur{display:none!important}#fk{position:fixed;left:0;top:0;z-index:2147483601;pointer-events:none;display:none;filter:drop-shadow(0 2px 3px #0008)}html.player-open #fk{display:block}';document.head.appendChild(st);
+  const K=Math.max(.5,innerWidth/1920);const c=document.createElement('div');c.id='fk';c.innerHTML=`<svg viewBox="0 0 20 31" width="${34*K}" height="${41*K}"><path d="M1 1v25l7-6 5 10 4-2-5-10h9z" fill="#fff" stroke="#000" stroke-width="2" stroke-linejoin="round"/></svg>`;document.documentElement.appendChild(c);
+  window.__fkx=0;window.__fky=0;
+  window.__fkSet=(x,y)=>{window.__fkx=x;window.__fky=y;c.style.transform=`translate(${x}px,${y}px)`};
+  window.__fkRip=(x,y)=>{const r=document.createElement('div');r.className='mk-rip';r.style.left=x+'px';r.style.top=y+'px';document.documentElement.appendChild(r);setTimeout(()=>r.remove(),550)};
+ })});
  // Fusszeile (Tester-Knopf) fuer die Aufnahme am unteren Bildrand festhalten (Seitenende ist unter Zoom nicht erreichbar)
  await p.addInitScript(()=>addEventListener('DOMContentLoaded',()=>{const st=document.createElement('style');st.textContent='html,body{scroll-behavior:auto!important}#tfoot{position:fixed!important;left:0;right:0;bottom:0;z-index:40;background:#0a0d2bf2;border-top:2px solid #00e5a855}';document.head.appendChild(st)}));
  await p.goto('file:///home/user/Claude/moki/_trailer-moki.html');await p.waitForSelector('.tile');await p.waitForTimeout(500);
@@ -52,22 +61,27 @@ const TYPES={html:'text/html',js:'text/plain',css:'text/css',png:'image/png',jpg
  await at(14.8,()=>cap('54 NEUE SPIELE','Frisch dazugekommen, mit NEU-Schild',3000),'cap-new');
  await at(15,async()=>{for(const n of [1,4,7,10]){await mvEl(`#app .grid .tile >> nth=${n}`,520,0,0,0,true);await sleep(180)}},'Kacheln');
  // ---- 4. Spiele direkt in Moki (drei spannende Spiele, jeweils kurz gespielt)
- // Unter dem Seiten-Zoom landen Klicks in eingebetteten Spielen verschoben. Waehrend ein Spiel offen ist, ist der Zoom daher aus.
- const zoomSet=z=>p.evaluate(z=>{document.body.style.zoom=z},z);
- const back=async()=>{const bb=await p.frameLocator('#player iframe').locator('#moki-back').boundingBox();await mv(bb.x+bb.width/2,bb.y+bb.height/2,800);await sleep(80);await p.mouse.down();await sleep(60);await p.mouse.up();await sleep(500);await zoomSet(1.3333)};
+ const ZS=0.75;   // sichtbare Koordinaten -> Maus-Koordinaten fuer Klicks ins Spiel
+ const eio=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+ // Maus und eigener Cursor gemeinsam zu einer sichtbaren Stelle (vx,vy) bewegen; real=true: Maus an dieser Stelle (Launcher-Knoepfe), sonst skaliert (Spiel)
+ const gmove=async(vx,vy,dur=800,real=false)=>{const sx=await p.evaluate(()=>window.__fkx),sy=await p.evaluate(()=>window.__fky);const k=real?1:ZS;const t1=Date.now();
+  for(;;){const u=Math.min(1,(Date.now()-t1)/dur),e=eio(u),x=sx+(vx-sx)*e,y=sy+(vy-sy)*e;await p.mouse.move(x*k,y*k);await p.evaluate(([x,y])=>window.__fkSet(x,y),[x,y]);if(u>=1)break}};
+ const gclick=async(vx,vy,dur=800,real=false)=>{await gmove(vx,vy,dur,real);await sleep(80);await p.mouse.down();await p.evaluate(([x,y])=>window.__fkRip(x,y),[vx,vy]);await sleep(60);await p.mouse.up()};
+ const fkStart=()=>p.evaluate(()=>window.__fkSet(window.__mx||960,window.__my||540));
+ const back=async()=>{const bb=await p.frameLocator('#player iframe').locator('#moki-back').boundingBox();await gclick((bb.x+bb.width/2)*1.3333,(bb.y+bb.height/2)*1.3333,800,true);await sleep(300)};
  await at(19.4,()=>cap('DIREKT AUF MOKI','Jedes Spiel läuft hier, ohne Umweg',3400),'cap-play');
  await at(19.6,async()=>{await scrollTo(await elY(tile('tunnel-rush'),420))},'scroll Tunnel Rush');
- await at(21,async()=>{await clk(tile('tunnel-rush'),900,0,true);await zoomSet(1)},'Tunnel Rush oeffnen');
- await at(28.6,async()=>{await mv(975,735,700);await p.mouse.down();await sleep(60);await p.mouse.up()},'Tunnel Rush starten');
+ await at(21,async()=>{await clk(tile('tunnel-rush'),900,0,true);await fkStart()},'Tunnel Rush oeffnen');
+ await at(28.6,async()=>{await gclick(975,735,900)},'Tunnel Rush starten');
  await at(29.6,async()=>{for(let i=0;i<9;i++){await p.keyboard.down(i%2?'ArrowLeft':'ArrowRight');await sleep(330);await p.keyboard.up(i%2?'ArrowLeft':'ArrowRight')}},'Tunnel Rush spielen');
  await at(34,back,'zurueck 1');
  await at(35.6,async()=>{await scrollTo(await elY(tile('stackball'),420))},'scroll Stackball');
- await at(37,async()=>{await clk(tile('stackball'),900,0,true);await zoomSet(1)},'Stackball oeffnen');
- await at(41,async()=>{await mv(960,780,600);await p.mouse.down();await sleep(3000);await p.mouse.up()},'Stackball spielen');
+ await at(37,async()=>{await clk(tile('stackball'),900,0,true);await fkStart()},'Stackball oeffnen');
+ await at(41,async()=>{await gmove(960,780,700);await p.mouse.down();await sleep(3000);await p.mouse.up()},'Stackball spielen');
  await at(44.8,back,'zurueck 2');
  await at(46.2,async()=>{await scrollTo(await elY(tile('granny'),420))},'scroll Granny');
- await at(47.6,async()=>{await clk(tile('granny'),900,0,true);await zoomSet(1)},'Granny oeffnen');
- await at(51,async()=>{await mv(520,470,900);await sleep(900);await mv(300,300,900)},'Granny Menue');
+ await at(47.6,async()=>{await clk(tile('granny'),900,0,true);await fkStart()},'Granny oeffnen');
+ await at(51,async()=>{await gmove(700,470,900);await sleep(700);await gmove(400,300,900)},'Granny Menue');
  await at(53.6,back,'zurueck 3');
  // ---- 5. Tester-Programm
  await at(55.2,()=>cap('TESTER-PROGRAMM','Hilf mit und teste neue Spiele',3000,true),'cap-test');
