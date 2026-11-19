@@ -258,7 +258,7 @@
   }
   function bauble(t, b, i) {
     const A = ADV[i], sl = API.SLOTS[i], ti = T_BAUBLE + i * .42, age = t - ti; if (age < 0) return null;
-    const r = b.w * .056, px = b.x0 + b.w * sl.x / 100, py = b.y0 + b.h * sl.y / 100, L = r * 1.1;
+    const r = b.w * .043, px = b.x0 + b.w * sl.x / 100, py = b.y0 + b.h * sl.y / 100, L = r * 1.1;
     const k = clamp(age / .5), drop = -(1 - eo4(k)) * b.h * .5, sw = .5 * Math.exp(-2.1 * Math.max(age - .3, 0)) * Math.cos(8 * Math.max(age - .3, 0)), pop = age < .45 ? back(age / .4) : 1;
     ctx.save(); ctx.globalAlpha = clamp(age / .12); ctx.translate(px, py - L - r + drop); ctx.rotate(sw);
     ctx.strokeStyle = "#e7c36a"; ctx.lineWidth = Math.max(1.2, r * .06); ctx.beginPath(); ctx.moveTo(0, -L * .7); ctx.lineTo(0, 0); ctx.stroke();
@@ -268,9 +268,9 @@
     // Kugel mit Spielbild
     ctx.save(); ctx.shadowColor = "rgba(0,0,0,.5)"; ctx.shadowBlur = r * .5; ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.fillStyle = "#c98a2b"; ctx.fill(); ctx.restore();
     ctx.save(); ctx.beginPath(); ctx.arc(0, 0, r * .94, 0, 7); ctx.clip();
-    const im = A.g ? IMG.get(A.g.image) : null;
-    if (im) { const s = Math.max(2 * r / im.width, 2 * r / im.height); ctx.drawImage(im, -im.width * s / 2, -im.height * s / 2, im.width * s, im.height * s); }
-    else { const g = ctx.createRadialGradient(-r * .3, -r * .3, r * .1, 0, 0, r); g.addColorStop(0, "#fff3c2"); g.addColorStop(1, "#d99a2b"); ctx.fillStyle = g; ctx.fillRect(-r, -r, 2 * r, 2 * r); star(0, 0, r * .62, 0, "#fff", 1); }
+    const BC = [["#ff7a86", "#b3202f"], ["#5fe0a0", "#12703f"], ["#6fa0ff", "#1f3f9e"], ["#ffe08a", "#c98a1b"]][i % 4];
+    { const g = ctx.createRadialGradient(-r * .35, -r * .4, r * .1, 0, 0, r * 1.05); g.addColorStop(0, BC[0]); g.addColorStop(1, BC[1]); ctx.fillStyle = g; ctx.fillRect(-r, -r, 2 * r, 2 * r);
+      ctx.fillStyle = "rgba(255,255,255,.95)"; ctx.shadowColor = "rgba(0,0,0,.45)"; ctx.shadowBlur = r * .2; ctx.font = `900 ${r * 1.3}px ${FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("?", 0, r * .06); ctx.shadowBlur = 0; }
     ctx.restore();
     ctx.lineWidth = r * .12; ctx.strokeStyle = "#f6c667"; ctx.beginPath(); ctx.arc(0, 0, r * .96, 0, 7); ctx.stroke();
     ctx.globalAlpha = .5; ctx.strokeStyle = "#fff"; ctx.lineWidth = r * .1; ctx.beginPath(); ctx.arc(0, 0, r * .72, 3.5, 4.5); ctx.stroke(); ctx.globalAlpha = 1;
@@ -310,7 +310,7 @@
     ctx.restore();
     // Texte
     if (t < T_FIN) {
-      if (t > T_TREE + .4) fitText("24 Türchen. 24 Spiele.", W / 2, H * .105, W * .9, Math.min(W * .06, 54), "#ffe3a0", eo((t - T_TREE - .4) / .6), 1, 800);
+      if (t > T_TREE + .4) fitText("24 Türchen. 24 Überraschungen.", W / 2, H * .105, W * .9, Math.min(W * .06, 54), "#ffe3a0", eo((t - T_TREE - .4) / .6), 1, 800);
       if (landed > 0) fitText("Türchen " + landed + " von 24", W / 2, H * .955, W * .9, Math.min(W * .04, 32), "#fff", .9, 1, 700, false, false);
     } else {
       const u2 = t - T_FIN;
@@ -341,7 +341,7 @@
     setTimeout(() => { mi.remove(); root.classList.remove("site-in"); }, 1300);
   }
   async function start() {
-    const list = ADV.filter(a => a.g).map(a => a.g.image);
+    const list = [];
     await Promise.race([Promise.all(list.map(src => loadImg(src).then(i => { IMG.set(src, i); }))), new Promise(r => setTimeout(r, 6000))]);
     if (TEST) { window.__MOKI_MI = { render, DUR, T_TITLE, T_TREE, T_BAUBLE, T_FIN, finish }; render(0); return; }
     let t = 0, last = performance.now();

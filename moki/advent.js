@@ -117,19 +117,26 @@
   // ---------- Darstellung ----------
   const treeHtml = () => {
     const td = today();
-    const orn = DAYS.map((it, i) => { const s = SLOTS[i], on = opened.has(i + 1) && i + 1 <= Math.max(td, 24); return `<span class="orn${on ? "" : " slot"}" style="left:${s.x}%;top:${s.y}%;animation-delay:${i * 25}ms">${on ? it.o : ""}</span>`; }).join("");
-    return `<div class="tree" role="img" aria-label="Weihnachtsbaum mit ${opened.size} von 24 Schmuckstücken"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-      <defs><linearGradient id="xmg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2fae74"/><stop offset="1" stop-color="#0d5236"/></linearGradient></defs>
-      <rect x="43" y="78" width="14" height="15" rx="2" fill="#6a3b1d"/>
-      <polygon points="11,78 50,38 89,78" fill="url(#xmg)" stroke="#fff" stroke-width=".7" stroke-linejoin="round"/>
-      <polygon points="20,54 50,20 80,54" fill="url(#xmg)" stroke="#fff" stroke-width=".7" stroke-linejoin="round"/>
-      <polygon points="28,34 50,6 72,34" fill="url(#xmg)" stroke="#fff" stroke-width=".7" stroke-linejoin="round"/></svg>
-      <span class="star${opened.has(24) ? " on" : ""}">⭐</span>${orn}</div><div class="gifts" aria-label="${gifts()} von 5 Geschenken unterm Baum">${Array.from({ length: 5 }, (_, i) => `<span class="${i < gifts() ? "on" : ""}">🎁</span>`).join("")}</div><small class="fl">❄ ${flakes} goldene Glücksflocken${gifts() < 5 ? ` · noch ${5 - (flakes % 5)} bis zum nächsten Geschenk` : " · alle Geschenke gesammelt!"}</small>`;
+    const orn = DAYS.map((it, i) => { const s = SLOTS[i], on = opened.has(i + 1) && i + 1 <= Math.max(td, 24); return `<span class="orn c${i % 4}${on ? " on" : " slot"}" style="left:${s.x}%;top:${s.y}%;animation-delay:${i * 30}ms">${on ? it.o : "?"}</span>`; }).join("");
+    const tier = (pts, id) => `<polygon points="${pts}" fill="url(#xmg${id})"/><polygon points="${pts}" fill="none" stroke="#9bf0c8" stroke-opacity=".55" stroke-width=".5" stroke-linejoin="round"/>`;
+    const caps = (y, x0, x1) => { let d = ""; const n = 7; for (let q = 0; q < n; q++) { const x = x0 + (x1 - x0) * (q + .5) / n; d += `<ellipse cx="${x.toFixed(1)}" cy="${y}" rx="3.2" ry="1.7" fill="#fff"/>`; } return d; };
+    const bulbs = [[22, 40], [30, 47], [37, 36], [44, 52], [50, 33], [58, 55], [64, 45], [70, 62], [76, 38], [82, 58], [88, 49], [60, 28]].map((b, k) => `<circle class="bl bl${k % 4}" cx="${b[1]}" cy="${b[0]}" r="1.15"/>`).join("");
+    return `<div class="tree" role="img" aria-label="Weihnachtsbaum mit ${opened.size} von 24 Schmuckstücken"><i class="tglow"></i><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      <defs><linearGradient id="xmg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3ed08f"/><stop offset="1" stop-color="#0f6b43"/></linearGradient>
+      <linearGradient id="xmg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34c383"/><stop offset="1" stop-color="#0c5a38"/></linearGradient>
+      <linearGradient id="xmg3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2bb277"/><stop offset="1" stop-color="#0a4a2f"/></linearGradient>
+      <linearGradient id="xmt" x1="0" x2="1"><stop offset="0" stop-color="#8a5126"/><stop offset="1" stop-color="#53301a"/></linearGradient></defs>
+      <ellipse cx="50" cy="95" rx="46" ry="4.5" fill="#fff" fill-opacity=".92"/><ellipse cx="50" cy="94" rx="40" ry="3" fill="#dbe7ff" fill-opacity=".5"/>
+      <rect x="43" y="80" width="14" height="14" rx="2" fill="url(#xmt)"/>
+      ${tier("8,80 50,44 92,80", 1)}${tier("17,58 50,22 83,58", 2)}${tier("26,37 50,6 74,37", 3)}
+      ${caps(79.2, 12, 88)}${caps(57.2, 22, 78)}${caps(36.2, 31, 69)}
+      <path d="M14 70 Q30 76 50 66 T86 68" fill="none" stroke="#ffd23f" stroke-width=".7" stroke-dasharray="1.4 1.8" stroke-linecap="round" opacity=".8"/>${bulbs}</svg>
+      <svg class="tstar${opened.has(24) ? " on" : ""}" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1l3.1 7 7.6.7-5.7 5 1.7 7.5L12 17.3 5.3 21.2 7 13.7 1.3 8.7l7.6-.7z" fill="#ffd23f" stroke="#fff3b0" stroke-width=".8" stroke-linejoin="round"/></svg>${orn}</div><div class="gifts" aria-label="${gifts()} von 5 Geschenken unterm Baum">${Array.from({ length: 5 }, (_, i) => `<span class="${i < gifts() ? "on" : ""}">🎁</span>`).join("")}</div><small class="fl">❄ ${flakes} goldene Glücksflocken${gifts() < 5 ? ` · noch ${5 - (flakes % 5)} bis zum nächsten Geschenk` : " · alle Geschenke gesammelt!"}</small>`;
   };
   const doorHtml = (it, i) => {
     const d = i + 1, td = today(), g = it.g ? findGame(it.g) : null, isOpen = opened.has(d) && d <= Math.max(td, 24), locked = d > td, isToday = d === td && !isOpen;
     const back = isOpen ? `<div class="dback">${g ? `<img src="${esc(g.image)}" alt="">` : ""}<span class="dgr"></span><span class="dd">${d}</span><span class="do">${it.o}</span><b>${esc(g ? g.title : "Bescherung")}</b></div>` : `<div class="dback"></div>`;
-    return `<button type="button" class="door${isOpen ? " open" : ""}${locked ? " locked" : ""}${isToday ? " today" : ""}" data-d="${d}" aria-label="Türchen ${d}${locked ? ", noch gesperrt" : isOpen ? ", geöffnet" : ""}">${back}<div class="dface"><span class="dnum">${d}</span>${locked ? '<span class="dlock">🔒</span>' : ""}</div></button>`;
+    return `<button type="button" class="door${isOpen ? " open" : ""}${locked ? " locked" : ""}${isToday ? " today" : ""}" data-d="${d}" aria-label="Türchen ${d}${locked ? ", noch gesperrt" : isOpen ? ", geöffnet" : ""}">${back}<div class="dface"><span class="dnum"><b>${d}</b></span><i class="dbow"></i>${locked ? '<span class="dlock">🔒</span>' : ""}</div></button>`;
   };
   function calendarView() {
     const td = today(), n = [...opened].filter(d => d <= Math.max(td, 24)).length, st = stars();

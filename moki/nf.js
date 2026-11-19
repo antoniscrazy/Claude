@@ -11,7 +11,7 @@
   var css = '#nf{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:24px;overflow:hidden;color:#fff;font-family:"Segoe UI",system-ui,sans-serif;background:radial-gradient(900px 500px at 80% -10%,#23307a66,transparent 60%),radial-gradient(800px 500px at -10% 90%,#0a7a7a44,transparent 60%),#0a0d2b}' +
     '#nf *{box-sizing:border-box;margin:0}#nf canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}' +
     '#nf .wrap{position:relative;text-align:center;max-width:560px;transition:transform .15s ease-out}' +
-    '#nf .num{display:flex;justify-content:center;align-items:center;gap:clamp(4px,1.5vw,14px);font-weight:900;font-size:clamp(96px,24vw,190px);line-height:1;letter-spacing:-.04em;animation:nfgl 5s 2s infinite}' +
+    '#nf .num{position:relative;inset:auto;display:flex;justify-content:center;align-items:center;gap:clamp(4px,1.5vw,14px);font-weight:900;font-size:clamp(96px,24vw,190px);line-height:1;letter-spacing:-.04em;animation:nfgl 5s 2s infinite}' +
     '#nf .d{display:inline-block;background:linear-gradient(135deg,#00e5a8,#ffd23f);-webkit-background-clip:text;background-clip:text;color:transparent;opacity:0;transform:translateY(-60px) scale(.7);animation:nfdrop .7s cubic-bezier(.3,1.6,.5,1) forwards}' +
     '#nf .d.l{animation-delay:.1s}#nf .d.r{animation-delay:.35s}@keyframes nfdrop{to{opacity:1;transform:none}}' +
     '#nf .ring{width:.82em;height:.82em;cursor:pointer;animation:nfroll .9s .25s cubic-bezier(.3,1.4,.5,1) both;filter:drop-shadow(0 8px 24px #00e5a855);-webkit-tap-highlight-color:transparent}' +

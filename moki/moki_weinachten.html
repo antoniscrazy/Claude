@@ -517,7 +517,7 @@ h2 .i{color:var(--xm-gold)}
 .tree{position:relative;width:100%;aspect-ratio:3/4;margin:6px auto 4px}
 .tree svg{position:absolute;inset:0;width:100%;height:100%}
 .tree .orn{position:absolute;transform:translate(-50%,-50%);font-size:clamp(15px,2vw,22px);line-height:1;filter:drop-shadow(0 2px 3px #0009);animation:xmorn .6s cubic-bezier(.3,1.6,.5,1) both}
-.tree .orn.slot{width:7px;height:7px;border-radius:50%;background:#ffffff1f;font-size:0;animation:none}
+
 @keyframes xmorn{from{transform:translate(-50%,-90%) scale(0);opacity:0}}
 .tree .star{position:absolute;left:50%;top:1%;transform:translateX(-50%);font-size:clamp(20px,3vw,32px);filter:grayscale(1) brightness(.6)}
 .tree .star.on{filter:drop-shadow(0 0 10px #ffd23f);animation:xmstar 1.6s ease-in-out infinite}
@@ -604,6 +604,41 @@ body:has(#player) .xm-music,body:has(#player) .xm-flake{display:none}
 .gsp i{position:fixed;left:50%;top:42%;width:10px;height:10px;border-radius:2px;background:var(--c);opacity:0;animation:xmsp 1.6s ease-out forwards}
 @media(max-width:520px){.xmcd b{min-width:34px;font-size:18px}.agiftv .gcard img{width:80px;height:80px}}
 @media(prefers-reduced-motion:reduce){.xm-flake{animation-duration:20s,3s}.gbox,.atree .gifts span.on{animation:none}}
+
+/* ===== Politur: Baum und Kalenderseite ===== */
+.adv{position:relative;padding:22px 22px 26px;border-radius:30px;border:1px solid #f6c66733;background:radial-gradient(700px 320px at 85% -5%,#f6c66722,transparent 70%),radial-gradient(600px 300px at 0% 100%,#2c4ea833,transparent 70%),linear-gradient(180deg,#0c1738d9,#070d24d9);box-shadow:0 20px 60px #0007,inset 0 1px 0 #ffffff14;overflow:hidden}
+.adv::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;background-image:radial-gradient(1.4px 1.4px at 12% 18%,#fff,transparent),radial-gradient(1.2px 1.2px at 34% 64%,#fff,transparent),radial-gradient(1.6px 1.6px at 58% 12%,#fff,transparent),radial-gradient(1.2px 1.2px at 78% 48%,#fff,transparent),radial-gradient(1.4px 1.4px at 92% 82%,#fff,transparent),radial-gradient(1.2px 1.2px at 22% 90%,#fff,transparent);animation:xmtw 3.5s ease-in-out infinite}
+.adv>*{position:relative}
+.adv .ahead h2{font-size:clamp(26px,3.4vw,38px);background:linear-gradient(90deg,#ffe3a0,#f6c667 50%,#ff9aa5);-webkit-background-clip:text;background-clip:text;color:transparent;display:flex;align-items:center;gap:10px}
+.adv .ahead h2 svg{stroke:#f6c667;width:34px;height:34px;flex:none}
+.adv .acount{padding:8px 16px;border-radius:99px;background:#f6c66722;border:1px solid #f6c66777;font-size:15px}
+.doors{gap:16px}
+.door .dface{background:linear-gradient(155deg,#c0334a,#6a1223 70%);border:2px solid #f6c667aa;box-shadow:inset 0 0 0 5px #0000001f,inset 0 0 0 7px #f6c66733,0 10px 22px #000a}
+.door:nth-child(3n+2) .dface{background:linear-gradient(155deg,#27a56e,#0d4630 70%)}
+.door:nth-child(3n) .dface{background:linear-gradient(155deg,#3a62cc,#15275e 70%)}
+.door .dface::after{width:100%;height:12px;left:0;top:50%;margin:-6px 0 0;background:linear-gradient(#f6c66700,#f6c667cc,#f6c66700);opacity:.35}
+.door .dnum{display:grid;place-items:center;width:62%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffffff2e,#00000033);border:2px dashed #f6c667aa;box-shadow:0 0 18px #f6c66733,inset 0 0 12px #0004}
+.door .dnum b{font:inherit}
+.door .dbow{position:absolute;left:50%;top:-4px;width:28px;height:18px;margin-left:-14px;z-index:3;background:radial-gradient(circle at 25% 55%,#ffd86b 0 6px,transparent 7px),radial-gradient(circle at 75% 55%,#ffd86b 0 6px,transparent 7px),radial-gradient(circle at 50% 60%,#e0a32e 0 4px,transparent 5px);opacity:.9}
+.door .dface:before{z-index:2}
+.door:hover:not(.locked) .dface{box-shadow:inset 0 0 0 5px #0000001f,inset 0 0 0 7px #f6c66755,0 14px 28px #000b,0 0 24px #f6c66744}
+.door.locked .dbow{display:none}
+.door.today .dnum{border-style:solid;animation:xmpulse 1.8s ease-in-out infinite}
+.alay{gap:22px}
+.adv .atree{background:radial-gradient(circle at 50% 40%,#16275e,#08112e 75%);border:1px solid #f6c66755;box-shadow:0 16px 40px #0009,inset 0 0 40px #f6c66711}
+.tree{aspect-ratio:3/4;margin:10px auto 6px;filter:drop-shadow(0 10px 18px #000a)}
+.tree .tglow{position:absolute;inset:-6%;border-radius:50%;background:radial-gradient(circle at 50% 45%,#f6c66733,transparent 62%);animation:xmpulse 3.2s ease-in-out infinite}
+.tree .bl{stroke:#fff;stroke-opacity:.8;stroke-width:.25;animation:xmtw 1.8s ease-in-out infinite}
+.tree .bl0{fill:#ff5d6c}.tree .bl1{fill:#ffd23f;animation-delay:.4s}.tree .bl2{fill:#5ad1ff;animation-delay:.8s}.tree .bl3{fill:#fff;animation-delay:1.2s}
+.tree .tstar{position:absolute;left:50%;top:-3%;width:20%;transform:translateX(-50%);filter:grayscale(1) brightness(.55);transition:.6s}
+.tree .tstar.on{filter:drop-shadow(0 0 10px #ffd23f) drop-shadow(0 0 22px #ffd23faa);animation:xmstar 1.6s ease-in-out infinite}
+.tree .star{display:none}
+.tree .orn{display:grid;place-items:center;width:clamp(20px,2.6vw,28px);aspect-ratio:1;border-radius:50%;font-size:clamp(12px,1.5vw,16px);font-weight:900;color:#fff;text-shadow:0 1px 2px #0008;border:1.5px solid #f6c667cc;box-shadow:inset -3px -4px 6px #0004,inset 3px 3px 5px #ffffff55,0 3px 6px #0008}
+.tree .orn.c0{background:radial-gradient(circle at 35% 30%,#ff7a86,#b3202f)}.tree .orn.c1{background:radial-gradient(circle at 35% 30%,#5fe0a0,#12703f)}.tree .orn.c2{background:radial-gradient(circle at 35% 30%,#6fa0ff,#1f3f9e)}.tree .orn.c3{background:radial-gradient(circle at 35% 30%,#ffe08a,#c98a1b)}
+.tree .orn.slot{width:clamp(20px,2.6vw,28px);height:auto;font-size:clamp(12px,1.5vw,16px);opacity:.92;animation:xmorn .6s cubic-bezier(.3,1.6,.5,1) both,xmtw 3.4s ease-in-out infinite}
+.tree .orn.on{background:radial-gradient(circle at 35% 30%,#fff7d6,#f6c667 70%,#c98a1b);color:#000;text-shadow:none;border-color:#fff}
+.tree svg.tstar{inset:auto;left:50%;top:-4%;width:19%;height:auto;aspect-ratio:1}
+.tree .orn,.tree .orn.slot{width:clamp(15px,1.9vw,21px);font-size:clamp(10px,1.2vw,13px)}
 
 </style>
 </head>
@@ -2780,19 +2815,26 @@ window.MOKI_XMAS_MUSIC=[{"n": "Jingle Bells", "u": "data:audio/mpeg;base64,SUQzB
   // ---------- Darstellung ----------
   const treeHtml = () => {
     const td = today();
-    const orn = DAYS.map((it, i) => { const s = SLOTS[i], on = opened.has(i + 1) && i + 1 <= Math.max(td, 24); return `<span class="orn${on ? "" : " slot"}" style="left:${s.x}%;top:${s.y}%;animation-delay:${i * 25}ms">${on ? it.o : ""}</span>`; }).join("");
-    return `<div class="tree" role="img" aria-label="Weihnachtsbaum mit ${opened.size} von 24 Schmuckstücken"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-      <defs><linearGradient id="xmg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2fae74"/><stop offset="1" stop-color="#0d5236"/></linearGradient></defs>
-      <rect x="43" y="78" width="14" height="15" rx="2" fill="#6a3b1d"/>
-      <polygon points="11,78 50,38 89,78" fill="url(#xmg)" stroke="#fff" stroke-width=".7" stroke-linejoin="round"/>
-      <polygon points="20,54 50,20 80,54" fill="url(#xmg)" stroke="#fff" stroke-width=".7" stroke-linejoin="round"/>
-      <polygon points="28,34 50,6 72,34" fill="url(#xmg)" stroke="#fff" stroke-width=".7" stroke-linejoin="round"/></svg>
-      <span class="star${opened.has(24) ? " on" : ""}">⭐</span>${orn}</div><div class="gifts" aria-label="${gifts()} von 5 Geschenken unterm Baum">${Array.from({ length: 5 }, (_, i) => `<span class="${i < gifts() ? "on" : ""}">🎁</span>`).join("")}</div><small class="fl">❄ ${flakes} goldene Glücksflocken${gifts() < 5 ? ` · noch ${5 - (flakes % 5)} bis zum nächsten Geschenk` : " · alle Geschenke gesammelt!"}</small>`;
+    const orn = DAYS.map((it, i) => { const s = SLOTS[i], on = opened.has(i + 1) && i + 1 <= Math.max(td, 24); return `<span class="orn c${i % 4}${on ? " on" : " slot"}" style="left:${s.x}%;top:${s.y}%;animation-delay:${i * 30}ms">${on ? it.o : "?"}</span>`; }).join("");
+    const tier = (pts, id) => `<polygon points="${pts}" fill="url(#xmg${id})"/><polygon points="${pts}" fill="none" stroke="#9bf0c8" stroke-opacity=".55" stroke-width=".5" stroke-linejoin="round"/>`;
+    const caps = (y, x0, x1) => { let d = ""; const n = 7; for (let q = 0; q < n; q++) { const x = x0 + (x1 - x0) * (q + .5) / n; d += `<ellipse cx="${x.toFixed(1)}" cy="${y}" rx="3.2" ry="1.7" fill="#fff"/>`; } return d; };
+    const bulbs = [[22, 40], [30, 47], [37, 36], [44, 52], [50, 33], [58, 55], [64, 45], [70, 62], [76, 38], [82, 58], [88, 49], [60, 28]].map((b, k) => `<circle class="bl bl${k % 4}" cx="${b[1]}" cy="${b[0]}" r="1.15"/>`).join("");
+    return `<div class="tree" role="img" aria-label="Weihnachtsbaum mit ${opened.size} von 24 Schmuckstücken"><i class="tglow"></i><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      <defs><linearGradient id="xmg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3ed08f"/><stop offset="1" stop-color="#0f6b43"/></linearGradient>
+      <linearGradient id="xmg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34c383"/><stop offset="1" stop-color="#0c5a38"/></linearGradient>
+      <linearGradient id="xmg3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2bb277"/><stop offset="1" stop-color="#0a4a2f"/></linearGradient>
+      <linearGradient id="xmt" x1="0" x2="1"><stop offset="0" stop-color="#8a5126"/><stop offset="1" stop-color="#53301a"/></linearGradient></defs>
+      <ellipse cx="50" cy="95" rx="46" ry="4.5" fill="#fff" fill-opacity=".92"/><ellipse cx="50" cy="94" rx="40" ry="3" fill="#dbe7ff" fill-opacity=".5"/>
+      <rect x="43" y="80" width="14" height="14" rx="2" fill="url(#xmt)"/>
+      ${tier("8,80 50,44 92,80", 1)}${tier("17,58 50,22 83,58", 2)}${tier("26,37 50,6 74,37", 3)}
+      ${caps(79.2, 12, 88)}${caps(57.2, 22, 78)}${caps(36.2, 31, 69)}
+      <path d="M14 70 Q30 76 50 66 T86 68" fill="none" stroke="#ffd23f" stroke-width=".7" stroke-dasharray="1.4 1.8" stroke-linecap="round" opacity=".8"/>${bulbs}</svg>
+      <svg class="tstar${opened.has(24) ? " on" : ""}" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1l3.1 7 7.6.7-5.7 5 1.7 7.5L12 17.3 5.3 21.2 7 13.7 1.3 8.7l7.6-.7z" fill="#ffd23f" stroke="#fff3b0" stroke-width=".8" stroke-linejoin="round"/></svg>${orn}</div><div class="gifts" aria-label="${gifts()} von 5 Geschenken unterm Baum">${Array.from({ length: 5 }, (_, i) => `<span class="${i < gifts() ? "on" : ""}">🎁</span>`).join("")}</div><small class="fl">❄ ${flakes} goldene Glücksflocken${gifts() < 5 ? ` · noch ${5 - (flakes % 5)} bis zum nächsten Geschenk` : " · alle Geschenke gesammelt!"}</small>`;
   };
   const doorHtml = (it, i) => {
     const d = i + 1, td = today(), g = it.g ? findGame(it.g) : null, isOpen = opened.has(d) && d <= Math.max(td, 24), locked = d > td, isToday = d === td && !isOpen;
     const back = isOpen ? `<div class="dback">${g ? `<img src="${esc(g.image)}" alt="">` : ""}<span class="dgr"></span><span class="dd">${d}</span><span class="do">${it.o}</span><b>${esc(g ? g.title : "Bescherung")}</b></div>` : `<div class="dback"></div>`;
-    return `<button type="button" class="door${isOpen ? " open" : ""}${locked ? " locked" : ""}${isToday ? " today" : ""}" data-d="${d}" aria-label="Türchen ${d}${locked ? ", noch gesperrt" : isOpen ? ", geöffnet" : ""}">${back}<div class="dface"><span class="dnum">${d}</span>${locked ? '<span class="dlock">🔒</span>' : ""}</div></button>`;
+    return `<button type="button" class="door${isOpen ? " open" : ""}${locked ? " locked" : ""}${isToday ? " today" : ""}" data-d="${d}" aria-label="Türchen ${d}${locked ? ", noch gesperrt" : isOpen ? ", geöffnet" : ""}">${back}<div class="dface"><span class="dnum"><b>${d}</b></span><i class="dbow"></i>${locked ? '<span class="dlock">🔒</span>' : ""}</div></button>`;
   };
   function calendarView() {
     const td = today(), n = [...opened].filter(d => d <= Math.max(td, 24)).length, st = stars();
@@ -3260,7 +3302,7 @@ window.MOKI_XMAS_MUSIC=[{"n": "Jingle Bells", "u": "data:audio/mpeg;base64,SUQzB
   }
   function bauble(t, b, i) {
     const A = ADV[i], sl = API.SLOTS[i], ti = T_BAUBLE + i * .42, age = t - ti; if (age < 0) return null;
-    const r = b.w * .056, px = b.x0 + b.w * sl.x / 100, py = b.y0 + b.h * sl.y / 100, L = r * 1.1;
+    const r = b.w * .043, px = b.x0 + b.w * sl.x / 100, py = b.y0 + b.h * sl.y / 100, L = r * 1.1;
     const k = clamp(age / .5), drop = -(1 - eo4(k)) * b.h * .5, sw = .5 * Math.exp(-2.1 * Math.max(age - .3, 0)) * Math.cos(8 * Math.max(age - .3, 0)), pop = age < .45 ? back(age / .4) : 1;
     ctx.save(); ctx.globalAlpha = clamp(age / .12); ctx.translate(px, py - L - r + drop); ctx.rotate(sw);
     ctx.strokeStyle = "#e7c36a"; ctx.lineWidth = Math.max(1.2, r * .06); ctx.beginPath(); ctx.moveTo(0, -L * .7); ctx.lineTo(0, 0); ctx.stroke();
@@ -3270,9 +3312,9 @@ window.MOKI_XMAS_MUSIC=[{"n": "Jingle Bells", "u": "data:audio/mpeg;base64,SUQzB
     // Kugel mit Spielbild
     ctx.save(); ctx.shadowColor = "rgba(0,0,0,.5)"; ctx.shadowBlur = r * .5; ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.fillStyle = "#c98a2b"; ctx.fill(); ctx.restore();
     ctx.save(); ctx.beginPath(); ctx.arc(0, 0, r * .94, 0, 7); ctx.clip();
-    const im = A.g ? IMG.get(A.g.image) : null;
-    if (im) { const s = Math.max(2 * r / im.width, 2 * r / im.height); ctx.drawImage(im, -im.width * s / 2, -im.height * s / 2, im.width * s, im.height * s); }
-    else { const g = ctx.createRadialGradient(-r * .3, -r * .3, r * .1, 0, 0, r); g.addColorStop(0, "#fff3c2"); g.addColorStop(1, "#d99a2b"); ctx.fillStyle = g; ctx.fillRect(-r, -r, 2 * r, 2 * r); star(0, 0, r * .62, 0, "#fff", 1); }
+    const BC = [["#ff7a86", "#b3202f"], ["#5fe0a0", "#12703f"], ["#6fa0ff", "#1f3f9e"], ["#ffe08a", "#c98a1b"]][i % 4];
+    { const g = ctx.createRadialGradient(-r * .35, -r * .4, r * .1, 0, 0, r * 1.05); g.addColorStop(0, BC[0]); g.addColorStop(1, BC[1]); ctx.fillStyle = g; ctx.fillRect(-r, -r, 2 * r, 2 * r);
+      ctx.fillStyle = "rgba(255,255,255,.95)"; ctx.shadowColor = "rgba(0,0,0,.45)"; ctx.shadowBlur = r * .2; ctx.font = `900 ${r * 1.3}px ${FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("?", 0, r * .06); ctx.shadowBlur = 0; }
     ctx.restore();
     ctx.lineWidth = r * .12; ctx.strokeStyle = "#f6c667"; ctx.beginPath(); ctx.arc(0, 0, r * .96, 0, 7); ctx.stroke();
     ctx.globalAlpha = .5; ctx.strokeStyle = "#fff"; ctx.lineWidth = r * .1; ctx.beginPath(); ctx.arc(0, 0, r * .72, 3.5, 4.5); ctx.stroke(); ctx.globalAlpha = 1;
@@ -3312,7 +3354,7 @@ window.MOKI_XMAS_MUSIC=[{"n": "Jingle Bells", "u": "data:audio/mpeg;base64,SUQzB
     ctx.restore();
     // Texte
     if (t < T_FIN) {
-      if (t > T_TREE + .4) fitText("24 Türchen. 24 Spiele.", W / 2, H * .105, W * .9, Math.min(W * .06, 54), "#ffe3a0", eo((t - T_TREE - .4) / .6), 1, 800);
+      if (t > T_TREE + .4) fitText("24 Türchen. 24 Überraschungen.", W / 2, H * .105, W * .9, Math.min(W * .06, 54), "#ffe3a0", eo((t - T_TREE - .4) / .6), 1, 800);
       if (landed > 0) fitText("Türchen " + landed + " von 24", W / 2, H * .955, W * .9, Math.min(W * .04, 32), "#fff", .9, 1, 700, false, false);
     } else {
       const u2 = t - T_FIN;
@@ -3343,7 +3385,7 @@ window.MOKI_XMAS_MUSIC=[{"n": "Jingle Bells", "u": "data:audio/mpeg;base64,SUQzB
     setTimeout(() => { mi.remove(); root.classList.remove("site-in"); }, 1300);
   }
   async function start() {
-    const list = ADV.filter(a => a.g).map(a => a.g.image);
+    const list = [];
     await Promise.race([Promise.all(list.map(src => loadImg(src).then(i => { IMG.set(src, i); }))), new Promise(r => setTimeout(r, 6000))]);
     if (TEST) { window.__MOKI_MI = { render, DUR, T_TITLE, T_TREE, T_BAUBLE, T_FIN, finish }; render(0); return; }
     let t = 0, last = performance.now();
@@ -4010,7 +4052,7 @@ window.MOKI_XMAS_MUSIC=[{"n": "Jingle Bells", "u": "data:audio/mpeg;base64,SUQzB
   var css = '#nf{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:24px;overflow:hidden;color:#fff;font-family:"Segoe UI",system-ui,sans-serif;background:radial-gradient(900px 500px at 80% -10%,#23307a66,transparent 60%),radial-gradient(800px 500px at -10% 90%,#0a7a7a44,transparent 60%),#0a0d2b}' +
     '#nf *{box-sizing:border-box;margin:0}#nf canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}' +
     '#nf .wrap{position:relative;text-align:center;max-width:560px;transition:transform .15s ease-out}' +
-    '#nf .num{display:flex;justify-content:center;align-items:center;gap:clamp(4px,1.5vw,14px);font-weight:900;font-size:clamp(96px,24vw,190px);line-height:1;letter-spacing:-.04em;animation:nfgl 5s 2s infinite}' +
+    '#nf .num{position:relative;inset:auto;display:flex;justify-content:center;align-items:center;gap:clamp(4px,1.5vw,14px);font-weight:900;font-size:clamp(96px,24vw,190px);line-height:1;letter-spacing:-.04em;animation:nfgl 5s 2s infinite}' +
     '#nf .d{display:inline-block;background:linear-gradient(135deg,#00e5a8,#ffd23f);-webkit-background-clip:text;background-clip:text;color:transparent;opacity:0;transform:translateY(-60px) scale(.7);animation:nfdrop .7s cubic-bezier(.3,1.6,.5,1) forwards}' +
     '#nf .d.l{animation-delay:.1s}#nf .d.r{animation-delay:.35s}@keyframes nfdrop{to{opacity:1;transform:none}}' +
     '#nf .ring{width:.82em;height:.82em;cursor:pointer;animation:nfroll .9s .25s cubic-bezier(.3,1.4,.5,1) both;filter:drop-shadow(0 8px 24px #00e5a855);-webkit-tap-highlight-color:transparent}' +
