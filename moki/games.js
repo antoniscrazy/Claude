@@ -1140,8 +1140,8 @@ window.MOKI_GAMES = [
     title: "Circloo",
     url: "#/play/circloo",
     category: "Denken",
-    emoji: "⭕",
-    colors: ["#ffd23f", "#1e1e2f"],
+    image: "circloo.jpg",
+        colors: ["#ffd23f", "#1e1e2f"],
     description: "Bewege dich durch die Kreise und löse jedes Level mit cleveren Wegen.",
     added: "2026-11-19",
     featured: false
