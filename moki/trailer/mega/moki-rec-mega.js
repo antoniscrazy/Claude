@@ -30,6 +30,8 @@ const TYPES={html:'text/html',js:'text/plain',css:'text/css',png:'image/png',jpg
  await p.route(/^https?:\/\/(?!localhost)(?!raw\.githubusercontent\.com\/antoniscrazy)[^/]+\/.*/,r=>{if(/supabase/.test(r.request().url()))return r.fallback();r.abort('aborted')});
  await p.addInitScript(()=>{try{localStorage.setItem('moki-intro-v2','1')}catch(e){}});
  await p.addInitScript(()=>{window.__ZOOM=1.3333});await p.addInitScript(OVERLAY);
+ // Fusszeile (Tester-Knopf) fuer die Aufnahme am unteren Bildrand festhalten (Seitenende ist unter Zoom nicht erreichbar)
+ await p.addInitScript(()=>addEventListener('DOMContentLoaded',()=>{const st=document.createElement('style');st.textContent='#tfoot{position:fixed!important;left:0;right:0;bottom:0;z-index:40;background:#0a0d2bf2;border-top:2px solid #00e5a855}';document.head.appendChild(st)}));
  await p.goto('file:///home/user/Claude/moki/_trailer-moki.html');await p.waitForSelector('.tile');await p.waitForTimeout(500);
  const off=(Date.now()-tCreate)/1000;const d=driver(p);d.reset();
  const {at,mv,mvEl,clk,cap,smoothScroll,sleep}=d;
@@ -57,7 +59,7 @@ const TYPES={html:'text/html',js:'text/plain',css:'text/css',png:'image/png',jpg
  await at(29.6,()=>frameClick('#player iframe','#moki-back',900),'zurueck zu Moki');
  // ---- 5. Tester-Programm
  await at(31.4,async()=>{await smoothScroll(null,await p.evaluate(()=>scrollY),await p.evaluate(()=>document.documentElement.scrollHeight*2),1400)},'nach unten');
- await at(33.0,()=>cap('TESTER-PROGRAMM','Hilf mit und teste neue Spiele',3000),'cap-test');
+ await at(33.0,()=>cap('TESTER-PROGRAMM','Hilf mit und teste neue Spiele',3000,true),'cap-test');
  await at(33.4,()=>clk('[data-tf=apply]',900,0,true),'Tester werden');
  await at(35.0,async()=>{await clk('#tf-name',500,0,true);await p.keyboard.type('Max',{delay:120})},'Name');
  await at(36.8,async()=>{tester={state:'pending'};await clk('[data-a=send]',700,0,true)},'Bewerben');
