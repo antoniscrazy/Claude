@@ -2425,10 +2425,53 @@ playerFromHash();
   // ---------- Bilder und Logo ----------
   const IMG = new Map();
   const loadImg = src => new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
-  const LOGO_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-14 -20 392 170" width="784" height="340"><defs><linearGradient id="g" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="362" y2="0"><stop offset="0" stop-color="#00e5a8"/><stop offset="1" stop-color="#ffd23f"/></linearGradient></defs>'
-    + '<g fill="none" stroke="url(#g)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 120V70C12 52 22 44 38 44S64 52 64 70V120"/><path d="M64 70C64 52 74 44 90 44S116 52 116 70V120"/><circle cx="192" cy="82" r="38"/><path d="M268 12V120"/><path d="M268 90L304 48"/><path d="M286 74L310 120"/><path d="M350 44V120"/></g>'
-    + '<circle cx="350" cy="6" r="14" fill="url(#g)"/><path d="M183 66L207 82L183 98Z" fill="#fff" stroke="#fff" stroke-width="7" stroke-linejoin="round"/></svg>';
-  let LOGO = null;
+  // ---------- Logo: wird mit einem leuchtenden Stift in einem Zug gezeichnet ----------
+  // Pfade im Koordinatensystem des Logos (viewBox -14 -20 392 170). Reihenfolge und Zeiten: m, o (mit Dreieck), k, i, Punkt.
+  const SEGS = [
+    { d: "M12 120V70C12 52 22 44 38 44S64 52 64 70V120", t0: 0, t1: .55 },
+    { d: "M64 70C64 52 74 44 90 44S116 52 116 70V120", t0: .45, t1: 1.0 },
+    { d: "M154 82A38 38 0 0 1 230 82A38 38 0 0 1 154 82", t0: .92, t1: 1.6 },
+    { d: "M268 12V120", t0: 1.5, t1: 1.85 },
+    { d: "M268 90L304 48", t0: 1.75, t1: 2.05 },
+    { d: "M286 74L310 120", t0: 1.95, t1: 2.3 },
+    { d: "M350 44V120", t0: 2.2, t1: 2.55 }
+  ];
+  const svgNS = "http://www.w3.org/2000/svg", msvg = document.createElementNS(svgNS, "svg");
+  msvg.setAttribute("aria-hidden", "true"); msvg.style.cssText = "position:absolute;width:0;height:0;overflow:hidden";
+  mi.appendChild(msvg);
+  SEGS.forEach(sg => { const el = document.createElementNS(svgNS, "path"); el.setAttribute("d", sg.d); msvg.appendChild(el); sg.el = el; sg.len = el.getTotalLength(); sg.p2d = new Path2D(sg.d); });
+  const LS = (cx, cy, w) => { const sc = w / 392; return p => [cx + (p[0] - 182) * sc, cy + (p[1] - 65) * sc]; };
+  // Stiftspitze zur Logo-Zeit tl (Bildschirmkoordinaten) oder null
+  function headAt(tl, map) {
+    let act = null;
+    for (const sg of SEGS) { const p = (tl - sg.t0) / (sg.t1 - sg.t0); if (p > 0 && p < 1) act = { sg, p }; }
+    if (!act) return null;
+    const pt = act.sg.el.getPointAtLength(act.sg.len * eio(act.p)); return map([pt.x, pt.y]);
+  }
+  function drawLogo(cx, cy, w, tl) {
+    if (tl <= 0) return;
+    const sc = w / 392, map = LS(cx, cy, w);
+    ctx.save(); ctx.translate(cx, cy); ctx.scale(sc, sc); ctx.translate(-182, -65);
+    const gr = ctx.createLinearGradient(0, 0, 362, 0); gr.addColorStop(0, MINT); gr.addColorStop(1, GOLD);
+    ctx.strokeStyle = gr; ctx.fillStyle = gr; ctx.lineWidth = 24; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.shadowColor = MINT; ctx.shadowBlur = 26;
+    SEGS.forEach(sg => { const p = eio((tl - sg.t0) / (sg.t1 - sg.t0)); if (p <= 0.002) return; ctx.setLineDash([sg.len + 2, sg.len + 2]); ctx.lineDashOffset = (sg.len + 2) * (1 - p); ctx.stroke(sg.p2d); });
+    ctx.setLineDash([]);
+    if (tl > 2.55) { const k = back((tl - 2.55) / .38); ctx.save(); ctx.translate(350, 6 - (1 - clamp((tl - 2.55) / .38)) * 40); ctx.scale(k, k); ctx.beginPath(); ctx.arc(0, 0, 14, 0, 7); ctx.fill(); ctx.restore(); }
+    if (tl > 1.62) { const k = back((tl - 1.62) / .4); ctx.save(); ctx.translate(195, 82); ctx.scale(k, k); ctx.translate(-195, -82); ctx.fillStyle = "#fff"; ctx.strokeStyle = "#fff"; ctx.lineWidth = 7; ctx.shadowColor = "#fff"; ctx.shadowBlur = 14; ctx.beginPath(); ctx.moveTo(183, 66); ctx.lineTo(207, 82); ctx.lineTo(183, 98); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore(); }
+    ctx.restore();
+    // Funkenspur und leuchtende Stiftspitze
+    const h = headAt(tl, map);
+    if (h) {
+      const gs = Math.max(.6, sc * 1.4);
+      for (let j = 1; j <= 18; j++) {
+        const hp = headAt(tl - j * .03, map); if (!hp) continue; const f = 1 - j / 18, a = rnd(j + Math.floor(tl * 20)) * 6.283;
+        ctx.fillStyle = hexA(j % 2 ? MINT : GOLD, f * .9); ctx.beginPath(); ctx.arc(hp[0] + Math.cos(a) * j * 3 * gs, hp[1] + Math.sin(a) * j * 3 * gs, (1 + f * 4) * gs, 0, 7); ctx.fill();
+      }
+      const R = 46 * gs + 16, gl = ctx.createRadialGradient(h[0], h[1], 0, h[0], h[1], R); gl.addColorStop(0, "rgba(255,255,255,.95)"); gl.addColorStop(.25, hexA(MINT, .6)); gl.addColorStop(1, "rgba(0,229,168,0)");
+      ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(h[0], h[1], R, 0, 7); ctx.fill();
+    }
+  }
+  const logoW = () => Math.min(W * .62, 780);
 
   // ---------- Kategorien (Reihenfolge: grosse zuletzt, damit es sich steigert) ----------
   const ORDER = ["Fahren", "Kampf & Schießen", "Sport", "Strategie", "Abenteuer", "Denken", "Simulation", "Geschicklichkeit"];
@@ -2446,7 +2489,7 @@ playerFromHash();
     plan.push({ name, list, step, card, tiles, end, exit, done0: done, col: CATCOL[name] || [MINT, GOLD] });
     done += list.length; tt = exit;
   });
-  const T_WALL = tt, T_FIN = T_WALL + 5.6, DUR = T_FIN + 2.2;
+  const T_WALL = tt, DUR = T_WALL + 8.6;
 
   // ---------- Zeichnen ----------
   function fitText(s, x, y, maxW, size, col, a = 1, sc = 1, weight = 900, glow = true, outline = true) {
@@ -2511,35 +2554,31 @@ playerFromHash();
     return [cx - inRow * L.s / 2 + col * L.s + L.s * .06, cy - L.rows * L.s / 2 + row * L.s + L.s * .06, L.s * .88];
   }
 
-  // Szene 1: Logo-Aufbau (0 - 5.2)
+  // Szene 1: Logo-Aufbau (0 - 5.2): Partikel sammeln sich, ein leuchtender Stift zeichnet "moki" in einem Zug
+  const T_PEN = 1.3;
   function sceneLogo(t) {
     bg(t); sparks(t, clamp(t / 1.2), 80);
-    const cx = W / 2, cy = H / 2 - H * .02, R = Math.min(W, H) * .17;
-    if (t < 3.5) {   // Partikel ziehen sich zusammen
+    const cx = W / 2, cy = H / 2, w = logoW(), start = LS(cx, cy, w)([12, 120]), hit = T_PEN + 2.9;
+    if (t < T_PEN + .2) {   // Partikel ziehen sich zum Startpunkt des Stifts zusammen
       for (let i = 0; i < 120; i++) {
-        const a0 = rnd(i) * 6.283, d0 = Math.max(W, H) * (.35 + rnd(i + 1) * .5), s = clamp((t - .2 - rnd(i + 2) * 1.2) / 2.2); if (s <= 0) continue;
-        const e = eio(s), d = d0 * (1 - e), a = a0 + e * 2.2;
-        ctx.fillStyle = hexA(i % 2 ? MINT : GOLD, (1 - e * .9) * .9); ctx.beginPath(); ctx.arc(cx + Math.cos(a) * d, cy + Math.sin(a) * d, 1.5 + rnd(i + 3) * 3 * (1 - e), 0, 7); ctx.fill();
+        const a0 = rnd(i) * 6.283, d0 = Math.max(W, H) * (.3 + rnd(i + 1) * .5), s = clamp((t - .1 - rnd(i + 2) * .8) / 1.1); if (s <= 0) continue;
+        const e = eio(s), d = d0 * (1 - e), a = a0 + e * 2.4;
+        ctx.fillStyle = hexA(i % 2 ? MINT : GOLD, (1 - e * .8) * .9); ctx.beginPath(); ctx.arc(start[0] + Math.cos(a) * d, start[1] + Math.sin(a) * d, 1.5 + rnd(i + 3) * 3 * (1 - e), 0, 7); ctx.fill();
       }
-      const gl = ctx.createRadialGradient(cx, cy, 5, cx, cy, R * 3); gl.addColorStop(0, hexA(MINT, .4 * eo(t / 3))); gl.addColorStop(1, "rgba(0,229,168,0)"); ctx.fillStyle = gl; ctx.fillRect(0, 0, W, H);
-      // Ring zeichnet sich, Dreieck springt auf
-      ctx.save(); ctx.translate(cx, cy); ctx.rotate(t * 1.6); const gr = ctx.createLinearGradient(-R, -R, R, R); gr.addColorStop(0, MINT); gr.addColorStop(1, GOLD);
-      ctx.strokeStyle = gr; ctx.lineWidth = R * .28; ctx.lineCap = "round"; ctx.shadowColor = MINT; ctx.shadowBlur = R * .4; ctx.beginPath(); ctx.arc(0, 0, R, 0, 6.283 * eio((t - .8) / 2.2)); ctx.stroke(); ctx.restore();
-      if (t > 2.6) { const k = back((t - 2.6) / .5); ctx.save(); ctx.translate(cx, cy); ctx.scale(k, k); ctx.fillStyle = "#fff"; ctx.shadowColor = "#fff"; ctx.shadowBlur = 20; ctx.beginPath(); ctx.moveTo(-R * .3, -R * .4); ctx.lineTo(R * .42, 0); ctx.lineTo(-R * .3, R * .4); ctx.closePath(); ctx.fill(); ctx.restore(); }
+      const pk = eo(t / 1.2), g = ctx.createRadialGradient(start[0], start[1], 0, start[0], start[1], 60); g.addColorStop(0, `rgba(255,255,255,${.9 * pk})`); g.addColorStop(.3, hexA(MINT, .55 * pk)); g.addColorStop(1, "rgba(0,229,168,0)");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(start[0], start[1], 60, 0, 7); ctx.fill();
     }
-    if (t >= 3.4) {   // Logo-Einschlag
-      const k = back((t - 3.4) / .6), w = Math.min(W * .62, 780), h = w * 340 / 784;
-      rays(t, MINT, .09 * eo((t - 3.4) / .5));
-      ctx.save(); ctx.translate(cx, cy); const pu = 1 + .03 * Math.exp(-(((t - 3.4) % .46875) / .46875) * 5); ctx.scale(k * pu, k * pu); ctx.shadowColor = MINT; ctx.shadowBlur = 50;
-      if (LOGO) ctx.drawImage(LOGO, -w / 2, -h / 2, w, h); ctx.restore();
-    }
-    shock(t, 3.4, cx, cy, "#fff"); shock(t, 3.58, cx, cy, MINT); flash(t, 3.4, 1, .45);
+    const tl = t - T_PEN;
+    if (tl > 2.0) rays(t, MINT, .09 * eo((tl - 2.0) / .8));
+    const pu = t > hit ? 1 + .03 * Math.exp(-(((t - hit) % .46875) / .46875) * 5) : 1;
+    drawLogo(cx, cy, w * pu, tl);
+    shock(t, hit, cx, cy, "#fff"); shock(t, hit + .18, cx, cy, MINT); flash(t, hit, .7, .45);
   }
   // Szene 2: Titel (5.2 - 10)
   function sceneTitle(t) {
     const u = t - T_TITLE; bg(t); sparks(t, 1, 80); rays(t, GOLD, .08);
     const w = Math.min(W * .5, 520), h = w * 340 / 784, ly = lerp(H / 2, H * .17, eio(u / .7)), ls = lerp(1, .6, eio(u / .7));
-    if (LOGO) { ctx.save(); ctx.translate(W / 2, ly); ctx.scale(ls, ls); ctx.shadowColor = MINT; ctx.shadowBlur = 30; ctx.drawImage(LOGO, -w / 2, -h / 2, w, h); ctx.restore(); }
+    drawLogo(W / 2, ly, w * ls, 99);
     const words = [["DAS", .7, H * .36, .09, "#fff"], ["MEGA", 1.15, H * .52, .2, MINT], ["UPDATE", 1.6, H * .7, .14, GOLD]];
     words.forEach(([s, at, y, sz, col]) => { const k = clamp((u - at) / .25); if (k <= 0) return; fitText(s, W / 2, y, W * .9, Math.min(W, H * 1.7) * sz * 1.35, col, k * 3, 1 + (1 - eo(k)) * 1.6); shock(t, T_TITLE + at, W / 2, y, col, .5); });
     if (u > 2.7) fitText("Alle Spiele. Eine Seite. Keine Werbung.", W / 2, H * .87, W * .9, Math.min(W * .045, 44), "#cfd6ff", eo((u - 2.7) / .6), 1, 600, false);
@@ -2608,12 +2647,13 @@ playerFromHash();
       }
       if (u > 2.3) { const ck = back((u - 2.3) / .35), cw = narrow ? pw * .85 : Math.min(pw * .6, 440); ctx.save(); ctx.translate(W / 2, H / 2 + ph * .75); ctx.scale(ck, ck); ctx.globalAlpha = clamp(ck) * (1 - clamp((u - 3.9) / .5)); ctx.fillStyle = MINT; ctx.beginPath(); ctx.roundRect(-cw / 2, -ph * .17, cw, ph * .34, ph * .17); ctx.fill(); ctx.restore(); fitText("KEINE WERBUNG", W / 2, H / 2 + ph * .75, cw * .86, ph * .2, "#04201a", ck * (1 - clamp((u - 3.9) / .5)), 1, 900, false, false); }
     }
-    // Logo zum Schluss
-    if (u > 4.2) {
-      const k = back((u - 4.2) / .6), w = Math.min(W * .6, 760), h = w * 340 / 784;
-      rays(t, MINT, .1 * eo((u - 4.2) / .6)); flash(t, T_WALL + 4.2, .6, .4); shock(t, T_WALL + 4.2, W / 2, H / 2, MINT, .9);
-      if (LOGO) { ctx.save(); ctx.translate(W / 2, H / 2 - h * .15); const pu = 1 + .03 * Math.exp(-(((u - 4.2) % .46875) / .46875) * 5); ctx.scale(k * pu, k * pu); ctx.shadowColor = MINT; ctx.shadowBlur = 50; ctx.drawImage(LOGO, -w / 2, -h / 2, w, h); ctx.restore(); }
-      fitText("Willkommen bei Moki", W / 2, H / 2 + h * .52, W * .9, Math.min(W * .06, 56), "#fff", eo((u - 4.8) / .5), 1, 800);
+    // Logo zum Schluss: wird noch einmal in einem Zug gezeichnet
+    const lu = u - 3.7;
+    if (lu > 0) {
+      const w = logoW(), lh = w * 340 / 784, pu = lu > 2.9 ? 1 + .03 * Math.exp(-(((lu - 2.9) % .46875) / .46875) * 5) : 1;
+      rays(t, MINT, .1 * eo((lu - 1.8) / .8)); drawLogo(W / 2, H / 2 - lh * .1, w * pu, lu);
+      shock(t, T_WALL + 6.6, W / 2, H / 2, MINT, .9); flash(t, T_WALL + 6.6, .5, .4);
+      fitText("Willkommen bei Moki", W / 2, H / 2 + lh * .6, W * .9, Math.min(W * .06, 56), "#fff", eo((lu - 3.2) / .5), 1, 800);
     }
   }
   function render(t) {
@@ -2640,9 +2680,8 @@ playerFromHash();
 
   // ---------- Start ----------
   async function start() {
-    const logoP = loadImg("data:image/svg+xml;charset=utf-8," + encodeURIComponent(LOGO_SVG)).then(i => { LOGO = i; });
     const imgs = Promise.all(games.map(g => loadImg(g.image).then(i => { IMG.set(g.image, i); })));
-    await Promise.race([Promise.all([logoP, imgs]), new Promise(r => setTimeout(r, 6000))]);
+    await Promise.race([imgs, new Promise(r => setTimeout(r, 6000))]);
     if (TEST) { window.__MOKI_MI = { render, DUR, T_TITLE, T_SHOW, T_WALL, plan, finish }; render(0); return; }
     let t = 0, last = performance.now();
     const hard = setTimeout(finish, (DUR + 20) * 1000);   // Notbremse, falls etwas haengt
