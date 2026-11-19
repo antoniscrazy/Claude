@@ -16,6 +16,14 @@ h=h.replace('<script src="games.js"></script>',"<script>\n"+g+"\n</script>").rep
 i=h.rindex("</body>");h=h[:i]+"<script>\n"+r("challenge.js")+"\n</script>\n<script>\n"+r("announcements.js")+"\n</script>\n<script>\n"+r("tester.js")+"\n</script>\n<script>\n"+r("nf.js")+"\n</script>\n"+h[i:]
 open("moki.html","w",encoding="utf-8").write(h)
 
+# ---------- Weihnachts-Ausgabe (moki_weinachten.html): gleiche Seite, dazu Winter-Design, Adventskalender, Weihnachts-Einleitung ----------
+_mi="<script>\n"+r("megaintro.js")+"\n</script>"
+assert _mi in h
+_xm="<script>\n"+r("advent.js")+"\n</script>"
+if os.path.exists("xmasintro.js"): _xm+="\n<script>\n"+r("xmasintro.js")+"\n</script>"
+x=h.replace(_mi,_xm).replace("moki-intro-v3","moki-xmas-intro-v1").replace("</head>","<style>\n"+r("weihnachten.css")+"\n</style>\n</head>",1)
+open("moki_weinachten.html","w",encoding="utf-8").write(x)
+
 
 # ---------- Studio (studio.html) ----------
 import json

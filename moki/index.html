@@ -15,7 +15,7 @@
   try { seen = localStorage.getItem(K) === "1"; } catch (e) {}
   if (!seen) { try { seen = document.cookie.indexOf(K + "=1") > -1; } catch (e) {} }
   if (/[?&]intro(=1)?(&|$)/.test(q)) seen = false;   // zum Testen: moki.html?intro
-  if (/^#\/spiel\//.test(location.hash)) seen = true;   // Spiel-Link von Freunden: kein Intro davor
+  if (/^#\/(spiel|geschenk)\//.test(location.hash)) seen = true;   // Spiel-Link von Freunden: kein Intro davor
   if (!seen) document.documentElement.classList.add("mi-on");
 })();
 </script>

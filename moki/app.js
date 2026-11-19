@@ -98,10 +98,10 @@ function heroHtml() {
 
 function renderSide() {
   const used = [...new Set(games.map(g => g.category))];
-  const cats = ["Alle", "__fav", "__cre", ...CATORDER.filter(c => used.includes(c)), ...used.filter(c => !CATORDER.includes(c))];
+  const cats = ["Alle", ...(window.MOKI_EXT_CATS || []), "__fav", "__cre", ...CATORDER.filter(c => used.includes(c)), ...used.filter(c => !CATORDER.includes(c))];
   const collapsed = document.body.classList.contains("side-collapsed");
   side.innerHTML = `<div class="sidehead"><h3>Kategorien</h3><button class="toggle" type="button" aria-label="${collapsed ? "Seitenleiste ausklappen" : "Seitenleiste einklappen"}" aria-expanded="${!collapsed}" title="${collapsed ? "Ausklappen" : "Einklappen"}">${icon("panel")}</button></div>` + cats.map(c => {
-    const n = c === "Alle" ? games.length : c === "__fav" ? favs.size : c === "__cre" ? CRE.list.length : games.filter(g => g.category === c).length;
+    const n = (window.MOKI_EXT_COUNT && window.MOKI_EXT_COUNT(c) != null) ? window.MOKI_EXT_COUNT(c) : c === "Alle" ? games.length : c === "__fav" ? favs.size : c === "__cre" ? CRE.list.length : games.filter(g => g.category === c).length;
     const label = CATLABEL[c] || c;
     return `<button class="cat ${c === category ? "on" : ""}" data-c="${esc(c)}" title="${esc(label)} (${n})" aria-label="${esc(label)}, ${n} Spiele">${icon(CATICON[c])}<span class="lbl">${esc(label)}</span><span class="n">${n}</span></button>`;
   }).join("");
@@ -128,6 +128,7 @@ function homeCre(q) {
 function home() {
   const q = search.value.trim().toLowerCase();
   renderSide();
+  if (window.MOKI_EXT_VIEW && window.MOKI_EXT_VIEW[category]) return window.MOKI_EXT_VIEW[category]();   // Erweiterungen, z. B. Adventskalender
   if (category === "__cre") return homeCre(q);
   const inCat = g => category === "Alle" || (category === "__fav" ? favs.has(g.id) : g.category === category);
   const list = games.filter(g => inCat(g) && g.title.toLowerCase().includes(q));
@@ -144,7 +145,7 @@ function home() {
       ${cm.length > 5 ? `<button class="btn more" data-cat="__cre" type="button">Alle ${cm.length} Kreationen ansehen</button>` : ""}
     </section>`;
   app.innerHTML = `
-    ${!q && category === "Alle" ? heroHtml() + challengeHtml() : ""}
+    ${!q && category === "Alle" ? (window.MOKI_XMAS_HOME ? window.MOKI_XMAS_HOME() : "") + heroHtml() + challengeHtml() : ""}
     ${!q && category === "Alle" && rec.length ? `<section>
       <h2>${icon("clock")}Zuletzt gespielt</h2>
       <div class="grid">${rec.map(tile).join("")}</div>

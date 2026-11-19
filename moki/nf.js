@@ -5,7 +5,7 @@
   function bad() {
     var p = location.pathname, h = location.hash;
     var okPath = file || /^\/?(index)?$/.test(p) || (!STUDIO && /^\/spiel\/[a-z0-9-]{1,80}\/?$/i.test(p));
-    var okHash = STUDIO || /^(#\/?)?$/.test(h) || /^#\/spiel\/[a-z0-9-]{1,80}\/?$/i.test(h) || /^#\/g\/[a-z0-9-]{1,60}\/?$/i.test(h) || /^#\/play\/[a-z0-9-]{1,60}\/?$/i.test(h);
+    var okHash = STUDIO || /^(#\/?)?$/.test(h) || /^#\/spiel\/[a-z0-9-]{1,80}\/?$/i.test(h) || /^#\/g\/[a-z0-9-]{1,60}\/?$/i.test(h) || /^#\/play\/[a-z0-9-]{1,60}\/?$/i.test(h) || /^#\/geschenk\/[a-z0-9-]{1,60}\/?[^\/]{0,120}$/i.test(h);
     return !(okPath && okHash);
   }
   var css = '#nf{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:24px;overflow:hidden;color:#fff;font-family:"Segoe UI",system-ui,sans-serif;background:radial-gradient(900px 500px at 80% -10%,#23307a66,transparent 60%),radial-gradient(800px 500px at -10% 90%,#0a7a7a44,transparent 60%),#0a0d2b}' +
