@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+
+<head><script>window.PokiSDK=window.PokiSDK||{init:function(){return Promise.resolve()},setDebug:function(){},gameLoadingStart:function(){},gameLoadingFinished:function(){},gameLoadingProgress:function(){},gameplayStart:function(){},gameplayStop:function(){},commercialBreak:function(){return Promise.resolve()},rewardedBreak:function(){return Promise.resolve(true)},displayAd:function(){},destroyAd:function(){},customEvent:function(){},logError:function(){},measure:function(){},isAdBlocked:function(){return false},getURLParam:function(){return ""},getLanguage:function(){return "en"},shareableURL:function(){return Promise.resolve("")},enableEventTracking:function(){}};window.poki_loadbar=window.poki_loadbar||function(){};window.dj_loading=window.dj_loading||function(){};</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      font-size: 5vw;
+      text-align: center;
+      background-color: white;
+    }
+
+    button {
+      font-size: 3vw;
+      padding: 1vw 2vw;
+      margin: 1vw;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+
+
+    table {
+      width: 80vw;
+      /* Ancho de la tabla al 80% del ancho de la ventana */
+      margin: 0 auto;
+      /* Centra la tabla horizontalmente */
+      border-collapse: collapse;
+      /* Fusiona los bordes de las celdas */
+    }
+
+    th,
+    td {
+      padding: 1vw;
+      /* Relleno de 1% del ancho de la ventana */
+      text-align: center;
+      /* Alineación del contenido al centro */
+    }
+
+    th {
+      background-color: #f2f2f2;
+      /* Color de fondo para las celdas de encabezado */
+    }
+
+    tr:nth-child(even) {
+      background-color: #e6e6e6;
+      /* Color de fondo para las filas pares */
+    }
+
+
+    caption {
+      font-size: 2vw;
+      /* Tamaño de fuente al 2% del ancho de la ventana */
+      margin-bottom: 1vw;
+      /* Margen inferior de 1% del ancho de la ventana */
+    }
+
+    .loader_scores {
+      border: 16px solid #f3f3f3;
+      /* Color del borde del loader */
+      border-top: 16px solid #3498db;
+      /* Color de la parte superior del loader */
+      border-radius: 50%;
+      /* Forma circular del loader */
+      width: 120px;
+      /* Ancho del loader */
+      height: 120px;
+      /* Altura del loader */
+      animation: spin 2s linear infinite;
+      /* Animación del loader */
+      margin: 0 auto;
+      /* Centrar el loader horizontalmente */
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      /* Rotación inicial del loader */
+      100% {
+        transform: rotate(360deg);
+      }
+
+      /* Rotación completa del loader */
+    }
+  </style>
+  <script>
+    window.onload = function() {
+      // Obtener el identificador de la última sección mostrada del almacenamiento local
+      var seccionGuardada = localStorage.getItem("seccionActual");
+
+      // Mostrar la sección guardada (si existe) o la primera sección por defecto
+      if (seccionGuardada) {
+        mostrarSeccion(seccionGuardada);
+      } else {
+
+      }
+      mostrarSeccion("seccion1");
+    }
+
+    // En el código dentro del <iframe>
+    window.addEventListener('message', function(event) {
+      // Verifica que el origen sea el esperado (opcional)
+
+      // Accede a los datos enviados desde el padre
+      var datos = event.data;
+
+      // Haz algo con los datos recibidos
+
+      // Buscar el elemento por su ID
+      var elemento = document.getElementById(datos.id);
+
+      // Reemplazar el contenido del elemento con la tabla
+      if (elemento) {
+        elemento.innerHTML = datos.tabla;
+      } else {
+        console.log("No se encontró ningún elemento con el ID proporcionado.");
+      }
+
+
+    });
+
+
+    function mostrarSeccion(id) {
+      // Ocultar todas las secciones
+      var secciones = document.getElementsByClassName("seccion");
+      for (var i = 0; i < secciones.length; i++) {
+        secciones[i].style.display = "none";
+      }
+
+      // Mostrar la sección seleccionada
+      var seccion = document.getElementById(id);
+      if (seccion) {
+        seccion.style.display = "block";
+      }
+      localStorage.setItem("seccionActual", id);
+
+    }
+  </script>
+</head>
+
+<body>
+  <button onclick="mostrarSeccion('seccion1')">1 HOUR</button>
+  <button onclick="mostrarSeccion('seccion2')">24 HOURS</button>
+
+
+  <div id="seccion1" class="seccion">
+    <h2>RANKING 1 HOUR</h2>
+
+
+
+    <div id="tabla1">
+      <div class='loader_scores'></div>
+    </div>
+  </div>
+
+  <div id="seccion2" class="seccion">
+    <h2>RANKING 24 HOUR</h2>
+    <div id="tabla2">
+      <div class='loader_scores'></div>
+    </div>
+  </div>
+
+</body>
+
+</html>
