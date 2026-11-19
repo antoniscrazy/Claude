@@ -52,20 +52,21 @@ const TYPES={html:'text/html',js:'text/plain',css:'text/css',png:'image/png',jpg
  await at(14.8,()=>cap('54 NEUE SPIELE','Frisch dazugekommen, mit NEU-Schild',3000),'cap-new');
  await at(15,async()=>{for(const n of [1,4,7,10]){await mvEl(`#app .grid .tile >> nth=${n}`,520,0,0,0,true);await sleep(180)}},'Kacheln');
  // ---- 4. Spiele direkt in Moki (drei spannende Spiele, jeweils kurz gespielt)
- const ZF=1.3333;   // Koordinaten von Elementen in Frames sind unter Seiten-Zoom gestaucht
- const back=async()=>{const bb=await p.frameLocator('#player iframe').locator('#moki-back').boundingBox();await mv((bb.x+bb.width/2)*ZF,(bb.y+bb.height/2)*ZF,800);await sleep(80);await p.mouse.down();await sleep(60);await p.mouse.up()};
+ // Unter dem Seiten-Zoom landen Klicks in eingebetteten Spielen verschoben. Waehrend ein Spiel offen ist, ist der Zoom daher aus.
+ const zoomSet=z=>p.evaluate(z=>{document.body.style.zoom=z},z);
+ const back=async()=>{const bb=await p.frameLocator('#player iframe').locator('#moki-back').boundingBox();await mv(bb.x+bb.width/2,bb.y+bb.height/2,800);await sleep(80);await p.mouse.down();await sleep(60);await p.mouse.up();await sleep(500);await zoomSet(1.3333)};
  await at(19.4,()=>cap('DIREKT AUF MOKI','Jedes Spiel läuft hier, ohne Umweg',3400),'cap-play');
  await at(19.6,async()=>{await scrollTo(await elY(tile('tunnel-rush'),420))},'scroll Tunnel Rush');
- await at(21,()=>clk(tile('tunnel-rush'),900,0,true),'Tunnel Rush oeffnen');
+ await at(21,async()=>{await clk(tile('tunnel-rush'),900,0,true);await zoomSet(1)},'Tunnel Rush oeffnen');
  await at(28.6,async()=>{await mv(975,735,700);await p.mouse.down();await sleep(60);await p.mouse.up()},'Tunnel Rush starten');
  await at(29.6,async()=>{for(let i=0;i<9;i++){await p.keyboard.down(i%2?'ArrowLeft':'ArrowRight');await sleep(330);await p.keyboard.up(i%2?'ArrowLeft':'ArrowRight')}},'Tunnel Rush spielen');
  await at(34,back,'zurueck 1');
  await at(35.6,async()=>{await scrollTo(await elY(tile('stackball'),420))},'scroll Stackball');
- await at(37,()=>clk(tile('stackball'),900,0,true),'Stackball oeffnen');
+ await at(37,async()=>{await clk(tile('stackball'),900,0,true);await zoomSet(1)},'Stackball oeffnen');
  await at(41,async()=>{await mv(960,780,600);await p.mouse.down();await sleep(3000);await p.mouse.up()},'Stackball spielen');
  await at(44.8,back,'zurueck 2');
  await at(46.2,async()=>{await scrollTo(await elY(tile('granny'),420))},'scroll Granny');
- await at(47.6,()=>clk(tile('granny'),900,0,true),'Granny oeffnen');
+ await at(47.6,async()=>{await clk(tile('granny'),900,0,true);await zoomSet(1)},'Granny oeffnen');
  await at(51,async()=>{await mv(520,470,900);await sleep(900);await mv(300,300,900)},'Granny Menue');
  await at(53.6,back,'zurueck 3');
  // ---- 5. Tester-Programm
