@@ -1019,8 +1019,8 @@ window.MOKI_GAMES = [
     title: "Snake Pivot",
     url: "#/play/snake-pivot",
     category: "Geschicklichkeit",
-    emoji: "🐍",
-    colors: ["#56c271", "#1f4d2b"],
+    image: "snake-pivot.jpg",
+        colors: ["#56c271", "#1f4d2b"],
     description: "Steuere die Schlange, sammle Punkte und vermeide die Wände und deinen eigenen Körper.",
     added: "2026-11-19",
     featured: false
