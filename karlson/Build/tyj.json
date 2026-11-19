@@ -2,9 +2,9 @@
  "companyName": "Dani",
  "productName": "Karlson",
  "productVersion": "0.1",
- "dataUrl": "tyj.data",
- "wasmCodeUrl": "tyj.wasm.code",
- "wasmFrameworkUrl": "tyj.wasm.framework",
+ "dataUrl": "https://raw.githubusercontent.com/antoniscrazy/Claude/f317dca6eea5fd72e08478995590a65d80f62ef2/karlson/Build/tyj.data",
+ "wasmCodeUrl": "https://raw.githubusercontent.com/antoniscrazy/Claude/f317dca6eea5fd72e08478995590a65d80f62ef2/karlson/Build/tyj.wasm.code",
+ "wasmFrameworkUrl": "https://raw.githubusercontent.com/antoniscrazy/Claude/f317dca6eea5fd72e08478995590a65d80f62ef2/karlson/Build/tyj.wasm.framework",
  "graphicsAPI": [
   "WebGL 2.0"
  ],
