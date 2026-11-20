@@ -3511,10 +3511,10 @@ window.MOKI_LAUNCH=Object.assign(window.MOKI_LAUNCH||{},{"blumgi-ball": "\u003c!
   const mouse = { x: -999, y: -999, in: false, vx: 0, vy: 0, lx: 0, ly: 0, lt: 0 };
   let drag = null, supp = 0, setCur = false;
   const popup = () => document.querySelector(".advm,.modal,.agiftv,#player");
-  function near(m, x, y) {
-    if (m.hidden) return false;
-    if (m.state === "limp" && m.nodes) { return Object.values(m.nodes).some(p => Math.hypot(p.x - x, p.y - y) < 17); }
-    return x > m.x - 14 && x < m.x + 14 && y > m.y - LEG - TOR - 22 && y < m.y + 6;
+  function near(m, x, y, pad) {
+    pad = pad || 0; if (m.hidden) return false;
+    if (m.state === "limp" && m.nodes) { return Object.values(m.nodes).some(p => Math.hypot(p.x - x, p.y - y) < 17 + pad); }
+    return x > m.x - 14 - pad && x < m.x + 14 + pad && y > m.y - LEG - TOR - 22 - pad && y < m.y + 6 + pad;
   }
   const pt = e => MODE.on ? [e.clientX / MODE.s, e.clientY / MODE.s] : [e.clientX, e.clientY];
   addEventListener("pointermove", e => { const [X, Y] = pt(e);
@@ -3526,20 +3526,24 @@ window.MOKI_LAUNCH=Object.assign(window.MOKI_LAUNCH||{},{"blumgi-ball": "\u003c!
   document.addEventListener("mouseleave", () => { mouse.in = false; });
   addEventListener("pointerdown", e => { const [X, Y] = pt(e);
     if ((!on && !MODE.on) || busy() || (popup() && !MODE.on) || e.button > 0) return;
-    const m = men.find(q => near(q, X, Y)); if (!m) return;
+    const m = men.find(q => near(q, X, Y, e.pointerType === "touch" ? 16 : 0)); if (!m) return;
     e.preventDefault(); e.stopPropagation();
-    if (e.pointerType === "touch") { if (m.state !== "limp") { m.launch(0, -640); m.speak(); } return; }
     if (m.state !== "limp" || !m.nodes) m.toLimp(0, 0);
     m.held = true; m.nodes.nk.pin = true; m.nodes.nk.x = X; m.nodes.nk.y = Y; drag = { man: m, x: X, y: Y, t: performance.now() };
     document.body.style.cursor = "grabbing"; m.speak(pick(["Huch!", "Hilfe!", "Wheee!"]), 1.4);
   }, true);
-  addEventListener("pointerup", e => { const [X, Y] = pt(e);
+  const upH = e => { const [X, Y] = pt(e);
     if (!drag) return; const m = drag.man, n = m.nodes, click = Math.hypot(X - drag.x, Y - drag.y) < 5 && performance.now() - drag.t < 250;
     m.held = false; n.nk.pin = false;
     if (click) { m.x = n.hp.x; m.y = Math.max(n.f0.y, n.f1.y); m.nodes = null; m.launch(0, -720); m.speak("Ho ho ho!"); }
     else { const k = .008; n.nk.px = n.nk.x - clamp(mouse.vx, -2200, 2200) * k; n.nk.py = n.nk.y - clamp(mouse.vy, -2200, 2200) * k; }
     drag = null; supp = performance.now() + 350; document.body.style.cursor = ""; setCur = false;
-  }, true);
+  };
+  addEventListener("pointerup", upH, true); addEventListener("pointercancel", upH, true);
+  // Touch: Finger auf einem Maennchen soll die Seite nicht scrollen
+  const touchHit = e => { if ((!on && !MODE.on) || busy() || (popup() && !MODE.on)) return false; const t = e.touches[0]; if (!t) return false; const [X, Y] = pt(t); return men.some(q => near(q, X, Y, 16)); };
+  addEventListener("touchstart", e => { if (touchHit(e)) e.preventDefault(); }, { capture: true, passive: false });
+  addEventListener("touchmove", e => { if (drag) e.preventDefault(); }, { capture: true, passive: false });
   document.addEventListener("click", e => { if (performance.now() < supp) { e.preventDefault(); e.stopPropagation(); } }, true);
 
   // ---------- Start ----------
