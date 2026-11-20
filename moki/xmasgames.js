@@ -20,4 +20,7 @@ window.MOKI_XMAS_GAMES = [
   { id: "crazycars", title: "Crazy Cars", url: "#/play/crazycars", category: "Fahren", image: "xmas/crazycars.jpg", emoji: "🚗", description: "Rase mit wilden Autos über die Strecke.", added: "2026-12-01" },
   { id: "going-balls", title: "Going Balls", url: "#/play/going-balls", category: "Geschicklichkeit", image: "xmas/going-balls.jpg", emoji: "🔴", description: "Rolle eine Kugel über gefährliche Bahnen.", added: "2026-12-01" },
   { id: "rooftop-snipers", title: "Rooftop Snipers", url: "#/play/rooftop-snipers", category: "Kampf & Schießen", image: "xmas/rooftop-snipers.jpg", emoji: "🎯", description: "Duelle auf den Dächern.", added: "2026-12-01" },
+  { id: "blastar", title: "Blastar", url: "#/play/blastar", category: "Kampf & Schießen", image: "xmas/blastar.jpg", emoji: "🚀", description: "Ein Weltraum-Klassiker im Retro-Look.", added: "2026-12-01" },
+  { id: "breakout-game", title: "The Breakout Game", url: "#/play/breakout-game", category: "Geschicklichkeit", image: "xmas/breakout-game.jpg", emoji: "🧱", description: "Lass den Ball prallen und zerlege alle Steine.", added: "2026-12-01" },
+  { id: "supercold", title: "Supercold", url: "#/play/supercold", category: "Kampf & Schießen", image: "xmas/supercold.jpg", emoji: "❄️", description: "Von oben gespielt: Die Zeit läuft nur, wenn du dich bewegst.", added: "2026-12-01" },
 ];
