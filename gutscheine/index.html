@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Gutscheinheft</title>
+<meta name="description" content="Dein persönliches Gutscheinheft – einlösen mit einem Fingertipp.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0714; --ink:#fff7ee; --ink-dim:rgba(255,247,238,.66); --ink-faint:rgba(255,247,238,.38);
+  --glass:rgba(255,255,255,.06); --glass-strong:rgba(255,255,255,.1); --line:rgba(255,255,255,.12);
+  --accent:#ff7a59; --accent2:#ffcf5c; --ok:#5ef2b0; --bad:#ff5c7a;
+  --radius:26px;
+  --display:"Bricolage Grotesque", system-ui, sans-serif;
+  --mono:"DM Mono", ui-monospace, monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--display);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+::selection{background:var(--accent);color:#1a0d05}
+
+/* ---------- animated background ---------- */
+.aurora{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.blob{position:absolute;width:60vmax;height:60vmax;border-radius:50%;filter:blur(80px);opacity:.5;mix-blend-mode:screen;animation:drift 22s ease-in-out infinite alternate}
+.blob.b1{background:radial-gradient(circle,#ff5e7e,transparent 65%);top:-20vmax;left:-15vmax}
+.blob.b2{background:radial-gradient(circle,#7a5cff,transparent 65%);bottom:-25vmax;right:-15vmax;animation-delay:-7s;animation-duration:26s}
+.blob.b3{background:radial-gradient(circle,#ffb347,transparent 65%);top:30%;left:40%;width:40vmax;height:40vmax;animation-delay:-13s;opacity:.35}
+@keyframes drift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(8vmax,6vmax) scale(1.15)}100%{transform:translate(-6vmax,10vmax) scale(.9)}}
+.grain{position:fixed;inset:-50%;z-index:1;pointer-events:none;opacity:.07;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");animation:grain 1.2s steps(6) infinite}
+@keyframes grain{0%{transform:translate(0,0)}25%{transform:translate(-3%,2%)}50%{transform:translate(2%,-3%)}75%{transform:translate(-2%,-1%)}100%{transform:translate(1%,3%)}}
+#sparkles{position:fixed;inset:0;z-index:1;pointer-events:none}
+
+/* ---------- layout ---------- */
+.wrap{position:relative;z-index:2;max-width:1180px;margin:0 auto;padding:clamp(20px,4vw,48px) 16px 120px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:clamp(36px,7vw,80px)}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.02em;font-size:18px}
+.logo i{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;font-style:normal;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 8px 30px -6px var(--accent);animation:wobble 4s ease-in-out infinite}
+@keyframes wobble{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg) scale(1.06)}}
+.pill{text-decoration:none;color:var(--ink);display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(12px);font-size:14px;transition:.25s}
+.pill:hover{background:var(--glass-strong);transform:translateY(-1px)}
+
+.hero{text-align:center;margin-bottom:clamp(40px,7vw,72px)}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent2);opacity:0;animation:rise .8s .1s forwards}
+.hero h1{font-size:clamp(44px,10vw,118px);line-height:.92;letter-spacing:-.045em;font-weight:800;margin:18px 0 20px}
+.hero h1 .word{display:inline-block;opacity:0;transform:translateY(60%) rotate(6deg);animation:wordIn .9s cubic-bezier(.2,.9,.2,1.2) forwards}
+.hero h1 .shine{background:linear-gradient(100deg,#ffd27a 0%,#ff7a59 30%,#ff5e9c 55%,#b18cff 80%,#ffd27a 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:wordIn .9s .25s cubic-bezier(.2,.9,.2,1.2) forwards, flow 6s linear infinite}
+@keyframes flow{to{background-position:-250% 0}}
+@keyframes wordIn{to{opacity:1;transform:none}}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.hero p{max-width:520px;margin:0 auto;color:var(--ink-dim);font-size:clamp(16px,2.2vw,19px);line-height:1.55;opacity:0;animation:rise .8s .55s forwards}
+
+.stats{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:28px;opacity:0;animation:rise .8s .7s forwards}
+.stats .pill b{font-family:var(--mono);font-weight:500;color:var(--accent2)}
+
+.filters{display:flex;justify-content:center;gap:6px;margin:0 auto 34px;padding:6px;border-radius:999px;background:var(--glass);border:1px solid var(--line);width:max-content;max-width:100%;position:relative}
+.filters button{position:relative;z-index:1;padding:9px 18px;border-radius:999px;font-size:14px;color:var(--ink-dim);transition:color .3s}
+.filters button.on{color:#1a0d05;font-weight:600}
+.filters .slider{position:absolute;z-index:0;top:6px;bottom:6px;border-radius:999px;background:linear-gradient(135deg,var(--accent2),var(--accent));transition:left .45s cubic-bezier(.3,1.4,.5,1),width .45s cubic-bezier(.3,1.4,.5,1)}
+
+/* ---------- voucher card ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));gap:clamp(18px,2.5vw,28px);perspective:1400px}
+.ticket{--c1:#ff7a59;--c2:#ff3d7f;--c3:#ffcf5c;
+  position:relative;border-radius:var(--radius);min-height:230px;cursor:pointer;transform-style:preserve-3d;
+  opacity:0;transform:translateY(40px) rotateX(18deg);animation:cardIn .8s cubic-bezier(.2,.9,.25,1.15) forwards;
+  transition:transform .25s ease-out, filter .3s}
+@keyframes cardIn{to{opacity:1;transform:none}}
+.ticket .face{position:absolute;inset:0;border-radius:inherit;overflow:hidden;padding:24px 24px 22px;display:flex;flex-direction:column;
+  background:linear-gradient(140deg,var(--c1),var(--c2) 70%);
+  box-shadow:0 30px 60px -25px var(--c2), inset 0 1px 0 rgba(255,255,255,.35);
+  -webkit-mask:radial-gradient(circle 14px at 0 64%,#0000 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 14px at 100% 64%,#0000 98%,#000) right/51% 100% no-repeat;
+          mask:radial-gradient(circle 14px at 0 64%,#0000 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 14px at 100% 64%,#0000 98%,#000) right/51% 100% no-repeat}
+.ticket .face::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at var(--mx,30%) var(--my,20%),rgba(255,255,255,.45),transparent 45%);opacity:0;transition:opacity .3s;pointer-events:none}
+.ticket:hover .face::before{opacity:1}
+.ticket .face::after{content:"";position:absolute;top:-50%;left:-60%;width:40%;height:200%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);transform:rotate(25deg);animation:sweep 5.5s ease-in-out infinite;animation-delay:var(--sd,0s);pointer-events:none}
+@keyframes sweep{0%,70%{left:-60%}100%{left:160%}}
+.ticket .pattern{position:absolute;inset:0;opacity:.18;background-image:radial-gradient(rgba(255,255,255,.9) 1.2px,transparent 1.4px);background-size:16px 16px;-webkit-mask:linear-gradient(200deg,#000,transparent 60%);mask:linear-gradient(200deg,#000,transparent 60%);pointer-events:none}
+.ticket .row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;position:relative}
+.ticket .emoji{font-size:52px;line-height:1;filter:drop-shadow(0 8px 14px rgba(0,0,0,.25));transform:translateZ(40px);transition:transform .4s cubic-bezier(.3,1.6,.5,1)}
+.ticket:hover .emoji{transform:translateZ(40px) scale(1.15) rotate(-8deg)}
+.ticket .tag{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;padding:6px 10px;border-radius:999px;background:rgba(0,0,0,.2);backdrop-filter:blur(6px)}
+.ticket h3{position:relative;font-size:clamp(24px,3vw,28px);letter-spacing:-.03em;line-height:1.05;font-weight:800;margin-top:16px;text-shadow:0 2px 20px rgba(0,0,0,.15)}
+.ticket p.desc{position:relative;font-size:14.5px;line-height:1.45;color:rgba(255,255,255,.85);margin-top:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ticket .perf{position:relative;margin:auto -24px 0;border-top:2px dashed rgba(255,255,255,.35);top:-1px}
+.ticket .foot{position:relative;display:flex;justify-content:space-between;align-items:center;padding-top:14px;font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:rgba(255,255,255,.8)}
+.ticket .foot .go{display:inline-flex;align-items:center;gap:6px;font-weight:500;color:#fff}
+.ticket .foot .go span{display:inline-block;transition:transform .3s}
+.ticket:hover .foot .go span{transform:translateX(5px)}
+.ticket.redeemed{filter:saturate(.25) brightness(.7)}
+.ticket.redeemed:hover{filter:saturate(.5) brightness(.85)}
+.ticket.expired{filter:grayscale(.8) brightness(.6)}
+.stamp{position:absolute;right:16px;top:44%;z-index:3;transform:rotate(-14deg);font-family:var(--mono);font-weight:500;font-size:20px;letter-spacing:.14em;padding:8px 14px;border:3px solid #fff;border-radius:10px;color:#fff;text-shadow:0 0 12px rgba(255,255,255,.5);box-shadow:0 0 0 2px rgba(0,0,0,.08);background:rgba(0,0,0,.12);pointer-events:none}
+.stamp.pop{animation:stamp .6s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes stamp{0%{transform:rotate(-30deg) scale(3);opacity:0}60%{opacity:1}100%{transform:rotate(-14deg) scale(1);opacity:1}}
+
+/* themes */
+.t-sunset{--c1:#ff9a5a;--c2:#ff3d7f}
+.t-ocean{--c1:#2fd2ff;--c2:#3a5cff}
+.t-forest{--c1:#55e39a;--c2:#0d8f78}
+.t-candy{--c1:#ff8ad8;--c2:#a54dff}
+.t-gold{--c1:#ffe27a;--c2:#e8892b}
+.t-galaxy{--c1:#4b2bd1;--c2:#120a3d}
+.t-gold h3,.t-gold .foot,.t-gold .foot .go,.t-gold p.desc{color:#3a1f00}
+.t-gold .stamp{color:#3a1f00;border-color:#3a1f00}
+.t-galaxy .pattern{opacity:.5;background-size:22px 22px}
+
+.empty{text-align:center;padding:60px 20px;color:var(--ink-dim);border:1px dashed var(--line);border-radius:var(--radius);grid-column:1/-1}
+.empty .big{font-size:64px;display:block;margin-bottom:12px;animation:float 3s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-12px) rotate(6deg)}}
+.skeleton{min-height:230px;border-radius:var(--radius);background:linear-gradient(100deg,var(--glass) 30%,var(--glass-strong) 50%,var(--glass) 70%);background-size:300% 100%;animation:skel 1.4s linear infinite}
+@keyframes skel{to{background-position:-300% 0}}
+
+/* ---------- modal ---------- */
+.modal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px;visibility:hidden}
+.modal.open{visibility:visible}
+.modal .shade{position:absolute;inset:0;background:rgba(8,4,16,.7);backdrop-filter:blur(14px);opacity:0;transition:opacity .4s}
+.modal.open .shade{opacity:1}
+.modal .sheet{position:relative;width:min(460px,100%);max-height:calc(100vh - 32px);overflow:auto;opacity:0;transform:scale(.85) translateY(30px);transition:transform .55s cubic-bezier(.2,1.3,.4,1),opacity .3s}
+.modal.open .sheet{opacity:1;transform:none}
+.modal .ticket{cursor:default;animation:none;opacity:1;transform:none;min-height:auto}
+.modal .ticket .face{position:relative;min-height:280px}
+.modal .ticket .tag{margin-right:44px}
+.modal .ticket p.desc{-webkit-line-clamp:unset;font-size:16px}
+.closeX{position:absolute;top:12px;right:12px;z-index:5;width:40px;height:40px;border-radius:50%;background:#fff;color:#1a0d05;font-size:20px;display:grid;place-items:center;box-shadow:0 10px 30px rgba(0,0,0,.4);transition:transform .3s}
+.closeX:hover{transform:rotate(90deg) scale(1.08)}
+.panel{margin-top:16px;padding:20px;border-radius:22px;background:rgba(255,255,255,.07);border:1px solid var(--line);backdrop-filter:blur(16px)}
+.panel label{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px}
+.field{width:100%;padding:14px 16px;border-radius:14px;background:rgba(0,0,0,.25);border:1px solid var(--line);outline:none;transition:border-color .25s, box-shadow .25s;font-size:15px}
+.field:focus{border-color:var(--accent2);box-shadow:0 0 0 4px rgba(255,207,92,.15)}
+textarea.field{resize:vertical;min-height:84px;line-height:1.45}
+
+/* hold-to-redeem */
+.hold{position:relative;width:100%;margin-top:14px;height:64px;border-radius:18px;overflow:hidden;background:linear-gradient(135deg,var(--accent2),var(--accent));color:#1a0d05;font-weight:800;font-size:17px;letter-spacing:-.01em;user-select:none;-webkit-user-select:none;touch-action:none;box-shadow:0 18px 40px -14px var(--accent);transition:transform .2s}
+.hold:active{transform:scale(.98)}
+.hold .fill{position:absolute;inset:0;background:linear-gradient(135deg,#fff,#ffe9b0);transform-origin:left;transform:scaleX(0)}
+.hold .lbl{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:10px;height:100%}
+.hold.shake{animation:shake .4s}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.hint{text-align:center;font-size:13px;color:var(--ink-faint);margin-top:10px}
+.done-msg{text-align:center;padding:6px 0}
+.done-msg .big{font-size:30px;font-weight:800;letter-spacing:-.03em}
+.done-msg p{color:var(--ink-dim);margin-top:6px;line-height:1.5}
+
+/* ---------- admin ---------- */
+.admin-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:860px){.admin-grid{grid-template-columns:1fr}}
+.card{padding:clamp(20px,3vw,30px);border-radius:var(--radius);background:rgba(255,255,255,.05);border:1px solid var(--line);backdrop-filter:blur(18px);opacity:0;animation:rise .7s forwards}
+.card h2{font-size:26px;letter-spacing:-.03em;margin-bottom:6px}
+.card .sub{color:var(--ink-dim);font-size:14.5px;margin-bottom:22px}
+.form-row{margin-bottom:18px}
+.form-row label{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px}
+.emojis{display:flex;flex-wrap:wrap;gap:6px}
+.emojis button{width:44px;height:44px;border-radius:12px;font-size:22px;background:rgba(0,0,0,.2);border:1px solid transparent;transition:transform .25s cubic-bezier(.3,1.8,.5,1),border-color .2s,background .2s}
+.emojis button:hover{transform:scale(1.15) rotate(-6deg)}
+.emojis button.on{border-color:var(--accent2);background:rgba(255,207,92,.15);transform:scale(1.1)}
+.emojis input{width:60px;height:44px;text-align:center;font-size:22px;padding:0}
+.themes{display:flex;gap:10px;flex-wrap:wrap}
+.themes button{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--c1),var(--c2));border:3px solid transparent;transition:transform .3s cubic-bezier(.3,1.8,.5,1);box-shadow:0 6px 18px -6px var(--c2)}
+.themes button.on{border-color:#fff;transform:scale(1.15)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:15px 22px;border-radius:16px;font-weight:700;background:linear-gradient(135deg,var(--accent2),var(--accent));color:#1a0d05;box-shadow:0 16px 36px -14px var(--accent);transition:transform .25s cubic-bezier(.3,1.6,.5,1),box-shadow .25s,opacity .2s}
+.btn:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 22px 44px -14px var(--accent)}
+.btn:disabled{opacity:.5;pointer-events:none}
+.btn.block{width:100%}
+.btn.ghost{background:var(--glass);color:var(--ink);border:1px solid var(--line);box-shadow:none}
+.preview-wrap{position:sticky;top:24px}
+.preview-wrap .ticket{animation:none;opacity:1;transform:none;cursor:default}
+.preview-wrap .ticket.bump{animation:bump .45s cubic-bezier(.3,1.8,.5,1)}
+@keyframes bump{40%{transform:scale(1.04) rotate(-1deg)}}
+.list{margin-top:28px;display:flex;flex-direction:column;gap:10px}
+.li{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid var(--line);transition:background .2s, transform .35s, opacity .35s}
+.li:hover{background:rgba(255,255,255,.08)}
+.li .e{width:44px;height:44px;flex:none;border-radius:12px;display:grid;place-items:center;font-size:22px;background:linear-gradient(135deg,var(--c1),var(--c2))}
+.li .t{flex:1;min-width:0}
+.li .t b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li .t small{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint)}
+.li .t small.ok{color:var(--ok)}
+.li .acts{display:flex;gap:4px}
+.li .acts button{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:16px;color:var(--ink-dim);transition:background .2s,color .2s}
+.li .acts button:hover{background:rgba(255,255,255,.1);color:var(--ink)}
+.li .acts button.del:hover{background:rgba(255,92,122,.18);color:var(--bad)}
+.li.gone{opacity:0;transform:translateX(40px) scale(.95)}
+.login{max-width:420px;margin:0 auto;text-align:center}
+.login .lock{font-size:56px;display:block;margin-bottom:10px;animation:float 3s ease-in-out infinite}
+.err{color:var(--bad);font-size:14px;min-height:20px;margin-top:10px}
+details.pw{margin-top:22px;color:var(--ink-dim);font-size:14px}
+details.pw summary{cursor:pointer;list-style:none}
+details.pw summary::-webkit-details-marker{display:none}
+details.pw .inner{display:flex;gap:8px;margin-top:12px}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:26px;z-index:80;transform:translate(-50%,calc(100% + 60px));opacity:0;padding:14px 20px;border-radius:16px;background:#fff;color:#1a0d05;font-weight:600;font-size:15px;box-shadow:0 20px 50px rgba(0,0,0,.45);transition:transform .5s cubic-bezier(.2,1.4,.4,1);max-width:calc(100% - 32px);text-align:center}
+.toast.show{transform:translate(-50%,0);opacity:1}
+.toast.bad{background:var(--bad);color:#fff}
+
+#confetti{position:fixed;inset:0;z-index:90;pointer-events:none}
+.view{display:none}
+.view.on{display:block}
+footer{position:relative;z-index:2;text-align:center;color:var(--ink-faint);font-family:var(--mono);font-size:12px;padding:0 16px 30px}
+footer a{color:inherit}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+<div class="aurora"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+<div class="grain"></div>
+<canvas id="sparkles"></canvas>
+<canvas id="confetti"></canvas>
+
+<!-- ===================== PUBLIC VIEW ===================== -->
+<main class="wrap view" id="view-public">
+  <header class="top">
+    <div class="logo"><i>🎟️</i>Gutscheinheft</div>
+  </header>
+
+  <section class="hero">
+    <div class="eyebrow">✦ Nur für dich ✦</div>
+    <h1><span class="word" style="animation-delay:.1s">Deine</span><br><span class="word shine">Gutscheine</span></h1>
+    <p>Such dir einen aus, halte den Knopf gedrückt – und schon ist er eingelöst. Ganz ohne Kleingedrucktes.</p>
+    <div class="stats" id="stats"></div>
+  </section>
+
+  <nav class="filters" id="filters">
+    <span class="slider"></span>
+    <button data-f="open" class="on">Offen</button>
+    <button data-f="done">Eingelöst</button>
+    <button data-f="all">Alle</button>
+  </nav>
+
+  <div class="grid" id="grid">
+    <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+  </div>
+</main>
+
+<!-- ===================== ADMIN VIEW ===================== -->
+<main class="wrap view" id="view-admin">
+  <header class="top">
+    <div class="logo"><i>🛠️</i>Gutschein-Werkstatt</div>
+    <a class="pill" href="#">← Zum Gutscheinheft</a>
+  </header>
+
+  <section id="admin-login" class="login card">
+    <span class="lock">🔐</span>
+    <h2>Nur für den Schenker</h2>
+    <p class="sub">Gib dein Passwort ein, um Gutscheine zu erstellen.</p>
+    <form id="loginForm">
+      <input class="field" type="password" id="pw" placeholder="Passwort" autocomplete="current-password" required>
+      <button class="btn block" style="margin-top:12px">Entsperren ✨</button>
+      <div class="err" id="loginErr"></div>
+    </form>
+  </section>
+
+  <section id="admin-app" style="display:none">
+    <div class="admin-grid">
+      <div class="card">
+        <h2>Neuer Gutschein</h2>
+        <p class="sub">Rechts siehst du live, wie er aussehen wird.</p>
+        <form id="createForm">
+          <div class="form-row">
+            <label>Emoji</label>
+            <div class="emojis" id="emojis"></div>
+          </div>
+          <div class="form-row">
+            <label for="fTitle">Titel</label>
+            <input class="field" id="fTitle" maxlength="80" placeholder="z.B. Frühstück ans Bett" required>
+          </div>
+          <div class="form-row">
+            <label for="fDesc">Beschreibung</label>
+            <textarea class="field" id="fDesc" maxlength="500" placeholder="Was genau bekommt die Person?"></textarea>
+          </div>
+          <div class="form-row">
+            <label>Farbe</label>
+            <div class="themes" id="themes"></div>
+          </div>
+          <div class="form-row">
+            <label for="fDate">Gültig bis (optional)</label>
+            <input class="field" type="date" id="fDate">
+          </div>
+          <button class="btn block" id="createBtn">Gutschein erstellen 🎁</button>
+        </form>
+        <details class="pw">
+          <summary>🔑 Passwort ändern</summary>
+          <form class="inner" id="pwForm">
+            <input class="field" type="password" id="newPw" minlength="6" placeholder="Neues Passwort" autocomplete="new-password" required>
+            <button class="btn ghost">Speichern</button>
+          </form>
+        </details>
+      </div>
+
+      <div class="preview-wrap">
+        <div class="ticket t-sunset" id="preview"></div>
+        <div class="list" id="adminList"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ===================== REDEEM MODAL ===================== -->
+<div class="modal" id="modal" aria-hidden="true">
+  <div class="shade" data-close></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <button class="closeX" data-close aria-label="Schließen">✕</button>
+    <div id="mTicket"></div>
+    <div class="panel" id="mPanel"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<footer>gemacht mit ♥ · <a href="#admin">Werkstatt</a></footer>
+
+<script>
+/* ================== CONFIG ================== */
+const SUPABASE_URL = "https://lgztiptcaqjxufbmvpcv.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Z1OZlEcr_IDbRWGy-JUUmQ_ZmuXwqJt";
+
+async function rpc(fn, args = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify(args)
+  });
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!res.ok) throw new Error(data?.message || "Etwas ist schiefgelaufen");
+  return data;
+}
+
+/* ================== HELPERS ================== */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtDate = d => new Date(d).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" });
+const todayISO = () => new Date().toISOString().slice(0, 10);
+const isExpired = g => g.valid_until && !g.redeemed_at && g.valid_until < todayISO();
+const shortCode = id => id.replace(/-/g, "").slice(0, 8).toUpperCase().replace(/(.{4})/, "$1-");
+const THEMES = ["sunset", "ocean", "forest", "candy", "gold", "galaxy"];
+const EMOJIS = ["🎁","🍕","🍫","☕","🎬","💆","🍳","🌹","🎮","🍦","🧁","🚗","🧹","🎤","🏖️","💌","🛁","🍝","🥂","🎢"];
+
+let toastT;
+function toast(msg, bad = false) {
+  const t = $("#toast");
+  t.textContent = msg; t.classList.toggle("bad", bad); t.classList.add("show");
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 3200);
+}
+
+function ticketInner(g, { tagText } = {}) {
+  const redeemed = !!g.redeemed_at, expired = isExpired(g);
+  const tag = tagText ?? (redeemed ? "Erledigt" : expired ? "Abgelaufen" : g.valid_until ? "bis " + fmtDate(g.valid_until) : "Unbegrenzt");
+  return `
+    <div class="face">
+      <div class="pattern"></div>
+      <div class="row"><div class="emoji">${esc(g.emoji || "🎁")}</div><span class="tag">${esc(tag)}</span></div>
+      <h3 ${g.__titleId ? `id="${g.__titleId}"` : ""}>${esc(g.title || "Dein Gutschein")}</h3>
+      <p class="desc">${esc(g.description || "")}</p>
+      <div class="perf"></div>
+      <div class="foot">
+        <span>№ ${g.id ? shortCode(g.id) : "XXXX-XXXX"}</span>
+        <span class="go">${redeemed ? "✓ " + fmtDate(g.redeemed_at) : expired ? "—" : "Einlösen <span>→</span>"}</span>
+      </div>
+    </div>
+    ${redeemed ? `<div class="stamp">EINGELÖST</div>` : ""}`;
+}
+
+/* 3D tilt */
+function addTilt(el, max = 10) {
+  if (matchMedia("(hover:none)").matches) return;
+  el.addEventListener("pointermove", e => {
+    const r = el.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+    el.style.transform = `rotateY(${(x - .5) * max}deg) rotateX(${(.5 - y) * max}deg) translateY(-4px)`;
+    el.querySelector(".face").style.setProperty("--mx", x * 100 + "%");
+    el.querySelector(".face").style.setProperty("--my", y * 100 + "%");
+  });
+  el.addEventListener("pointerleave", () => { el.style.transform = ""; });
+}
+
+/* ================== PUBLIC ================== */
+let vouchers = [], filter = "open";
+
+async function loadPublic() {
+  try {
+    vouchers = await rpc("gs_list");
+    renderPublic();
+  } catch (e) {
+    $("#grid").innerHTML = `<div class="empty"><span class="big">😵</span>Konnte die Gutscheine nicht laden.<br><small>${esc(e.message)}</small></div>`;
+  }
+}
+
+function renderPublic() {
+  const open = vouchers.filter(g => !g.redeemed_at && !isExpired(g));
+  const done = vouchers.filter(g => g.redeemed_at);
+  $("#stats").innerHTML = `<span class="pill"><b>${open.length}</b> offen</span><span class="pill"><b>${done.length}</b> eingelöst</span>`;
+  const all = [...open, ...vouchers.filter(g => !g.redeemed_at && isExpired(g)), ...done];
+  const list = filter === "open" ? open : filter === "done" ? done : all;
+  const grid = $("#grid");
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty"><span class="big">${filter === "done" ? "🌱" : "💫"}</span>${filter === "done" ? "Noch nichts eingelöst – worauf wartest du?" : "Gerade keine offenen Gutscheine. Bald kommt Nachschub!"}</div>`;
+    return;
+  }
+  grid.innerHTML = "";
+  list.forEach((g, i) => {
+    const el = document.createElement("article");
+    el.className = `ticket t-${g.theme}${g.redeemed_at ? " redeemed" : ""}${isExpired(g) ? " expired" : ""}`;
+    el.style.animationDelay = (i * 0.08) + "s";
+    el.style.setProperty("--sd", (i * 0.7) + "s");
+    el.tabIndex = 0;
+    el.setAttribute("role", "button");
+    el.setAttribute("aria-label", `Gutschein: ${g.title}`);
+    el.innerHTML = ticketInner(g);
+    el.addEventListener("click", () => openModal(g));
+    el.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openModal(g); } });
+    el.addEventListener("animationend", () => { el.style.animation = "none"; el.style.opacity = 1; addTilt(el); }, { once: true });
+    grid.appendChild(el);
+  });
+}
+
+function moveSlider() {
+  const on = $("#filters .on"), s = $("#filters .slider");
+  s.style.left = on.offsetLeft + "px"; s.style.width = on.offsetWidth + "px";
+}
+$("#filters").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  $("#filters .on").classList.remove("on"); b.classList.add("on");
+  filter = b.dataset.f; moveSlider(); renderPublic();
+});
+addEventListener("resize", moveSlider);
+
+/* ================== MODAL & REDEEM ================== */
+let lastFocus;
+function openModal(g) {
+  lastFocus = document.activeElement;
+  const t = document.createElement("div");
+  t.className = `ticket t-${g.theme}${g.redeemed_at ? " redeemed" : ""}`;
+  t.innerHTML = ticketInner({ ...g, __titleId: "mTitle" });
+  $("#mTicket").replaceChildren(t);
+  renderPanel(g);
+  $("#modal").classList.add("open");
+  $("#modal").setAttribute("aria-hidden", "false");
+  setTimeout(() => $("#modal .closeX").focus(), 50);
+}
+function closeModal() {
+  $("#modal").classList.remove("open");
+  $("#modal").setAttribute("aria-hidden", "true");
+  lastFocus?.focus?.();
+}
+$("#modal").addEventListener("click", e => { if (e.target.closest("[data-close]")) closeModal(); });
+addEventListener("keydown", e => { if (e.key === "Escape" && $("#modal").classList.contains("open")) closeModal(); });
+
+function renderPanel(g) {
+  const p = $("#mPanel");
+  if (g.redeemed_at) {
+    p.innerHTML = `<div class="done-msg"><div class="big">Schon eingelöst ✓</div>
+      <p>am ${fmtDate(g.redeemed_at)}${g.redeemed_note ? `<br>„${esc(g.redeemed_note)}“` : ""}</p></div>`;
+    return;
+  }
+  if (isExpired(g)) {
+    p.innerHTML = `<div class="done-msg"><div class="big">Abgelaufen ⏳</div><p>Dieser Gutschein war bis ${fmtDate(g.valid_until)} gültig.</p></div>`;
+    return;
+  }
+  p.innerHTML = `
+    <label for="note">Nachricht dazu (optional)</label>
+    <textarea class="field" id="note" maxlength="300" placeholder="z.B. Wie wär's mit Samstag? 😊"></textarea>
+    <button class="hold" id="hold"><span class="fill"></span><span class="lbl">✋ Gedrückt halten zum Einlösen</span></button>
+    <div class="hint">Halte den Knopf ca. 1 Sekunde lang gedrückt</div>`;
+  setupHold($("#hold"), () => redeem(g));
+}
+
+function setupHold(btn, onDone) {
+  const fill = btn.querySelector(".fill"), DUR = 1100;
+  let start = 0, raf = 0, done = false;
+  const step = now => {
+    const k = Math.min(1, (now - start) / DUR);
+    fill.style.transform = `scaleX(${k})`;
+    btn.style.transform = `scale(${1 - k * .03}) rotate(${Math.sin(now / 30) * k * 1.2}deg)`;
+    if (navigator.vibrate && Math.random() < k * .2) navigator.vibrate(5);
+    if (k < 1) raf = requestAnimationFrame(step);
+    else { done = true; btn.style.transform = ""; onDone(); }
+  };
+  const down = e => { if (done) return; e.preventDefault(); start = performance.now(); raf = requestAnimationFrame(step); };
+  const up = () => {
+    if (done || !start) return;
+    cancelAnimationFrame(raf); start = 0;
+    fill.style.transition = "transform .35s"; fill.style.transform = "scaleX(0)"; btn.style.transform = "";
+    setTimeout(() => fill.style.transition = "", 350);
+  };
+  btn.addEventListener("pointerdown", down);
+  ["pointerup", "pointerleave", "pointercancel"].forEach(ev => btn.addEventListener(ev, up));
+  btn.addEventListener("keydown", e => { if ((e.key === " " || e.key === "Enter") && !e.repeat) down(e); });
+  btn.addEventListener("keyup", e => { if (e.key === " " || e.key === "Enter") up(); });
+  btn.addEventListener("contextmenu", e => e.preventDefault());
+}
+
+async function redeem(g) {
+  const btn = $("#hold"), note = $("#note")?.value || "";
+  btn.querySelector(".lbl").textContent = "Wird eingelöst …";
+  try {
+    const r = await rpc("gs_redeem", { gid: g.id, note });
+    Object.assign(g, r);
+    const card = $("#mTicket .ticket");
+    card.classList.add("redeemed");
+    card.innerHTML = ticketInner(g);
+    card.querySelector(".stamp").classList.add("pop");
+    const rect = card.getBoundingClientRect();
+    confetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    $("#mPanel").innerHTML = `<div class="done-msg"><div class="big">Eingelöst! 🎉</div><p>Viel Spaß damit – der Schenker weiß jetzt Bescheid.</p></div>`;
+    renderPublic();
+  } catch (e) {
+    btn.classList.add("shake"); setTimeout(() => btn.classList.remove("shake"), 400);
+    toast(e.message, true);
+    renderPanel(g);
+  }
+}
+
+/* ================== CONFETTI ================== */
+const cf = $("#confetti"), cx = cf.getContext("2d");
+let parts = [], cfRunning = false;
+function sizeCanvas(c) { c.width = innerWidth * devicePixelRatio; c.height = innerHeight * devicePixelRatio; }
+function confetti(x, y) {
+  sizeCanvas(cf);
+  const colors = ["#ffcf5c", "#ff7a59", "#ff5e9c", "#b18cff", "#5ef2b0", "#2fd2ff", "#ffffff"];
+  const shapes = ["rect", "circle", "star"];
+  for (let i = 0; i < 180; i++) {
+    const a = Math.random() * Math.PI * 2, v = 6 + Math.random() * 14;
+    parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 8, r: 4 + Math.random() * 7,
+      c: colors[i % colors.length], s: shapes[i % 3], rot: Math.random() * 6, vr: (Math.random() - .5) * .4, life: 1 });
+  }
+  if (!cfRunning) { cfRunning = true; requestAnimationFrame(cfLoop); }
+}
+function star(ctx, r) { ctx.beginPath(); for (let i = 0; i < 10; i++) { const rr = i % 2 ? r * .45 : r, a = i * Math.PI / 5; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } ctx.closePath(); ctx.fill(); }
+function cfLoop() {
+  const d = devicePixelRatio;
+  cx.clearRect(0, 0, cf.width, cf.height);
+  parts = parts.filter(p => p.life > 0 && p.y < innerHeight + 40);
+  for (const p of parts) {
+    p.vx *= .985; p.vy = p.vy * .985 + .38; p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.life -= .006;
+    cx.save(); cx.globalAlpha = Math.min(1, p.life * 2); cx.translate(p.x * d, p.y * d); cx.rotate(p.rot); cx.scale(d, d * Math.abs(Math.cos(p.rot * 2)) + .2);
+    cx.fillStyle = p.c;
+    if (p.s === "rect") cx.fillRect(-p.r / 2, -p.r / 4, p.r, p.r / 2);
+    else if (p.s === "circle") { cx.beginPath(); cx.arc(0, 0, p.r / 2.4, 0, 7); cx.fill(); }
+    else star(cx, p.r / 1.6);
+    cx.restore();
+  }
+  if (parts.length) requestAnimationFrame(cfLoop); else { cfRunning = false; cx.clearRect(0, 0, cf.width, cf.height); }
+}
+
+/* ================== SPARKLES BACKGROUND ================== */
+(() => {
+  const c = $("#sparkles"), ctx = c.getContext("2d");
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let stars = [], mouse = { x: -999, y: -999 };
+  function init() {
+    sizeCanvas(c);
+    const n = Math.min(90, Math.floor(innerWidth * innerHeight / 14000));
+    stars = Array.from({ length: n }, () => ({ x: Math.random() * innerWidth, y: Math.random() * innerHeight,
+      r: Math.random() * 1.6 + .3, t: Math.random() * 6, s: .2 + Math.random() * .5 }));
+  }
+  addEventListener("resize", init);
+  addEventListener("pointermove", e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+  init();
+  function loop(now) {
+    const d = devicePixelRatio;
+    ctx.clearRect(0, 0, c.width, c.height);
+    for (const s of stars) {
+      s.y -= s.s * .3; if (s.y < -5) { s.y = innerHeight + 5; s.x = Math.random() * innerWidth; }
+      const dx = s.x - mouse.x, dy = s.y - mouse.y, dist = Math.hypot(dx, dy);
+      const push = dist < 120 ? (120 - dist) / 120 : 0;
+      const tw = .4 + .6 * Math.abs(Math.sin(now / 900 + s.t));
+      ctx.globalAlpha = tw * (.5 + push * .5);
+      ctx.fillStyle = push > .1 ? "#ffcf5c" : "#fff";
+      ctx.beginPath(); ctx.arc((s.x + dx / (dist || 1) * push * 18) * d, (s.y + dy / (dist || 1) * push * 18) * d, s.r * d * (1 + push), 0, 7); ctx.fill();
+    }
+    if (!reduce) requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+
+/* ================== ADMIN ================== */
+let adminPw = sessionStorageGet("gs_pw");
+const draft = { emoji: "🎁", title: "", description: "", theme: "sunset", valid_until: "" };
+
+function sessionStorageGet(k) { try { return sessionStorage.getItem(k); } catch { return null; } }
+function sessionStorageSet(k, v) { try { v == null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch {} }
+
+function buildPickers() {
+  $("#emojis").innerHTML = EMOJIS.map(e => `<button type="button" data-e="${e}" class="${e === draft.emoji ? "on" : ""}">${e}</button>`).join("")
+    + `<input class="field" id="customEmoji" maxlength="4" placeholder="+" aria-label="Eigenes Emoji">`;
+  $("#themes").innerHTML = THEMES.map(t => `<button type="button" class="t-${t}${t === draft.theme ? " on" : ""}" data-t="${t}" aria-label="Farbe ${t}"></button>`).join("");
+}
+$("#emojis").addEventListener("click", e => {
+  const b = e.target.closest("button[data-e]"); if (!b) return;
+  draft.emoji = b.dataset.e;
+  $("#emojis .on")?.classList.remove("on"); b.classList.add("on"); updatePreview(true);
+});
+$("#emojis").addEventListener("input", e => {
+  if (e.target.id !== "customEmoji" || !e.target.value.trim()) return;
+  draft.emoji = e.target.value.trim(); $("#emojis .on")?.classList.remove("on"); updatePreview(true);
+});
+$("#themes").addEventListener("click", e => {
+  const b = e.target.closest("button[data-t]"); if (!b) return;
+  draft.theme = b.dataset.t; $("#themes .on")?.classList.remove("on"); b.classList.add("on"); updatePreview(true);
+});
+["fTitle", "fDesc", "fDate"].forEach(id => $("#" + id).addEventListener("input", () => {
+  draft.title = $("#fTitle").value; draft.description = $("#fDesc").value; draft.valid_until = $("#fDate").value; updatePreview();
+}));
+
+function updatePreview(bump) {
+  const p = $("#preview");
+  p.className = `ticket t-${draft.theme}`;
+  p.innerHTML = ticketInner({ ...draft, valid_until: draft.valid_until || null });
+  if (bump) { void p.offsetWidth; p.classList.add("bump"); }
+}
+
+async function tryLogin(pw, silent) {
+  try {
+    await rpc("gs_admin_check", { pw });
+    adminPw = pw; sessionStorageSet("gs_pw", pw);
+    $("#admin-login").style.display = "none";
+    $("#admin-app").style.display = "block";
+    buildPickers(); updatePreview(); addTilt($("#preview"), 8); loadAdminList();
+  } catch (e) {
+    sessionStorageSet("gs_pw", null);
+    if (!silent) {
+      $("#loginErr").textContent = e.message;
+      const card = $("#admin-login"); card.style.animation = "shake .4s"; setTimeout(() => card.style.animation = "none", 400);
+    }
+  }
+}
+$("#loginForm").addEventListener("submit", e => { e.preventDefault(); $("#loginErr").textContent = ""; tryLogin($("#pw").value); });
+
+$("#createForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const btn = $("#createBtn"); btn.disabled = true;
+  try {
+    await rpc("gs_create", { pw: adminPw, p_emoji: draft.emoji, p_title: $("#fTitle").value, p_description: $("#fDesc").value,
+      p_theme: draft.theme, p_valid_until: $("#fDate").value || null });
+    const r = $("#preview").getBoundingClientRect();
+    confetti(r.left + r.width / 2, r.top + r.height / 2);
+    toast("Gutschein erstellt! 🎉");
+    $("#createForm").reset(); $("#customEmoji").value = "";
+    Object.assign(draft, { title: "", description: "", valid_until: "" }); updatePreview(true);
+    loadAdminList();
+  } catch (err) { toast(err.message, true); }
+  btn.disabled = false;
+});
+
+$("#pwForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const np = $("#newPw").value;
+  try { await rpc("gs_change_pw", { pw: adminPw, new_pw: np }); adminPw = np; sessionStorageSet("gs_pw", np); $("#newPw").value = ""; toast("Passwort geändert 🔑"); }
+  catch (err) { toast(err.message, true); }
+});
+
+async function loadAdminList() {
+  const list = await rpc("gs_list").catch(() => []);
+  $("#adminList").innerHTML = list.length ? list.map(g => `
+    <div class="li t-${g.theme}" data-id="${g.id}">
+      <div class="e">${esc(g.emoji)}</div>
+      <div class="t"><b>${esc(g.title)}</b>
+        <small class="${g.redeemed_at ? "ok" : ""}">${g.redeemed_at ? "✓ eingelöst " + fmtDate(g.redeemed_at) + (g.redeemed_note ? " · „" + esc(g.redeemed_note) + "“" : "") : isExpired(g) ? "abgelaufen" : "offen"}</small></div>
+      <div class="acts">
+        ${g.redeemed_at ? `<button data-a="reset" title="Wieder freischalten" aria-label="Wieder freischalten">↺</button>` : ""}
+        <button data-a="del" class="del" title="Löschen" aria-label="Löschen">🗑</button>
+      </div>
+    </div>`).join("") : `<div class="empty" style="padding:30px"><span class="big">✍️</span>Noch keine Gutscheine – erstelle deinen ersten!</div>`;
+}
+$("#adminList").addEventListener("click", async e => {
+  const b = e.target.closest("button[data-a]"); if (!b) return;
+  const row = b.closest(".li"), id = row.dataset.id;
+  if (b.dataset.a === "del" && !confirm("Diesen Gutschein wirklich löschen?")) return;
+  try {
+    if (b.dataset.a === "del") { await rpc("gs_delete", { pw: adminPw, gid: id }); row.classList.add("gone"); setTimeout(loadAdminList, 350); toast("Gelöscht"); }
+    else { await rpc("gs_reset", { pw: adminPw, gid: id }); toast("Wieder einlösbar ↺"); loadAdminList(); }
+  } catch (err) { toast(err.message, true); }
+});
+
+/* ================== ROUTER ================== */
+function route() {
+  const admin = location.hash === "#admin";
+  $("#view-public").classList.toggle("on", !admin);
+  $("#view-admin").classList.toggle("on", admin);
+  scrollTo(0, 0);
+  if (admin) { if (adminPw && $("#admin-app").style.display === "none") tryLogin(adminPw, true); }
+  else { loadPublic(); requestAnimationFrame(moveSlider); }
+}
+addEventListener("hashchange", route);
+route();
+</script>
+</body>
+</html>
