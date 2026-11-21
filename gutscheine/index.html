@@ -1811,7 +1811,9 @@ footer a:hover { color: var(--gold); border-color: var(--gold); }
   transform-origin: 0 var(--ph);
 }
 
-.lt.show { visibility: visible; }
+.lt.show { visibility: inherit; }
+.letter-stage:not(.on),
+.letter-stage:not(.on) * { pointer-events: none !important; }
 
 .lt-panel {
   position: relative;
@@ -3613,6 +3615,9 @@ const Letter = (() => {
 
   function close() {
     run++;
+    scroller.classList.remove("live");
+    lt.classList.remove("show");
+    actions.classList.remove("show");
     stage.classList.remove("on");
     stage.setAttribute("aria-hidden", "true");
     if (!$("#dialog").classList.contains("open")) document.body.classList.remove("lock");
