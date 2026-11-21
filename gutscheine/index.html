@@ -1993,6 +1993,33 @@ footer a:hover { color: var(--gold); border-color: var(--gold); }
 
 .ls-actions.show { opacity: 1; transform: none; pointer-events: auto; }
 
+.lt-burn {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.lt {
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+.burn-fx {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.ls-close { transition: color .2s, background .2s, transform .3s var(--ease), opacity .4s; }
+
 .lt.interactive {
   touch-action: none;
   cursor: grab;
@@ -3038,7 +3065,7 @@ body::before { z-index: 1; }
   <div class="ls-scroll" id="lsScroll">
     <div class="lt" id="lt"></div>
     <p class="lt-hint" id="ltHint" aria-live="polite"></p>
-    <div class="ls-actions" id="lsActions"><button class="btn ink" id="lcGo">Zu deinen Gutscheinen →</button></div>
+    <div class="ls-actions" id="lsActions" hidden><button class="btn ink" id="lcGo" tabindex="-1">Schließen</button></div>
   </div>
 
   <button class="ls-close" id="lsClose" aria-label="Brief schließen">
@@ -3869,6 +3896,8 @@ const Letter = (() => {
     const rad = a * Math.PI / 180;
     flap.style.transform = `perspective(1700px) rotateX(${a.toFixed(2)}deg)`;
     flap.style.zIndex = a > 90 ? "1" : "5";
+    flapFront.style.visibility = a > 90 ? "hidden" : "";
+    flapBack.style.visibility = a > 90 ? "" : "hidden";
     const sF = $("#lsShadeF");
     const sB = $("#lsShadeB");
     if (sF) sF.setAttribute("fill-opacity", (Math.sin(rad) * .42).toFixed(3));
@@ -3955,6 +3984,11 @@ const Letter = (() => {
 
   function setPanel(p, a) {
     p.style.transform = `perspective(2200px) rotateX(${a.toFixed(2)}deg)`;
+    const showBack = Math.abs(a) > 90;
+    const fr = p.querySelector(":scope > .lt-face.front");
+    const bk = p.querySelector(":scope > .lt-face.back");
+    if (fr) fr.style.visibility = showBack ? "hidden" : "";
+    if (bk) bk.style.visibility = showBack ? "" : "hidden";
     const s = Math.abs(Math.sin(a * Math.PI / 180));
     $$(":scope > .lt-face > .lt-shade", p).forEach(el => { el.style.opacity = (s * .4).toFixed(3); });
   }
@@ -4134,11 +4168,10 @@ const Letter = (() => {
       st.phase = "done";
       lt.classList.remove("interactive");
       lt.classList.add("flat");
-      $("#ltHint").classList.remove("show");
-      actions.classList.add("show");
+      showLtHint("Fertig gelesen? Neben den Brief tippen");
       const top = lt.getBoundingClientRect().top;
       if (top < 0) scroller.scrollTo({ top: scroller.scrollTop + top - 40, behavior: REDUCED ? "auto" : "smooth" });
-      setTimeout(() => $("#lcGo").focus({ preventScroll: true }), 300);
+      setTimeout(() => $("#lsClose").focus({ preventScroll: true }), 300);
     }
   }
 
@@ -4220,6 +4253,7 @@ const Letter = (() => {
     shadow.style.transform = "";
     shadow.style.opacity = "";
     if (my !== run) return;
+    setTimeout(() => { if (my === run) slot.classList.remove("on"); }, 350);
     st.phase = "closed";
     hint.style.opacity = "";
     env.focus({ preventScroll: true });
@@ -4229,12 +4263,14 @@ const Letter = (() => {
   let drag = null;
   env.addEventListener("pointerdown", e => {
     if (!st || (st.phase !== "closed" && st.phase !== "open") || (e.button !== undefined && e.button !== 0)) return;
-    drag = { y0: e.clientY, a0: st.angle, p0: st.pull || 0, moved: false, id: e.pointerId, phase: st.phase };
+    drag = { y0: e.clientY, a0: st.angle, p0: st.pull || 0, moved: false, id: e.pointerId, phase: st.phase, hist: [[e.clientY, performance.now()]] };
     try { env.setPointerCapture(e.pointerId); } catch {}
   });
   env.addEventListener("pointermove", e => {
     if (!drag || e.pointerId !== drag.id || st.phase !== drag.phase) return;
     const dy = e.clientY - drag.y0;
+    drag.hist.push([e.clientY, performance.now()]);
+    if (drag.hist.length > 6) drag.hist.shift();
     if (!drag.moved && Math.abs(dy) > 5) {
       drag.moved = true;
       env.classList.add("dragging");
@@ -4242,7 +4278,10 @@ const Letter = (() => {
     if (!drag.moved) return;
     const h = env.getBoundingClientRect().height;
     if (drag.phase === "closed") {
-      const raw = drag.a0 + (-dy) / (h * .85) * 180;
+      // die Laschenspitze folgt dem Finger: Projektion tip·cos(Winkel)
+      const tipY = h * (404 / 640);
+      const yRel = tipY * Math.cos(drag.a0 * Math.PI / 180) + dy;
+      const raw = Math.acos(clamp(yRel / tipY, -1, 1)) * 180 / Math.PI;
       if (!st.cracked) {
         // das Wachs hält die Lasche fest – erst ab einem Punkt springt es ab
         const held = Math.max(0, raw) * .16;
@@ -4267,14 +4306,17 @@ const Letter = (() => {
     drag = null;
     env.classList.remove("dragging");
     if (st.phase !== d.phase) return;
+    const hs = d.hist;
+    const vy = hs.length > 1 ? (hs[hs.length - 1][0] - hs[0][0]) / Math.max(1, hs[hs.length - 1][1] - hs[0][1]) : 0;
+    const flickUp = vy < -.45;
     if (d.phase === "closed") {
-      if (!d.moved || (st.cracked && st.angle > 60)) { openFlap(); return; }
+      if (!d.moved || (st.cracked && (st.angle > 60 || flickUp))) { openFlap(); return; }
       const from = st.angle;
       const seal = $("#lsSealFull");
       if (seal && !st.cracked) seal.removeAttribute("transform");
       await tween(520, k => setFlap(from * (1 - k)), E.out);
     } else {
-      if (!d.moved || st.pull > maxPull() * .42) { pullOut(); return; }
+      if (!d.moved || st.pull > maxPull() * .42 || flickUp) { pullOut(); return; }
       const from = st.pull;
       const to = envLetter.offsetHeight * .16;
       await tween(420, k => setPull(from + (to - from) * k), E.out);
@@ -4293,24 +4335,35 @@ const Letter = (() => {
   let fdrag = null;
   lt.addEventListener("pointerdown", e => {
     if (!st || (st.phase !== "unfold1" && st.phase !== "unfold2")) return;
-    fdrag = { y0: e.clientY, k0: st.fold || 0, moved: false, id: e.pointerId, phase: st.phase };
+    fdrag = { y0: e.clientY, k0: st.fold || 0, moved: false, id: e.pointerId, phase: st.phase, hist: [[e.clientY, performance.now()]] };
     try { lt.setPointerCapture(e.pointerId); } catch {}
   });
   lt.addEventListener("pointermove", e => {
     if (!fdrag || e.pointerId !== fdrag.id || st.phase !== fdrag.phase) return;
     const dy = e.clientY - fdrag.y0;
+    fdrag.hist.push([e.clientY, performance.now()]);
+    if (fdrag.hist.length > 6) fdrag.hist.shift();
     if (!fdrag.moved && Math.abs(dy) > 5) fdrag.moved = true;
     if (!fdrag.moved) return;
     const ph = parseFloat(getComputedStyle(lt).getPropertyValue("--ph")) || 300;
-    const dir = fdrag.phase === "unfold1" ? -1 : 1;
-    setFold(clamp(fdrag.k0 + dir * dy / (ph * 1.15), 0, 1));
+    // die freie Papierkante folgt dem Finger
+    if (fdrag.phase === "unfold1") {
+      const yRel = ph * Math.cos(Math.PI * fdrag.k0) + dy;
+      setFold(Math.acos(clamp(yRel / ph, -1, 1)) / Math.PI);
+    } else {
+      const yRel = -ph * Math.cos(Math.PI * fdrag.k0) + dy;
+      setFold(Math.acos(clamp(-yRel / ph, -1, 1)) / Math.PI);
+    }
   });
   const fend = async e => {
     if (!fdrag || e.pointerId !== fdrag.id) return;
     const d = fdrag;
     fdrag = null;
     if (st.phase !== d.phase) return;
-    if (!d.moved || st.fold > .38) { finishFold(st.fold); return; }
+    const hs = d.hist;
+    const vy = hs.length > 1 ? (hs[hs.length - 1][0] - hs[0][0]) / Math.max(1, hs[hs.length - 1][1] - hs[0][1]) : 0;
+    const flick = d.phase === "unfold1" ? vy < -.45 : vy > .45;
+    if (!d.moved || st.fold > .3 || flick) { finishFold(st.fold); return; }
     const from = st.fold;
     await tween(420, k => setFold(from * (1 - k)), E.out);
   };
@@ -4323,9 +4376,305 @@ const Letter = (() => {
     }
   });
 
+  /* ------------------------------------------------------------------
+     VERBRENNEN – der gelesene Brief brennt von unten ab, zerfällt zu
+     Asche und segelt pendelnd aus dem Bild
+  ------------------------------------------------------------------ */
+  let burning = false;
+
+  function makeNoise() {
+    const P = new Float32Array(256);
+    for (let i = 0; i < 256; i++) P[i] = Math.random();
+    const h = (a, b) => P[((Math.imul(a, 374761393) + Math.imul(b, 668265263)) >>> 0) & 255];
+    const sm = t => t * t * (3 - 2 * t);
+    const n = (x, y) => {
+      const xi = Math.floor(x);
+      const yi = Math.floor(y);
+      const u = sm(x - xi);
+      const v = sm(y - yi);
+      const a = h(xi, yi), b = h(xi + 1, yi), c = h(xi, yi + 1), d = h(xi + 1, yi + 1);
+      return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+    };
+    return (x, y) => n(x, y) * .55 + n(x * 2.1 + 7, y * 2.1 + 3) * .3 + n(x * 4.4 + 11, y * 4.4 + 5) * .15;
+  }
+
+  function sprite(r, stops) {
+    const c = document.createElement("canvas");
+    c.width = c.height = r * 2;
+    const x = c.getContext("2d");
+    const g = x.createRadialGradient(r, r, 0, r, r, r);
+    stops.forEach(([o, col]) => g.addColorStop(o, col));
+    x.fillStyle = g;
+    x.fillRect(0, 0, r * 2, r * 2);
+    return c;
+  }
+
+  async function burnAway() {
+    if (burning) return;
+    burning = true;
+    run++;
+    const my = run;
+    st.phase = "burning";
+    $("#ltHint").classList.remove("show");
+    $("#lsClose").style.opacity = "0";
+    lt.classList.remove("interactive");
+    scroller.style.overflow = "hidden";
+    try { navigator.vibrate && navigator.vibrate([6, 40, 6]); } catch {}
+
+    const r = lt.getBoundingClientRect();
+    const W = r.width;
+    const H = r.height;
+    const cell = Math.max(3, Math.round(Math.max(W, H) / 300));
+    const gw = Math.ceil(W / cell);
+    const gh = Math.ceil(H / cell);
+    const S = Math.max(W, H);
+
+    // Brandkarte: Abstand zu den Zündpunkten (untere Ecken) + Rauschen
+    const noise = makeNoise();
+    const field = new Float32Array(gw * gh);
+    const flick = new Float32Array(gw * gh);
+    let maxF = 0;
+    for (let j = 0; j < gh; j++) {
+      for (let i = 0; i < gw; i++) {
+        const X = (i + .5) * cell / S;
+        const Y = (j + .5) * cell / S;
+        const d1 = Math.hypot(X - W / S * .96, Y - H / S * 1.0);
+        const d2 = Math.hypot(X - W / S * .05, Y - H / S * 1.0) + .22;
+        const v = Math.min(d1, d2) * (1 + (1 - Y / (H / S)) * .25) + noise(X * 7, Y * 7) * .16;
+        field[j * gw + i] = v;
+        flick[j * gw + i] = Math.random();
+        if (v > maxF) maxF = v;
+      }
+    }
+
+    const CH = .055;   // verkohlter Saum
+    const GL = .022;   // glühende Kante
+    const SC = .09;    // angebräuntes Papier vor dem Feuer
+
+    const maskC = document.createElement("canvas");
+    maskC.width = gw;
+    maskC.height = gh;
+    const mctx = maskC.getContext("2d");
+    const mimg = mctx.createImageData(gw, gh);
+    const ov = document.createElement("canvas");
+    ov.className = "lt-burn";
+    ov.width = gw;
+    ov.height = gh;
+    lt.appendChild(ov);
+    const octx = ov.getContext("2d");
+    const oimg = octx.createImageData(gw, gh);
+
+    const fx = document.createElement("canvas");
+    fx.className = "burn-fx";
+    stage.appendChild(fx);
+    const FD = Math.min(devicePixelRatio || 1, 1.5);
+    fx.width = Math.round(innerWidth * FD);
+    fx.height = Math.round(innerHeight * FD);
+    const fctx = fx.getContext("2d");
+    const glowS = sprite(32, [[0, "rgba(255,190,90,.9)"], [.35, "rgba(255,120,30,.35)"], [1, "rgba(255,80,10,0)"]]);
+    const smokeS = sprite(64, [[0, "rgba(70,64,58,.55)"], [.6, "rgba(60,55,50,.2)"], [1, "rgba(50,46,42,0)"]]);
+    const parts = [];
+
+    lt.style.transformOrigin = "50% 50%";
+    const c0x = r.left + W / 2;
+    const c0y = r.top + H / 2;
+    let tx = 0, ty = 0, rot = 0, rx = 0, sc = 1;
+    const toScreen = (i, j) => {
+      const lx = ((i + .5) * cell - W / 2) * sc;
+      const ly = ((j + .5) * cell - H / 2) * sc;
+      const a = rot * Math.PI / 180;
+      return [c0x + tx + lx * Math.cos(a) - ly * Math.sin(a), c0y + ty + lx * Math.sin(a) + ly * Math.cos(a)];
+    };
+
+    // Schreibtisch blendet aus, die Website kommt zum Vorschein
+    const desk = $(".ls-desk", stage);
+    desk.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 1500, delay: 700, easing: "ease-in-out", fill: "forwards" });
+
+    const BURN = REDUCED ? 600 : 3500;
+    const FLY = REDUCED ? 800 : 4300;
+    const t0 = performance.now();
+    let last = t0;
+    let frame = 0;
+
+    await new Promise(resolve => {
+      const loop = now => {
+        if (my !== run) return resolve();
+        const t = now - t0;
+        const dt = Math.min(3, (now - last) / 16.67);
+        last = now;
+        frame++;
+        const kb = Math.min(1, t / BURN);
+        const T = .015 + (maxF + CH + .03) * Math.pow(kb, 1.45);
+        const k = Math.min(1, t / FLY);
+
+        // Blatt-Flug: erst kurz vom heißen Luftzug gehoben, dann pendelnd absinkend
+        const sw = t / 1000 * 2.3;
+        const amp = Math.min(120, W * .17) * (.2 + k * 1.1);
+        tx = amp * Math.sin(sw);
+        ty = (innerHeight - r.top + 80) * Math.pow(k, 2.2) - 34 * Math.sin(Math.min(1, k * 2.5) * Math.PI) * (1 - k);
+        rot = 8 * Math.sin(sw + .9) * (.35 + k);
+        rx = 16 * Math.sin(sw + 1.7) * Math.min(1, k * 1.6);
+        sc = 1 - .14 * k;
+        lt.style.transform = `translate(${tx.toFixed(1)}px, ${ty.toFixed(1)}px) perspective(1300px) rotateX(${rx.toFixed(2)}deg) rotate(${rot.toFixed(2)}deg) scale(${sc.toFixed(4)})`;
+
+        // Brandfront rechnen
+        const md = mimg.data;
+        const od = oimg.data;
+        const fl = .75 + .25 * Math.sin(t / 60);
+        for (let n = 0, q = 0; n < field.length; n++, q += 4) {
+          const v = field[n] - T;
+          md[q] = md[q + 1] = md[q + 2] = 255;
+          // weicher Übergang statt harter Pixelkante
+          const m = (v + CH) / .007;
+          md[q + 3] = m <= 0 ? 0 : m >= 1 ? 255 : 255 * m * m * (3 - 2 * m);
+          if (v < -CH) {
+            od[q] = 18; od[q + 1] = 11; od[q + 2] = 7; od[q + 3] = 255;
+            continue;
+          }
+          if (v < 0) {
+            // verkohlt: zur Feuerseite hin noch glimmend
+            const u = (v + CH) / CH;
+            const ember = u > .7 ? (u - .7) / .3 * (.55 + .45 * flick[n] * fl) : 0;
+            od[q] = 18 + ember * 230;
+            od[q + 1] = 11 + ember * 90;
+            od[q + 2] = 7 + ember * 10;
+            od[q + 3] = 255 * (.97 - u * .1);
+          } else if (v < GL) {
+            const w = v / GL;
+            const f = .8 + .2 * Math.sin(t / 45 + flick[n] * 9);
+            od[q] = 255;
+            od[q + 1] = 205 - w * 120;
+            od[q + 2] = 95 - w * 80;
+            od[q + 3] = 255 * (1 - w * .45) * f;
+          } else if (v < GL + SC) {
+            const w = (v - GL) / SC;
+            od[q] = 110;
+            od[q + 1] = 62;
+            od[q + 2] = 22;
+            od[q + 3] = 255 * (1 - w) * (1 - w) * .55;
+          } else {
+            od[q + 3] = 0;
+          }
+        }
+        octx.putImageData(oimg, 0, 0);
+        if (true) {
+          mctx.putImageData(mimg, 0, 0);
+          const url = `url(${maskC.toDataURL()})`;
+          lt.style.webkitMaskImage = url;
+          lt.style.maskImage = url;
+        }
+
+        // Funken, Glut, Asche und Rauch an der Brandkante
+        if (t < BURN + 200) {
+          for (let s = 0; s < 140; s++) {
+            const n = (Math.random() * field.length) | 0;
+            const v = field[n] - T;
+            const i = n % gw;
+            const j = (n / gw) | 0;
+            if (v >= 0 && v < GL) {
+              const [sx, sy] = toScreen(i, j);
+              if (Math.random() < .3) parts.push({ k: "glow", x: sx, y: sy, life: 1, dec: .12, r: R(10, 22) * sc });
+              if (Math.random() < .05) parts.push({ k: "ember", x: sx, y: sy, vx: R(-.6, .6), vy: R(-2.2, -.8), life: 1, dec: R(.012, .03), r: R(.8, 2), ph: R(0, 6) });
+              if (Math.random() < .018) parts.push({ k: "smoke", x: sx, y: sy, vx: R(-.3, .3), vy: R(-1.1, -.5), life: 1, dec: R(.006, .011), r: R(18, 40), g: 1 });
+            } else if (v > -CH - .012 && v < -CH + .004) {
+              if (Math.random() < .35) {
+                const [sx, sy] = toScreen(i, j);
+                parts.push({ k: "ash", x: sx, y: sy, vx: R(-.5, .5), vy: R(.2, .9), life: 1, dec: R(.006, .014), r: R(1.5, 4.5), rot: R(0, 6), vr: R(-.15, .15), ph: R(0, 6), hot: Math.random() < .35 });
+              }
+            }
+          }
+        }
+
+        fctx.setTransform(FD, 0, 0, FD, 0, 0);
+        fctx.clearRect(0, 0, innerWidth, innerHeight);
+        for (let p = parts.length - 1; p >= 0; p--) {
+          const q = parts[p];
+          q.life -= q.dec * dt;
+          if (q.life <= 0) { parts.splice(p, 1); continue; }
+          if (q.k === "glow") {
+            fctx.globalCompositeOperation = "lighter";
+            fctx.globalAlpha = q.life * .22;
+            fctx.drawImage(glowS, q.x - q.r, q.y - q.r, q.r * 2, q.r * 2);
+          } else if (q.k === "ember") {
+            q.vx += Math.sin(t / 300 + q.ph) * .03;
+            q.x += q.vx * dt;
+            q.y += q.vy * dt;
+            q.vy *= .995;
+            fctx.globalCompositeOperation = "lighter";
+            fctx.globalAlpha = q.life * (.7 + .3 * Math.sin(t / 40 + q.ph));
+            fctx.fillStyle = `rgb(255,${(150 + q.life * 80) | 0},${(60 * q.life) | 0})`;
+            fctx.beginPath();
+            fctx.arc(q.x, q.y, q.r, 0, Math.PI * 2);
+            fctx.fill();
+          } else if (q.k === "smoke") {
+            q.x += q.vx * dt;
+            q.y += q.vy * dt;
+            q.r += .35 * dt;
+            fctx.globalCompositeOperation = "source-over";
+            fctx.globalAlpha = Math.min(1, q.life * 1.3) * .32;
+            fctx.drawImage(smokeS, q.x - q.r, q.y - q.r, q.r * 2, q.r * 2);
+          } else {
+            // Ascheflocke: segelt pendelnd, glimmt anfangs noch
+            q.vx = q.vx * .98 + Math.sin(t / 420 + q.ph) * .05;
+            q.vy = Math.min(1.4, q.vy + .012 * dt);
+            q.x += q.vx * dt;
+            q.y += q.vy * dt;
+            q.rot += q.vr * dt;
+            fctx.save();
+            fctx.translate(q.x, q.y);
+            fctx.rotate(q.rot);
+            fctx.scale(1, .45 + .55 * Math.abs(Math.sin(t / 260 + q.ph)));
+            fctx.globalCompositeOperation = "source-over";
+            fctx.globalAlpha = Math.min(1, q.life * 1.5) * .85;
+            const glowing = q.hot && q.life > .6;
+            fctx.fillStyle = glowing ? `rgb(${(120 + (q.life - .6) * 340) | 0},${(45 + (q.life - .6) * 120) | 0},20)` : "rgb(46,42,38)";
+            fctx.fillRect(-q.r, -q.r * .6, q.r * 2, q.r * 1.2);
+            fctx.restore();
+          }
+        }
+        fctx.globalAlpha = 1;
+        fctx.globalCompositeOperation = "source-over";
+
+        if (t > Math.max(BURN, FLY) && parts.length === 0) return resolve();
+        if (t > Math.max(BURN, FLY) + 3500) return resolve();
+        requestAnimationFrame(loop);
+      };
+      requestAnimationFrame(loop);
+    });
+
+    // aufräumen und Seite freigeben
+    ov.remove();
+    fx.remove();
+    desk.getAnimations().forEach(a => a.cancel());
+    lt.style.webkitMaskImage = "";
+    lt.style.maskImage = "";
+    lt.style.transform = "";
+    lt.style.transformOrigin = "";
+    scroller.style.overflow = "";
+    $("#lsClose").style.opacity = "";
+    burning = false;
+    stage.style.transition = "none";
+    close(true);
+    requestAnimationFrame(() => { stage.style.transition = ""; });
+  }
+
+  function requestClose() {
+    if (burning) return;
+    if (st && (st.phase === "done" || st.phase === "unfold1" || st.phase === "unfold2") && lt.classList.contains("show")) burnAway();
+    else close();
+  }
+
   /* ------------------------------ API ------------------------------- */
   function reset() {
     st = { phase: "closed", cracked: false, angle: 0, pull: 0, sink: 0, fold: 0 };
+    $$(".lt-burn", lt).forEach(c => c.remove());
+    $$(".burn-fx", stage).forEach(c => c.remove());
+    lt.style.webkitMaskImage = "";
+    lt.style.maskImage = "";
+    lt.style.transformOrigin = "";
+    scroller.style.overflow = "";
+    $("#lsClose").style.opacity = "";
+    $(".ls-desk", stage).getAnimations().forEach(a => a.cancel());
     lt.classList.remove("interactive");
     $("#ltHint").classList.remove("show");
     const shadow = $(".env-shadow", env);
@@ -4362,7 +4711,7 @@ const Letter = (() => {
     deliver();
   }
 
-  function close() {
+  function close(silent = false) {
     run++;
     $("#ltHint").classList.remove("show");
     lt.classList.remove("interactive");
@@ -4374,15 +4723,20 @@ const Letter = (() => {
     if (!$("#dialog").classList.contains("open")) document.body.classList.remove("lock");
     store.set("gs_letter_seen", "1");
     const v = $("#view-public.on");
-    if (v && !REDUCED) v.animate([
+    if (v && !REDUCED && !silent) v.animate([
       { filter: "blur(10px)", transform: "scale(.985)", opacity: .35 },
       { filter: "blur(0)", transform: "none", opacity: 1 }
     ], { duration: 1100, easing: "cubic-bezier(.16,1,.3,1)" });
   }
 
-  $("#lcGo").addEventListener("click", close);
-  $("#lsClose").addEventListener("click", close);
-  addEventListener("keydown", e => { if (e.key === "Escape" && stage.classList.contains("on")) close(); });
+  $("#lcGo").addEventListener("click", () => requestClose());
+  $("#lsClose").addEventListener("click", () => requestClose());
+  addEventListener("keydown", e => { if (e.key === "Escape" && stage.classList.contains("on")) requestClose(); });
+  // neben den Brief tippen, wenn er fertig gelesen ist
+  scroller.addEventListener("click", e => {
+    if (!st || st.phase !== "done" || lt.contains(e.target)) return;
+    burnAway();
+  });
 
   return { open, close, get isOpen() { return stage.classList.contains("on"); } };
 })();
