@@ -425,12 +425,32 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.8); curs
     radial-gradient(circle var(--notch) at 100% 100%, #0000 97%, #000) bottom / 100% 51% no-repeat;
 }
 
-/* feine Zierlinie innen */
+.tk-body { transition: filter .9s var(--ease); }
+.tk-body > * { position: relative; z-index: 1; }
+
+/* Guilloche wie auf Banknoten, nach links ausblendend */
+.tk-body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--guilloche);
+  background-size: 420px 220px;
+  background-position: right -60px center;
+  background-repeat: no-repeat;
+  opacity: .1;
+  -webkit-mask: linear-gradient(90deg, transparent 25%, #000 80%);
+  mask: linear-gradient(90deg, transparent 25%, #000 80%);
+  pointer-events: none;
+}
+
+.t-gold .tk-body::before { filter: invert(1); opacity: .07; }
+
+/* feine Zierlinie innen, champagnerfarben */
 .tk-body::after {
   content: "";
   position: absolute;
   inset: 7px 0 7px 7px;
-  border: 1px solid rgba(255, 255, 255, .07);
+  border: 1px solid rgba(232, 205, 150, .2);
   border-right: 0;
   border-radius: 10px 0 0 10px;
   pointer-events: none;
@@ -599,24 +619,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.8); curs
   width: 18px;
   height: 18px;
   color: var(--ok);
-}
-
-/* Riss-Linie, die beim Ziehen von oben nach unten wächst */
-.tk-rip {
-  position: absolute;
-  top: 0;
-  right: var(--stub);
-  width: 2px;
-  height: 100%;
-  margin-right: -1px;
-  transform-origin: top;
-  transform: scaleY(0);
-  background: linear-gradient(to bottom, rgba(255, 248, 232, .95), rgba(255, 248, 232, .6));
-  box-shadow: 0 0 10px rgba(255, 236, 200, .55);
-  pointer-events: none;
-  z-index: 2;
-  opacity: 0;
-  transition: opacity .2s;
 }
 
 .ticket.is-redeemed .tk-body {
@@ -818,8 +820,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.8); curs
   40% { transform: rotate(1deg); }
 }
 
-.tk-stub.torn { clip-path: var(--torn-stub); }
-
 .tear-hint {
   display: flex;
   align-items: center;
@@ -860,9 +860,39 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.8); curs
 .fiber {
   position: fixed;
   z-index: 60;
-  width: 3px;
-  height: 7px;
+  width: 1.5px;
+  height: 4px;
   border-radius: 1px;
+  background: rgba(255, 248, 235, .8);
+  pointer-events: none;
+}
+
+#tearCanvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 56;
+  pointer-events: none;
+}
+
+.tk-edge,
+.tk-edge-live {
+  position: absolute;
+  top: 0;
+  left: calc(100% - var(--stub) - 6px);
+  width: 12px;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.tear-zone::before {
+  content: "";
+  position: absolute;
+  inset: -40px -60px;
+  background: radial-gradient(closest-side, rgba(216, 185, 126, .07), transparent);
   pointer-events: none;
 }
 
@@ -1637,15 +1667,49 @@ function countTo(el, to) {
   requestAnimationFrame(step);
 }
 
-/* Gerissene Kanten – einmal erzeugt und als CSS-Variable abgelegt */
+/* Statische Risskante (für eingelöste Tickets in der Übersicht) und
+   Guilloche-Muster wie auf Banknoten – beides einmal erzeugt */
+let STATIC_EDGE = "";
 (() => {
-  const n = 30;
-  const off = Array.from({ length: n + 1 }, (_, i) => (i % 2 ? 1.5 : 0) + Math.random() * 3);
-  const ys = off.map((_, i) => (i / n * 100).toFixed(2) + "%");
-  const body = ["0 0", ...off.map((o, i) => `calc(100% - ${o.toFixed(1)}px) ${ys[i]}`), "0 100%"];
-  const stub = [`${off[0].toFixed(1)}px 0`, "100% 0", "100% 100%", ...off.map((o, i) => `${o.toFixed(1)}px ${ys[i]}`).reverse()];
-  document.documentElement.style.setProperty("--torn-body", `polygon(${body.join(",")})`);
-  document.documentElement.style.setProperty("--torn-stub", `polygon(${stub.join(",")})`);
+  const H = 200;
+  const pts = [];
+  let drift = -1.6;
+  for (let y = 0; y <= H; y += 1.5) {
+    drift = clamp(drift + (Math.random() - .5) * .9, -3, -.7);
+    const perf = -.9 * Math.pow(Math.max(0, Math.cos((y - 2.5) / 10 * Math.PI * 2)), 3);
+    pts.push([clamp(drift + perf + (Math.random() - .5) * .9, -3.9, -.15), Math.min(y, H)]);
+  }
+  const n = v => (v < 0 ? `- ${(-v).toFixed(2)}px` : `+ ${v.toFixed(2)}px`);
+  const poly = ["0 0", ...pts.map(([x, y]) => `calc(100% ${n(x)}) ${(y / H * 100).toFixed(2)}%`), "0 100%"];
+  document.documentElement.style.setProperty("--torn-body", `polygon(${poly.join(",")})`);
+
+  const inner = pts.filter(p => p[1] > 10 && p[1] < H - 10);
+  const d = inner.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(2)} ${p[1].toFixed(1)}`).join("");
+  let hairs = "";
+  inner.forEach(p => {
+    if (Math.random() > .5) return;
+    hairs += `M${p[0].toFixed(2)} ${p[1].toFixed(1)}l${(.8 + Math.random() * 2).toFixed(2)} ${((Math.random() - .5) * 2.4).toFixed(2)}`;
+  });
+  STATIC_EDGE = `<svg class="tk-edge" viewBox="-6 0 12 ${H}" preserveAspectRatio="none" aria-hidden="true">
+    <g fill="none" stroke-linecap="round">
+      <path d="${d}" stroke="rgba(255,249,238,.14)" stroke-width="3.2" vector-effect="non-scaling-stroke"/>
+      <path d="${d}" stroke="rgba(255,249,238,.5)" stroke-width="1.1" vector-effect="non-scaling-stroke"/>
+      <path d="${hairs}" stroke="rgba(255,249,238,.4)" stroke-width=".5" vector-effect="non-scaling-stroke"/>
+    </g></svg>`;
+
+  // Guilloche
+  let paths = "";
+  for (let i = 0; i < 16; i++) {
+    const ph = i * .39;
+    let dd = "";
+    for (let x = 0; x <= 420; x += 5) {
+      const y = 110 + Math.sin(x * .021 + ph) * (52 + i * 2.2) * Math.cos(x * .006 + i * .2) + Math.sin(x * .07 + ph * 2) * 6;
+      dd += `${x ? "L" : "M"}${x} ${y.toFixed(1)}`;
+    }
+    paths += `<path d='${dd}'/>`;
+  }
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='420' height='220' viewBox='0 0 420 220'><g fill='none' stroke='white' stroke-width='.6'>${paths}</g></svg>`;
+  document.documentElement.style.setProperty("--guilloche", `url("data:image/svg+xml,${encodeURIComponent(svg)}")`);
 })();
 
 /* =====================================================================
@@ -1679,7 +1743,7 @@ function ticketHTML(g, { titleId = "" } = {}) {
       <div class="tk-foot"><span>Nr. ${shortCode(g.id)}</span></div>
     </div>
     ${stubHTML}
-    <span class="tk-rip" aria-hidden="true"></span>`;
+    ${g.redeemed_at ? STATIC_EDGE : ""}`;
 }
 
 function ticketClass(g) {
@@ -1838,6 +1902,7 @@ function closeDialog() {
   d.classList.remove("open");
   d.setAttribute("aria-hidden", "true");
   document.body.classList.remove("lock");
+  Tear.cancel();
   if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
 }
 
@@ -1878,175 +1943,686 @@ function resultHTML(g, animate = true) {
 }
 
 /* =====================================================================
-   ABREISSEN
-   Der Abschnitt dreht sich um seine untere linke Ecke – wie beim
-   echten Abreißen entlang der Perforation von oben nach unten.
+   ABREISSEN – Papier-Simulation
+   ---------------------------------------------------------------------
+   Sobald man den Abschnitt greift, wird er auf einem Canvas gezeichnet:
+   - Der Riss läuft entlang der Perforation von oben nach unten, so weit
+     man zieht (er wächst nur, wie bei echtem Papier).
+   - Der gelöste Teil dreht sich um die Rissspitze und biegt sich dabei
+     weich (in feinen Streifen), mit Knickschatten und Schlagschatten.
+   - Beide Rissränder zeigen helle Papierfasern.
+   - Ist der Abschnitt ganz ab, hängt er am Finger und fällt beim
+     Loslassen mit Schwung, Drehung und Flattern (Vorder-/Rückseite).
 ===================================================================== */
-const TEAR_AT = 24;
-const MAX_ROT = 34;
+const Tear = (() => {
+  const cv = document.createElement("canvas");
+  cv.id = "tearCanvas";
+  cv.setAttribute("aria-hidden", "true");
+  document.body.appendChild(cv);
+  const ctx = cv.getContext("2d");
+  let D = 1;
+  let VW = 0;
+  let VH = 0;
+
+  function size() {
+    D = Math.min(devicePixelRatio || 1, 2);
+    VW = innerWidth;
+    VH = innerHeight;
+    cv.width = Math.round(VW * D);
+    cv.height = Math.round(VH * D);
+  }
+  size();
+  addEventListener("resize", size);
+
+  const smooth = k => (k <= 0 ? 0 : k >= 1 ? 1 : k * k * (3 - 2 * k));
+  const rnd = (a, b) => a + Math.random() * (b - a);
+
+  let noiseCanvas = null;
+  function noise() {
+    if (noiseCanvas) return noiseCanvas;
+    const n = document.createElement("canvas");
+    n.width = n.height = 128;
+    const c = n.getContext("2d");
+    const img = c.createImageData(128, 128);
+    for (let i = 0; i < img.data.length; i += 4) {
+      const light = Math.random() < .5;
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = light ? 255 : 0;
+      img.data[i + 3] = Math.random() * (light ? 18 : 14);
+    }
+    c.putImageData(img, 0, 0);
+    noiseCanvas = n;
+    return n;
+  }
+
+  /** "color(srgb r g b / a)" → "rgba(...)" für ältere Canvas-Implementierungen */
+  function cssColor(c) {
+    const m = /^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+))?\)/.exec(c);
+    if (!m) return c;
+    const to = v => Math.round(parseFloat(v) * 255);
+    return `rgba(${to(m[1])},${to(m[2])},${to(m[3])},${m[4] ?? 1})`;
+  }
+
+  /** Rissverlauf in px: x ≤ 0 (frisst sich leicht in den Hauptteil),
+      folgt grob den Perforationslöchern (Periode 10px) */
+  function makeProfile(H) {
+    const pts = [];
+    let drift = -1.6;
+    for (let y = 0; y <= H; y += 1.5) {
+      drift += rnd(-.45, .45);
+      drift = clamp(drift, -3, -.7);
+      const perf = -.9 * Math.pow(Math.max(0, Math.cos((y - 2.5) / 10 * Math.PI * 2)), 3);
+      pts.push([clamp(drift + perf + rnd(-.45, .45), -3.9, -.15), y]);
+    }
+    if (pts[pts.length - 1][1] < H) pts.push([pts[pts.length - 1][0], H]);
+    return pts;
+  }
+
+  /** helle, faserige Risskante; dir = Richtung der Fasern (+1 rechts, −1 links) */
+  function drawFibers(x, prof, dir, notch, H) {
+    const pts = prof.filter(p => p[1] > notch - 1 && p[1] < H - notch + 1);
+    if (pts.length < 2) return;
+    const path = () => {
+      x.beginPath();
+      pts.forEach((p, i) => (i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])));
+    };
+    x.save();
+    x.lineCap = "round";
+    x.lineJoin = "round";
+    x.strokeStyle = "rgba(255,249,238,.14)";
+    x.lineWidth = 3.2;
+    path();
+    x.stroke();
+    x.strokeStyle = "rgba(255,249,238,.55)";
+    x.lineWidth = 1.1;
+    path();
+    x.stroke();
+    x.lineWidth = .45;
+    pts.forEach(p => {
+      if (Math.random() > .55) return;
+      x.strokeStyle = `rgba(255,249,238,${rnd(.25, .65).toFixed(2)})`;
+      x.beginPath();
+      x.moveTo(p[0], p[1]);
+      x.quadraticCurveTo(p[0] + dir * rnd(.5, 1.5), p[1] + rnd(-1, 1), p[0] + dir * rnd(1, 2.8), p[1] + rnd(-1.8, 1.8));
+      x.stroke();
+    });
+    x.restore();
+  }
+
+  /** Textur des Abschnitts (Vorderseite / Rückseite, mit oder ohne Fasern) */
+  function buildTexture(s, { fibers = false, back = false } = {}) {
+    const { W, H, M, prof, col, notch } = s;
+    const c = document.createElement("canvas");
+    c.width = Math.ceil((W + M) * D);
+    c.height = Math.ceil(H * D);
+    const x = c.getContext("2d");
+    x.scale(D, D);
+    x.translate(M, 0);
+
+    const r = 14;
+    x.beginPath();
+    x.moveTo(prof[0][0], 0);
+    x.lineTo(W - r, 0);
+    x.arcTo(W, 0, W, r, r);
+    x.lineTo(W, H - r);
+    x.arcTo(W, H, W - r, H, r);
+    for (let i = prof.length - 1; i >= 0; i--) x.lineTo(prof[i][0], prof[i][1]);
+    x.closePath();
+    x.save();
+    x.clip();
+
+    x.fillStyle = col.paper;
+    x.fillRect(-M, 0, W + M, H);
+    if (back) {
+      x.fillStyle = "rgba(255,255,255,.07)";
+      x.fillRect(-M, 0, W + M, H);
+    }
+    const g = x.createLinearGradient(0, 0, W * .7, H);
+    g.addColorStop(0, "rgba(255,255,255,.07)");
+    g.addColorStop(.45, "rgba(255,255,255,0)");
+    g.addColorStop(1, "rgba(0,0,0,.16)");
+    x.fillStyle = g;
+    x.fillRect(-M, 0, W + M, H);
+    x.fillStyle = x.createPattern(noise(), "repeat");
+    x.fillRect(-M, 0, W + M, H);
+
+    if (!back) {
+      // Perforation (ein Teil der Löcher bleibt am Abschnitt)
+      x.fillStyle = col.line;
+      for (let y = notch + 4; y < H - notch - 4; y += 10) x.fillRect(0, y, 1.5, Math.min(5, H - notch - 4 - y));
+      // Beschriftung
+      const L = s.label;
+      if (L) {
+        x.save();
+        x.fillStyle = col.soft;
+        x.font = L.font;
+        x.textBaseline = "middle";
+        x.translate(L.x + L.w / 2, L.y + L.h);
+        x.rotate(-Math.PI / 2);
+        let pos = 0;
+        for (const ch of L.text) {
+          x.fillText(ch, pos, 0);
+          pos += x.measureText(ch).width + L.ls;
+        }
+        x.restore();
+      }
+      // Strichcode
+      const B = s.barcode;
+      if (B) {
+        x.save();
+        x.globalAlpha = .5;
+        x.fillStyle = col.ink;
+        for (let bx = 0; bx < B.w; bx += 10) {
+          [[0, 1], [3, 2], [6, 1]].forEach(([o, w]) => {
+            if (bx + o < B.w) x.fillRect(B.x + bx + o, B.y, Math.min(w, B.w - bx - o), B.h);
+          });
+        }
+        x.restore();
+      }
+    }
+    x.restore();
+
+    // Kerben oben und unten
+    x.globalCompositeOperation = "destination-out";
+    x.beginPath();
+    x.arc(0, 0, notch, 0, Math.PI * 2);
+    x.fill();
+    x.beginPath();
+    x.arc(0, H, notch, 0, Math.PI * 2);
+    x.fill();
+    x.globalCompositeOperation = "source-over";
+
+    if (fibers) drawFibers(x, prof, -1, notch, H);
+    return c;
+  }
+
+  /** Risskante am Hauptteil: Clip-Path + SVG-Fasern, die mit dem Riss wachsen */
+  function prepareBody(s) {
+    const { body, prof, H, notch } = s;
+    const n = v => (v < 0 ? `- ${(-v).toFixed(2)}px` : `+ ${v.toFixed(2)}px`);
+    const poly = ["0px 0px", ...prof.map(([x, y]) => `calc(100% ${n(x)}) ${y.toFixed(1)}px`), `0px ${H}px`];
+    body.style.clipPath = `polygon(${poly.join(",")})`;
+
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("class", "tk-edge-live");
+    svg.setAttribute("viewBox", `-6 0 12 ${H}`);
+    svg.style.height = H + "px";
+    const id = "rip" + Math.random().toString(36).slice(2, 8);
+    const pts = prof.filter(p => p[1] > notch - 1 && p[1] < H - notch + 1);
+    const d = pts.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(2)} ${p[1].toFixed(1)}`).join("");
+    let hairs = "";
+    pts.forEach(p => {
+      if (Math.random() > .55) return;
+      hairs += `M${p[0].toFixed(2)} ${p[1].toFixed(1)}q${rnd(.5, 1.5).toFixed(2)} ${rnd(-1, 1).toFixed(2)} ${rnd(1, 2.8).toFixed(2)} ${rnd(-1.8, 1.8).toFixed(2)}`;
+    });
+    svg.innerHTML = `
+      <defs><clipPath id="${id}"><rect x="-6" y="0" width="12" height="0"/></clipPath></defs>
+      <g clip-path="url(#${id})" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="${d}" stroke="rgba(255,249,238,.14)" stroke-width="3.2"/>
+        <path d="${d}" stroke="rgba(255,249,238,.55)" stroke-width="1.1"/>
+        <path d="${hairs}" stroke="rgba(255,249,238,.45)" stroke-width=".45"/>
+      </g>`;
+    s.ticket.appendChild(svg);
+    s.edgeRect = svg.querySelector("rect");
+    s.edgeSvg = svg;
+  }
+
+  /* ------------------------------------------------------------------ */
+  let s = null;
+  let raf = 0;
+
+  function init(stub, g, onDetach, onDone) {
+    const ticket = stub.closest(".ticket");
+    const body = $(".tk-body", ticket);
+    const r = stub.getBoundingClientRect();
+    const W = r.width;
+    const H = r.height;
+    const cs = getComputedStyle(stub);
+    const ts = getComputedStyle(ticket);
+    const lab = $(".tk-stub-label", stub);
+    const bar = $(".tk-barcode", stub);
+    const rel = el => {
+      const q = el.getBoundingClientRect();
+      return { x: q.left - r.left, y: q.top - r.top, w: q.width, h: q.height };
+    };
+    const ls = getComputedStyle(lab);
+    s = {
+      g, ticket, body, stub, W, H, M: 7, notch: 11,
+      prof: makeProfile(H),
+      col: {
+        paper: cssColor(cs.backgroundColor),
+        line: cssColor(ts.getPropertyValue("--tk-line").trim() || "rgba(255,255,255,.3)"),
+        soft: cssColor(ls.color),
+        ink: cssColor(ts.getPropertyValue("--tk-ink").trim() || "#fff")
+      },
+      label: { ...rel(lab), text: lab.textContent.toUpperCase(), font: `${ls.fontWeight} ${ls.fontSize} ${ls.fontFamily}`, ls: parseFloat(ls.letterSpacing) || 0 },
+      barcode: rel(bar),
+      tip: 0, theta: 0, omega: 0, sc: 1,
+      mode: "rest", onDetach, onDone,
+      hist: [], lastTick: 0
+    };
+    s.texA = buildTexture(s);
+    s.texB = buildTexture(s, { fibers: true });
+    s.texBack = buildTexture(s, { back: true, fibers: true });
+    prepareBody(s);
+    stub.style.opacity = "0";
+    start();
+  }
+
+  function origin() {
+    const tr = s.ticket.getBoundingClientRect();
+    return { x: tr.right - s.W, y: tr.top };
+  }
+
+  /** Biegezone: wird kürzer, je weiter der Riss ist → am Ende fast starr */
+  const bendLen = () => Math.max(6, Math.min(48, s.tip * .6, (s.H - s.tip) * 1.4 + 8));
+
+  function mapPoint(o, u, v, th, sc) {
+    const px = o.x;
+    const py = o.y + s.tip;
+    const dx = u * sc;
+    const dy = (v - s.tip) * sc;
+    return [px + dx * Math.cos(th) - dy * Math.sin(th), py + dx * Math.sin(th) + dy * Math.cos(th)];
+  }
+
+  function drawSlice(o, tex, v0, h, th, sc, shade) {
+    const hh = Math.min(h, s.H - v0);
+    if (hh <= 0) return;
+    const px = o.x;
+    const py = o.y + s.tip;
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.rotate(th);
+    ctx.scale(sc, sc);
+    ctx.translate(-px, -py);
+    ctx.drawImage(tex, 0, v0 * D, tex.width, hh * D, o.x - s.M, o.y + v0, s.W + s.M, hh);
+    if (shade) {
+      ctx.beginPath();
+      ctx.rect(o.x - s.M, o.y + v0, s.W + s.M, hh);
+      ctx.clip();
+      ctx.globalCompositeOperation = "source-atop";
+      ctx.fillStyle = shade;
+      ctx.fillRect(o.x - s.M, o.y + v0, s.W + s.M, hh);
+    }
+    ctx.restore();
+  }
+
+  function drawAttached(o) {
+    const t = s.tip;
+    const lift = clamp(s.theta / .7, 0, 1);
+    const B = bendLen();
+    const rigidEnd = Math.max(0, t - B);
+    const thAt = v => s.theta * smooth((t - v) / B);
+    const scAt = v => 1 + .03 * lift * smooth((t - v) / B);
+
+    // fester (noch verbundener) Teil
+    if (t < s.H) ctx.drawImage(s.texA, 0, t * D, s.texA.width, (s.H - t) * D, o.x - s.M, o.y + t, s.W + s.M, s.H - t);
+    if (t <= 0) return;
+
+    // Schlagschatten der Lasche
+    if (s.theta > .004) {
+      const left = [];
+      const right = [];
+      for (let v = 0; v <= t; v += 4) {
+        left.push(mapPoint(o, 0, v, thAt(v), scAt(v)));
+        right.push(mapPoint(o, s.W, v, thAt(v), scAt(v)));
+      }
+      ctx.save();
+      ctx.shadowColor = `rgba(0,0,0,${(.6 * lift).toFixed(3)})`;
+      ctx.shadowBlur = 8 + 22 * lift;
+      ctx.shadowOffsetX = 3 + 8 * lift;
+      ctx.shadowOffsetY = 4 + 14 * lift;
+      ctx.fillStyle = s.col.paper;
+      ctx.beginPath();
+      right.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
+      for (let i = left.length - 1; i >= 0; i--) ctx.lineTo(left[i][0], left[i][1]);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // starrer Teil oben, dann die Biegezone in feinen Streifen
+    if (rigidEnd > 0) drawSlice(o, s.texB, 0, rigidEnd + 3, s.theta, scAt(0), lift > .02 ? `rgba(255,255,255,${(.05 * lift).toFixed(3)})` : null);
+    for (let v = Math.floor(rigidEnd); v < t; v += 1) {
+      const k = clamp((t - v - .5) / B, 0, 1);
+      const curv = 6 * k * (1 - k) / 1.5;
+      const shade = s.theta > .01 ? `rgba(0,0,0,${(.26 * lift * curv).toFixed(3)})` : null;
+      drawSlice(o, s.texB, v, Math.min(4, t - v + 0.6), s.theta * smooth(k), 1 + .03 * lift * smooth(k), shade);
+    }
+  }
+
+  function drawFree() {
+    const p = s.free;
+    const sx = Math.cos(p.phase);
+    const tex = sx >= 0 ? s.texB : s.texBack;
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.th);
+    ctx.shadowColor = "rgba(0,0,0,.45)";
+    ctx.shadowBlur = 24;
+    ctx.shadowOffsetX = 8;
+    ctx.shadowOffsetY = 18;
+    ctx.scale((Math.abs(sx) < .04 ? .04 * Math.sign(sx || 1) : sx) * p.sc, p.sc);
+    ctx.drawImage(tex, -s.W / 2 - s.M, -s.H / 2, s.W + s.M, s.H);
+    ctx.shadowColor = "transparent";
+    const dark = (1 - Math.abs(sx)) * .35;
+    if (dark > .01) {
+      ctx.globalCompositeOperation = "source-atop";
+      ctx.fillStyle = `rgba(0,0,0,${dark.toFixed(3)})`;
+      ctx.fillRect(-s.W / 2 - s.M, -s.H / 2, s.W + s.M, s.H);
+    }
+    ctx.restore();
+  }
+
+  function render() {
+    ctx.setTransform(D, 0, 0, D, 0, 0);
+    ctx.clearRect(0, 0, VW, VH);
+    if (!s) return;
+    if (s.free) drawFree();
+    else drawAttached(origin());
+    if (s.edgeRect) s.edgeRect.setAttribute("height", String(s.free ? s.H : s.tip));
+    const m = $("#tearMeter");
+    if (m) m.style.transform = `scaleX(${(s.free ? 1 : s.tip / s.H).toFixed(3)})`;
+  }
+
+  /* --------------------------- Physik ------------------------------- */
+  let last = 0;
+  function loop(now) {
+    if (!s) return;
+    const dt = clamp((now - (last || now)) / 16.67, 0, 3);
+    last = now;
+
+    if (s.mode === "spring") {
+      // gedämpfte Feder zurück in die Ruhelage (Riss bleibt bestehen)
+      s.omega += (-.16 * s.theta - .32 * s.omega) * dt;
+      s.theta += s.omega * dt;
+      if (Math.abs(s.theta) < .0015 && Math.abs(s.omega) < .0015) {
+        s.theta = 0;
+        s.omega = 0;
+        s.mode = "rest";
+      }
+    } else if (s.mode === "auto") {
+      const k = clamp((now - s.autoStart) / 1300, 0, 1);
+      const e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      setTip(e * s.H);
+      s.theta = .32 * Math.sin(Math.min(1, k * 1.4) * Math.PI / 2);
+      if (k >= 1) detach({ vx: 2.2, vy: -3.5, release: true });
+    } else if (s.mode === "follow") {
+      const f = s.free;
+      const v = velocity();
+      f.thTarget = f.thBase + clamp(v.vx * .02, -.5, .5);
+      f.th += (f.thTarget - f.th) * .12 * dt;
+      const [gx, gy] = [(s.grab.u - s.W / 2) * f.sc, (s.grab.v - s.H / 2) * f.sc];
+      const cx = s.pointer.x - (gx * Math.cos(f.th) - gy * Math.sin(f.th));
+      const cy = s.pointer.y - (gx * Math.sin(f.th) + gy * Math.cos(f.th));
+      f.offX *= Math.pow(.82, dt);
+      f.offY *= Math.pow(.82, dt);
+      f.x = cx + f.offX;
+      f.y = cy + f.offY;
+      f.sc += (1.04 - f.sc) * .1 * dt;
+    } else if (s.mode === "fall") {
+      const f = s.free;
+      f.vx = f.vx * Math.pow(.992, dt) + Math.sin(f.phase * .7) * .1 * dt;
+      f.vy = f.vy * Math.pow(.985, dt) + .42 * dt;
+      f.x += f.vx * dt;
+      f.y += f.vy * dt;
+      f.om *= Math.pow(.995, dt);
+      f.th += f.om * dt;
+      f.phase += f.ps * dt;
+      f.sc += (1 - f.sc) * .05 * dt;
+      if (f.y - s.H > VH + 40 || now - f.t0 > 4000) {
+        finish();
+        return;
+      }
+    }
+    render();
+    raf = requestAnimationFrame(loop);
+  }
+
+  function start() {
+    cancelAnimationFrame(raf);
+    last = 0;
+    raf = requestAnimationFrame(loop);
+  }
+
+  function setTip(t) {
+    const nt = clamp(Math.max(s.tip, t), 0, s.H);
+    // feine Haptik, wenn der Riss durch die Perforation „knackt“
+    if (Math.floor(nt / 20) > Math.floor(s.tip / 20)) {
+      try { navigator.vibrate && navigator.vibrate(3); } catch {}
+    }
+    s.tip = nt;
+  }
+
+  function velocity() {
+    const h = s.hist;
+    if (h.length < 2) return { vx: 0, vy: 0 };
+    const a = h[0];
+    const b = h[h.length - 1];
+    const dt = Math.max(1, b.t - a.t);
+    return { vx: (b.x - a.x) / dt * 16.67, vy: (b.y - a.y) / dt * 16.67 };
+  }
+
+  function detach({ vx = 0, vy = 0, release = false } = {}) {
+    if (s.free) return;
+    const o = origin();
+    // aktuelle Lage der (fast starren) Lasche als starrer Körper
+    const th = s.theta;
+    const sc = 1 + .03 * clamp(th / .7, 0, 1);
+    const [cx, cy] = mapPoint(o, s.W / 2, s.H / 2, th, sc);
+    s.tip = s.H;
+    s.free = { x: cx, y: cy, th, thBase: th, thTarget: th, sc, offX: 0, offY: 0, vx, vy, om: 0, phase: 0, ps: rnd(.05, .09), t0: performance.now() };
+    try { navigator.vibrate && navigator.vibrate(14); } catch {}
+    if (s.edgeRect) s.edgeRect.setAttribute("height", String(s.H));
+    s.onDetach && s.onDetach();
+    if (release) toFall(vx, vy);
+    else {
+      s.mode = "follow";
+      // Versatz zwischen Finger und Lasche weich abbauen
+      const f = s.free;
+      const [gx, gy] = [(s.grab.u - s.W / 2) * f.sc, (s.grab.v - s.H / 2) * f.sc];
+      const px = s.pointer.x - (gx * Math.cos(f.th) - gy * Math.sin(f.th));
+      const py = s.pointer.y - (gx * Math.sin(f.th) + gy * Math.cos(f.th));
+      f.offX = cx - px;
+      f.offY = cy - py;
+    }
+  }
+
+  function toFall(vx, vy) {
+    const f = s.free;
+    f.vx = clamp(vx, -26, 26);
+    f.vy = clamp(vy, -26, 26);
+    f.om = clamp(vx * .004 + (f.thTarget - f.th) * .2, -.15, .15) + rnd(-.02, .02);
+    f.t0 = performance.now();
+    s.mode = REDUCED ? "fall" : "fall";
+  }
+
+  function finish() {
+    cancelAnimationFrame(raf);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    const done = s && s.onDone;
+    s.mode = "done";
+    done && done();
+  }
+
+  /* ------------------------- Eingaben ------------------------------- */
+  function bind(stub, g, { onDetach, onDone }) {
+    let pid = null;
+
+    const local = e => {
+      const o = origin();
+      return { u: e.clientX - o.x, v: e.clientY - o.y };
+    };
+
+    stub.addEventListener("pointerdown", e => {
+      if (e.button !== undefined && e.button !== 0) return;
+      if (s && (s.free || s.mode === "auto")) return;
+      stub.classList.remove("nudge");
+      if (!s || s.stub !== stub) init(stub, g, onDetach, onDone);
+      pid = e.pointerId;
+      try { stub.setPointerCapture(pid); } catch {}
+      s.mode = "drag";
+      s.grab = local(e);
+      s.tipAtDown = s.tip;
+      s.pointer = { x: e.clientX, y: e.clientY };
+      s.hist = [{ x: e.clientX, y: e.clientY, t: performance.now() }];
+      start();
+    });
+
+    stub.addEventListener("pointermove", e => {
+      if (!s || e.pointerId !== pid) return;
+      s.pointer = { x: e.clientX, y: e.clientY };
+      const now = performance.now();
+      s.hist.push({ x: e.clientX, y: e.clientY, t: now });
+      while (s.hist.length > 2 && now - s.hist[0].t > 90) s.hist.shift();
+      if (s.mode !== "drag") return;
+
+      const p = local(e);
+      const dx = p.u - s.grab.u;
+      const dy = p.v - s.grab.v;
+      const pull = Math.max(0, dy) * .9 + Math.max(0, dx) * 1.1 - Math.max(0, -dy) * .3;
+      setTip(s.tipAtDown + pull * 1.35);
+
+      // Lasche so drehen, dass der Greifpunkt dem Finger folgt
+      const a0 = Math.atan2(s.grab.v - s.tip, s.grab.u);
+      const a1 = Math.atan2(p.v - s.tip, p.u);
+      let th = a1 - a0;
+      if (th > Math.PI) th -= Math.PI * 2;
+      if (th < -Math.PI) th += Math.PI * 2;
+      if (s.grab.v > s.tip - 12) th = pull * .0035;
+      s.theta = clamp(th, 0, .78);
+
+      if (s.tip >= s.H - .5) detach();
+    });
+
+    const up = e => {
+      if (!s || e.pointerId !== pid) return;
+      pid = null;
+      if (s.mode === "follow") {
+        const v = velocity();
+        toFall(v.vx, v.vy);
+      } else if (s.mode === "drag") {
+        s.mode = "spring";
+        s.omega = 0;
+      }
+    };
+    stub.addEventListener("pointerup", up);
+    stub.addEventListener("pointercancel", up);
+    // falls das Element unterwegs ersetzt wird, trotzdem das Loslassen erkennen
+    addEventListener("pointerup", up);
+    addEventListener("pointercancel", up);
+
+    stub.addEventListener("keydown", e => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault();
+      if (s && (s.free || s.mode === "auto")) return;
+      stub.classList.remove("nudge");
+      if (!s || s.stub !== stub) init(stub, g, onDetach, onDone);
+      s.grab = { u: s.W / 2, v: s.H * .3 };
+      s.mode = "auto";
+      s.autoStart = performance.now();
+      start();
+    });
+  }
+
+  function cancel() {
+    cancelAnimationFrame(raf);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    s = null;
+  }
+
+  function dust(rect) {
+    if (REDUCED) return;
+    for (let i = 0; i < 12; i++) {
+      const f = document.createElement("i");
+      f.className = "fiber";
+      f.style.left = rect.x + rnd(-2, 2) + "px";
+      f.style.top = rect.y + rect.h * rnd(.08, .92) + "px";
+      document.body.appendChild(f);
+      f.animate([
+        { transform: "translate(0,0) rotate(0)", opacity: .85 },
+        { transform: `translate(${rnd(-10, 22)}px, ${rnd(30, 90)}px) rotate(${rnd(0, 220)}deg)`, opacity: 0 }
+      ], { duration: rnd(900, 1500), easing: "cubic-bezier(.25,.2,.55,1)", fill: "forwards" })
+        .finished.then(() => f.remove(), () => f.remove());
+    }
+  }
+
+  return {
+    bind, cancel, dust,
+    get active() { return !!s && s.mode !== "done"; },
+    get state() { return s; }
+  };
+})();
 
 function setupTear(stub, g) {
   const ticket = stub.closest(".ticket");
-  const rip = $(".tk-rip", ticket);
   stub.tabIndex = 0;
   stub.setAttribute("role", "button");
   stub.setAttribute("aria-label", "Abschnitt abreißen und Gutschein einlösen");
 
-  let startX = 0;
-  let startY = 0;
-  let dragging = false;
-  let done = false;
-  let angle = 0;
-  let buzzed = false;
+  let request = null;
+  let detachedAt = 0;
 
-  const apply = (a, dx = 0, dy = 0, animated = false) => {
-    angle = a;
-    const k = clamp(a / TEAR_AT, 0, 1);
-    stub.style.transform = `translate(${dx}px, ${dy}px) rotate(${a}deg)`;
-    if (rip) {
-      rip.style.transition = animated ? "transform .55s var(--ease), opacity .3s" : "opacity .2s";
-      rip.style.opacity = k > 0 ? "1" : "0";
-      rip.style.transform = `scaleY(${k})`;
-    }
-    const m = $("#tearMeter");
-    if (m) {
-      m.style.transition = animated ? "transform .55s var(--ease)" : "none";
-      m.style.transform = `scaleX(${k})`;
-    }
-    if (k >= 1 && !buzzed) {
-      buzzed = true;
-      try { navigator.vibrate && navigator.vibrate(12); } catch {}
-    }
-    if (k < 1) buzzed = false;
-  };
-
-  const onDown = e => {
-    if (done || (e.button !== undefined && e.button !== 0)) return;
-    stub.classList.remove("nudge");
-    dragging = true;
-    startX = e.clientX;
-    startY = e.clientY;
-    stub.style.transition = "none";
-    try { stub.setPointerCapture(e.pointerId); } catch {}
-  };
-
-  const onMove = e => {
-    if (!dragging || done) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    const pull = Math.max(0, dy) + Math.max(0, dx) * .5 - Math.max(0, -dy) * .3;
-    let a = (pull / ticket.offsetHeight) * 48;
-    if (a > TEAR_AT) a = TEAR_AT + (a - TEAR_AT) * .5;
-    a = clamp(a, 0, MAX_ROT);
-    apply(a, clamp(dx * .08, -4, 10), clamp(dy * .06, 0, 10));
-  };
-
-  const onUp = () => {
-    if (!dragging || done) return;
-    dragging = false;
-    if (angle >= TEAR_AT) {
-      done = true;
-      tearOff(stub, ticket, g);
-    } else {
-      stub.style.transition = "transform .6s cubic-bezier(.3,1.5,.5,1)";
-      apply(0, 0, 0, true);
-    }
-  };
-
-  stub.addEventListener("pointerdown", onDown);
-  stub.addEventListener("pointermove", onMove);
-  stub.addEventListener("pointerup", onUp);
-  stub.addEventListener("pointercancel", onUp);
-  stub.addEventListener("keydown", e => {
-    if (done || (e.key !== "Enter" && e.key !== " ")) return;
-    e.preventDefault();
-    done = true;
-    stub.classList.remove("nudge");
-    stub.style.transition = "transform .4s var(--ease)";
-    apply(TEAR_AT + 2, 0, 0, true);
-    setTimeout(() => tearOff(stub, ticket, g), 380);
+  Tear.bind(stub, g, {
+    onDetach() {
+      const note = ($("#note") && $("#note").value) || "";
+      request = rpc("gs_redeem", { gid: g.id, note });
+      detachedAt = performance.now();
+      ticket.classList.add("is-redeemed");
+      const o = ticket.getBoundingClientRect();
+      Tear.dust({ x: o.right - stub.offsetWidth, y: o.top, h: o.height });
+      const nw = $("#noteWrap");
+      const hint = $("#tearHint");
+      if (nw) nw.style.opacity = ".4";
+      if (hint) hint.style.opacity = "0";
+      // Ergebnis anzeigen, sobald der Abschnitt gefallen ist – solange er
+      // noch am Finger hängt, warten wir
+      const wait = () => {
+        const st = Tear.state;
+        if (st && (st.mode === "follow" || st.mode === "auto")) setTimeout(wait, 200);
+        else setTimeout(() => settle(), 700);
+      };
+      setTimeout(wait, 400);
+    },
+    onDone() { settle(); }
   });
-}
 
-async function tearOff(stub, ticket, g) {
-  const note = ($("#note") && $("#note").value) || "";
-  const request = rpc("gs_redeem", { gid: g.id, note });
-  const rip = $(".tk-rip", ticket);
+  let settled = false;
+  async function settle() {
+    if (settled || !request) return;
+    settled = true;
+    const nw = $("#noteWrap");
+    const hint = $("#tearHint");
+    try {
+      const res = await request;
+      Object.assign(g, res);
+      const ghost = document.createElement("div");
+      ghost.className = "tk-ghost";
+      ghost.innerHTML = `${ICON.check}<span>${fmtShort(g.redeemed_at)}</span>`;
+      stub.replaceWith(ghost);
+      ghost.animate([{ opacity: 0, transform: "scale(.96)" }, { opacity: 1, transform: "none" }], { duration: 500, easing: "cubic-bezier(.22,.8,.24,1)" });
 
-  const rect = stub.getBoundingClientRect();
-  const from = stub.style.transform || "none";
-  stub.style.transition = "none";
-  stub.classList.add("torn");
-  ticket.classList.add("is-redeemed");
-  if (rip) rip.style.opacity = "0";
-  spawnFibers(rect, getComputedStyle(stub).backgroundColor);
+      $("#dEyebrow").textContent = "Eingelöst";
+      const nb = $(".tk-new", ticket);
+      if (nb) nb.remove();
+      const tv = $(".tk-valid", ticket);
+      if (tv) { tv.textContent = "Eingelöst"; tv.classList.remove("soon"); }
+      if (nw) nw.remove();
+      if (hint) hint.remove();
+      const slot = $("#resultSlot");
+      slot.innerHTML = resultHTML(g, true);
+      requestAnimationFrame(() => $(".result", slot).classList.add("show"));
 
-  const fall = stub.animate([
-    { transform: from, opacity: 1 },
-    { transform: "translate(18px, 30px) rotate(42deg)", opacity: 1, offset: .25 },
-    { transform: "translate(70px, 340px) rotate(78deg)", opacity: 0 }
-  ], { duration: REDUCED ? 200 : 950, easing: "cubic-bezier(.45,.05,.7,.6)", fill: "forwards" });
-
-  const nw = $("#noteWrap");
-  const hint = $("#tearHint");
-  if (nw) nw.style.opacity = ".4";
-  if (hint) hint.style.opacity = "0";
-
-  try {
-    const res = await request;
-    Object.assign(g, res);
-    await fall.finished.catch(() => {});
-
-    const ghost = document.createElement("div");
-    ghost.className = "tk-ghost";
-    ghost.innerHTML = `${ICON.check}<span>${fmtShort(g.redeemed_at)}</span>`;
-    stub.replaceWith(ghost);
-    ghost.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 400 });
-
-    $("#dEyebrow").textContent = "Eingelöst";
-    const nb = $(".tk-new", ticket);
-    if (nb) nb.remove();
-    const tv = $(".tk-valid", ticket);
-    if (tv) { tv.textContent = "Eingelöst"; tv.classList.remove("soon"); }
-    if (nw) nw.remove();
-    if (hint) hint.remove();
-    const slot = $("#resultSlot");
-    slot.innerHTML = resultHTML(g, true);
-    requestAnimationFrame(() => $(".result", slot).classList.add("show"));
-
-    const idx = vouchers.findIndex(v => v.id === g.id);
-    if (idx > -1) vouchers[idx] = g;
-    renderPublic(true);
-  } catch (err) {
-    fall.cancel();
-    ticket.classList.remove("is-redeemed");
-    const fresh = stub.cloneNode(true);
-    fresh.classList.remove("torn");
-    fresh.style.transform = "none";
-    stub.replaceWith(fresh);
-    setupTear(fresh, g);
-    if (nw) nw.style.opacity = "";
-    if (hint) hint.style.opacity = "";
-    toast(err.message, true);
-  }
-}
-
-function spawnFibers(rect, color) {
-  if (REDUCED) return;
-  for (let i = 0; i < 10; i++) {
-    const f = document.createElement("i");
-    f.className = "fiber";
-    f.style.background = color;
-    f.style.left = rect.left + "px";
-    f.style.top = (rect.top + rect.height * (.12 + Math.random() * .76)) + "px";
-    document.body.appendChild(f);
-    const dx = 6 + Math.random() * 26;
-    const dy = 30 + Math.random() * 70;
-    f.animate([
-      { transform: "translate(0,0) rotate(0)", opacity: .9 },
-      { transform: `translate(${dx}px, ${dy}px) rotate(${Math.random() * 180}deg)`, opacity: 0 }
-    ], { duration: 700 + Math.random() * 400, easing: "cubic-bezier(.3,.2,.6,1)", fill: "forwards" })
-      .finished.then(() => f.remove(), () => f.remove());
+      const idx = vouchers.findIndex(v => v.id === g.id);
+      if (idx > -1) vouchers[idx] = g;
+      renderPublic(true);
+    } catch (err) {
+      Tear.cancel();
+      toast(err.message, true);
+      openDialog(g);
+    }
   }
 }
 
