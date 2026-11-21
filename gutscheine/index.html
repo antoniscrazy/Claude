@@ -4557,11 +4557,29 @@ const Letter = (() => {
           }
         }
         octx.putImageData(oimg, 0, 0);
-        if (true) {
-          mctx.putImageData(mimg, 0, 0);
-          const url = `url(${maskC.toDataURL()})`;
-          lt.style.webkitMaskImage = url;
-          lt.style.maskImage = url;
+        // Zuschnitt entlang der Brandkante (sofort, auch in Safari)
+        {
+          const pts = [];
+          for (let i = 0; i < gw; i++) {
+            let y = gh * cell;
+            for (let j = 0; j < gh; j++) {
+              const v = field[j * gw + i] - T;
+              if (v < -CH) {
+                if (j === 0) { y = 0; break; }
+                const vp = field[(j - 1) * gw + i] - T;
+                const f = clamp((vp + CH) / Math.max(1e-6, vp - v), 0, 1);
+                y = (j - .5 + f) * cell;
+                break;
+              }
+            }
+            pts.push([(i + .5) * cell, Math.min(H, y)]);
+          }
+          let poly = `0px 0px, ${W.toFixed(1)}px 0px, ${W.toFixed(1)}px ${pts[gw - 1][1].toFixed(1)}px`;
+          for (let i = gw - 1; i >= 0; i--) poly += `, ${pts[i][0].toFixed(1)}px ${pts[i][1].toFixed(1)}px`;
+          poly += `, 0px ${pts[0][1].toFixed(1)}px`;
+          const cp = `polygon(${poly})`;
+          lt.style.webkitClipPath = cp;
+          lt.style.clipPath = cp;
         }
 
         // Funken, Glut, Asche und Rauch an der Brandkante
@@ -4646,8 +4664,8 @@ const Letter = (() => {
     ov.remove();
     fx.remove();
     desk.getAnimations().forEach(a => a.cancel());
-    lt.style.webkitMaskImage = "";
-    lt.style.maskImage = "";
+    lt.style.webkitClipPath = "";
+    lt.style.clipPath = "";
     lt.style.transform = "";
     lt.style.transformOrigin = "";
     scroller.style.overflow = "";
@@ -4669,8 +4687,8 @@ const Letter = (() => {
     st = { phase: "closed", cracked: false, angle: 0, pull: 0, sink: 0, fold: 0 };
     $$(".lt-burn", lt).forEach(c => c.remove());
     $$(".burn-fx", stage).forEach(c => c.remove());
-    lt.style.webkitMaskImage = "";
-    lt.style.maskImage = "";
+    lt.style.webkitClipPath = "";
+    lt.style.clipPath = "";
     lt.style.transformOrigin = "";
     scroller.style.overflow = "";
     $("#lsClose").style.opacity = "";
