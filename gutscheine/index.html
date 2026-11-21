@@ -1992,6 +1992,47 @@ footer a:hover { color: var(--gold); border-color: var(--gold); }
 }
 
 .ls-actions.show { opacity: 1; transform: none; pointer-events: auto; }
+
+.lt.interactive {
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.lt.interactive:active { cursor: grabbing; }
+
+.lt-hint {
+  position: fixed;
+  left: 50%;
+  bottom: max(26px, env(safe-area-inset-bottom));
+  z-index: 5;
+  translate: -50% 0;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(16, 13, 10, .72);
+  border: 1px solid rgba(216, 185, 126, .25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: rgba(232, 205, 150, .9);
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity .5s var(--ease), transform .5s var(--ease);
+  pointer-events: none;
+}
+
+.lt-hint.show { opacity: 1; transform: none; }
+
+@media (max-width: 520px) {
+  .lt-hint { white-space: normal; text-align: center; width: calc(100% - 32px); }
+}
+
+.env-shadow { transform-origin: 50% 50%; will-change: transform, opacity; }
 .ls-actions .btn { box-shadow: 0 18px 40px -12px rgba(0, 0, 0, .8), 0 8px 22px -10px rgba(216, 185, 126, .6); }
 .lt { margin-bottom: 90px; }
 
@@ -2996,6 +3037,7 @@ body::before { z-index: 1; }
 
   <div class="ls-scroll" id="lsScroll">
     <div class="lt" id="lt"></div>
+    <p class="lt-hint" id="ltHint" aria-live="polite"></p>
     <div class="ls-actions" id="lsActions"><button class="btn ink" id="lcGo">Zu deinen Gutscheinen →</button></div>
   </div>
 
@@ -3791,8 +3833,6 @@ const Letter = (() => {
     buildSeal(initial);
     const edge = flapEdgePoints();
     const poly = "M0 0L" + edge.map(p => `${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join("L") + "L1000 0Z";
-    const crack = edge.filter(p => Math.hypot(p[0] - SEAL.x, p[1] - SEAL.y) < SEAL.r + 6);
-    const crackD = crack.length ? "M" + crack.map(p => `${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join("L") : "";
 
     pocket.innerHTML = `
       <defs>
@@ -3804,14 +3844,15 @@ const Letter = (() => {
         <path d="M1000 0L532 348Q518 362 532 376L1000 640Z" fill="url(#lsSideRG)" filter="url(#lsPS)"/>
         <path d="M0 640L438 354Q500 318 562 354L1000 640Z" fill="url(#lsBottomG)" filter="url(#lsPSup)"/>
       </g>
-      <g id="lsSealBot" clip-path="url(#lsClipBot)" style="display:none"><use href="#lsSealArt" x="${SEAL.x}" y="${SEAL.y}"/></g>
-
-      <path id="lsCrack" d="${crackD}" fill="none" stroke="#2a0409" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" opacity="0"/>`;
+      <g id="lsResidue" clip-path="url(#lsClipBot)" opacity="0">
+        <path d="${blobPath(SEAL.r * .74)}" transform="translate(${SEAL.x} ${SEAL.y})" fill="#7d1824" opacity=".26"/>
+        <path d="${blobPath(SEAL.r * .5)}" transform="translate(${SEAL.x + 6} ${SEAL.y + 4})" fill="#5e0f19" opacity=".22"/>
+        ${Array.from({ length: 9 }, () => `<circle cx="${(SEAL.x + R(-70, 70)).toFixed(1)}" cy="${(SEAL.y + R(-10, 60)).toFixed(1)}" r="${R(1, 3.2).toFixed(1)}" fill="#8a1d2a" opacity="${R(.25, .6).toFixed(2)}"/>`).join("")}
+      </g>`;
 
     flapFront.innerHTML = `
       <defs><clipPath id="lsClipTop" clipPathUnits="userSpaceOnUse"><path d="${poly}"/></clipPath></defs>
       <path d="${FLAP}" fill="url(#lsFlapG)" filter="url(#lsPS)"/>
-      <g id="lsSealTop" clip-path="url(#lsClipTop)" style="display:none"><use href="#lsSealArt" x="${SEAL.x}" y="${SEAL.y}"/></g>
       <g id="lsSealFull"><use href="#lsSealArt" x="${SEAL.x}" y="${SEAL.y}"/></g>
       <path id="lsShadeF" d="${FLAP}" fill="#140c04" fill-opacity="0"/>`;
 
@@ -3946,50 +3987,84 @@ const Letter = (() => {
   async function crack() {
     if (st.cracked) return;
     st.cracked = true;
-    try { navigator.vibrate && navigator.vibrate([8, 30, 12]); } catch {}
-    const crackP = $("#lsCrack");
-    const top = $("#lsSealTop");
-    const full = $("#lsSealFull");
-    const bot = $("#lsSealBot");
-    if (full) full.style.display = "none";
-    if (bot) bot.style.display = "";
-    if (top) top.style.display = "";
-    if (crackP) crackP.setAttribute("opacity", ".85");
+    try { navigator.vibrate && navigator.vibrate([10, 25, 16]); } catch {}
+    const seal = $("#lsSealFull");
+    const residue = $("#lsResidue");
     crumbs();
     hint.style.opacity = "0";
-    await tween(160, k => {
-      if (top) top.setAttribute("transform", `translate(${(k * .8).toFixed(2)} ${(-k * 2.4).toFixed(2)}) rotate(${(-k * .7).toFixed(2)} ${SEAL.x} ${SEAL.y})`);
+    if (residue) residue.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, fill: "forwards" });
+    // Siegel löst sich als Ganzes vom Papier: kurzer Ruck nach oben
+    await tween(170, k => {
+      const j = Math.sin(k * Math.PI);
+      if (seal) seal.setAttribute("transform", `translate(${(j * .6).toFixed(2)} ${(-j * 3.2).toFixed(2)}) rotate(${(-j * 1.4).toFixed(2)} ${SEAL.x} ${SEAL.y})`);
     }, E.out);
+    if (seal) seal.removeAttribute("transform");
   }
 
+  /** Siegel antippen: Wachs gibt kurz nach, springt ab, Lasche klappt auf */
   async function openFlap() {
     if (st.phase !== "closed") return;
     st.phase = "opening";
-    await crack();
-    if (st.angle < 4) await pausee(220);
+    const seal = $("#lsSealFull");
+    if (!st.cracked) {
+      await tween(140, k => {
+        if (seal) seal.setAttribute("transform", `translate(${SEAL.x} ${SEAL.y}) scale(${(1 - k * .035).toFixed(4)}) translate(${-SEAL.x} ${-SEAL.y})`);
+        setFlap(k * 5);
+      }, E.out);
+      await crack();
+    }
     const from = st.angle;
-    const ok = await tween(Math.max(450, 1050 * (1 - from / 180)), k => setFlap(from + (180 - from) * k), E.soft);
-    if (ok) afterOpen();
+    const dur = Math.max(420, 1000 * (1 - from / 180));
+    const ok = await tween(dur, k => {
+      // leichtes Nachfedern, wenn die Lasche auf dem Tisch aufliegt
+      const a = from + (186 - from) * k;
+      setFlap(k > .92 ? 186 - (k - .92) / .08 * 6 : a);
+    }, E.soft);
+    if (!ok) return;
+    setFlap(180);
+    peekLetter();
   }
 
   const pausee = ms => new Promise(r => setTimeout(r, REDUCED ? 0 : ms));
+  const setPull = px => {
+    st.pull = px;
+    envLetter.style.transform = `translateY(${(-px).toFixed(1)}px)`;
+  };
+  const maxPull = () => envLetter.offsetHeight * 1.04;
 
-  async function afterOpen() {
+  /** Brief schaut ein Stück heraus – zum Herausziehen */
+  async function peekLetter() {
+    st.phase = "open";
+    hint.textContent = "Brief nach oben herausziehen – oder antippen";
+    hint.style.opacity = "";
+    const target = envLetter.offsetHeight * .16;
+    await tween(700, e => setPull(target * e), E.out);
+  }
+
+  async function pullOut() {
     const my = run;
-    st.phase = "out";
+    if (st.phase !== "open") return;
+    st.phase = "pulling";
+    hint.style.opacity = "0";
     const er = env.getBoundingClientRect();
-    const lift = envLetter.offsetHeight * 1.04;
+    const from = st.pull || 0;
+    const to = maxPull();
     const sink = er.height * .3;
-
-    // Brief gleitet heraus, Umschlag sinkt etwas ab
-    if (!await tween(1250, k => {
-      envLetter.style.transform = `translateY(${(-lift * k).toFixed(1)}px)`;
-      env.style.transform = `translateY(${(sink * k).toFixed(1)}px)`;
+    const curSink = st.sink || 0;
+    if (!await tween(Math.max(450, 1100 * (1 - from / to)), e => {
+      setPull(from + (to - from) * e);
+      st.sink = curSink + (sink - curSink) * e;
+      env.style.transform = `translateY(${st.sink.toFixed(1)}px)`;
     }, E.inOut)) return;
-    await pausee(140);
+    await pausee(120);
     if (my !== run) return;
+    present();
+  }
 
-    // Brief löst sich vom Umschlag und kommt nach vorn (FLIP)
+  /** Brief kommt nach vorn, Umschlag rutscht weg */
+  async function present() {
+    const my = run;
+    st.phase = "presenting";
     const from = envLetter.getBoundingClientRect();
     lt.classList.add("show");
     scroller.classList.add("live");
@@ -4003,12 +4078,14 @@ const Letter = (() => {
     const sy = from.height / r1.height;
     const dx = from.left - r1.left;
     const dy = from.top - r1.top;
+    const sink = st.sink || 0;
     const apply = e => {
-      const lift3 = Math.sin(e * Math.PI) * .03;
-      lt.style.transform = `translate(${(dx * (1 - e)).toFixed(1)}px, ${(dy * (1 - e) - Math.sin(e * Math.PI) * 18).toFixed(1)}px) scale(${(sx + (1 - sx) * e + lift3).toFixed(4)}, ${(sy + (1 - sy) * e + lift3).toFixed(4)})`;
+      const lift3 = Math.sin(e * Math.PI) * .035;
+      const tilt = Math.sin(e * Math.PI) * 7;
+      lt.style.transform = `translate(${(dx * (1 - e)).toFixed(1)}px, ${(dy * (1 - e) - Math.sin(e * Math.PI) * 22).toFixed(1)}px) perspective(1400px) rotateX(${tilt.toFixed(2)}deg) scale(${(sx + (1 - sx) * e + lift3).toFixed(4)}, ${(sy + (1 - sy) * e + lift3).toFixed(4)})`;
     };
     apply(0);
-    if (!await tween(1050, (e, k) => {
+    if (!await tween(1100, (e, k) => {
       apply(e);
       env.style.transform = `translateY(${(sink + innerHeight * .95 * E.inOut(k)).toFixed(1)}px) rotate(${(5 * k).toFixed(2)}deg)`;
       envWrap.style.opacity = String(Math.max(0, 1 - Math.max(0, (k - .45) / .55)));
@@ -4016,20 +4093,53 @@ const Letter = (() => {
     lt.style.transform = "";
     envWrap.style.visibility = "hidden";
     $("#mailSlot").classList.remove("on");
+    if (my !== run) return;
+    st.phase = "unfold1";
+    st.fold = 0;
+    lt.classList.add("interactive");
+    showLtHint("Oberen Teil nach oben aufklappen – oder antippen");
+  }
 
-    // Auffalten: erst oben, dann unten
-    await pausee(160);
-    const p0 = $(".p0", lt);
-    const p2 = $(".p2", lt);
-    if (!await tween(1150, e => setPanel(p0, -180 + 180 * e), E.inOut)) return;
-    await pausee(90);
-    if (!await tween(1150, e => setPanel(p2, 180 - 180 * e), E.inOut)) return;
-    lt.classList.add("flat");
-    actions.classList.add("show");
-    st.phase = "done";
-    const top = lt.getBoundingClientRect().top;
-    if (top < 0) scroller.scrollTo({ top: scroller.scrollTop + top - 40, behavior: REDUCED ? "auto" : "smooth" });
-    setTimeout(() => $("#lcGo").focus({ preventScroll: true }), 300);
+  function showLtHint(text) {
+    const h = $("#ltHint");
+    h.textContent = text;
+    h.classList.add("show");
+  }
+
+  /** Faltwinkel setzen und Schatten auf die Briefmitte werfen */
+  function setFold(k) {
+    st.fold = k;
+    const p = st.phase === "unfold1" ? $(".p0", lt) : $(".p2", lt);
+    const a = st.phase === "unfold1" ? -180 * (1 - k) : 180 * (1 - k);
+    setPanel(p, a);
+    const cast = Math.sin(clamp(k, 0, 1) * Math.PI) * .22;
+    const mid = $(".p1 > .lt-face > .lt-shade", lt);
+    if (mid) mid.style.opacity = cast.toFixed(3);
+  }
+
+  async function finishFold(from) {
+    const my = run;
+    const phase = st.phase;
+    const dur = Math.max(320, 1050 * (1 - from));
+    // Papier legt sich ab und federt ganz leicht nach
+    if (!await tween(dur, e => setFold(from + (1.035 - from) * e), E.inOut)) return;
+    if (!await tween(260, e => setFold(1.035 - .035 * e), E.out)) return;
+    if (my !== run || st.phase !== phase) return;
+    try { navigator.vibrate && navigator.vibrate(6); } catch {}
+    if (phase === "unfold1") {
+      st.phase = "unfold2";
+      st.fold = 0;
+      showLtHint("Unteren Teil nach unten aufklappen – oder antippen");
+    } else {
+      st.phase = "done";
+      lt.classList.remove("interactive");
+      lt.classList.add("flat");
+      $("#ltHint").classList.remove("show");
+      actions.classList.add("show");
+      const top = lt.getBoundingClientRect().top;
+      if (top < 0) scroller.scrollTo({ top: scroller.scrollTop + top - 40, behavior: REDUCED ? "auto" : "smooth" });
+      setTimeout(() => $("#lcGo").focus({ preventScroll: true }), 300);
+    }
   }
 
   /* ------------------------ Zustellung per Briefschlitz -------------- */
@@ -4037,7 +4147,9 @@ const Letter = (() => {
     const my = run;
     const slot = $("#mailSlot");
     const flapEl = $(".ms-flap", slot);
+    const shadow = $(".env-shadow", env);
     st.phase = "arriving";
+    hint.textContent = "Siegel antippen oder Lasche nach oben ziehen";
     hint.style.opacity = "0";
     slot.classList.add("on");
     if (REDUCED) {
@@ -4046,91 +4158,179 @@ const Letter = (() => {
       return;
     }
     env.style.visibility = "hidden";
-    await pausee(700);
+    await pausee(750);
     if (my !== run) return;
     const er = env.getBoundingClientRect();
     const sr = $(".ms-opening", slot).getBoundingClientRect();
     const slotY = sr.top + sr.height / 2;
     const startY = slotY - er.top - er.height - 6;
-    const midY = slotY - er.top;
+    const outY = slotY - er.top;
     const clipAt = y => {
       const t = Math.max(0, slotY - (er.top + y));
       env.style.clipPath = `polygon(-200px ${t}px, calc(100% + 200px) ${t}px, calc(100% + 200px) calc(100% + 300px), -200px calc(100% + 300px))`;
     };
+    const setFlapEl = a => { flapEl.style.transform = `perspective(380px) rotateX(${a.toFixed(1)}deg)`; };
 
-    // Klappe schwingt auf
-    if (!await tween(300, e => { flapEl.style.transform = `perspective(380px) rotateX(${(70 * e).toFixed(1)}deg)`; }, E.out)) return;
-    env.style.transform = `translateY(${startY}px)`;
-    clipAt(startY);
     env.style.visibility = "";
-
-    // Umschlag wird hindurchgeschoben
-    if (!await tween(1050, e => {
-      const y = startY + (midY - startY) * e;
-      env.style.transform = `translateY(${y.toFixed(1)}px) rotate(${(Math.sin(e * Math.PI) * -.6).toFixed(2)}deg)`;
+    shadow.style.opacity = "0";
+    // zwei Schübe wie von einer Hand – die Klappe wird vom Umschlag aufgedrückt
+    const push = k => (k < .45
+      ? .56 * E.out(k / .45)
+      : k < .58 ? .56 - .015 * Math.sin((k - .45) / .13 * Math.PI)
+        : .56 + .44 * E.inOut((k - .58) / .42));
+    if (!await tween(1650, (e, k) => {
+      const prog = push(k);
+      const y = startY + (outY - startY) * prog;
+      const flex = Math.sin(prog * Math.PI) * 7;
+      env.style.transform = `perspective(1200px) translateY(${y.toFixed(1)}px) rotateX(${flex.toFixed(2)}deg) rotate(${(Math.sin(k * 9) * .35 * (1 - k)).toFixed(2)}deg)`;
       clipAt(y);
-    }, E.inOut)) return;
+      setFlapEl(Math.min(74, prog * 600));
+    }, t => t)) return;
     env.style.clipPath = "";
 
-    // Klappe schnappt zu und federt nach
-    tween(700, (e, k) => {
-      const a = k < .28 ? 70 * (1 - k / .28) : -9 * Math.sin((k - .28) / .72 * Math.PI * 2.5) * (1 - k);
-      flapEl.style.transform = `perspective(380px) rotateX(${a.toFixed(1)}deg)`;
+    // Klappe schwingt zurück und federt aus
+    tween(1100, (e, k) => {
+      const a = 74 * Math.cos(k * Math.PI * 3.2) * Math.exp(-k * 4.2);
+      setFlapEl(Math.max(-6, a));
     }, t => t).then(() => { flapEl.style.transform = ""; });
-    try { navigator.vibrate && navigator.vibrate(10); } catch {}
+    try { navigator.vibrate && navigator.vibrate(8); } catch {}
 
-    // fällt auf den Schreibtisch
-    const fall = env.animate([
-      { transform: `translateY(${midY}px) rotate(0deg) scale(1.02)`, easing: "cubic-bezier(.5,0,.9,.5)" },
-      { transform: "translateY(0) rotate(-2.4deg) scale(1)", offset: .66, easing: "ease-out" },
-      { transform: "translateY(-7px) rotate(.9deg)", offset: .82, easing: "ease-in" },
-      { transform: "none" }
-    ], { duration: 950 });
+    // freier Fall auf den Tisch: kippt, kommt näher, Schatten wandert heran
+    const fallDur = 980;
+    if (!await tween(fallDur, (e, k) => {
+      const g = k * k;
+      const y = outY * (1 - g);
+      const tumble = Math.sin(k * Math.PI * 1.6) * 16 * (1 - k);
+      const roll = Math.sin(k * Math.PI * 1.1) * -3.5;
+      const sc = 1.07 - .07 * g;
+      env.style.transform = `perspective(1200px) translateY(${y.toFixed(1)}px) rotateX(${tumble.toFixed(2)}deg) rotate(${roll.toFixed(2)}deg) scale(${sc.toFixed(4)})`;
+      shadow.style.opacity = (.15 + .85 * g).toFixed(3);
+      shadow.style.transform = `translate(${(30 * (1 - g)).toFixed(1)}px, ${(70 * (1 - g)).toFixed(1)}px) scale(${(1.25 - .25 * g).toFixed(3)})`;
+    }, t => t)) return;
+
+    // Aufprall: winziger Sprung, kurzes Rutschen, zur Ruhe kommen
+    try { navigator.vibrate && navigator.vibrate(12); } catch {}
+    if (!await tween(650, (e, k) => {
+      const bounce = Math.sin(k * Math.PI) * Math.exp(-k * 3) * 9;
+      const slide = 14 * E.out(k);
+      const rot = -3.5 * (1 - E.out(k)) + Math.sin(k * Math.PI * 2) * .6 * (1 - k);
+      env.style.transform = `translate(${(slide - 14).toFixed(1)}px, ${(-bounce).toFixed(1)}px) rotate(${rot.toFixed(2)}deg) scale(${(1 - Math.sin(k * Math.PI) * .006).toFixed(4)})`;
+    }, t => t)) return;
     env.style.transform = "";
-    await fall.finished.catch(() => {});
+    shadow.style.transform = "";
+    shadow.style.opacity = "";
     if (my !== run) return;
     st.phase = "closed";
     hint.style.opacity = "";
     env.focus({ preventScroll: true });
   }
 
-  /* ------------------------- Ziehen der Lasche ----------------------- */
+  /* --------------------- Interaktion: Lasche & Brief ----------------- */
   let drag = null;
   env.addEventListener("pointerdown", e => {
-    if (!st || st.phase !== "closed" || (e.button !== undefined && e.button !== 0)) return;
-    drag = { y0: e.clientY, a0: st.angle, moved: false, id: e.pointerId };
+    if (!st || (st.phase !== "closed" && st.phase !== "open") || (e.button !== undefined && e.button !== 0)) return;
+    drag = { y0: e.clientY, a0: st.angle, p0: st.pull || 0, moved: false, id: e.pointerId, phase: st.phase };
     try { env.setPointerCapture(e.pointerId); } catch {}
   });
   env.addEventListener("pointermove", e => {
-    if (!drag || e.pointerId !== drag.id) return;
+    if (!drag || e.pointerId !== drag.id || st.phase !== drag.phase) return;
     const dy = e.clientY - drag.y0;
     if (!drag.moved && Math.abs(dy) > 5) {
       drag.moved = true;
       env.classList.add("dragging");
-      crack();
     }
     if (!drag.moved) return;
     const h = env.getBoundingClientRect().height;
-    setFlap(clamp(drag.a0 + (-dy) / (h * .85) * 180, 0, 176));
+    if (drag.phase === "closed") {
+      const raw = drag.a0 + (-dy) / (h * .85) * 180;
+      if (!st.cracked) {
+        // das Wachs hält die Lasche fest – erst ab einem Punkt springt es ab
+        const held = Math.max(0, raw) * .16;
+        setFlap(Math.min(held, 7.5));
+        const seal = $("#lsSealFull");
+        if (seal) seal.setAttribute("transform", `translate(0 ${(-Math.min(held, 7.5) * .25).toFixed(2)})`);
+        if (raw > 46) {
+          if (seal) seal.removeAttribute("transform");
+          crack();
+          setFlap(clamp(raw, 0, 178));
+        }
+      } else {
+        setFlap(clamp(raw, 0, 178));
+      }
+    } else {
+      setPull(clamp(drag.p0 + (-dy), 0, maxPull() * 1.02));
+    }
   });
   const end = async e => {
     if (!drag || e.pointerId !== drag.id) return;
-    const moved = drag.moved;
+    const d = drag;
     drag = null;
     env.classList.remove("dragging");
-    if (!moved || st.angle > 70) { openFlap(); return; }
-    const from = st.angle;
-    await tween(520, k => setFlap(from * (1 - k)), E.out);
+    if (st.phase !== d.phase) return;
+    if (d.phase === "closed") {
+      if (!d.moved || (st.cracked && st.angle > 60)) { openFlap(); return; }
+      const from = st.angle;
+      const seal = $("#lsSealFull");
+      if (seal && !st.cracked) seal.removeAttribute("transform");
+      await tween(520, k => setFlap(from * (1 - k)), E.out);
+    } else {
+      if (!d.moved || st.pull > maxPull() * .42) { pullOut(); return; }
+      const from = st.pull;
+      const to = envLetter.offsetHeight * .16;
+      await tween(420, k => setPull(from + (to - from) * k), E.out);
+    }
   };
   env.addEventListener("pointerup", end);
   env.addEventListener("pointercancel", end);
   env.addEventListener("keydown", e => {
-    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openFlap(); }
+    if (e.key !== "Enter" && e.key !== " ") return;
+    e.preventDefault();
+    if (st.phase === "closed") openFlap();
+    else if (st.phase === "open") pullOut();
+  });
+
+  // Auffalten mit dem Finger
+  let fdrag = null;
+  lt.addEventListener("pointerdown", e => {
+    if (!st || (st.phase !== "unfold1" && st.phase !== "unfold2")) return;
+    fdrag = { y0: e.clientY, k0: st.fold || 0, moved: false, id: e.pointerId, phase: st.phase };
+    try { lt.setPointerCapture(e.pointerId); } catch {}
+  });
+  lt.addEventListener("pointermove", e => {
+    if (!fdrag || e.pointerId !== fdrag.id || st.phase !== fdrag.phase) return;
+    const dy = e.clientY - fdrag.y0;
+    if (!fdrag.moved && Math.abs(dy) > 5) fdrag.moved = true;
+    if (!fdrag.moved) return;
+    const ph = parseFloat(getComputedStyle(lt).getPropertyValue("--ph")) || 300;
+    const dir = fdrag.phase === "unfold1" ? -1 : 1;
+    setFold(clamp(fdrag.k0 + dir * dy / (ph * 1.15), 0, 1));
+  });
+  const fend = async e => {
+    if (!fdrag || e.pointerId !== fdrag.id) return;
+    const d = fdrag;
+    fdrag = null;
+    if (st.phase !== d.phase) return;
+    if (!d.moved || st.fold > .38) { finishFold(st.fold); return; }
+    const from = st.fold;
+    await tween(420, k => setFold(from * (1 - k)), E.out);
+  };
+  lt.addEventListener("pointerup", fend);
+  lt.addEventListener("pointercancel", fend);
+  lt.addEventListener("keydown", e => {
+    if ((e.key === "Enter" || e.key === " ") && (st.phase === "unfold1" || st.phase === "unfold2")) {
+      e.preventDefault();
+      finishFold(st.fold || 0);
+    }
   });
 
   /* ------------------------------ API ------------------------------- */
   function reset() {
-    st = { phase: "closed", cracked: false, angle: 0 };
+    st = { phase: "closed", cracked: false, angle: 0, pull: 0, sink: 0, fold: 0 };
+    lt.classList.remove("interactive");
+    $("#ltHint").classList.remove("show");
+    const shadow = $(".env-shadow", env);
+    shadow.style.transform = "";
+    shadow.style.opacity = "";
     const slot = $("#mailSlot");
     slot.classList.remove("on");
     $(".ms-flap", slot).style.transform = "";
@@ -4164,6 +4364,8 @@ const Letter = (() => {
 
   function close() {
     run++;
+    $("#ltHint").classList.remove("show");
+    lt.classList.remove("interactive");
     scroller.classList.remove("live");
     lt.classList.remove("show");
     actions.classList.remove("show");
