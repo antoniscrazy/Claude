@@ -391,16 +391,28 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.8); curs
   min-height: 190px;
   color: var(--tk-ink);
   text-align: left;
-  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .35)) drop-shadow(0 16px 26px rgba(0, 0, 0, .4));
+  isolation: isolate;
   transform-style: preserve-3d;
   transition: transform .5s var(--ease), filter .4s var(--ease);
 }
 
 .grid .ticket { cursor: pointer; }
 
-.grid .ticket:hover {
-  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .35)) drop-shadow(0 26px 34px rgba(0, 0, 0, .5));
+/* Schatten als eigene Ebene statt Filter – bleibt flüssig bei Animationen */
+.ticket::before,
+.ticket::after {
+  content: "";
+  position: absolute;
+  inset: 12px 6px 0;
+  z-index: -1;
+  border-radius: 14px;
+  pointer-events: none;
 }
+
+.ticket::before { box-shadow: 0 16px 28px -4px rgba(0, 0, 0, .5), 0 3px 4px rgba(0, 0, 0, .35); }
+.ticket::after { box-shadow: 0 30px 44px -6px rgba(0, 0, 0, .55); opacity: 0; transition: opacity .45s var(--ease); }
+.grid .ticket:hover::after,
+.ticket.tilting::after { opacity: 1; }
 
 .paper {
   background-color: var(--tk);
@@ -567,11 +579,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.8); curs
 .tk-stub::before {
   content: "";
   position: absolute;
-  left: 0;
-  top: calc(var(--notch) + 4px);
-  bottom: calc(var(--notch) + 4px);
-  width: 1.5px;
-  background: repeating-linear-gradient(to bottom, var(--tk-line) 0 5px, transparent 5px 10px);
+  left: -2.5px;
+  top: calc(var(--notch) + 6px);
+  bottom: calc(var(--notch) + 6px);
+  width: 5px;
+  background: radial-gradient(circle at 50% 50%, var(--hole, #0d0c0b) 0 1.3px, rgba(0, 0, 0, .25) 1.7px, transparent 2.1px) 0 0 / 5px 7px repeat-y;
 }
 
 .tk-stub-label {
@@ -1484,10 +1496,16 @@ footer a:hover { color: var(--gold); border-color: var(--gold); }
 
 #spot {
   position: fixed;
-  inset: 0;
+  left: 0;
+  top: 0;
+  width: 1040px;
+  height: 1040px;
+  margin: -520px 0 0 -520px;
   z-index: 0;
   pointer-events: none;
-  background: radial-gradient(520px circle at var(--sx, 50%) var(--sy, 20%), rgba(216, 185, 126, .055), transparent 65%);
+  background: radial-gradient(closest-side, rgba(216, 185, 126, .06), transparent);
+  transform: translate3d(50vw, 22vh, 0);
+  will-change: transform;
   transition: opacity .6s;
 }
 
@@ -1989,8 +2007,8 @@ footer a:hover { color: var(--gold); border-color: var(--gold); }
   z-index: 0;
   border-radius: 50%;
   pointer-events: none;
-  filter: blur(60px);
-  opacity: .5;
+  opacity: .55;
+  will-change: transform;
 }
 
 .orb.o1 {
@@ -2033,18 +2051,27 @@ footer a:hover { color: var(--gold); border-color: var(--gold); }
   position: absolute;
   inset: 0;
   z-index: 2;
+  overflow: hidden;
   pointer-events: none;
-  background: linear-gradient(105deg, transparent 38%, rgba(255, 248, 230, .16) 48%, rgba(255, 255, 255, .3) 50%, rgba(255, 248, 230, .16) 52%, transparent 62%);
-  background-size: 300% 100%;
-  background-position: 150% 0;
-  mix-blend-mode: overlay;
-  animation: tkShine 7s ease-in-out infinite;
+}
+
+.tk-shine::before {
+  content: "";
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: 0;
+  width: 45%;
+  background: linear-gradient(100deg, transparent, rgba(255, 250, 235, .09) 38%, rgba(255, 255, 255, .2) 50%, rgba(255, 250, 235, .09) 62%, transparent);
+  transform: translateX(-130%) skewX(-12deg);
+  animation: tkShine 7.5s ease-in-out infinite;
   animation-delay: var(--shine, 1s);
+  will-change: transform;
 }
 
 @keyframes tkShine {
-  0%, 62% { background-position: 150% 0; }
-  100% { background-position: -50% 0; }
+  0%, 62% { transform: translateX(-130%) skewX(-12deg); }
+  100% { transform: translateX(340%) skewX(-12deg); }
 }
 
 /* schwebender Fächer */
@@ -2137,6 +2164,383 @@ footer a:hover { color: var(--gold); border-color: var(--gold); }
   background: var(--gold-soft);
   border-radius: 12px;
 }
+
+
+/* =====================================================================
+   REALISMUS: Perforation, Hologramm, Goldfolie, Kartenstärke, Stempel
+===================================================================== */
+.tk-holes {
+  position: absolute;
+  right: -2.5px;
+  top: calc(var(--notch) + 6px);
+  bottom: calc(var(--notch) + 6px);
+  width: 5px;
+  z-index: 3;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, var(--hole, #0d0c0b) 0 1.3px, rgba(0, 0, 0, .25) 1.7px, transparent 2.1px) 0 0 / 5px 7px repeat-y;
+}
+
+.dialog .ticket { --hole: #1a1917; }
+.preview-stage .ticket { --hole: #141311; }
+.ticket.is-redeemed .tk-holes { display: none; }
+
+.tk-body {
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .1), inset 0 -2px 0 rgba(0, 0, 0, .2);
+}
+
+.tk-stub {
+  box-shadow: inset -1px 1px 0 rgba(255, 255, 255, .08), inset 0 -2px 0 rgba(0, 0, 0, .22);
+}
+
+.tk-title {
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .28), 0 -1px 0 rgba(255, 255, 255, .06);
+}
+
+.tk-kind {
+  background: linear-gradient(100deg, #b08647 0%, #f9e9c0 42%, #c99a55 58%, #f3dca6 78%, #a57c3f 100%);
+  background-size: 260% 100%;
+  background-position: var(--mx, 30%) 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 500;
+}
+
+.t-gold .tk-kind {
+  background-image: linear-gradient(100deg, #4a310d 0%, #a77a32 45%, #3d2a0c 65%, #8d6427 100%);
+}
+
+.tk-holo {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(115deg, transparent 0 3px, rgba(255, 255, 255, .2) 3px 4px),
+    linear-gradient(125deg, #ff9ad5, #9ad7ff, #b5ffcf, #fff3a8, #ffb59a, #c9a3ff, #9ad7ff, #ff9ad5);
+  background-size: 100% 100%, 320% 320%;
+  background-position: 0 0, var(--hx, 30%) var(--hy, 30%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .4), 0 1px 3px rgba(0, 0, 0, .4);
+  filter: saturate(.8);
+}
+
+.ticket:not(.tilting) .tk-holo { animation: holoIdle 10s ease-in-out infinite; }
+
+.tk-holo::after {
+  content: "✦";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  color: rgba(255, 255, 255, .85);
+  text-shadow: 0 0 4px rgba(255, 255, 255, .6);
+}
+
+@keyframes holoIdle {
+  0%, 100% { background-position: 0 0, 20% 20%; }
+  50% { background-position: 0 0, 85% 75%; }
+}
+
+.tk-stamp {
+  position: absolute;
+  z-index: 4;
+  top: 50%;
+  left: calc((100% - var(--stub)) * .66);
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 6px 12px 5px;
+  border: 2.5px solid currentColor;
+  border-radius: 6px;
+  outline: 1px solid currentColor;
+  outline-offset: 2px;
+  color: rgba(226, 78, 84, .92);
+  font-family: var(--mono);
+  text-transform: uppercase;
+  transform: translate(-50%, -50%) rotate(-11deg);
+  -webkit-mask-image: var(--grunge);
+  mask-image: var(--grunge);
+  -webkit-mask-size: 170px 170px;
+  mask-size: 170px 170px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.tk-stamp b {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: .24em;
+}
+
+.tk-stamp small {
+  font-size: 9.5px;
+  letter-spacing: .16em;
+}
+
+.t-gold .tk-stamp { color: rgba(150, 22, 34, .88); }
+
+.tk-stamp.slam { animation: slam .55s cubic-bezier(.2, .9, .25, 1.25) .25s both; }
+
+@keyframes slam {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(-28deg) scale(2.4); }
+  55% { opacity: 1; transform: translate(-50%, -50%) rotate(-10deg) scale(.93); }
+  100% { opacity: 1; transform: translate(-50%, -50%) rotate(-11deg) scale(1); }
+}
+
+@media (max-width: 520px) {
+  .tk-stamp { left: calc((100% - var(--stub)) * .6); }
+  .tk-stamp b { font-size: 13px; }
+  .tk-holo { width: 24px; height: 24px; }
+}
+
+/* Fächer reagiert auf die Maus */
+.fan { transition: transform .8s var(--ease); transform-style: preserve-3d; }
+
+/* =====================================================================
+   DIALOG-ZUSÄTZE
+===================================================================== */
+.sheet-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.when-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.when-chip {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px !important;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(216, 185, 126, .3);
+  background: var(--gold-soft);
+  color: var(--gold) !important;
+  font-size: 13.5px;
+}
+
+.when-chip svg { width: 15px; height: 15px; }
+
+.tl-when {
+  margin-top: 4px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: .06em;
+  color: var(--gold);
+}
+
+/* =====================================================================
+   WUNSCHBOX
+===================================================================== */
+.wishbox {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: clamp(28px, 5vw, 64px);
+  align-items: center;
+  margin-top: 110px;
+}
+
+@media (max-width: 820px) {
+  .wishbox { grid-template-columns: 1fr; }
+}
+
+.wish-copy h2 {
+  margin: 14px 0 12px;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(36px, 5vw, 52px);
+  line-height: 1;
+}
+
+.wish-copy p {
+  color: var(--muted);
+  font-size: 16px;
+  max-width: 400px;
+}
+
+.wish-paper {
+  position: relative;
+  padding: 34px 28px 20px 54px;
+  border-radius: 3px;
+  color: #2c261e;
+  background-color: #f7f1e4;
+  background-image:
+    linear-gradient(90deg, transparent 40px, rgba(205, 70, 70, .38) 40px 41px, transparent 41px),
+    repeating-linear-gradient(to bottom, transparent 0 33px, rgba(70, 110, 175, .2) 33px 34px),
+    linear-gradient(170deg, rgba(255, 255, 255, .55), transparent 40%, rgba(120, 95, 60, .07));
+  background-position: 0 0, 0 18px, 0 0;
+  box-shadow: 0 40px 70px -30px rgba(0, 0, 0, .85), 0 2px 4px rgba(0, 0, 0, .3);
+  transform: rotate(-1.4deg);
+  transition: transform .6s var(--ease), box-shadow .6s var(--ease);
+}
+
+.wish-paper:hover,
+.wish-paper:focus-within {
+  transform: rotate(-.4deg) translateY(-3px);
+  box-shadow: 0 50px 80px -30px rgba(0, 0, 0, .9), 0 2px 4px rgba(0, 0, 0, .3);
+}
+
+.wish-paper .tape {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  width: 120px;
+  height: 30px;
+  margin-left: -60px;
+  transform: rotate(-3deg);
+  background: linear-gradient(90deg, rgba(230, 218, 190, .82), rgba(240, 230, 205, .9) 50%, rgba(226, 214, 186, .82));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .18);
+  -webkit-mask: linear-gradient(90deg, transparent, #000 4px, #000 calc(100% - 4px), transparent);
+  mask: linear-gradient(90deg, transparent, #000 4px, #000 calc(100% - 4px), transparent);
+}
+
+.wish-paper textarea {
+  display: block;
+  width: 100%;
+  min-height: 136px;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  resize: none;
+  background: transparent;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-style: italic;
+  font-size: 23px;
+  line-height: 34px;
+  color: #1f2c4b;
+}
+
+.wish-paper textarea::placeholder { color: rgba(31, 44, 75, .38); }
+
+.wish-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+.wish-count {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: rgba(44, 38, 30, .45);
+}
+
+.wish-paper .btn {
+  background: #2b241b;
+  color: #f7f1e4;
+  box-shadow: 0 10px 20px -10px rgba(0, 0, 0, .6);
+}
+
+.wish-paper .btn svg { width: 16px; height: 16px; }
+
+.wish-paper.shake { animation: shake .4s; }
+
+.plane {
+  position: fixed;
+  z-index: 90;
+  width: 46px;
+  height: 46px;
+  pointer-events: none;
+  filter: drop-shadow(0 10px 10px rgba(0, 0, 0, .5));
+  will-change: transform, opacity;
+}
+
+/* =====================================================================
+   VERWALTUNG: Vorlagen & Wünsche
+===================================================================== */
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.presets button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  font-size: 13px;
+  transition: border-color .2s, background .2s, transform .25s var(--ease);
+}
+
+.presets button:hover {
+  border-color: rgba(216, 185, 126, .5);
+  background: var(--gold-soft);
+  transform: translateY(-1px);
+}
+
+.preview-stage { perspective: 1200px; }
+
+.badge {
+  min-width: 22px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: #1a140a;
+  font-family: var(--mono);
+  font-size: 12px;
+  text-align: center;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(216, 185, 126, 0), 0 0 16px rgba(216, 185, 126, .5); } }
+
+.wish-li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+  animation: fadeUp .4s var(--ease) both;
+}
+
+.wish-li p {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-style: italic;
+  font-size: 19px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.wish-li small {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--faint);
+}
+
+.wish-li.done p { color: var(--faint); text-decoration: line-through; text-decoration-color: rgba(244, 240, 232, .25); }
+
+.wish-li .acts {
+  display: flex;
+  gap: 2px;
+}
+
+.wish-li .acts button {
+  display: grid;
+  place-items: center;
+  min-width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  color: var(--muted);
+  transition: background .2s, color .2s;
+}
+
+.wish-li .acts button:hover { background: var(--surface-2); color: var(--ink); }
+.wish-li .acts button.make { padding: 0 10px; font-size: 12.5px; color: var(--gold); }
+.wish-li .acts button.confirm, .wish-li .acts button.confirm:hover { padding: 0 12px; background: var(--danger); color: #1a0806; font-size: 12.5px; font-weight: 600; }
+.wish-li .acts svg { width: 16px; height: 16px; }
 
 @media (max-width: 520px) {
   .ticket { --stub: 76px; }
@@ -2322,6 +2726,26 @@ footer a:hover { color: var(--gold); border-color: var(--gold); }
     </div>
   </section>
 
+  <section class="wishbox" id="wishbox">
+    <div class="wish-copy reveal">
+      <div class="eyebrow">Wunschbox</div>
+      <h2>Du wünschst dir etwas?</h2>
+      <p>Schreib es auf einen Zettel und schick ihn ab – vielleicht wird daraus dein nächster Gutschein.</p>
+    </div>
+    <div class="reveal" style="--rd:.12s">
+      <form class="wish-paper" id="wishForm">
+        <span class="tape" aria-hidden="true"></span>
+        <textarea id="wishText" maxlength="300" placeholder="Ich wünsche mir …" aria-label="Dein Wunsch"></textarea>
+        <div class="wish-actions">
+          <span class="wish-count" id="wishCountPub">0/300</span>
+          <button class="btn" id="wishSend">Abschicken
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 11l18-8-7 18-2-8z"/></svg>
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+
   <section class="chronicle" id="chronicle" hidden>
     <div class="ornament reveal" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg></div>
     <div class="section-head reveal">
@@ -2367,6 +2791,10 @@ footer a:hover { color: var(--gold); border-color: var(--gold); }
         <p class="sub" id="formSub">Die Vorschau rechts aktualisiert sich beim Tippen.</p>
         <form id="createForm">
           <div class="form-row">
+            <span class="field-label">Schnellstart</span>
+            <div class="presets" id="presets"></div>
+          </div>
+          <div class="form-row">
             <label class="field-label" for="fTitle">Titel <span class="count" id="cTitle">0/80</span></label>
             <input class="field" id="fTitle" maxlength="80" placeholder="z. B. Frühstück ans Bett" required>
           </div>
@@ -2395,6 +2823,12 @@ footer a:hover { color: var(--gold); border-color: var(--gold); }
             <button class="btn secondary">Speichern</button>
           </form>
         </details>
+      </div>
+
+      <div class="panel" id="wishPanel">
+        <div class="form-title-row"><h2>Wunschbox</h2><span class="badge" id="wishBadge" hidden></span></div>
+        <p class="sub">Wünsche, die dir geschickt wurden. Mit einem Klick wird daraus ein Gutschein.</p>
+        <div id="wishList"></div>
       </div>
 
       <div class="panel" id="letterPanel">
@@ -2436,9 +2870,14 @@ footer a:hover { color: var(--gold); border-color: var(--gold); }
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="dTitle">
     <div class="sheet-head">
       <span class="eyebrow" id="dEyebrow">Gutschein</span>
-      <button class="icon-btn" data-close aria-label="Schließen">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
-      </button>
+      <div class="sheet-actions">
+        <button class="icon-btn" id="shareBtn" aria-label="Gutschein teilen" title="Teilen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>
+        </button>
+        <button class="icon-btn" data-close aria-label="Schließen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
     </div>
     <div class="tear-zone" id="tearZone"></div>
     <div id="dBottom"></div>
@@ -2499,6 +2938,7 @@ const store = {
 const ICON = {
   check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`,
   reset: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>`,
+  link: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>`,
   edit: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>`,
   trash: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>`
 };
@@ -2594,10 +3034,11 @@ function ticketHTML(g, { titleId = "" } = {}) {
   const v = validity(g);
   const stubHTML = g.redeemed_at
     ? `<div class="tk-ghost">${ICON.check}<span>${fmtShort(g.redeemed_at)}</span></div>`
-    : `<div class="tk-stub paper" data-stub><span class="tk-stub-label">Einlösen</span><span class="tk-barcode" aria-hidden="true"></span></div>`;
+    : `<div class="tk-stub paper" data-stub><span class="tk-stub-label">Einlösen</span><span class="tk-holo" aria-hidden="true"></span><span class="tk-barcode" aria-hidden="true"></span></div>`;
   return `
     <div class="tk-body paper">
       <span class="tk-shine" aria-hidden="true" style="--shine:${(Math.random() * 6).toFixed(2)}s"></span>
+      <span class="tk-holes" aria-hidden="true"></span>
       <div class="tk-head">
         <span class="tk-badge" aria-hidden="true">${esc(g.emoji || "🎁")}</span>
         <span class="tk-kind">Gutschein</span>
@@ -2609,30 +3050,52 @@ function ticketHTML(g, { titleId = "" } = {}) {
       <div class="tk-foot"><span>Nr. ${shortCode(g.id)}</span></div>
     </div>
     ${stubHTML}
-    ${g.redeemed_at ? STATIC_EDGE : ""}`;
+    ${g.redeemed_at ? STATIC_EDGE + stampHTML(g) : ""}`;
+}
+
+function stampHTML(g) {
+  return `<div class="tk-stamp" aria-hidden="true"><b>Eingelöst</b><small>${esc(fmtShort(g.redeemed_at))}</small></div>`;
+}
+
+function fmtWhen(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" }) + ", " +
+    d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr";
 }
 
 function ticketClass(g) {
   return `ticket t-${g.theme || "forest"}${g.redeemed_at ? " is-redeemed" : ""}${isExpired(g) ? " is-expired" : ""}`;
 }
 
-/** Dezente 3D-Neigung mit Lichtreflex, nur bei Maus */
+/** Dezente 3D-Neigung mit Lichtreflex, Folie und Hologramm – nur bei Maus */
 function addTilt(el, max = 4) {
-  if (!FINE || REDUCED) return;
-  el.addEventListener("pointermove", e => {
+  if (!FINE || REDUCED || !el || el.dataset.tilt) return;
+  el.dataset.tilt = "1";
+  let raf = 0;
+  let ev = null;
+  const apply = () => {
+    raf = 0;
+    if (!ev) return;
     const r = el.getBoundingClientRect();
-    const x = (e.clientX - r.left) / r.width;
-    const y = (e.clientY - r.top) / r.height;
-    el.style.transform = `translateY(-4px) rotateX(${(.5 - y) * max}deg) rotateY(${(x - .5) * max}deg)`;
-    $$(".paper", el).forEach(p => {
-      p.style.setProperty("--mx", (x * 100) + "%");
-      p.style.setProperty("--my", (y * 100) + "%");
-      p.style.setProperty("--sheen", ".16");
-    });
+    const x = clamp((ev.clientX - r.left) / r.width, 0, 1);
+    const y = clamp((ev.clientY - r.top) / r.height, 0, 1);
+    el.style.transform = `translateY(-4px) rotateX(${((.5 - y) * max).toFixed(2)}deg) rotateY(${((x - .5) * max).toFixed(2)}deg)`;
+    el.style.setProperty("--hx", (x * 100).toFixed(1) + "%");
+    el.style.setProperty("--hy", (y * 100).toFixed(1) + "%");
+    el.style.setProperty("--mx", (x * 100).toFixed(1) + "%");
+    el.style.setProperty("--my", (y * 100).toFixed(1) + "%");
+    el.style.setProperty("--sheen", ".16");
+    el.classList.add("tilting");
+  };
+  el.addEventListener("pointermove", e => {
+    ev = e;
+    if (!raf) raf = requestAnimationFrame(apply);
   });
   el.addEventListener("pointerleave", () => {
+    ev = null;
     el.style.transform = "";
-    $$(".paper", el).forEach(p => p.style.removeProperty("--sheen"));
+    el.style.removeProperty("--sheen");
+    el.classList.remove("tilting");
   });
 }
 
@@ -2645,14 +3108,25 @@ const pause = ms => new Promise(r => setTimeout(r, ms));
 (() => {
   const cv = $("#dust");
   const x = cv.getContext("2d");
+  const spot = $("#spot");
+  const sprite = document.createElement("canvas");
+  sprite.width = sprite.height = 64;
+  const sc = sprite.getContext("2d");
+  const sg = sc.createRadialGradient(32, 32, 0, 32, 32, 32);
+  sg.addColorStop(0, "rgba(248,226,176,1)");
+  sg.addColorStop(.35, "rgba(240,210,150,.5)");
+  sg.addColorStop(1, "rgba(216,185,126,0)");
+  sc.fillStyle = sg;
+  sc.fillRect(0, 0, 64, 64);
+
   let W = 0, H = 0, D = 1, P = [];
   function size() {
-    D = Math.min(devicePixelRatio || 1, 2);
+    D = Math.min(devicePixelRatio || 1, 1.5);
     W = innerWidth;
     H = innerHeight;
-    cv.width = W * D;
-    cv.height = H * D;
-    const n = Math.round(Math.min(70, W * H / 22000));
+    cv.width = Math.round(W * D);
+    cv.height = Math.round(H * D);
+    const n = Math.round(Math.min(FINE ? 60 : 26, W * H / 24000));
     P = Array.from({ length: n }, () => spawn(true));
   }
   function spawn(any) {
@@ -2666,14 +3140,23 @@ const pause = ms => new Promise(r => setTimeout(r, ms));
   }
   size();
   addEventListener("resize", size);
-  let mx = 0, my = 0;
+  let mx = 0, my = 0, px = 0, py = 0, praf = 0;
   addEventListener("pointermove", e => {
-    mx = e.clientX / innerWidth - .5;
-    my = e.clientY / innerHeight - .5;
-    document.documentElement.style.setProperty("--sx", e.clientX + "px");
-    document.documentElement.style.setProperty("--sy", e.clientY + "px");
+    px = e.clientX;
+    py = e.clientY;
+    if (praf) return;
+    praf = requestAnimationFrame(() => {
+      praf = 0;
+      mx = px / innerWidth - .5;
+      my = py / innerHeight - .5;
+      spot.style.transform = `translate3d(${px}px, ${py}px, 0)`;
+    });
   }, { passive: true });
   function loop(now) {
+    if (document.hidden || document.body.classList.contains("lock")) {
+      setTimeout(() => requestAnimationFrame(loop), 400);
+      return;
+    }
     x.setTransform(D, 0, 0, D, 0, 0);
     x.clearRect(0, 0, W, H);
     for (const p of P) {
@@ -2681,21 +3164,14 @@ const pause = ms => new Promise(r => setTimeout(r, ms));
       p.x += p.vx + Math.sin(now / 3000 + p.t) * .05;
       if (p.y < -20) Object.assign(p, spawn(false));
       const tw = .55 + .45 * Math.sin(now / 1400 + p.t * 3);
-      const px = p.x - mx * 30 * p.z;
-      const py = p.y - my * 20 * p.z;
+      const s = p.r * 4.4;
       x.globalAlpha = p.a * tw * (p.r > 3 ? .18 : 1);
-      const g = x.createRadialGradient(px, py, 0, px, py, p.r * 2.2);
-      g.addColorStop(0, "rgba(246,222,170,1)");
-      g.addColorStop(1, "rgba(216,185,126,0)");
-      x.fillStyle = g;
-      x.beginPath();
-      x.arc(px, py, p.r * 2.2, 0, Math.PI * 2);
-      x.fill();
+      x.drawImage(sprite, p.x - mx * 30 * p.z - s / 2, p.y - my * 20 * p.z - s / 2, s, s);
     }
     if (!REDUCED) requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
-  if (!FINE) $("#spot").style.opacity = "0";
+  if (!FINE) spot.style.opacity = "0";
 })();
 
 const revealIO = "IntersectionObserver" in window
@@ -3171,6 +3647,7 @@ function renderChronicle(done) {
       <div>
         <div class="tl-date">${fmtLong(g.redeemed_at)}</div>
         <div class="tl-title">${esc(g.title)}</div>
+        ${g.redeemed_for ? `<div class="tl-when">Wunschtermin · ${esc(fmtWhen(g.redeemed_for))}</div>` : ""}
         ${g.redeemed_note ? `<div class="tl-note">„${esc(g.redeemed_note)}“</div>` : ""}
       </div>
     </li>`).join("");
@@ -3183,12 +3660,16 @@ function renderChronicle(done) {
 let vouchers = [];
 let filter = "open";
 
-async function loadPublic() {
+async function loadPublic(openId = null) {
   try {
     const [list] = await Promise.all([rpc("gs_list"), loadSettings()]);
     vouchers = list;
     renderPublic(true);
-    if (settings && settings.dedication && !store.get("gs_letter_seen") && !Letter.isOpen) {
+    observeReveal();
+    const target = openId && vouchers.find(v => v.id === openId);
+    if (target) {
+      setTimeout(() => openDialog(target), 350);
+    } else if (settings && settings.dedication && !store.get("gs_letter_seen") && !Letter.isOpen) {
       setTimeout(() => Letter.open(settings), 500);
     }
   } catch (e) {
@@ -3289,7 +3770,10 @@ addEventListener("resize", moveThumb);
 ===================================================================== */
 let lastFocus = null;
 
+let currentDialog = null;
+
 function openDialog(g) {
+  currentDialog = g;
   lastFocus = document.activeElement;
   const zone = $("#tearZone");
   zone.innerHTML = `<div class="${ticketClass(g)}">${ticketHTML(g, { titleId: "dTitle" })}</div>`;
@@ -3338,8 +3822,13 @@ function renderBottom(g) {
       <span class="tear-meter" aria-hidden="true"><i id="tearMeter"></i></span>
     </div>
     <div class="note-wrap" id="noteWrap">
-      <label class="field-label" for="note">Nachricht an den Schenker <small>(optional)</small></label>
-      <textarea class="field" id="note" maxlength="300" placeholder="z. B. Wie wäre es mit Samstag?"></textarea>
+      <label class="field-label" for="whenDate">Wann möchtest du ihn einlösen? <small>(optional)</small></label>
+      <div class="when-row">
+        <input class="field" type="date" id="whenDate" min="${todayISO()}" aria-label="Wunschdatum">
+        <input class="field" type="time" id="whenTime" value="18:00" step="900" aria-label="Uhrzeit">
+      </div>
+      <label class="field-label" for="note" style="margin-top:16px">Nachricht an den Schenker <small>(optional)</small></label>
+      <textarea class="field" id="note" maxlength="300" placeholder="z. B. Ich freu mich schon!"></textarea>
     </div>
     <div id="resultSlot"></div>`;
 }
@@ -3350,6 +3839,7 @@ function resultHTML(g, animate = true) {
       <svg class="check" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20"/><path d="M15 24.5l6 6 12-13"/></svg>
       <h3>Eingelöst</h3>
       <p>am ${fmtLong(g.redeemed_at)}</p>
+      ${g.redeemed_for ? `<p class="when-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Wunschtermin: ${esc(fmtWhen(g.redeemed_for))}</p>` : ""}
       ${g.redeemed_note ? `<blockquote>„${esc(g.redeemed_note)}“</blockquote>` : ""}
     </div>`;
 }
@@ -3498,9 +3988,23 @@ const Tear = (() => {
     x.fillRect(-M, 0, W + M, H);
 
     if (!back) {
-      // Perforation (ein Teil der Löcher bleibt am Abschnitt)
-      x.fillStyle = col.line;
-      for (let y = notch + 4; y < H - notch - 4; y += 10) x.fillRect(0, y, 1.5, Math.min(5, H - notch - 4 - y));
+      // Hologramm-Sticker
+      const HO = s.holo;
+      if (HO) {
+        x.save();
+        const hg = x.createLinearGradient(HO.x, HO.y, HO.x + HO.w, HO.y + HO.h);
+        ["#ff9ad5", "#9ad7ff", "#b5ffcf", "#fff3a8", "#ffb59a", "#c9a3ff"].forEach((c, i, a) => hg.addColorStop(i / (a.length - 1), c));
+        x.beginPath();
+        x.roundRect ? x.roundRect(HO.x, HO.y, HO.w, HO.h, 8) : x.rect(HO.x, HO.y, HO.w, HO.h);
+        x.fillStyle = hg;
+        x.globalAlpha = .9;
+        x.fill();
+        x.globalAlpha = .35;
+        x.strokeStyle = "#fff";
+        x.lineWidth = 1;
+        x.stroke();
+        x.restore();
+      }
       // Beschriftung
       const L = s.label;
       if (L) {
@@ -3533,8 +4037,13 @@ const Tear = (() => {
     }
     x.restore();
 
-    // Kerben oben und unten
+    // Kerben oben und unten, gestanzte Perforationslöcher
     x.globalCompositeOperation = "destination-out";
+    for (let y = notch + 6 + 3.5; y < H - notch - 6; y += 7) {
+      x.beginPath();
+      x.arc(0, y, 1.6, 0, Math.PI * 2);
+      x.fill();
+    }
     x.beginPath();
     x.arc(0, 0, notch, 0, Math.PI * 2);
     x.fill();
@@ -3608,6 +4117,7 @@ const Tear = (() => {
         ink: cssColor(ts.getPropertyValue("--tk-ink").trim() || "#fff")
       },
       label: { ...rel(lab), text: lab.textContent.toUpperCase(), font: `${ls.fontWeight} ${ls.fontSize} ${ls.fontFamily}`, ls: parseFloat(ls.letterSpacing) || 0 },
+      holo: $(".tk-holo", stub) ? rel($(".tk-holo", stub)) : null,
       barcode: rel(bar),
       tip: 0, theta: 0, omega: 0, sc: 1,
       mode: "rest", onDetach, onDone,
@@ -3980,7 +4490,10 @@ function setupTear(stub, g) {
   Tear.bind(stub, g, {
     onDetach() {
       const note = ($("#note") && $("#note").value) || "";
-      request = rpc("gs_redeem", { gid: g.id, note });
+      const wd = $("#whenDate") && $("#whenDate").value;
+      const wt = ($("#whenTime") && $("#whenTime").value) || "18:00";
+      const p_when = wd ? new Date(`${wd}T${wt}`).toISOString() : null;
+      request = rpc("gs_redeem", { gid: g.id, note, p_when });
       detachedAt = performance.now();
       ticket.classList.add("is-redeemed");
       const o = ticket.getBoundingClientRect();
@@ -4015,6 +4528,19 @@ function setupTear(stub, g) {
       ghost.innerHTML = `${ICON.check}<span>${fmtShort(g.redeemed_at)}</span>`;
       stub.replaceWith(ghost);
       ghost.animate([{ opacity: 0, transform: "scale(.96)" }, { opacity: 1, transform: "none" }], { duration: 500, easing: "cubic-bezier(.22,.8,.24,1)" });
+
+      // Tinten-Stempel knallt aufs Ticket
+      const tmp = document.createElement("div");
+      tmp.innerHTML = stampHTML(g);
+      const stamp = tmp.firstElementChild;
+      stamp.classList.add("slam");
+      ticket.appendChild(stamp);
+      if (!REDUCED) ticket.animate([
+        { transform: "none" },
+        { transform: "translate(1px, 3px) scale(.992)", offset: .5 },
+        { transform: "none" }
+      ], { duration: 380, delay: 300, easing: "ease-out" });
+      setTimeout(() => { try { navigator.vibrate && navigator.vibrate(18); } catch {} }, 300);
 
       $("#dEyebrow").textContent = "Eingelöst";
       const nb = $(".tk-new", ticket);
@@ -4097,9 +4623,11 @@ async function tryLogin(pw, silent = false) {
     $("#admin-login").hidden = true;
     $("#admin-app").hidden = false;
     buildPickers();
+    buildPresets();
     updatePreview();
     loadAdminList();
     loadLetterForm();
+    loadWishes();
   } catch (e) {
     store.set("gs_pw", null);
     if (!silent) {
@@ -4225,18 +4753,22 @@ $("#letterPreview").addEventListener("click", () => {
 });
 
 /* ---------- Link kopieren ---------- */
-$("#copyLink").addEventListener("click", async () => {
-  const url = location.href.split("#")[0];
+async function copyText(text) {
   try {
-    await navigator.clipboard.writeText(url);
+    await navigator.clipboard.writeText(text);
   } catch {
     const t = document.createElement("textarea");
-    t.value = url;
+    t.value = text;
+    t.style.cssText = "position:fixed;opacity:0";
     document.body.appendChild(t);
     t.select();
     try { document.execCommand("copy"); } catch {}
     t.parentNode.removeChild(t);
   }
+}
+
+$("#copyLink").addEventListener("click", async () => {
+  await copyText(location.href.split("#")[0]);
   toast("Link kopiert");
 });
 
@@ -4262,7 +4794,7 @@ async function loadAdminList() {
   const done = list.filter(g => g.redeemed_at).length;
   const rows = list.map((g, i) => {
     const status = g.redeemed_at
-      ? `<span class="status ok">Eingelöst</span>${fmtShort(g.redeemed_at)}${g.redeemed_note ? ` · „${esc(g.redeemed_note)}“` : ""}`
+      ? `<span class="status ok">Eingelöst</span>${fmtShort(g.redeemed_at)}${g.redeemed_for ? ` · Termin ${esc(fmtWhen(g.redeemed_for))}` : ""}${g.redeemed_note ? ` · „${esc(g.redeemed_note)}“` : ""}`
       : isExpired(g)
         ? `<span class="status">Abgelaufen</span>`
         : `<span class="status">Offen</span>${g.valid_until ? "bis " + fmtShort(g.valid_until) : "unbegrenzt"}`;
@@ -4271,6 +4803,7 @@ async function loadAdminList() {
         <div class="sw">${esc(g.emoji)}</div>
         <div class="meta"><b>${esc(g.title)}</b><small>${status}</small></div>
         <div class="acts">
+          <button data-a="link" title="Link kopieren" aria-label="Link kopieren">${ICON.link}</button>
           <button data-a="edit" title="Bearbeiten" aria-label="Bearbeiten">${ICON.edit}</button>
           ${g.redeemed_at ? `<button data-a="reset" title="Wieder einlösbar machen" aria-label="Wieder einlösbar machen">${ICON.reset}</button>` : ""}
           <button data-a="del" class="del" title="Löschen" aria-label="Löschen">${ICON.trash}</button>
@@ -4291,6 +4824,11 @@ $("#adminList").addEventListener("click", async e => {
   if (b.dataset.a === "edit") {
     const g = adminVouchers.find(v => v.id === id);
     if (g) startEdit(g);
+    return;
+  }
+  if (b.dataset.a === "link") {
+    await copyText(location.href.split("#")[0] + "#g=" + id);
+    toast("Link zu diesem Gutschein kopiert");
     return;
   }
 
@@ -4327,21 +4865,242 @@ $("#adminList").addEventListener("click", async e => {
   }
 });
 
+
+/* =====================================================================
+   STEMPEL-TEXTUR, TEILEN, FÄCHER, WUNSCHBOX
+===================================================================== */
+(() => {
+  // unregelmäßige Tinte für den Stempel (Maske)
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='170' height='170'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' seed='4'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -5.2 3.35'/></filter><rect width='100%' height='100%' filter='url(#g)'/></svg>`;
+  document.documentElement.style.setProperty("--grunge", `url("data:image/svg+xml,${encodeURIComponent(svg)}")`);
+})();
+
+$("#shareBtn").addEventListener("click", async () => {
+  const g = currentDialog;
+  if (!g) return;
+  const url = location.href.split("#")[0] + "#g=" + g.id;
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: g.title, text: `Gutschein: ${g.title}`, url });
+      return;
+    } catch (e) {
+      if (e && e.name === "AbortError") return;
+    }
+  }
+  await copyText(url);
+  toast("Link zu diesem Gutschein kopiert");
+});
+
+// Fächer neigt sich zur Maus
+(() => {
+  if (!FINE || REDUCED) return;
+  const hero = $("#hero");
+  const fan = $("#fan");
+  let raf = 0;
+  let ev = null;
+  hero.addEventListener("pointermove", e => {
+    ev = e;
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = 0;
+      const r = fan.getBoundingClientRect();
+      if (!r.width) return;
+      const x = clamp((ev.clientX - (r.left + r.width / 2)) / r.width, -1, 1);
+      const y = clamp((ev.clientY - (r.top + r.height / 2)) / r.height, -1, 1);
+      fan.style.transform = `perspective(1200px) rotateY(${(x * 12).toFixed(2)}deg) rotateX(${(-y * 9).toFixed(2)}deg)`;
+    });
+  });
+  hero.addEventListener("pointerleave", () => { fan.style.transform = ""; });
+})();
+
+/* ---------------------------- Wunschbox ---------------------------- */
+const PLANE_SVG = `<svg viewBox="0 0 48 48" width="46" height="46"><path d="M3 22L45 4 30 44 22 28z" fill="#f7f1e4"/><path d="M22 28L45 4 18 31z" fill="#d8cdb6"/><path d="M18 31l4-3 2 10z" fill="#bfb399"/><path d="M3 22L45 4 22 28" fill="none" stroke="rgba(120,95,60,.35)" stroke-width=".8"/></svg>`;
+
+async function flyPlane(paper) {
+  if (REDUCED) return;
+  const r = paper.getBoundingClientRect();
+  const fold = paper.animate([
+    { transform: "rotate(-1.4deg)", opacity: 1 },
+    { transform: "rotate(-6deg) scale(.6, .25)", opacity: .2, offset: .7 },
+    { transform: "rotate(-10deg) scale(.15, .1)", opacity: 0 }
+  ], { duration: 520, easing: "cubic-bezier(.55,0,.75,.2)", fill: "forwards" });
+  const plane = document.createElement("div");
+  plane.className = "plane";
+  plane.innerHTML = PLANE_SVG;
+  const cx = r.left + r.width / 2;
+  const cy = r.top + r.height / 2;
+  plane.style.left = (cx - 23) + "px";
+  plane.style.top = (cy - 23) + "px";
+  plane.style.opacity = "0";
+  document.body.appendChild(plane);
+  await pause(380);
+
+  const P = [[0, 0], [innerWidth * .12, 110], [innerWidth * .32, -innerHeight * .55], [innerWidth - cx + 140, -cy - 180]];
+  const bez = (t, i) => (1 - t) ** 3 * P[0][i] + 3 * (1 - t) ** 2 * t * P[1][i] + 3 * (1 - t) * t * t * P[2][i] + t ** 3 * P[3][i];
+  const base = -23.2;
+  const frames = [];
+  const N = 30;
+  for (let i = 0; i <= N; i++) {
+    const t = i / N;
+    const x = bez(t, 0);
+    const y = bez(t, 1);
+    const t2 = Math.min(1, t + .02);
+    const ang = Math.atan2(bez(t2, 1) - y, bez(t2, 0) - x) * 180 / Math.PI - base;
+    const sc = i === 0 ? .35 : 1 - t * .5;
+    const op = i === 0 ? 0 : t > .82 ? 1 - (t - .82) / .18 : 1;
+    frames.push({ transform: `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${ang.toFixed(1)}deg) scale(${sc.toFixed(3)})`, opacity: op });
+  }
+  plane.style.opacity = "";
+  await plane.animate(frames, { duration: 1700, easing: "cubic-bezier(.45,.05,.45,1)", fill: "forwards" }).finished.catch(() => {});
+  plane.remove();
+  fold.cancel();
+  paper.animate([
+    { opacity: 0, transform: "rotate(-1.4deg) translateY(18px)" },
+    { opacity: 1, transform: "rotate(-1.4deg)" }
+  ], { duration: 600, easing: "cubic-bezier(.22,.8,.24,1)" });
+}
+
+$("#wishText").addEventListener("input", e => { $("#wishCountPub").textContent = `${e.target.value.length}/300`; });
+
+$("#wishForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const paper = $("#wishForm");
+  const text = $("#wishText").value.trim();
+  if (!text) {
+    paper.classList.remove("shake");
+    void paper.offsetWidth;
+    paper.classList.add("shake");
+    $("#wishText").focus();
+    return;
+  }
+  const btn = $("#wishSend");
+  btn.disabled = true;
+  try {
+    await rpc("gs_wish", { p_text: text });
+    await flyPlane(paper);
+    $("#wishText").value = "";
+    $("#wishCountPub").textContent = "0/300";
+    toast("Dein Wunsch ist unterwegs");
+  } catch (err) {
+    toast(err.message, true);
+  }
+  btn.disabled = false;
+});
+
+/* --------------------------- Vorlagen ------------------------------ */
+const PRESETS = [
+  ["🍳", "Frühstück ans Bett", "Mit frischen Brötchen, Kaffee und allem, was du magst.", "gold"],
+  ["🎬", "Kinoabend", "Du suchst den Film aus – ich kümmere mich um Popcorn und Tickets.", "ocean"],
+  ["💆", "Massage", "Eine Stunde Entspannung, ganz ohne Zeitdruck.", "candy"],
+  ["🍝", "Kochabend", "Ich koche dein Lieblingsgericht – mit Nachtisch.", "sunset"],
+  ["🧹", "Haushalts-Joker", "Eine lästige Aufgabe deiner Wahl übernehme ich.", "galaxy"],
+  ["🏖️", "Ausflug", "Ein Tag raus – Ziel und Picknick inklusive.", "forest"],
+  ["🎮", "Spieleabend", "Snacks, Spiele, gute Laune – du bestimmst das Spiel.", "ocean"],
+  ["🛁", "Wellness-Abend", "Badewanne, Kerzen, Ruhe – ich bereite alles vor.", "candy"]
+];
+
+function buildPresets() {
+  $("#presets").innerHTML = PRESETS.map((p, i) => `<button type="button" data-p="${i}"><span aria-hidden="true">${p[0]}</span>${esc(p[1])}</button>`).join("");
+}
+
+function fillDraft({ emoji, title, description, theme }) {
+  Object.assign(draft, { emoji: emoji || draft.emoji, title: title || "", description: description || "", theme: theme || draft.theme });
+  buildPickers();
+  if (!EMOJIS.includes(draft.emoji)) $("#customEmoji").value = draft.emoji;
+  $("#fTitle").value = draft.title;
+  $("#fDesc").value = draft.description;
+  $("#cTitle").textContent = `${draft.title.length}/80`;
+  $("#cDesc").textContent = `${draft.description.length}/500`;
+  updatePreview();
+  const pv = $("#preview .ticket");
+  if (pv && !REDUCED) pv.animate([
+    { transform: "rotateY(-80deg) scale(.94)", opacity: .2 },
+    { transform: "rotateY(8deg)", opacity: 1, offset: .7 },
+    { transform: "none", opacity: 1 }
+  ], { duration: 700, easing: "cubic-bezier(.16,1,.3,1)" });
+}
+
+$("#presets").addEventListener("click", e => {
+  const b = e.target.closest("button[data-p]");
+  if (!b) return;
+  const [emoji, title, description, theme] = PRESETS[+b.dataset.p];
+  fillDraft({ emoji, title, description, theme });
+});
+
+/* ------------------------ Wünsche verwalten ------------------------ */
+let adminWishes = [];
+
+async function loadWishes() {
+  try { adminWishes = await rpc("gs_wishes", { pw: adminPw }); } catch { adminWishes = []; }
+  const open = adminWishes.filter(w => !w.done).length;
+  const badge = $("#wishBadge");
+  badge.hidden = open === 0;
+  badge.textContent = open;
+  $("#wishList").innerHTML = adminWishes.length ? adminWishes.map((w, i) => `
+    <div class="wish-li${w.done ? " done" : ""}" data-id="${w.id}" style="animation-delay:${i * .04}s">
+      <div><p>„${esc(w.text)}“</p><small>${esc(fmtLong(w.created_at))}${w.done ? " · erledigt" : ""}</small></div>
+      <div class="acts">
+        ${w.done ? "" : `<button class="make" data-w="make" title="Als Gutschein anlegen">Als Gutschein</button>`}
+        <button data-w="done" title="${w.done ? "Wieder offen" : "Als erledigt markieren"}" aria-label="${w.done ? "Wieder offen" : "Erledigt"}">${w.done ? ICON.reset : ICON.check}</button>
+        <button data-w="del" title="Löschen" aria-label="Löschen">${ICON.trash}</button>
+      </div>
+    </div>`).join("") : `<div class="empty" style="padding:26px 16px">Noch keine Wünsche eingegangen.</div>`;
+}
+
+$("#wishList").addEventListener("click", async e => {
+  const b = e.target.closest("button[data-w]");
+  if (!b) return;
+  const id = b.closest(".wish-li").dataset.id;
+  const w = adminWishes.find(x => x.id === id);
+  if (!w) return;
+  if (b.dataset.w === "make") {
+    const t = w.text.trim();
+    const title = t.length <= 80 ? t : t.slice(0, 77).replace(/\s+\S*$/, "") + " …";
+    if (editingId) endEdit();
+    fillDraft({ emoji: "🎁", title, description: t.length > 80 ? t : "", theme: draft.theme });
+    $("#formPanel").scrollIntoView({ behavior: REDUCED ? "auto" : "smooth", block: "start" });
+    try { await rpc("gs_wish_set", { pw: adminPw, wid: id, p_done: true }); } catch {}
+    loadWishes();
+    toast("Wunsch ins Formular übernommen");
+    return;
+  }
+  if (b.dataset.w === "del" && !b.classList.contains("confirm")) {
+    b.classList.add("confirm");
+    b.textContent = "Löschen?";
+    setTimeout(() => {
+      if (!b.isConnected || !b.classList.contains("confirm")) return;
+      b.classList.remove("confirm");
+      b.innerHTML = ICON.trash;
+    }, 3500);
+    return;
+  }
+  b.disabled = true;
+  try {
+    if (b.dataset.w === "del") await rpc("gs_wish_delete", { pw: adminPw, wid: id });
+    else await rpc("gs_wish_set", { pw: adminPw, wid: id, p_done: !w.done });
+    loadWishes();
+  } catch (err) {
+    b.disabled = false;
+    toast(err.message, true);
+  }
+});
+
 /* =====================================================================
    ROUTER
 ===================================================================== */
 function route() {
   const admin = location.hash === "#admin";
+  const deep = /^#g=([0-9a-f-]{36})$/i.exec(location.hash);
   closeDialog();
   if (admin && Letter.isOpen) Letter.close();
   $("#view-public").classList.toggle("on", !admin);
   $("#view-admin").classList.toggle("on", admin);
   window.scrollTo(0, 0);
   if (admin) {
-    if (!$("#admin-app").hidden) loadAdminList();
+    if (!$("#admin-app").hidden) { loadAdminList(); loadWishes(); }
     else if (adminPw) tryLogin(adminPw, true);
   } else {
-    loadPublic();
+    loadPublic(deep ? deep[1] : null);
   }
 }
 
