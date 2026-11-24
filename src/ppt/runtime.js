@@ -492,7 +492,7 @@ class Player {
     this.host = host; this.proj = proj; this.o = opts || {}; this.idx = 0; this.eng = null; this.layer = null; this.trans = null; this.timer = 0; this.presenter = !!this.o.presenter; this.keyBuf = ''; this.closed = false; this.atEnd = false; this.tickIv = 0;
     this.W = proj.size.w; this.H = proj.size.h; this.seen = [];
     const d = (c, p) => { const e = document.createElement('div'); e.className = c; if (p) p.appendChild(e); return e; };
-    host.innerHTML = ''; host.classList.add('pp-player');
+    host.innerHTML = ''; host.classList.add('pp-player'); host.style.display = 'flex';
     this.main = d('pp-main', host); this.stage = d('pp-stage', this.main); this.stage.style.width = this.W + 'px'; this.stage.style.height = this.H + 'px';
     this.endEl = d('pp-end', this.main); this.endEl.textContent = 'Ende der Präsentation – Klicken oder Esc zum Beenden.';
     this.toast = d('pp-toast', this.main);

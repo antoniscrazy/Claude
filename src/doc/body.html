@@ -1,0 +1,26 @@
+<div id="app">
+  <div id="titlebar">
+    <div class="logo" aria-hidden="true">W</div>
+    <button class="qa" id="qSave" title="Projekt speichern (Strg+S)" aria-label="Projekt speichern"></button>
+    <button class="qa" id="qUndo" title="Rückgängig (Strg+Z)" aria-label="Rückgängig"></button>
+    <button class="qa" id="qRedo" title="Wiederholen (Strg+Y)" aria-label="Wiederholen"></button>
+    <input id="docname" value="Dokument" aria-label="Dateiname" maxlength="80">
+    <span id="savestat" role="status">–</span>
+  </div>
+  <div id="tabs" role="tablist"></div>
+  <div id="ribbon" role="toolbar"></div>
+  <div id="findbar" role="search">
+    <input type="text" id="fq" placeholder="Suchen" aria-label="Suchbegriff"><input type="text" id="fr" placeholder="Ersetzen durch" aria-label="Ersetzen durch">
+    <label><input type="checkbox" id="fcs"> Groß-/Kleinschreibung</label>
+    <button class="btn" id="fprev" title="Vorheriger Treffer (Umschalt+Eingabe)">▲</button><button class="btn" id="fnext" title="Nächster Treffer (Eingabe)">▼</button>
+    <button class="btn" id="frep">Ersetzen</button><button class="btn" id="frepall">Alle ersetzen</button><span id="findinfo" role="status"></span><button class="btn" id="fclose" aria-label="Suchleiste schließen">Schließen</button>
+  </div>
+  <div id="work">
+    <div id="nav"><h4>Navigation</h4><div id="navlist"></div></div>
+    <div id="scroller"><div id="zoomwrap"><div id="pages"><div id="sheets"></div><div id="doc" class="docflow" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Dokument"></div></div></div></div>
+  </div>
+  <div id="status"><span id="stpage"></span><span id="stwords"></span><span id="stchars"></span><span class="sp"></span><label>Zoom <select id="zoomsel" aria-label="Zoom"><option value="fit">Seitenbreite</option><option value="0.5">50 %</option><option value="0.75">75 %</option><option value="1" selected>100 %</option><option value="1.25">125 %</option><option value="1.5">150 %</option><option value="2">200 %</option></select></label></div>
+</div>
+<div id="toast" role="alert"></div>
+<input type="file" id="fileIn" accept=".json" hidden>
+<input type="file" id="fileImg" accept="image/png,image/jpeg,image/gif,image/webp" hidden>

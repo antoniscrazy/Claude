@@ -15,7 +15,7 @@
 .pp-chart text{font-family:inherit}
 /* ---- Präsentationsfenster ---- */
 .pp-player{position:fixed;left:0;top:0;right:0;bottom:0;background:#000;color:#fff;font-family:"Segoe UI",Arial,sans-serif;overflow:hidden;user-select:none;z-index:9000;display:flex}
-.pp-main{position:relative;flex:1 1 auto;overflow:hidden;cursor:default}
+.pp-main{position:relative;flex:1 1 auto;min-width:0;height:100%;overflow:hidden;cursor:default}
 .pp-stage{position:absolute;left:0;top:0;overflow:hidden;background:#000;transform-origin:0 0}
 .pp-side{display:none;flex:0 0 34%;max-width:520px;background:#1d1f24;padding:14px;box-sizing:border-box;flex-direction:column;gap:10px;border-left:1px solid #333}
 .pp-player.presenter .pp-side{display:flex}

@@ -282,7 +282,7 @@ function parseFormula(src) {
     if (k.t === 'rng') { const a = refNode(k.a, k.sh), b = refNode(k.b, k.sh); if (a.t === 'err' || b.t === 'err') return { t: 'err', code: '#BEZUG!' }; return { t: 'rng', sh: k.sh, r1: a.r, c1: a.c, r2: b.r, c2: b.c, ar1: a.ar, ac1: a.ac, ar2: b.ar, ac2: b.ac }; }
     if (k.t === 'fn') {
       if (!isOp('(')) throw new Error('Klammer fehlt'); p++; const args = [];
-      if (isOp(')')) { p++; return { t: 'fn', name: k.v, args }; }
+      if (isOp(')')) { p++; if (BOOLS.hasOwnProperty(k.v)) return { t: 'bool', v: BOOLS[k.v] }; return { t: 'fn', name: k.v, args }; } // WAHR()/FALSCH() wie von LibreOffice geschrieben
       for (;;) { if (isOp(';') || isOp(',') || isOp(')')) args.push({ t: 'empty' }); else args.push(expr()); if (isOp(';') || isOp(',')) { p++; continue; } if (isOp(')')) { p++; break; } throw new Error('Erwartet ; oder )'); }
       return { t: 'fn', name: k.v, args };
     }

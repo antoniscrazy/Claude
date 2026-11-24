@@ -88,7 +88,7 @@ function sampleProject() {
   // Folie 2: Inhalt + Klickgruppen
   s = newSlideData('content', p); s.objects[0].html = lines('Vier Schritte, ein Zeitplan'); s.objects[1].html = lines('Effekt A startet per Klick (500 ms)', 'Effekt B startet mit A, 200 ms verzögert', 'Effekt C startet nach B', 'Effekt D wartet auf den nächsten Klick');
   s.objects[1].w = W * .46; s.objects[1].st = { size: 20, bullets: true };
-  const mk = (i, label, fill, kind) => mkShapeObj(kind, W * .58 + (i % 2) * 300, H * .3 + Math.floor(i / 2) * 220, 250, 170, fill, { name: 'Effekt ' + label, html: lines(label) });
+  const mk = (i, label, fill, kind) => mkShapeObj(kind, W * .55 + (i % 2) * 300, H * .3 + Math.floor(i / 2) * 220, 250, 170, fill, { name: 'Effekt ' + label, html: lines(label) });
   const A = mk(0, 'A', '@a1', 'round'), B = mk(1, 'B', '@a2', 'ellipse'), C = mk(2, 'C', '@a3', 'diamond'), D = mk(3, 'D', '@a4', 'hexagon');
   s.objects.push(A, B, C, D);
   s.effects.push(mkEffect(A.id, 'entrance', 'zoom', 'click', { dur: .5 }), mkEffect(B.id, 'entrance', 'fly', 'with', { dur: .6, delay: .2, dir: 'right' }), mkEffect(C.id, 'entrance', 'fade', 'after', { dur: .5 }), mkEffect(D.id, 'emphasis', 'grow', 'click', { dur: .6 }), mkEffect(D.id, 'exit', 'fade', 'after', { dur: .4 }));

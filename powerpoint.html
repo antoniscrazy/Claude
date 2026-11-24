@@ -26,7 +26,7 @@
 .pp-chart text{font-family:inherit}
 /* ---- Präsentationsfenster ---- */
 .pp-player{position:fixed;left:0;top:0;right:0;bottom:0;background:#000;color:#fff;font-family:"Segoe UI",Arial,sans-serif;overflow:hidden;user-select:none;z-index:9000;display:flex}
-.pp-main{position:relative;flex:1 1 auto;overflow:hidden;cursor:default}
+.pp-main{position:relative;flex:1 1 auto;min-width:0;height:100%;overflow:hidden;cursor:default}
 .pp-stage{position:absolute;left:0;top:0;overflow:hidden;background:#000;transform-origin:0 0}
 .pp-side{display:none;flex:0 0 34%;max-width:520px;background:#1d1f24;padding:14px;box-sizing:border-box;flex-direction:column;gap:10px;border-left:1px solid #333}
 .pp-player.presenter .pp-side{display:flex}
@@ -763,7 +763,7 @@ class Player {
     this.host = host; this.proj = proj; this.o = opts || {}; this.idx = 0; this.eng = null; this.layer = null; this.trans = null; this.timer = 0; this.presenter = !!this.o.presenter; this.keyBuf = ''; this.closed = false; this.atEnd = false; this.tickIv = 0;
     this.W = proj.size.w; this.H = proj.size.h; this.seen = [];
     const d = (c, p) => { const e = document.createElement('div'); e.className = c; if (p) p.appendChild(e); return e; };
-    host.innerHTML = ''; host.classList.add('pp-player');
+    host.innerHTML = ''; host.classList.add('pp-player'); host.style.display = 'flex';
     this.main = d('pp-main', host); this.stage = d('pp-stage', this.main); this.stage.style.width = this.W + 'px'; this.stage.style.height = this.H + 'px';
     this.endEl = d('pp-end', this.main); this.endEl.textContent = 'Ende der Präsentation – Klicken oder Esc zum Beenden.';
     this.toast = d('pp-toast', this.main);
@@ -1101,7 +1101,7 @@ function sampleProject() {
   // Folie 2: Inhalt + Klickgruppen
   s = newSlideData('content', p); s.objects[0].html = lines('Vier Schritte, ein Zeitplan'); s.objects[1].html = lines('Effekt A startet per Klick (500 ms)', 'Effekt B startet mit A, 200 ms verzögert', 'Effekt C startet nach B', 'Effekt D wartet auf den nächsten Klick');
   s.objects[1].w = W * .46; s.objects[1].st = { size: 20, bullets: true };
-  const mk = (i, label, fill, kind) => mkShapeObj(kind, W * .58 + (i % 2) * 300, H * .3 + Math.floor(i / 2) * 220, 250, 170, fill, { name: 'Effekt ' + label, html: lines(label) });
+  const mk = (i, label, fill, kind) => mkShapeObj(kind, W * .55 + (i % 2) * 300, H * .3 + Math.floor(i / 2) * 220, 250, 170, fill, { name: 'Effekt ' + label, html: lines(label) });
   const A = mk(0, 'A', '@a1', 'round'), B = mk(1, 'B', '@a2', 'ellipse'), C = mk(2, 'C', '@a3', 'diamond'), D = mk(3, 'D', '@a4', 'hexagon');
   s.objects.push(A, B, C, D);
   s.effects.push(mkEffect(A.id, 'entrance', 'zoom', 'click', { dur: .5 }), mkEffect(B.id, 'entrance', 'fly', 'with', { dur: .6, delay: .2, dir: 'right' }), mkEffect(C.id, 'entrance', 'fade', 'after', { dur: .5 }), mkEffect(D.id, 'emphasis', 'grow', 'click', { dur: .6 }), mkEffect(D.id, 'exit', 'fade', 'after', { dur: .4 }));
@@ -1843,7 +1843,7 @@ function fontGroup() {
 }
 function paraGroup() {
   return G_('Absatz', col(el('div', { class: 'rb-field' }, ...['left', 'center', 'right'].map(a => B({ icon: 'align' + a[0], sm: 1, tip: { left: 'Linksbündig', center: 'Zentriert', right: 'Rechtsbündig' }[a], en: textSel, on: () => textStateOf('align') === a, fn: () => applyTextStyle('align', a) })), B({ icon: 'bullets', sm: 1, tip: 'Aufzählung', en: textSel, on: () => !!textStateOf('bullets'), fn: () => applyObjStyle('bullets') })),
-    el('div', { class: 'rb-field' }, F({ type: 'select', label: 'Anker', tip: 'Vertikale Ausrichtung', opts: [['top', 'Oben'], ['middle', 'Mitte'], ['bottom', 'Unten']], en: textSel, get: () => textStateOf('valign'), set: v => applyObjStyle('valign', v) }))));
+    el('div', { class: 'rb-field' }, F({ type: 'select', tip: 'Vertikale Ausrichtung (Anker)', opts: [['top', 'Oben'], ['middle', 'Mitte'], ['bottom', 'Unten']], en: textSel, get: () => textStateOf('valign'), set: v => applyObjStyle('valign', v) }))));
 }
 function arrangeGroup() {
   return G_('Anordnen', B({ icon: 'front', label: 'Nach vorne', en: hasSel, fn: () => arrange('front'), tip: 'Ganz nach vorne' }), B({ icon: 'back', label: 'Nach hinten', en: hasSel, fn: () => arrange('back'), tip: 'Ganz nach hinten' }),

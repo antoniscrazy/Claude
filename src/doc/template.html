@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WebOffice Textverarbeitung</title>
+<!--
+  WebOffice Textverarbeitung – eigenständige, seitenorientierte Textverarbeitung (eine Datei, offline, ohne externe Abhängigkeiten).
+  ZIP/DOCX-Schreiben, Sanitizer und Paginierung sind eigener Code ohne Fremdlizenzen.
+-->
+<style>
+@@include doc/style.css@@
+</style>
+</head>
+<body>
+@@include doc/body.html@@
+<script>
+@@include shared/zip.js@@
+</script>
+<script>
+@@include doc/icons.js@@
+@@include doc/d1-core.js@@
+@@include doc/d2-layout.js@@
+@@include doc/d3-commands.js@@
+@@include doc/d4-io.js@@
+</script>
+</body>
+</html>

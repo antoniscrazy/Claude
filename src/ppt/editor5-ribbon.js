@@ -35,7 +35,7 @@ function fontGroup() {
 }
 function paraGroup() {
   return G_('Absatz', col(el('div', { class: 'rb-field' }, ...['left', 'center', 'right'].map(a => B({ icon: 'align' + a[0], sm: 1, tip: { left: 'Linksbündig', center: 'Zentriert', right: 'Rechtsbündig' }[a], en: textSel, on: () => textStateOf('align') === a, fn: () => applyTextStyle('align', a) })), B({ icon: 'bullets', sm: 1, tip: 'Aufzählung', en: textSel, on: () => !!textStateOf('bullets'), fn: () => applyObjStyle('bullets') })),
-    el('div', { class: 'rb-field' }, F({ type: 'select', label: 'Anker', tip: 'Vertikale Ausrichtung', opts: [['top', 'Oben'], ['middle', 'Mitte'], ['bottom', 'Unten']], en: textSel, get: () => textStateOf('valign'), set: v => applyObjStyle('valign', v) }))));
+    el('div', { class: 'rb-field' }, F({ type: 'select', tip: 'Vertikale Ausrichtung (Anker)', opts: [['top', 'Oben'], ['middle', 'Mitte'], ['bottom', 'Unten']], en: textSel, get: () => textStateOf('valign'), set: v => applyObjStyle('valign', v) }))));
 }
 function arrangeGroup() {
   return G_('Anordnen', B({ icon: 'front', label: 'Nach vorne', en: hasSel, fn: () => arrange('front'), tip: 'Ganz nach vorne' }), B({ icon: 'back', label: 'Nach hinten', en: hasSel, fn: () => arrange('back'), tip: 'Ganz nach hinten' }),
