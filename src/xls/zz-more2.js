@@ -112,3 +112,12 @@ async function pasteButton() {
 (() => { const base = RIB.start; RIB.start = () => { const g = base(), cb = g.find(x => (x.querySelector('.gn') || {}).textContent === 'Zwischenablage'); if (cb) { const first = cb.querySelector('.rb-btn'); if (first) first.replaceWith(B({ icon: 'paste', label: 'Einfügen', tip: 'Einfügen (Strg+V)', fn: pasteButton })); } return g; }; })();
 
 (() => { const base = RIB.file; RIB.file = () => { const g = base(); g.push(GR('Einstellungen', B({ icon: 'gear', label: 'Einstellungen', tip: 'Design, Dunkelmodus, Touch und mehr', fn: openSettings }))); return g; }; IC.gear = '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.600 5.600l2.100 2.100M16.300 16.300l2.100 2.100M5.600 18.400l2.100-2.100M16.300 7.700l2.100-2.100"/>'; })();
+
+/* Touch: Umschalter „Auswählen / Verschieben“ in der Statusleiste und im Reiter Ansicht */
+S.panMode = false;
+function togglePan() { S.panMode = !S.panMode; $('#viewport').classList.toggle('panmode', S.panMode); const b = $('#panbtn'); if (b) { b.classList.toggle('on', S.panMode); b.textContent = S.panMode ? '✋ Verschieben' : '👆 Auswählen'; b.title = S.panMode ? 'Ein Finger verschiebt die Tabelle (zwei Finger verschieben immer)' : 'Ein Finger wählt Zellen aus (zwei Finger verschieben die Tabelle)'; } refreshRibbon(); }
+(() => {
+  const st = document.createElement('style'); st.textContent = '#panbtn{border:1px solid var(--rbd,#ccc);background:transparent;color:inherit;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:12px}#panbtn.on{background:var(--ac);border-color:var(--ac);color:#fff}#viewport.panmode{cursor:grab}'; document.head.append(st);
+  window.addEventListener('DOMContentLoaded', () => { const stt = $('#status'); if (stt && !$('#panbtn')) { const b = el('button', { id: 'panbtn', type: 'button', onclick: togglePan }); b.textContent = '👆 Auswählen'; b.title = 'Ein Finger wählt Zellen aus (zwei Finger verschieben die Tabelle)'; stt.insertBefore(b, stt.querySelector('.sp') || null); } });
+  const base = RIB.view; RIB.view = () => { const g = base(); g.push(GR('Touch', B({ icon: 'touch', label: S.panMode ? 'Verschieben aktiv' : 'Auswählen aktiv', tip: 'Umschalten: ein Finger wählt aus oder verschiebt (zwei Finger verschieben immer)', on: () => S.panMode, fn: togglePan }))); return g; };
+})();

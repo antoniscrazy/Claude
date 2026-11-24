@@ -135,7 +135,14 @@ const focusGrid = () => { const v = $('#viewport'); v.focus({ preventScroll: tru
 /* ---------- Pointer: Auswahl, Ausfüllgriff, Spaltenbreite ---------- */
 let G = null, lastDown = null;
 function vpPoint(e) { const vp = $('#viewport'), r = vp.getBoundingClientRect(); return { x: e.clientX - r.left + vp.scrollLeft, y: e.clientY - r.top + vp.scrollTop }; }
+/* Touch: ein Finger wählt aus (oder verschiebt im Verschieben-Modus), zwei Finger verschieben die Tabelle – nie beides zugleich */
+const TP = new Map(); let PAN = null, AUTO = 0;
+function panStart(vp) { const ps = [...TP.values()], cx = ps.reduce((a, p) => a + p.x, 0) / ps.length, cy = ps.reduce((a, p) => a + p.y, 0) / ps.length; PAN = { cx, cy, sl: vp.scrollLeft, st: vp.scrollTop }; }
+function panMove(vp) { const ps = [...TP.values()], cx = ps.reduce((a, p) => a + p.x, 0) / ps.length, cy = ps.reduce((a, p) => a + p.y, 0) / ps.length; vp.scrollLeft = PAN.sl - (cx - PAN.cx); vp.scrollTop = PAN.st - (cy - PAN.cy); }
+function stopAuto() { if (AUTO) { cancelAnimationFrame(AUTO); AUTO = 0; } }
 function onGridDown(e) {
+  const vp0 = $('#viewport');
+  if (e.pointerType === 'touch') { TP.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (TP.size > 1) { G = null; stopAuto(); e.preventDefault(); panStart(vp0); PAN.multi = true; return; } if (S.panMode && !e.target.classList.contains('fillh') && !e.target.closest('.xchart')) { e.preventDefault(); vp0.setPointerCapture(e.pointerId); panStart(vp0); PAN.multi = false; return; } }
   if (e.button !== 0) return; const vp = $('#viewport'); S.focus = 'grid';
   if (e.target.closest('.xchart')) return;
   const p = vpPoint(e); if (p.x > colX[COLS] || p.y > rowY[ROWS]) return;
@@ -153,8 +160,12 @@ function onGridDown(e) {
   lastDown = { r, c, t: now }; selectCell(r, c, shift); G = { t: 'sel' };
 }
 function onGridMove(e) {
+  if (e.pointerType === 'touch' && TP.has(e.pointerId)) { TP.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (PAN) { e.preventDefault(); panMove($('#viewport')); return; } }
   if (!G) return; const p = vpPoint(e), vp = $('#viewport'), vr = vp.getBoundingClientRect();
-  if (e.clientY > vr.bottom - 14) vp.scrollTop += 24; else if (e.clientY < vr.top + 14) vp.scrollTop -= 24; if (e.clientX > vr.right - 14) vp.scrollLeft += 24; else if (e.clientX < vr.left + 14) vp.scrollLeft -= 24;
+  if (e.pointerType !== 'touch' && G.t === 'sel') { // gleichmäßiges Mitscrollen am Rand (nur Maus/Stift), nicht pro Bewegung
+    const dx = e.clientX > vr.right - 20 ? e.clientX - (vr.right - 20) : e.clientX < vr.left + 20 ? e.clientX - (vr.left + 20) : 0, dy = e.clientY > vr.bottom - 20 ? e.clientY - (vr.bottom - 20) : e.clientY < vr.top + 20 ? e.clientY - (vr.top + 20) : 0; stopAuto();
+    if (dx || dy) { const step = () => { if (!G || G.t !== 'sel') { AUTO = 0; return; } vp.scrollLeft += Math.sign(dx) * Math.min(18, Math.abs(dx) / 3 + 2) * (dx ? 1 : 0); vp.scrollTop += Math.sign(dy) * Math.min(18, Math.abs(dy) / 3 + 2) * (dy ? 1 : 0); const pp = vpPoint(e), rr = clamp(rowAt(clamp(pp.y, 0, rowY[ROWS] - 1)), 0, ROWS - 1), cc = clamp(colAt(clamp(pp.x, 0, colX[COLS] - 1)), 0, COLS - 1); S.sel = { r1: S.anchor.r, c1: S.anchor.c, r2: rr, c2: cc }; render(); AUTO = requestAnimationFrame(step); }; AUTO = requestAnimationFrame(step); }
+  }
   const r = clamp(rowAt(clamp(p.y, 0, rowY[ROWS] - 1)), 0, ROWS - 1), c = clamp(colAt(clamp(p.x, 0, colX[COLS] - 1)), 0, COLS - 1);
   if (G.t === 'sel') { S.sel = { r1: S.anchor.r, c1: S.anchor.c, r2: r, c2: c }; render(); }
   else if (G.t === 'fill') {
@@ -163,7 +174,7 @@ function onGridMove(e) {
     S.fillPreview = G.target; drawSelection();
   }
 }
-function onGridUp() { if (!G) return; const g = G; G = null; if (g.t === 'fill') { const t = g.target; S.fillPreview = null; if (t) fillRange(g.src, t, g.dir); else drawSelection(); } }
+function onGridUp(e) { if (e && e.pointerType === 'touch') { TP.delete(e.pointerId); if (!TP.size || (PAN && PAN.multi && TP.size < 2)) PAN = null; } stopAuto(); if (!G) return; const g = G; G = null; if (g.t === 'fill') { const t = g.target; S.fillPreview = null; if (t) fillRange(g.src, t, g.dir); else drawSelection(); } }
 /* Kopfzeilen: Auswahl ganzer Spalten/Zeilen, Größenänderung am Rand */
 function headDown(e, kind) {
   if (e.button !== 0) return; if (S.editing && !commitEdit(0, 0)) return; const hd = e.currentTarget, sh = cur(), vp = $('#viewport');
