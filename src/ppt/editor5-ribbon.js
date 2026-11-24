@@ -43,7 +43,7 @@ function arrangeGroup() {
     col(B({ icon: 'group', sm: 1, label: 'Gruppieren', tip: 'Gruppieren (Strg+G)', en: () => S.sel.length > 1, fn: groupSel }), B({ icon: 'ungroup', sm: 1, label: 'Gruppierung aufheben', tip: 'Entgruppieren (Strg+Umschalt+G)', en: () => selObjs().some(o => o.type === 'group'), fn: ungroupSel })),
     B({ icon: 'align', label: 'Ausrichten', en: hasSel, menu: () => [{ label: 'Links', fn: () => alignSel('l') }, { label: 'Horizontal zentrieren', fn: () => alignSel('ch') }, { label: 'Rechts', fn: () => alignSel('r') }, '-', { label: 'Oben', fn: () => alignSel('t') }, { label: 'Vertikal zentrieren', fn: () => alignSel('cv') }, { label: 'Unten', fn: () => alignSel('b') }, '-', { label: 'Horizontal verteilen', fn: () => distribute('h'), disabled: S.sel.length < 3 }, { label: 'Vertikal verteilen', fn: () => distribute('v'), disabled: S.sel.length < 3 }] }));
 }
-function shapeMenu() { return Object.entries(SHAPES).map(([k, v]) => ({ label: v, icon: 'shape', fn: () => insertShape(k) })); }
+function shapeMenu() { return SHAPE_GROUPS.flatMap(([g, ks], i) => [...(i ? ['-'] : []), { label: g, disabled: true }, ...ks.map(k => ({ label: SHAPES[k], icon: 'shape', fn: () => insertShape(k) }))]); }
 function layoutMenu(fn) { return Object.entries(LAYOUTS).map(([k, v]) => ({ label: v, icon: 'layout', fn: () => fn(k) })); }
 const startNew = () => newSlide('content');
 

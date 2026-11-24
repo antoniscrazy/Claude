@@ -1,7 +1,7 @@
 /* =====================================================================
    1. Zustand, Hilfsfunktionen, Dialoge, Verlauf (Undo/Redo)
    ===================================================================== */
-const { uid, clamp, sanitizeHTML, plainText, rc, TEMPLATES, newMaster, LAYOUTS, SHAPES, layoutPh, newPlaceholders, renderSlide, renderObj,
+const { uid, clamp, sanitizeHTML, plainText, rc, TEMPLATES, newMaster, LAYOUTS, SHAPES, SHAPE_GROUPS, layoutPh, newPlaceholders, renderSlide, renderObj,
   FX, CAT_NAMES, START_NAMES, DIR_NAMES, TRANS, TDIR_NAMES, buildSchedule, AnimEngine, validateProject, Player } = PP;
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));

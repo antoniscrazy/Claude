@@ -11,7 +11,8 @@ const px = n => (Math.round(n * 100) / 100) + 'px';
 let _uc = 0;
 const uid = p => p + '_' + (Math.random() * 1e9 | 0).toString(36) + (++_uc).toString(36);
 const escHtml = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const SHAPES = { rect: 'Rechteck', round: 'Abgerundetes Rechteck', ellipse: 'Ellipse', triangle: 'Dreieck', diamond: 'Raute', star: 'Stern', arrow: 'Blockpfeil', hexagon: 'Sechseck' };
+const SHAPES = { rect: 'Rechteck', round: 'Abgerundetes Rechteck', ellipse: 'Ellipse', triangle: 'Dreieck', diamond: 'Raute', star: 'Stern', arrow: 'Blockpfeil', hexagon: 'Sechseck', rtriangle: 'Rechtwinkliges Dreieck', pentagon: 'Fünfeck', octagon: 'Achteck', parallelogram: 'Parallelogramm', trapezoid: 'Trapez', chevron: 'Chevron', plus: 'Kreuz', heart: 'Herz', donut: 'Ring', cloud: 'Wolke', callout: 'Sprechblase', larrow: 'Pfeil links', uarrow: 'Pfeil oben', darrow: 'Pfeil unten', lrarrow: 'Doppelpfeil', frame: 'Rahmen' };
+const SHAPE_GROUPS = [['Grundformen', ['rect', 'round', 'ellipse', 'triangle', 'rtriangle', 'diamond', 'pentagon', 'hexagon', 'octagon', 'parallelogram', 'trapezoid', 'frame', 'donut']], ['Pfeile', ['arrow', 'larrow', 'uarrow', 'darrow', 'lrarrow', 'chevron']], ['Sonstige', ['star', 'plus', 'heart', 'cloud', 'callout']]];
 const LAYOUTS = { title: 'Titelfolie', content: 'Titel und Inhalt', two: 'Zwei Spalten', section: 'Abschnittstitel', blank: 'Leer' };
 const TYPES = ['shape', 'text', 'image', 'line', 'table', 'chart', 'group'];
 
@@ -142,8 +143,31 @@ function shapeNode(o, w, h) {
     case 'arrow': return svgEl('polygon', { points: pts([[0, h * .3], [w * .6, h * .3], [w * .6, 0], [w, h / 2], [w * .6, h], [w * .6, h * .7], [0, h * .7]]) });
     case 'hexagon': return svgEl('polygon', { points: pts([[w * .25, 0], [w * .75, 0], [w, h / 2], [w * .75, h], [w * .25, h], [0, h / 2]]) });
     case 'star': { const p = []; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? .4 : 1; p.push([w / 2 + Math.cos(a) * r * w / 2, h / 2 + Math.sin(a) * r * h / 2]); } return svgEl('polygon', { points: pts(p) }); }
+    case 'rtriangle': return svgEl('polygon', { points: pts([[0, 0], [0, h], [w, h]]) });
+    case 'pentagon': return svgEl('polygon', { points: pts([[w / 2, 0], [w, h * .38], [w * .81, h], [w * .19, h], [0, h * .38]]) });
+    case 'octagon': { const c = .29; return svgEl('polygon', { points: pts([[c * w, 0], [(1 - c) * w, 0], [w, c * h], [w, (1 - c) * h], [(1 - c) * w, h], [c * w, h], [0, (1 - c) * h], [0, c * h]]) }); }
+    case 'parallelogram': return svgEl('polygon', { points: pts([[w * .25, 0], [w, 0], [w * .75, h], [0, h]]) });
+    case 'trapezoid': return svgEl('polygon', { points: pts([[w * .2, 0], [w * .8, 0], [w, h], [0, h]]) });
+    case 'chevron': return svgEl('polygon', { points: pts([[0, 0], [w * .7, 0], [w, h / 2], [w * .7, h], [0, h], [w * .3, h / 2]]) });
+    case 'plus': { const t = .33; return svgEl('polygon', { points: pts([[t * w, 0], [(1 - t) * w, 0], [(1 - t) * w, t * h], [w, t * h], [w, (1 - t) * h], [(1 - t) * w, (1 - t) * h], [(1 - t) * w, h], [t * w, h], [t * w, (1 - t) * h], [0, (1 - t) * h], [0, t * h], [t * w, t * h]]) }); }
+    case 'larrow': return svgEl('polygon', { points: pts([[w, h * .3], [w * .4, h * .3], [w * .4, 0], [0, h / 2], [w * .4, h], [w * .4, h * .7], [w, h * .7]]) });
+    case 'uarrow': return svgEl('polygon', { points: pts([[w * .3, h], [w * .3, h * .4], [0, h * .4], [w / 2, 0], [w, h * .4], [w * .7, h * .4], [w * .7, h]]) });
+    case 'darrow': return svgEl('polygon', { points: pts([[w * .3, 0], [w * .7, 0], [w * .7, h * .6], [w, h * .6], [w / 2, h], [0, h * .6], [w * .3, h * .6]]) });
+    case 'lrarrow': return svgEl('polygon', { points: pts([[0, h / 2], [w * .25, 0], [w * .25, h * .3], [w * .75, h * .3], [w * .75, 0], [w, h / 2], [w * .75, h], [w * .75, h * .7], [w * .25, h * .7], [w * .25, h]]) });
+    case 'heart': return svgEl('path', { d: `M${w / 2} ${h} C${-w * .1} ${h * .45} ${w * .2} ${-h * .05} ${w / 2} ${h * .28} C${w * .8} ${-h * .05} ${w * 1.1} ${h * .45} ${w / 2} ${h} Z` });
+    case 'donut': return svgEl('path', { d: `M0 ${h / 2} a${w / 2} ${h / 2} 0 1 0 ${w} 0 a${w / 2} ${h / 2} 0 1 0 ${-w} 0 Z M${w * .25} ${h / 2} a${w * .25} ${h * .25} 0 1 0 ${w * .5} 0 a${w * .25} ${h * .25} 0 1 0 ${-w * .5} 0 Z`, 'fill-rule': 'evenodd' });
+    case 'frame': return svgEl('path', { d: `M0 0H${w}V${h}H0Z M${w * .12} ${h * .12}V${h * .88}H${w * .88}V${h * .12}Z`, 'fill-rule': 'evenodd' });
+    case 'cloud': return svgEl('path', { d: `M${w * .25} ${h * .8} C${-w * .05} ${h * .8} ${-w * .05} ${h * .4} ${w * .22} ${h * .42} C${w * .2} ${h * .1} ${w * .55} ${h * .05} ${w * .6} ${h * .3} C${w * .8} ${h * .1} ${w * 1.05} ${h * .35} ${w * .85} ${h * .55} C${w * 1.05} ${h * .8} ${w * .85} ${h * .95} ${w * .72} ${h * .8} Z` });
+    case 'callout': return svgEl('path', { d: `M0 0H${w}V${h * .78}H${w * .4}L${w * .2} ${h}L${w * .22} ${h * .78}H0Z`, 'stroke-linejoin': 'round' });
     default: return svgEl('rect', { x: 0, y: 0, width: w, height: h });
   }
+}
+let gradSeq = 0;
+function applyGrad(svg, node, o, m) {
+  if (!o.grad || o.type !== 'shape') return;
+  const id = 'pg' + (++gradSeq), defs = svgEl('defs', {}), g = svgEl('linearGradient', { id, x1: 0, y1: .5, x2: 1, y2: .5, gradientTransform: 'rotate(' + (o.grad.ang || 0) + ' .5 .5)' });
+  g.appendChild(svgEl('stop', { offset: 0, 'stop-color': rc(m, o.fill || '@a1') })); g.appendChild(svgEl('stop', { offset: 1, 'stop-color': rc(m, o.grad.c2 || '@a2') }));
+  defs.appendChild(g); svg.appendChild(defs); node.setAttribute('fill', 'url(#' + id + ')');
 }
 function fillStroke(node, o, m) {
   node.setAttribute('fill', o.fill && o.fill !== 'none' ? rc(m, o.fill) : 'none');
@@ -216,7 +240,7 @@ function renderObj(o, ctx) {
       if (o.type === 'shape' || (o.fill && o.fill !== 'none') || (o.stroke && o.stroke !== 'none' && o.sw > 0)) {
         const svg = svgEl('svg', { class: 'pp-svg', viewBox: `0 0 ${o.w} ${o.h}`, preserveAspectRatio: 'none' });
         const node = o.type === 'shape' ? shapeNode(o, o.w, o.h) : svgEl('rect', { x: 0, y: 0, width: o.w, height: o.h });
-        fillStroke(node, o, m); svg.appendChild(node); el.appendChild(svg);
+        fillStroke(node, o, m); applyGrad(svg, node, o, m); svg.appendChild(node); el.appendChild(svg);
       }
       appendText(el, o, ctx); break;
     }
@@ -619,6 +643,7 @@ function validateProject(p) {
     if (depth > 6) fail('Gruppen sind zu tief verschachtelt.');
     const r = { id: chk(o.id), type: o.type, name: str(o.name, o.type, 120), x: num(o.x, 0, -1e5, 1e5), y: num(o.y, 0, -1e5, 1e5), w: num(o.w, 100, 1, 1e5), h: num(o.h, 100, 1, 1e5), rot: num(o.rot, 0, -3600, 3600) };
     if (o.hidden) r.hidden = true; if (o.locked) r.locked = true; if (o.lockRatio) r.lockRatio = true; if (o.shadow) r.shadow = true;
+    if (o.grad && typeof o.grad === 'object') { const c2 = safeColor(o.grad.c2); if (c2) r.grad = { c2, ang: num(o.grad.ang, 0, 0, 359) }; }
     if (typeof o.mid === 'string' && /^[\w-]{1,60}$/.test(o.mid)) r.mid = o.mid;
     if (['title', 'subtitle', 'body', 'body2'].includes(o.ph)) r.ph = o.ph;
     if (o.opacity != null) r.opacity = num(o.opacity, 1, 0, 1);
@@ -631,7 +656,7 @@ function validateProject(p) {
     if (o.st && typeof o.st === 'object') { const s = {}, q = o.st;
       if (typeof q.font === 'string' && /^[\w\s,"'-]{1,120}$/.test(q.font)) s.font = q.font; if (q.size != null) s.size = num(q.size, 20, 4, 400);
       if (q.color != null) s.color = safeColor(q.color) || '@tx'; ['bold', 'italic', 'underline', 'strike', 'bullets'].forEach(k => { if (q[k] != null) s[k] = !!q[k]; });
-      if (['left', 'center', 'right'].includes(q.align)) s.align = q.align; if (['top', 'middle', 'bottom'].includes(q.valign)) s.valign = q.valign; if (q.lineH != null) s.lineH = num(q.lineH, 1.2, .8, 3);
+      if (['left', 'center', 'right', 'justify'].includes(q.align)) s.align = q.align; if (['top', 'middle', 'bottom'].includes(q.valign)) s.valign = q.valign; if (q.lineH != null) s.lineH = num(q.lineH, 1.2, .8, 3);
       r.st = s; } else if (o.type === 'text' || o.type === 'shape') r.st = {};
     if (o.type === 'image') { r.src = typeof o.src === 'string' && assets[o.src] ? o.src : null; const c = o.crop || {}; r.crop = { l: num(c.l, 0, 0, .9), t: num(c.t, 0, 0, .9), r: num(c.r, 0, 0, .9), b: num(c.b, 0, 0, .9) }; if (r.crop.l + r.crop.r > .95) r.crop.l = r.crop.r = 0; if (r.crop.t + r.crop.b > .95) r.crop.t = r.crop.b = 0; }
     if (o.type === 'table') { if (!Array.isArray(o.rows) || !o.rows.length || o.rows.length > 60 || !Array.isArray(o.rows[0]) || !o.rows[0].length || o.rows[0].length > 20) fail('Ungültige Tabelle.'); const nc = o.rows[0].length; r.rows = o.rows.map(rw => { if (!Array.isArray(rw)) fail('Ungültige Tabelle.'); const x = []; for (let i = 0; i < nc; i++) x.push(str(rw[i], '', 500)); return x; }); r.header = o.header !== false; r.fs = num(o.fs, 16, 6, 100); }
@@ -653,6 +678,6 @@ function validateProject(p) {
   return { format: 'WebOffice-Praesentation', version: 1, title: str(p.title, 'Präsentation', 120), size, master, slides, assets };
 }
 
-return { uid, clamp, ease, sanitizeHTML, plainText, safeColor, rc, TEMPLATES, newMaster, LAYOUTS, SHAPES, layoutPh, newPlaceholders, textStyle, renderObj, renderSlide, setGeom,
+return { uid, clamp, ease, sanitizeHTML, plainText, safeColor, rc, TEMPLATES, newMaster, LAYOUTS, SHAPES, SHAPE_GROUPS, layoutPh, newPlaceholders, textStyle, renderObj, renderSlide, setGeom,
   FX, CAT_NAMES, START_NAMES, DIR_NAMES, TRANS, TDIR_NAMES, buildSchedule, AnimEngine, objStates, visibleSet, matchPairs, playTransition, Player, validateProject, pathPoint, chartSVG, px, escHtml, shapeNode };
 })();

@@ -7,8 +7,9 @@ const XE = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', 
 const EMU = v => Math.round(v * 9525);
 const hx = c => toHex(c).slice(1).toUpperCase();
 function clr(c, alpha) { const h = hx(c); return alpha != null && alpha < 1 ? `<a:srgbClr val="${h}"><a:alpha val="${Math.round(alpha * 100000)}"/></a:srgbClr>` : `<a:srgbClr val="${h}"/>`; }
+const gradFill = o => `<a:gradFill rotWithShape="1"><a:gsLst><a:gs pos="0">${clr(o.fill || '@a1', o.opacity)}</a:gs><a:gs pos="100000">${clr(o.grad.c2 || '@a2', o.opacity)}</a:gs></a:gsLst><a:lin ang="${Math.round((o.grad.ang || 0) * 60000)}" scaled="0"/></a:gradFill>`;
 const solid = (c, a) => (!c || c === 'none') ? '<a:noFill/>' : `<a:solidFill>${clr(c, a)}</a:solidFill>`;
-const PRST = { rect: 'rect', round: 'roundRect', ellipse: 'ellipse', triangle: 'triangle', diamond: 'diamond', star: 'star5', arrow: 'rightArrow', hexagon: 'hexagon' };
+const PRST = { rect: 'rect', round: 'roundRect', ellipse: 'ellipse', triangle: 'triangle', diamond: 'diamond', star: 'star5', arrow: 'rightArrow', hexagon: 'hexagon', rtriangle: 'rtTriangle', pentagon: 'pentagon', octagon: 'octagon', parallelogram: 'parallelogram', trapezoid: 'trapezoid', chevron: 'chevron', plus: 'mathPlus', heart: 'heart', donut: 'donut', cloud: 'cloud', callout: 'wedgeRectCallout', larrow: 'leftArrow', uarrow: 'upArrow', darrow: 'downArrow', lrarrow: 'leftRightArrow', frame: 'frame' };
 const dataToBytes = d => { const b = atob(d.split(',')[1]), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; };
 async function imgToPngBytes(src) { const img = new Image(); await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('Bild nicht dekodierbar')); img.src = src; }); const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight; c.getContext('2d').drawImage(img, 0, 0); return dataToBytes(c.toDataURL('image/png')); }
 
@@ -27,7 +28,7 @@ async function buildPptx() {
       const runs = (node, f, acc) => { node.childNodes.forEach(n => { if (n.nodeType === 3) { if (n.nodeValue) acc.push(Object.assign({ t: n.nodeValue }, f)); } else if (n.nodeType === 1) { const g = Object.assign({}, f), t = n.tagName; if (t === 'B') g.b = 1; if (t === 'I') g.i = 1; if (t === 'U') g.u = 1; if (t === 'S') g.s = 1; if (t === 'SUB') g.base = -25000; if (t === 'SUP') g.base = 30000; if (n.style && n.style.color) g.color = n.style.color; if (n.style && /px/.test(n.style.fontSize || '')) g.sz = Math.round(parseFloat(n.style.fontSize) * 75); runs(n, g, acc); } }); };
       const lines = Array.from(doc.body.children); if (!lines.length) return '<a:p><a:endParaRPr lang="de-DE" sz="' + baseSz + '"/></a:p>';
       lines.forEach(ln => { const acc = []; runs(ln, { b: st.bold, i: st.italic, u: st.underline, s: st.strike }, acc);
-        const algn = { left: 'l', center: 'ctr', right: 'r' }[st.align || 'left'], bu = st.bullets ? `<a:pPr marL="342900" indent="-342900" algn="${algn}"><a:buFont typeface="Arial"/><a:buChar char="•"/></a:pPr>` : `<a:pPr algn="${algn}"><a:buNone/></a:pPr>`;
+        const algn = { left: 'l', center: 'ctr', right: 'r', justify: 'just' }[st.align || 'left'], bu = st.bullets ? `<a:pPr marL="342900" indent="-342900" algn="${algn}"><a:buFont typeface="Arial"/><a:buChar char="•"/></a:pPr>` : `<a:pPr algn="${algn}"><a:buNone/></a:pPr>`;
         const rs = acc.map(r => `<a:r><a:rPr lang="de-DE" sz="${r.sz || baseSz}"${r.b ? ' b="1"' : ''}${r.i ? ' i="1"' : ''}${r.u ? ' u="sng"' : ''}${r.s ? ' strike="sngStrike"' : ''}${r.base ? ` baseline="${r.base}"` : ''} dirty="0">${solid(r.color || st.color)}<a:latin typeface="${XE(fam)}"/></a:rPr><a:t>${XE(r.t)}</a:t></a:r>`).join('');
         out.push(`<a:p>${bu}${rs || ''}<a:endParaRPr lang="de-DE" sz="${baseSz}"/></a:p>`); });
       return out.join('');
@@ -42,7 +43,7 @@ async function buildPptx() {
       switch (o.type) {
         case 'shape': case 'text': {
           if (o.type === 'text' && o.ph && !PP.plainText(o.html).trim()) { if (top) delete spid[o.id]; return ''; }
-          const has = PP.plainText(o.html).trim().length > 0, fill = o.type === 'shape' ? solid(o.fill, o.opacity) : (o.fill && o.fill !== 'none' ? solid(o.fill, o.opacity) : '<a:noFill/>');
+          const has = PP.plainText(o.html).trim().length > 0, fill = o.type === 'shape' ? (o.grad ? gradFill(o) : solid(o.fill, o.opacity)) : (o.fill && o.fill !== 'none' ? solid(o.fill, o.opacity) : '<a:noFill/>');
           const geom = o.type === 'text' ? 'rect' : PRST[o.kind] || 'rect', av = o.kind === 'round' && o.radius != null ? `<a:avLst><a:gd name="adj" fmla="val ${Math.round(Math.min(50000, o.radius / Math.min(o.w, o.h) * 100000))}"/></a:avLst>` : '<a:avLst/>';
           if (top && has && !decor) animatable[o.id] = true;
           return `<p:sp><p:nvSpPr>${nv(o, id)}<p:cNvSpPr${o.type === 'text' ? ' txBox="1"' : ''}/><p:nvPr/></p:nvSpPr><p:spPr>${xfrm(o)}<a:prstGeom prst="${geom}">${av}</a:prstGeom>${fill}${ln(o)}${shadow(o)}</p:spPr>${has ? txBody(o) : ''}</p:sp>`;
