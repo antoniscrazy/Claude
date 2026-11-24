@@ -1,5 +1,12 @@
 <!DOCTYPE html>
-<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><title>Granny</title><style>html,body{margin:0;height:100%;background:#111;color:#fff;font-family:sans-serif;overflow:hidden}body{display:flex;flex-direction:column}#bar{flex:0 0 auto;display:flex;justify-content:flex-end;padding:6px 12px;background:#111}#moki-back{padding:9px 16px;border-radius:999px;background:linear-gradient(90deg,#00e5a8,#ffd23f);color:#04201a;font:800 14px 'Segoe UI',system-ui,sans-serif;text-decoration:none;box-shadow:0 3px 12px rgba(0,0,0,.5);opacity:.92}#wrap{flex:1 1 auto;position:relative;min-height:0}#c{position:absolute;inset:0;width:100%;height:100%;display:block;background:#000;outline:none;touch-action:none}#ld{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;width:70%;max-width:360px}#pb{height:10px;border-radius:5px;background:rgba(255,255,255,.15);overflow:hidden;margin-top:8px}#pf{height:100%;width:0;background:#00e5a8}</style></head>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><title>Granny</title><style>html,body{margin:0;height:100%;background:#111;color:#fff;font-family:sans-serif;overflow:hidden}body{display:flex;flex-direction:column}#bar{flex:0 0 auto;display:flex;justify-content:flex-end;padding:6px 12px;background:#111}#moki-back{padding:9px 16px;border-radius:999px;background:linear-gradient(90deg,#00e5a8,#ffd23f);color:#04201a;font:800 14px 'Segoe UI',system-ui,sans-serif;text-decoration:none;box-shadow:0 3px 12px rgba(0,0,0,.5);opacity:.92}#wrap{flex:1 1 auto;position:relative;min-height:0}#c{position:absolute;inset:0;width:100%;height:100%;display:block;background:#000;outline:none;touch-action:none}#ld{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;width:70%;max-width:360px}#pb{height:10px;border-radius:5px;background:rgba(255,255,255,.15);overflow:hidden;margin-top:8px}#pf{height:100%;width:0;background:#00e5a8}</style><style>
+#pad{display:none;position:fixed;left:12px;bottom:12px;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(2,64px);gap:8px;z-index:9;touch-action:none;user-select:none;-webkit-user-select:none}
+#pad button{font:800 22px system-ui,sans-serif;border:0;border-radius:14px;background:rgba(255,255,255,.22);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.5);touch-action:none}
+#pad button:active,#pad button.on{background:rgba(0,229,168,.6)}
+#pad .e{visibility:hidden}
+#pad.show{display:grid}
+</style>
+</head>
 <body>
 <div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
 <div id="wrap"><canvas id="c" tabindex="-1"></canvas><div id="ld"><div id="tx">Lade Spiel …</div><div id="pb"><div id="pf"></div></div></div></div>
@@ -61,6 +68,34 @@ async function get(f, kind) { const r = await fetch(BASE + f); if (!r.ok) throw 
     window.unityGame = inst;
     document.getElementById("ld").remove();
   } catch (e) { tx.textContent = "Fehler beim Laden: " + (e.message || e); }
+})();
+</script>
+<div id="pad"><span class="e"></span><button data-k="w">W</button><span class="e"></span><button data-k="a">A</button><button data-k="s">S</button><button data-k="d">D</button></div>
+<script>
+(function(){
+  const KEYS={w:{key:"w",code:"KeyW",keyCode:87},a:{key:"a",code:"KeyA",keyCode:65},s:{key:"s",code:"KeyS",keyCode:83},d:{key:"d",code:"KeyD",keyCode:68}};
+  function fire(type,k){
+    const target=document.getElementById("c")||document.body;
+    const ev=new KeyboardEvent(type,{key:k.key,code:k.code,keyCode:k.keyCode,which:k.keyCode,bubbles:true,cancelable:true});
+    target.dispatchEvent(ev);
+  }
+  const held=new Set();
+  function down(b){ const k=KEYS[b.dataset.k]; if(!k||held.has(k.key)) return; held.add(k.key); b.classList.add("on"); const c=document.getElementById("c"); if(c&&c.focus) c.focus(); fire("keydown",k); }
+  function up(b){ const k=KEYS[b.dataset.k]; if(!k||!held.has(k.key)) return; held.delete(k.key); b.classList.remove("on"); fire("keyup",k); }
+  document.querySelectorAll("#pad button").forEach(b=>{
+    b.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); down(b); });
+    b.addEventListener("pointerup",e=>{ e.preventDefault(); e.stopPropagation(); up(b); });
+    b.addEventListener("pointercancel",()=>up(b));
+    b.addEventListener("pointerleave",()=>up(b));
+  });
+  window.addEventListener("blur",()=>{ document.querySelectorAll("#pad button").forEach(up); });
+  // Steuerkreuz nur im Spiel: erscheint nach Druck auf den Start-Button unten (Mitte), verschwindet mit Escape.
+  const pad=document.getElementById("pad");
+  document.addEventListener("pointerdown",e=>{
+    const inStartZone = e.clientY > innerHeight*0.85 && Math.abs(e.clientX-innerWidth/2) < innerWidth*0.2;
+    if(inStartZone) pad.classList.add("show");
+  },true);
+  document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ pad.classList.remove("show"); document.querySelectorAll("#pad button").forEach(up); } });
 })();
 </script>
 </body></html>
