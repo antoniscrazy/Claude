@@ -15,7 +15,7 @@ let menuEl = null;
 function closeMenu() { if (menuEl) { menuEl.remove(); menuEl = null; document.removeEventListener('pointerdown', menuOff, true); } }
 const menuOff = e => { if (menuEl && !menuEl.contains(e.target)) closeMenu(); };
 function showMenu(anchor, items) {
-  closeMenu(); const m = el('div', { class: 'menu', role: 'menu' }); items.forEach(it => { if (it === '-') { m.append(el('hr')); return; } const b = el('button', { role: 'menuitem', disabled: it.disabled }, it.label); b.addEventListener('mousedown', e => e.preventDefault()); b.addEventListener('click', () => { closeMenu(); it.fn && it.fn(); }); m.append(b); });
+  closeMenu(); const m = el('div', { class: 'menu', role: 'menu' }); items.forEach(it => { if (it === '-') { m.append(el('hr')); return; } if (it.node) { m.append(it.node); return; } const b = el('button', { role: 'menuitem', disabled: it.disabled }, it.label); b.addEventListener('mousedown', e => e.preventDefault()); b.addEventListener('click', () => { closeMenu(); it.fn && it.fn(); }); m.append(b); });
   document.body.append(m); const r = anchor.getBoundingClientRect(); m.style.left = Math.max(4, Math.min(r.left, innerWidth - m.offsetWidth - 6)) + 'px'; m.style.top = Math.min(r.bottom + 2, innerHeight - m.offsetHeight - 6) + 'px'; menuEl = m; document.addEventListener('pointerdown', menuOff, true);
 }
 
