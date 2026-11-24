@@ -168,6 +168,12 @@ button,select,input,textarea{font:inherit;color:inherit}
 #savestat{margin-left:auto;margin-right:4px;max-width:22vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #tsearch{width:min(32vw,400px)}
 @media (max-width:1100px){#savestat{display:none}}
+/* Gruppen füllen die ganze Leiste: freier Platz wird gleichmäßig verteilt */
+.grp{flex:1 1 auto}
+.grp .items{justify-content:center}
+#app.rbmin #ribbon{display:none}
+.grp .items{flex-wrap:nowrap;max-width:none}
+.grp{flex:1 0 auto}
 </style>
 </head>
 <body>
@@ -578,7 +584,7 @@ function render() {
       const cell = sh.cells[key(r, c)], d = document.createElement('div'), s = cell && cell.st, w = colX[c + 1] - colX[c];
       d.className = 'cell'; d.style.left = colX[c] + 'px'; d.style.top = rowY[r] + 'px'; d.style.width = w + 'px'; d.style.height = h + 'px';
       if (cell) {
-        const v = cell.v, isErr = v instanceof XlErr; d.textContent = formatValue(v, s);
+        const v = cell.v, isErr = v instanceof XlErr; d.textContent = formatValue(v, s); if (S.showF && cell.f !== undefined) d.textContent = '=' + displayFormula(cell.f);
         let al = s && s.al; if (!al) al = typeof v === 'number' ? 'r' : (typeof v === 'boolean' || isErr) ? 'c' : 'l'; d.style.textAlign = { l: 'left', c: 'center', r: 'right' }[al];
         if (isErr) { d.classList.add('err'); d.title = v.code + ' – ' + v.msg; }
         if (s) {
@@ -586,6 +592,7 @@ function render() {
           if (s.wr) d.classList.add('wrap'); if (s.bd) { if (s.bd.t) d.style.borderTop = '1.5px solid #222'; if (s.bd.b) d.style.borderBottom = '1.5px solid #222'; if (s.bd.l) d.style.borderLeft = '1.5px solid #222'; if (s.bd.r) d.style.borderRight = '1.5px solid #222'; }
         }
       }
+      if (cell && cell.nt) { d.classList.add('hasnote'); d.title = cell.nt; }
       if (sh.cf && sh.cf.length) { const x = cfStyle(sh, r, c, cell); if (x) { if (x.bg) d.style.background = x.bg; if (x.co) d.style.color = x.co; if (x.b) d.style.fontWeight = '700'; } }
       const f = sh.filter; if (f && r === f.r1 && c >= f.c1 && c <= f.c2) { const act = f.cols[c] && f.cols[c].length; d.append(el('span', { class: 'fbtn' + (act ? ' on' : ''), 'data-fc': c, title: 'Filter' }, '▾')); d.classList.add('fhead'); }
       frag.append(d);
@@ -737,14 +744,19 @@ function niceStep(raw) { const e = Math.pow(10, Math.floor(Math.log10(raw))), f 
 function chartSVG(ch, w, h) {
   const d = chartData(ch), svg = SV('svg', { viewBox: `0 0 ${w} ${h}`, width: w, height: h }), T = (x, y, s, a, size, col) => { const t = SV('text', { x, y, 'text-anchor': a || 'middle', 'font-size': size || 12, fill: col || '#444' }); t.textContent = s; svg.append(t); };
   if (!d || !d.series.length) { T(w / 2, h / 2, 'Keine Daten', 'middle', 14); return svg; }
-  const top = 30, legendH = d.series.length > 1 || ch.kind === 'pie' ? 22 : 0; if (ch.title) T(w / 2, 20, ch.title, 'middle', 14, '#111');
-  if (ch.kind === 'pie') { const vals = d.series[0].values.map(v => Math.max(0, v)), tot = vals.reduce((a, b) => a + b, 0) || 1, r = Math.min(w * .35, (h - top - 10) / 2), cx = w * .36, cy = top + (h - top) / 2; let a0 = -Math.PI / 2;
-    vals.forEach((v, i) => { const a1 = a0 + v / tot * Math.PI * 2, lg = a1 - a0 > Math.PI ? 1 : 0; if (v / tot > .9999) svg.append(SV('circle', { cx, cy, r, fill: PAL[i % 6] })); else svg.append(SV('path', { d: `M${cx},${cy} L${cx + r * Math.cos(a0)},${cy + r * Math.sin(a0)} A${r},${r} 0 ${lg} 1 ${cx + r * Math.cos(a1)},${cy + r * Math.sin(a1)} Z`, fill: PAL[i % 6], stroke: '#fff', 'stroke-width': 1.5 })); a0 = a1; });
+  const top = 30, legendH = d.series.length > 1 || ch.kind === 'pie' || ch.kind === 'donut' ? 22 : 0; if (ch.title) T(w / 2, 20, ch.title, 'middle', 14, '#111');
+  if (ch.kind === 'pie' || ch.kind === 'donut') { const vals = d.series[0].values.map(v => Math.max(0, v)), tot = vals.reduce((a, b) => a + b, 0) || 1, r = Math.min(w * .35, (h - top - 10) / 2), cx = w * .36, cy = top + (h - top) / 2; let a0 = -Math.PI / 2;
+    vals.forEach((v, i) => { const a1 = a0 + v / tot * Math.PI * 2, lg = a1 - a0 > Math.PI ? 1 : 0; if (v / tot > .9999) svg.append(SV('circle', { cx, cy, r, fill: PAL[i % 6] })); else svg.append(SV('path', { d: `M${cx},${cy} L${cx + r * Math.cos(a0)},${cy + r * Math.sin(a0)} A${r},${r} 0 ${lg} 1 ${cx + r * Math.cos(a1)},${cy + r * Math.sin(a1)} Z`, fill: PAL[i % 6], stroke: '#fff', 'stroke-width': 1.5 })); a0 = a1; }); if (ch.kind === 'donut') svg.append(SV('circle', { cx, cy, r: r * .55, fill: '#fff' }));
     d.labels.forEach((l, i) => { svg.append(SV('rect', { x: w * .7, y: top + 6 + i * 20, width: 12, height: 12, fill: PAL[i % 6] })); T(w * .7 + 18, top + 16 + i * 20, l + ' (' + Math.round(vals[i] / tot * 100) + '%)', 'start', 12); }); return svg; }
+  if (ch.kind === 'hbar') { const L2 = 84, R2 = 16, B2 = 22 + legendH, pw2 = w - L2 - R2, ph2 = h - top - B2; let mx = 0; d.series.forEach(s => s.values.forEach(v => { mx = Math.max(mx, v); })); const st = niceStep(mx / 4 || 1); mx = Math.ceil(mx / st) * st || 1;
+    for (let v = 0; v <= mx + 1e-9; v += st) { const x = L2 + v / mx * pw2; svg.append(SV('line', { x1: x, x2: x, y1: top, y2: top + ph2, stroke: '#0002' })); T(x, top + ph2 + 14, String(+v.toFixed(2)), 'middle', 11); }
+    const n2 = d.labels.length, gh = ph2 / Math.max(1, n2); d.labels.forEach((l, i) => T(L2 - 5, top + gh * (i + .5) + 4, l.slice(0, 12), 'end', 11)); const bh = gh * .72 / d.series.length;
+    d.series.forEach((s, si) => s.values.forEach((v, i) => svg.append(SV('rect', { x: L2, y: top + gh * i + gh * .14 + si * bh, width: Math.max(1, Math.max(0, v) / mx * pw2), height: Math.max(1, bh - 2), fill: PAL[si % 6] }))));
+    if (legendH) d.series.forEach((s, si) => { const x = L2 + si * 120; svg.append(SV('rect', { x, y: h - 16, width: 11, height: 11, fill: PAL[si % 6] })); T(x + 16, h - 6, s.name.slice(0, 14), 'start', 11); }); return svg; }
   const L = 46, R = 12, B = 26 + legendH, pw = w - L - R, ph = h - top - B; let max = 0, min = 0; d.series.forEach(s => s.values.forEach(v => { max = Math.max(max, v); min = Math.min(min, v); })); const step = niceStep((max - min) / 4 || 1); max = Math.ceil(max / step) * step || 1; min = Math.floor(min / step) * step;
   for (let v = min; v <= max + 1e-9; v += step) { const y = top + ph - (v - min) / (max - min) * ph; svg.append(SV('line', { x1: L, x2: w - R, y1: y, y2: y, stroke: '#0002' })); T(L - 5, y + 4, String(+v.toFixed(2)), 'end', 11); }
   const n = d.labels.length, gw = pw / Math.max(1, n); d.labels.forEach((l, i) => T(L + gw * (i + .5), top + ph + 16, l.slice(0, 12), 'middle', 11));
-  if (ch.kind === 'line') d.series.forEach((s, si) => { const pts = s.values.map((v, i) => [L + gw * (i + .5), top + ph - (v - min) / (max - min) * ph]); svg.append(SV('polyline', { points: pts.map(p => p.join(',')).join(' '), fill: 'none', stroke: PAL[si % 6], 'stroke-width': 2.5 })); pts.forEach(p => svg.append(SV('circle', { cx: p[0], cy: p[1], r: 3.5, fill: PAL[si % 6] }))); });
+  if (ch.kind === 'line' || ch.kind === 'area') d.series.forEach((s, si) => { const pts = s.values.map((v, i) => [L + gw * (i + .5), top + ph - (v - min) / (max - min) * ph]); if (ch.kind === 'area' && pts.length) svg.append(SV('polygon', { points: [[pts[0][0], top + ph - (0 - min) / (max - min) * ph]].concat(pts, [[pts[pts.length - 1][0], top + ph - (0 - min) / (max - min) * ph]]).map(p => p.join(',')).join(' '), fill: PAL[si % 6], 'fill-opacity': .3 })); svg.append(SV('polyline', { points: pts.map(p => p.join(',')).join(' '), fill: 'none', stroke: PAL[si % 6], 'stroke-width': 2.5 })); pts.forEach(p => svg.append(SV('circle', { cx: p[0], cy: p[1], r: 3.5, fill: PAL[si % 6] }))); });
   else { const bw = gw * .72 / d.series.length; d.series.forEach((s, si) => s.values.forEach((v, i) => { const y0 = top + ph - (0 - min) / (max - min) * ph, y1 = top + ph - (v - min) / (max - min) * ph; svg.append(SV('rect', { x: L + gw * i + gw * .14 + si * bw, y: Math.min(y0, y1), width: Math.max(1, bw - 2), height: Math.abs(y1 - y0), fill: PAL[si % 6] })); })); }
   if (legendH) d.series.forEach((s, si) => { const x = L + si * 120; svg.append(SV('rect', { x, y: h - 16, width: 11, height: 11, fill: PAL[si % 6] })); T(x + 16, h - 6, s.name.slice(0, 14), 'start', 11); });
   return svg;
@@ -1014,7 +1026,7 @@ function validateWorkbook(p) {
     for (const k in (s.rowH || {})) if (/^\d{1,4}$/.test(k) && +k < ROWS) sh.rowH[k] = num(s.rowH[k], DEF_H, 8, 600);
     for (const k in (s.rowM || {})) if (/^\d{1,4}$/.test(k)) sh.rowM[k] = 1;
     if (s.filter && typeof s.filter === 'object') { const f = s.filter, r1 = num(f.r1, 0, 0, ROWS - 1), r2 = num(f.r2, 0, 0, ROWS - 1), c1 = num(f.c1, 0, 0, COLS - 1), c2 = num(f.c2, 0, 0, COLS - 1); if (r2 > r1) { sh.filter = { r1, c1, r2, c2: Math.max(c1, c2), cols: {} }; for (const k in (f.cols || {})) if (/^\d+$/.test(k) && Array.isArray(f.cols[k])) sh.filter.cols[k] = f.cols[k].map(String).slice(0, 5000); } }
-    (Array.isArray(s.charts) ? s.charts : []).forEach(ch => { if (ch && ['bar', 'line', 'pie'].includes(ch.kind) && ch.rng) { const g = { r1: num(ch.rng.r1, 0, 0, ROWS - 1), c1: num(ch.rng.c1, 0, 0, COLS - 1), r2: num(ch.rng.r2, 0, 0, ROWS - 1), c2: num(ch.rng.c2, 0, 0, COLS - 1) }; sh.charts.push({ id: typeof ch.id === 'string' && /^[\w-]{1,40}$/.test(ch.id) ? ch.id : uid('ch'), kind: ch.kind, sh: sh.id, rng: norm(g), x: num(ch.x, 0, 0, 1e6), y: num(ch.y, 0, 0, 1e6), w: num(ch.w, 420, 160, 2000), h: num(ch.h, 280, 120, 2000), title: String(ch.title || '').slice(0, 80) }); } });
+    (Array.isArray(s.charts) ? s.charts : []).forEach(ch => { if (ch && ['bar', 'line', 'pie', 'hbar', 'area', 'donut'].includes(ch.kind) && ch.rng) { const g = { r1: num(ch.rng.r1, 0, 0, ROWS - 1), c1: num(ch.rng.c1, 0, 0, COLS - 1), r2: num(ch.rng.r2, 0, 0, ROWS - 1), c2: num(ch.rng.c2, 0, 0, COLS - 1) }; sh.charts.push({ id: typeof ch.id === 'string' && /^[\w-]{1,40}$/.test(ch.id) ? ch.id : uid('ch'), kind: ch.kind, sh: sh.id, rng: norm(g), x: num(ch.x, 0, 0, 1e6), y: num(ch.y, 0, 0, 1e6), w: num(ch.w, 420, 160, 2000), h: num(ch.h, 280, 120, 2000), title: String(ch.title || '').slice(0, 80) }); } });
     sheets.push(sh);
   });
   const wb = { sheets }; sheets.forEach(sh => { sh.hidden = {}; }); return { wb, title: String(p.title || 'Mappe1').slice(0, 80), active: num(p.active, 0, 0, sheets.length - 1) };
@@ -1566,6 +1578,81 @@ document.addEventListener('keydown', e => {
   if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || S.editing || document.activeElement !== $('#viewport')) return;
   if (e.key === 'd' || e.key === 'D') { e.preventDefault(); fillDir('v'); } else if (e.key === 'r' || e.key === 'R') { e.preventDefault(); fillDir('h'); }
 });
+/* =====================================================================
+   Excel, zweite Erweiterung: Tabellenformate, Diagrammtypen, Notizen, Reihen/Zufallszahlen, Formelüberwachung,
+   Blattschutz, Datenumwandlung, Ansichtsoptionen – füllt die Menübänder aller Reiter.
+   ===================================================================== */
+Object.assign(IC, {
+  tblfmt: '<rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 9h18" stroke-width="3"/><path d="M3 14h18M9 9v11M15 9v11"/>', hbar: '<path d="M4 4v16M4 7h10M4 12h14M4 17h7"/>', area: '<path d="M3 19l5-8 4 4 5-8 4 6v6z"/>', donut: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.500"/>', swap: '<path d="M4 8h13l-3-3M20 16H7l3 3"/>',
+  note: '<path d="M4 4h16v12h-6l-4 4v-4H4z"/><path d="M8 8h8M8 11h5"/>', notex: '<path d="M4 4h16v12h-6l-4 4v-4H4z"/><path d="M9 7l6 6M15 7l-6 6"/>', today: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/><circle cx="12" cy="15" r="1.500" fill="currentColor"/>', series: '<path d="M4 18l4-4 4 2 4-6 4-4M4 6v12h16" /><path d="M4 21h16" opacity=".4"/>', dice: '<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.200" fill="currentColor"/><circle cx="15" cy="15" r="1.200" fill="currentColor"/><circle cx="15" cy="9" r="1.200" fill="currentColor"/><circle cx="9" cy="15" r="1.200" fill="currentColor"/>',
+  omega: '<path d="M6 19h4v-2.500C7.500 15.500 6 13.500 6 11a6 6 0 0112 0c0 2.500-1.500 4.500-4 5.500V19h4"/>', bug: '<path d="M12 8a4 4 0 00-4 4v3a4 4 0 008 0v-3a4 4 0 00-4-4zM8 12H4M20 12h-4M8 16l-3 2M16 16l3 2M9 6l2 2M15 6l-2 2"/>', trace: '<circle cx="5" cy="12" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 12l10-5M7 12l10 5"/>', lock2: '<rect x="5" y="11" width="14" height="9" rx="1"/><path d="M8 11V8a4 4 0 018 0v3"/>', unlock: '<rect x="5" y="11" width="14" height="9" rx="1"/><path d="M8 11V8a4 4 0 017.500-2"/>', val: '<path d="M5 12l4 4 10-10"/>', shuffle: '<path d="M3 7h4l10 10h4M3 17h4l3-3M14 10l3-3h4M18 4l3 3-3 3M18 14l3 3-3 3"/>', blankrow: '<path d="M4 6h16M4 18h16M7 10l10 4M17 10L7 14"/>', num: '<path d="M5 8l2-1v10M11 8h3v9h-3zM17 8h3v9h-3z"/>', fbar: '<rect x="3" y="7" width="18" height="10" rx="1"/><path d="M7 12h6"/>', gotoc: '<circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>', widths: '<path d="M4 6v12M20 6v12M4 12h16M7 9l-3 3 3 3M17 9l3 3-3 3"/>', fullscr: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>', spell: '<path d="M3 17l4-11 4 11M4.500 13h5M13 15l3 3 6-7"/>', dupes: '<rect x="4" y="4" width="10" height="10" rx="1"/><rect x="10" y="10" width="10" height="10" rx="1"/>'
+});
+const askX = (title, fields, ok, hint) => ask(title, fields, ok, hint);
+const curCell = () => getCell(S.active.r, S.active.c);
+
+/* ---- Tabellenformate ---- */
+const TBLSTYLES = [['Grün', '#1f7a45', '#e3f3e9'], ['Blau', '#1f5fbf', '#e1ebfa'], ['Orange', '#d9631e', '#fdeadb'], ['Grau', '#4b5563', '#eceef1'], ['Violett', '#6d3fc0', '#ece4fa'], ['Rot', '#b4232a', '#fbe3e4']];
+function formatAsTable(hd, bd) {
+  const g = targetRange(), sh = cur(); if (g.r2 <= g.r1) { toast('Bitte einen Datenbereich mit mindestens zwei Zeilen markieren.', true); return; }
+  for (let r = g.r1; r <= g.r2; r++) for (let c = g.c1; c <= g.c2; c++) { const k = key(r, c), cell = sh.cells[k] || (sh.cells[k] = { v: null }); const st = cell.st = cell.st || {}; if (r === g.r1) { st.b = 1; st.bg = hd; st.co = '#ffffff'; } else { delete st.b; st.co = st.co === '#ffffff' ? undefined : st.co; if (!st.co) delete st.co; if ((r - g.r1) % 2 === 0) st.bg = bd; else delete st.bg; } }
+  S.sel = { r1: g.r1, c1: g.c1, r2: g.r2, c2: g.c2 }; if (!sh.filter) toggleFilter(); else commit('Als Tabelle formatieren');
+}
+function clearTableFormat() { const g = targetRange(); S.sel = g; clearFormats(); if (cur().filter) toggleFilter(); }
+
+/* ---- Diagrammtypen ---- */
+function changeChartKind(k) { const ch = cur().charts.find(c => c.id === S.selChart); if (!ch) { toast('Bitte zuerst ein Diagramm anklicken.', true); return; } ch.kind = k; commit('Diagrammtyp'); }
+const chartKinds = [['bar', 'Säulen'], ['hbar', 'Balken'], ['line', 'Linien'], ['area', 'Fläche'], ['pie', 'Kreis'], ['donut', 'Ring']];
+
+/* ---- Notizen ---- */
+function editNote() { const c = curCell(), k = key(S.active.r, S.active.c), ta = el('textarea', { rows: 4, style: 'width:100%;font:inherit;box-sizing:border-box' }); ta.value = c && c.nt || ''; dialog({ title: 'Notiz zu ' + addr(S.active.r, S.active.c), body: ta, buttons: [{ label: 'Abbrechen' }, { label: 'OK', pri: true, fn: () => { const sh = cur(), t = ta.value.trim().slice(0, 1000); let cell = sh.cells[k]; if (t) { cell = sh.cells[k] = cell || { v: null }; cell.nt = t; } else if (cell) { delete cell.nt; if (cell.v === null && !cell.st && cell.f === undefined) delete sh.cells[k]; } commit('Notiz'); } }] }); ta.focus(); }
+function delNotes(all) { const sh = cur(); let n = 0; const g = selRect(); for (const k in sh.cells) { const [r, c] = k.split(',').map(Number); if (!sh.cells[k].nt) continue; if (all || (r >= g.r1 && r <= g.r2 && c >= g.c1 && c <= g.c2)) { delete sh.cells[k].nt; n++; if (sh.cells[k].v === null && !sh.cells[k].st && sh.cells[k].f === undefined) delete sh.cells[k]; } } commit('Notizen löschen'); toast(n + (n === 1 ? ' Notiz gelöscht.' : ' Notizen gelöscht.')); }
+
+/* ---- Einfügen: Datum, Reihe, Zufall, Symbole ---- */
+function insertToday(withTime) { const d = new Date(), p = n => String(n).padStart(2, '0'), t = withTime ? p(d.getHours()) + ':' + p(d.getMinutes()) : p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + d.getFullYear(); setCellInput(S.active.r, S.active.c, withTime ? "'" + t : t); commit('Datum einfügen'); }
+function seriesDialog() { askX('Datenreihe', [{ label: 'Startwert', value: '1' }, { label: 'Schrittweite', value: '1' }, { label: 'Anzahl', type: 'number', value: '10' }, { label: 'Richtung', value: 'v', opts: [['v', 'Nach unten (Spalte)'], ['h', 'Nach rechts (Zeile)']] }], ([a, s, n, d]) => { const A = parseNumberText(a), St = parseNumberText(s), N = clamp(Math.round(+n), 1, 5000); if (A === null || St === null) throw new Error('Start und Schrittweite müssen Zahlen sein.'); for (let i = 0; i < N; i++) { const v = +(A + St * i).toPrecision(12), r = S.active.r + (d === 'v' ? i : 0), c = S.active.c + (d === 'h' ? i : 0); if (r < ROWS && c < COLS) setCellInput(r, c, String(v).replace('.', ',')); } commit('Datenreihe'); }); }
+function randomDialog() { askX('Zufallszahlen in die Auswahl', [{ label: 'Minimum', value: '1' }, { label: 'Maximum', value: '100' }, { label: 'Nachkommastellen (0–6)', type: 'number', value: '0' }], ([a, b, dp]) => { const lo = parseNumberText(a), hi = parseNumberText(b), d = clamp(Math.round(+dp) || 0, 0, 6); if (lo === null || hi === null || hi < lo) throw new Error('Bitte gültige Grenzen eingeben.'); const f = Math.pow(10, d); eachSel((r, c) => { setCellInput(r, c, String(Math.round((lo + Math.random() * (hi - lo)) * f) / f).replace('.', ',')); }); commit('Zufallszahlen'); }, 'Die Zahlen werden als feste Werte eingetragen.'); }
+const SYMS = '© ® ™ § ° ± × ÷ ≠ ≈ ≤ ≥ ∞ √ π Σ µ ‰ ½ ¼ ¾ ² ³ € £ ¥ → ← ↑ ↓ ✓ ✗ ★ ● ■ ▲ ▼'.split(' ');
+const symMenu = () => SYMS.map(ch => ({ label: ch + '   U+' + ch.codePointAt(0).toString(16).toUpperCase().padStart(4, '0'), fn: () => { const c = curCell(); setCellInput(S.active.r, S.active.c, "'" + String(c && c.v !== null && c.v !== undefined && c.f === undefined ? c.v : '') + ch); commit('Symbol'); } }));
+
+/* ---- Formelüberwachung ---- */
+function findErrors() { const sh = cur(), errs = []; for (const k in sh.cells) { if (sh.cells[k].v instanceof XlErr) { const [r, c] = k.split(',').map(Number); errs.push([r, c, sh.cells[k].v.code]); } } if (!errs.length) { toast('Keine Fehlerwerte im Blatt gefunden.'); return; } errs.sort((a, b) => a[0] - b[0] || a[1] - b[1]); const [r, c] = errs[0]; S.active = { r, c }; S.anchor = { r, c }; S.sel = { r1: r, c1: c, r2: r, c2: c }; render(); toast(errs.length + ' Fehlerwert(e): ' + errs.slice(0, 5).map(e => addr(e[0], e[1]) + ' ' + e[2]).join(', ') + (errs.length > 5 ? ' …' : '')); }
+function showPrecedents() { const c = curCell(); if (!c || c.f === undefined) { toast('Die aktive Zelle enthält keine Formel.'); return; } const refs = []; try { mapRefs(c.f, n => { const a = n.t === 'ref' ? addr(n.r, n.c) : addr(n.r1, n.c1) + ':' + addr(n.r2, n.c2); refs.push((n.sh ? n.sh + '!' : '') + a); }); } catch (e) { } toast('Vorgänger von ' + addr(S.active.r, S.active.c) + ': ' + (refs.join(', ') || '–')); }
+function showDependents() { const sh = cur(), a = S.active, out = []; for (const k in sh.cells) { const cell = sh.cells[k]; if (cell.f === undefined) continue; try { let hit = false; mapRefs(cell.f, n => { if (n.sh) return; if (n.t === 'ref' ? (n.r === a.r && n.c === a.c) : (a.r >= n.r1 && a.r <= n.r2 && a.c >= n.c1 && a.c <= n.c2)) hit = true; }); if (hit) { const [r, c] = k.split(',').map(Number); out.push(addr(r, c)); } } catch (e) { } } toast('Nachfolger von ' + addr(a.r, a.c) + ': ' + (out.slice(0, 12).join(', ') || '–') + (out.length > 12 ? ' …' : '')); }
+function toggleShowF() { S.showF = !S.showF; render(); refreshRibbon(); }
+
+/* ---- Blattschutz ---- */
+['startEdit', 'clearSel', 'pasteText', 'fillRange', 'styleSel', 'insertRows', 'insertCols', 'deleteRows', 'deleteCols', 'quickSort', 'sortRange', 'cleanText', 'removeDuplicates', 'textToColumns', 'transposeSel', 'seriesDialog', 'randomDialog', 'insertToday', 'formatAsTable', 'clearFormats', 'cfAdd'].forEach(n => { try { const f = eval(n); if (typeof f !== 'function') return; const w = function () { if (cur().prot) { toast('Das Blatt ist geschützt (Überprüfen › Blattschutz aufheben).', true); return; } return f.apply(this, arguments); }; eval(n + ' = w'); } catch (e) { } });
+function toggleProt() { const sh = cur(); sh.prot = !sh.prot; commit(sh.prot ? 'Blatt geschützt' : 'Schutz aufgehoben'); refreshRibbon(); toast(sh.prot ? 'Blatt geschützt: Eingaben und Änderungen sind gesperrt.' : 'Blattschutz aufgehoben.'); }
+(() => { const orig = validateWorkbook; validateWorkbook = function (p) { const wb = orig(p); p.sheets.forEach((s, i) => { const sh = wb.wb.sheets[i]; if (s.prot === true) sh.prot = true; for (const k in (s.cells || {})) { const nt = s.cells[k] && s.cells[k].nt; if (typeof nt === 'string' && nt && sh.cells[k]) sh.cells[k].nt = nt.slice(0, 1000); else if (typeof nt === 'string' && nt && /^\d{1,4},\d{1,3}$/.test(k)) sh.cells[k] = { v: null, nt: nt.slice(0, 1000) }; } }); return wb; }; })();
+
+/* ---- Datenumwandlung ---- */
+function formulasToValues() { let n = 0; eachSel((r, c, sh) => { const cell = sh.cells[key(r, c)]; if (cell && cell.f !== undefined) { delete cell.f; n++; } }); commit('Formeln in Werte'); toast(n + ' Formel(n) in feste Werte umgewandelt.'); }
+function textToNumbers() { let n = 0; eachSel((r, c, sh) => { const cell = sh.cells[key(r, c)]; if (cell && cell.f === undefined && typeof cell.v === 'string') { const x = parseNumberText(cell.v.trim()); if (x !== null) { cell.v = x; n++; } } }); commit('Text in Zahlen'); toast(n + ' Zelle(n) in Zahlen umgewandelt.'); }
+function numbersToText() { let n = 0; eachSel((r, c, sh) => { const cell = sh.cells[key(r, c)]; if (cell && cell.f === undefined && typeof cell.v === 'number') { cell.v = formatValue(cell.v, cell.st); delete cell.st; n++; } }); commit('Zahlen in Text'); toast(n + ' Zelle(n) in Text umgewandelt.'); }
+function shuffleRows() { const g = targetRange(), sh = cur(), hdr = guessHeader(g), r0 = g.r1 + (hdr ? 1 : 0), rows = []; for (let r = r0; r <= g.r2; r++) { const row = []; for (let c = g.c1; c <= g.c2; c++) row.push(sh.cells[key(r, c)] || null); rows.push(row); } for (let i = rows.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [rows[i], rows[j]] = [rows[j], rows[i]]; } rows.forEach((row, i) => row.forEach((cell, j) => { const k = key(r0 + i, g.c1 + j); if (cell) sh.cells[k] = cell; else delete sh.cells[k]; })); commit('Zeilen mischen'); }
+function deleteBlankRows() { const g = targetRange(), sh = cur(); const keep = []; for (let r = g.r1; r <= g.r2; r++) { let any = false; for (let c = g.c1; c <= g.c2; c++) { const x = sh.cells[key(r, c)]; if (x && ((x.v !== null && x.v !== undefined && x.v !== '') || x.f !== undefined)) any = true; } if (any) keep.push(r); } if (keep.length === g.r2 - g.r1 + 1) { toast('Keine leeren Zeilen im Bereich.'); return; } const buf = keep.map(r => { const row = []; for (let c = g.c1; c <= g.c2; c++) row.push(sh.cells[key(r, c)] || null); return row; }); for (let r = g.r1; r <= g.r2; r++) for (let c = g.c1; c <= g.c2; c++) delete sh.cells[key(r, c)]; buf.forEach((row, i) => row.forEach((cell, j) => { if (cell) sh.cells[key(g.r1 + i, g.c1 + j)] = cell; })); commit('Leere Zeilen löschen'); toast((g.r2 - g.r1 + 1 - keep.length) + ' leere Zeile(n) entfernt.'); }
+function markDuplicates() { cfAdd({ type: 'dup', fmt: CF_PRESETS.rot }); }
+
+/* ---- Ansicht ---- */
+function fitAllColumns() { const keep = S.active.c, u = usedBounds(cur()); for (let c = 0; c <= Math.max(0, u.c2); c++) { S.active.c = c; fitColumn(); } S.active.c = keep; }
+function gotoCell() { askX('Gehe zu', [{ label: 'Zelle oder Bereich (z. B. D12)', value: '' }], ([v]) => { const nb = $('#namebox'); nb.value = v.trim(); nb.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); }); }
+function toggleEl(sel, label) { const e = $(sel); e.style.display = e.style.display === 'none' ? '' : 'none'; refreshRibbon(); layout(); render(); }
+
+/* ---- Menüband ---- */
+(() => {
+  const wrap = (name, add) => { const base = RIB[name]; RIB[name] = () => add(base()); };
+  const grp = (g, n) => g.find(x => (x.querySelector('.gn') || {}).textContent === n);
+  wrap('insert', g => { g.unshift(GR('Tabellen', B({ icon: 'tblfmt', label: 'Als Tabelle formatieren', tip: 'Kopfzeile, Streifen und Filter', menu: () => [...TBLSTYLES.map(([n, h, b]) => ({ label: n, fn: () => formatAsTable(h, b) })), '-', { label: 'Tabellenformat entfernen', fn: clearTableFormat }] })));
+    const dg = grp(g, 'Diagramme'); if (dg) dg.querySelector('.items').append(B({ icon: 'hbar', label: 'Balken', fn: () => insertChart('hbar') }), B({ icon: 'area', label: 'Fläche', fn: () => insertChart('area') }), B({ icon: 'donut', label: 'Ring', fn: () => insertChart('donut') }), B({ icon: 'swap', label: 'Typ ändern', tip: 'Typ des markierten Diagramms ändern', menu: () => chartKinds.map(([k, l]) => ({ label: l, fn: () => changeChartKind(k) })) }));
+    g.push(GR('Notizen', B({ icon: 'note', label: 'Notiz', tip: 'Notiz zur aktiven Zelle', fn: editNote }), B({ icon: 'notex', label: 'Notiz löschen', fn: () => delNotes(false) })),
+      GR('Einfügen', B({ icon: 'today', label: 'Heute', tip: 'Heutiges Datum in die Zelle', fn: () => insertToday(false) }), B({ icon: 'clock', label: 'Uhrzeit', fn: () => insertToday(true) }), B({ icon: 'series', label: 'Datenreihe …', fn: seriesDialog }), B({ icon: 'dice', label: 'Zufallszahlen …', fn: randomDialog }), B({ icon: 'omega', label: 'Symbol', menu: symMenu }))); return g; });
+  wrap('formulas', g => { g.push(GR('Beliebte Funktionen', ...['SUMME', 'MITTELWERT', 'WENN', 'SVERWEIS', 'ZÄHLENWENN', 'RUNDEN'].map(n => B({ icon: 'fx', label: n, tip: '=' + n + '( in die Zelle schreiben', fn: () => startEdit('=' + n + '(') }))),
+      GR('Formelüberwachung', B({ icon: 'showf', label: 'Formeln anzeigen', on: () => !!S.showF, fn: toggleShowF }), B({ icon: 'trace', label: 'Vorgänger', tip: 'Zellen, auf die die Formel zugreift', fn: showPrecedents }), B({ icon: 'trace', label: 'Nachfolger', tip: 'Formeln, die die aktive Zelle verwenden', fn: showDependents }), B({ icon: 'bug', label: 'Fehler suchen', fn: findErrors }))); return g; });
+  wrap('data', g => { g.push(GR('Umwandeln', B({ icon: 'val', label: 'Formeln in Werte', fn: formulasToValues }), B({ icon: 'num', label: 'Text in Zahlen', fn: textToNumbers }), B({ icon: 'text', label: 'Zahlen in Text', fn: numbersToText })), GR('Aufräumen', B({ icon: 'shuffle', label: 'Zeilen mischen', fn: shuffleRows }), B({ icon: 'blankrow', label: 'Leere Zeilen löschen', fn: deleteBlankRows }), B({ icon: 'dupes', label: 'Duplikate markieren', fn: markDuplicates }))); return g; });
+  wrap('review', g => { g.push(GR('Notizen', B({ icon: 'note', label: 'Neue Notiz', fn: editNote }), B({ icon: 'notex', label: 'Notiz löschen', fn: () => delNotes(false) }), B({ icon: 'notex', label: 'Alle Notizen löschen', fn: () => delNotes(true) })), GR('Prüfen', B({ icon: 'spell', label: 'Rechtschreibung', tip: 'Rechtschreibprüfung im Eingabefeld', on: () => $('#ed').spellcheck !== false, fn: () => { $('#ed').spellcheck = $('#ed').spellcheck === false; refreshRibbon(); } }), B({ icon: 'bug', label: 'Fehler suchen', fn: findErrors }), B({ icon: 'dupes', label: 'Duplikate markieren', fn: markDuplicates })), GR('Schutz', B({ icon: 'lock2', label: 'Blatt schützen', on: () => !!cur().prot, tip: 'Sperrt Eingaben und Änderungen im Blatt', fn: toggleProt }))); return g; });
+  wrap('view', g => { g.push(GR('Fenster', B({ icon: 'fbar', label: 'Formelleiste', on: () => $('#fbar').style.display !== 'none', fn: () => toggleEl('#fbar') }), B({ icon: 'showf', label: 'Formeln anzeigen', on: () => !!S.showF, fn: toggleShowF }), B({ icon: 'fullscr', label: 'Vollbild', fn: () => { const d = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen(); } })), GR('Navigation', B({ icon: 'gotoc', label: 'Gehe zu …', tip: 'Zelle oder Bereich ansteuern', fn: gotoCell }), B({ icon: 'widths', label: 'Alle Spalten anpassen', fn: fitAllColumns }), B({ icon: 'cellfmt', label: 'Standardbreiten', tip: 'Spaltenbreiten und Zeilenhöhen zurücksetzen', fn: () => { const sh = cur(); sh.colW = {}; sh.rowH = {}; sh.rowM = {}; commit('Standardbreiten'); } }))); return g; });
+  const st = document.createElement('style'); st.textContent = '.cell.hasnote::after{content:"";position:absolute;right:0;top:0;border:5px solid transparent;border-top-color:#d00;border-right-color:#d00}'; document.head.append(st);
+})();
 /* Gemeinsame Befehlssuche in der Titelleiste („Was möchten Sie tun?“): sammelt Befehle aller Reiter,
    springt zum Reiter und hebt die Schaltfläche hervor. api = { tabs(), build(id), go(id) } */
 function initTellMe(api) {
@@ -1615,6 +1702,11 @@ function initTellMe(api) {
   });
   document.addEventListener('keydown', e => { if (e.altKey && (e.key === 'q' || e.key === 'Q')) { e.preventDefault(); inp.focus(); inp.select(); } });
 }
+
+/* Menüband einklappen (Doppelklick auf einen Reiter oder Strg+F1) */
+function toggleRibbonMin() { const a = document.getElementById('app'); a.classList.toggle('rbmin'); window.dispatchEvent(new Event('resize')); return a.classList.contains('rbmin'); }
+document.addEventListener('dblclick', e => { if (e.target.closest && e.target.closest('#tabs .tab')) toggleRibbonMin(); });
+document.addEventListener('keydown', e => { if (e.ctrlKey && e.key === 'F1') { e.preventDefault(); toggleRibbonMin(); } });
 
 /* Zoomregler und Ansichtsschalter für die Statusleiste. cfg = { get(): Zahl(1 = 100 %), set(v), min, max } */
 function zoomWidget(cfg) {

@@ -13,7 +13,7 @@ let _uc = 0; const uid = p => p + (Math.random() * 1e9 | 0).toString(36) + (++_u
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const escHtml = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const MM = 96 / 25.4, PT = 96 / 72;
-const PAPER = { A4: { w: 210, h: 297 }, Letter: { w: 215.9, h: 279.4 } };
+const PAPER = { A4: { w: 210, h: 297 }, Letter: { w: 215.9, h: 279.4 }, A3: { w: 297, h: 420 }, A5: { w: 148, h: 210 }, Legal: { w: 215.9, h: 355.6 } };
 const GAP = 24;
 const S = { doc: null, zoom: 1, navOn: true, tab: 'start', name: 'Dokument', dirty: false, selRange: null, pages: [], unitPage: new Map(), curImg: null, findOn: false };
 const FONTS = [['"Segoe UI",Calibri,Arial,sans-serif', 'Segoe UI'], ['Arial,Helvetica,sans-serif', 'Arial'], ['"Times New Roman",Times,serif', 'Times New Roman'], ['Georgia,serif', 'Georgia'], ['Verdana,sans-serif', 'Verdana'], ['"Courier New",monospace', 'Courier New'], ['"Trebuchet MS",sans-serif', 'Trebuchet MS']];

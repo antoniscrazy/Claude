@@ -48,6 +48,11 @@ function initTellMe(api) {
   document.addEventListener('keydown', e => { if (e.altKey && (e.key === 'q' || e.key === 'Q')) { e.preventDefault(); inp.focus(); inp.select(); } });
 }
 
+/* Menüband einklappen (Doppelklick auf einen Reiter oder Strg+F1) */
+function toggleRibbonMin() { const a = document.getElementById('app'); a.classList.toggle('rbmin'); window.dispatchEvent(new Event('resize')); return a.classList.contains('rbmin'); }
+document.addEventListener('dblclick', e => { if (e.target.closest && e.target.closest('#tabs .tab')) toggleRibbonMin(); });
+document.addEventListener('keydown', e => { if (e.ctrlKey && e.key === 'F1') { e.preventDefault(); toggleRibbonMin(); } });
+
 /* Zoomregler und Ansichtsschalter für die Statusleiste. cfg = { get(): Zahl(1 = 100 %), set(v), min, max } */
 function zoomWidget(cfg) {
   const w = document.createElement('div'); w.className = 'zm';

@@ -642,6 +642,7 @@ function validateProject(p) {
     if (!o || typeof o !== 'object' || !TYPES.includes(o.type)) fail('Unbekannter Objekttyp: ' + (o && o.type));
     if (depth > 6) fail('Gruppen sind zu tief verschachtelt.');
     const r = { id: chk(o.id), type: o.type, name: str(o.name, o.type, 120), x: num(o.x, 0, -1e5, 1e5), y: num(o.y, 0, -1e5, 1e5), w: num(o.w, 100, 1, 1e5), h: num(o.h, 100, 1, 1e5), rot: num(o.rot, 0, -3600, 3600) };
+    if (typeof o.alt === 'string' && o.alt) r.alt = o.alt.slice(0, 400);
     if (o.hidden) r.hidden = true; if (o.locked) r.locked = true; if (o.lockRatio) r.lockRatio = true; if (o.shadow) r.shadow = true;
     if (o.grad && typeof o.grad === 'object') { const c2 = safeColor(o.grad.c2); if (c2) r.grad = { c2, ang: num(o.grad.ang, 0, 0, 359) }; }
     if (typeof o.mid === 'string' && /^[\w-]{1,60}$/.test(o.mid)) r.mid = o.mid;
@@ -673,7 +674,8 @@ function validateProject(p) {
       if (e.cat === 'path') { const q = e.path || {}; r.path = { dx: num(q.dx, 200, -1e5, 1e5), dy: num(q.dy, 0, -1e5, 1e5) }; if (q.cx != null) { r.path.cx = num(q.cx, 0, -1e5, 1e5); r.path.cy = num(q.cy, 0, -1e5, 1e5); } }
       return r; });
     return { id: sid, layout: LAYOUTS[s.layout] ? s.layout : 'blank', hidden: !!s.hidden, bg: s.bg != null ? safeColor(s.bg) : null, notes: str(s.notes, '', 20000), objects, effects,
-      transition: { type: TRANS[tr.type] ? tr.type : 'none', dur: num(tr.dur, .7, .1, 10), dir: tr.dir || 'left' }, advClick: s.advClick !== false, advTime: s.advTime == null ? null : num(s.advTime, 5, 0, 3600) };
+      transition: { type: TRANS[tr.type] ? tr.type : 'none', dur: num(tr.dur, .7, .1, 10), dir: tr.dir || 'left' }, advClick: s.advClick !== false, advTime: s.advTime == null ? null : num(s.advTime, 5, 0, 3600),
+      comments: Array.isArray(s.comments) ? s.comments.slice(0, 100).filter(c => c && typeof c.t === 'string').map(c => ({ t: str(c.t, '', 1000), d: num(c.d, 0, 0, 4e12) })) : [] };
   });
   return { format: 'WebOffice-Praesentation', version: 1, title: str(p.title, 'Präsentation', 120), size, master, slides, assets };
 }

@@ -39,7 +39,7 @@ function render() {
       const cell = sh.cells[key(r, c)], d = document.createElement('div'), s = cell && cell.st, w = colX[c + 1] - colX[c];
       d.className = 'cell'; d.style.left = colX[c] + 'px'; d.style.top = rowY[r] + 'px'; d.style.width = w + 'px'; d.style.height = h + 'px';
       if (cell) {
-        const v = cell.v, isErr = v instanceof XlErr; d.textContent = formatValue(v, s);
+        const v = cell.v, isErr = v instanceof XlErr; d.textContent = formatValue(v, s); if (S.showF && cell.f !== undefined) d.textContent = '=' + displayFormula(cell.f);
         let al = s && s.al; if (!al) al = typeof v === 'number' ? 'r' : (typeof v === 'boolean' || isErr) ? 'c' : 'l'; d.style.textAlign = { l: 'left', c: 'center', r: 'right' }[al];
         if (isErr) { d.classList.add('err'); d.title = v.code + ' – ' + v.msg; }
         if (s) {
@@ -47,6 +47,7 @@ function render() {
           if (s.wr) d.classList.add('wrap'); if (s.bd) { if (s.bd.t) d.style.borderTop = '1.5px solid #222'; if (s.bd.b) d.style.borderBottom = '1.5px solid #222'; if (s.bd.l) d.style.borderLeft = '1.5px solid #222'; if (s.bd.r) d.style.borderRight = '1.5px solid #222'; }
         }
       }
+      if (cell && cell.nt) { d.classList.add('hasnote'); d.title = cell.nt; }
       if (sh.cf && sh.cf.length) { const x = cfStyle(sh, r, c, cell); if (x) { if (x.bg) d.style.background = x.bg; if (x.co) d.style.color = x.co; if (x.b) d.style.fontWeight = '700'; } }
       const f = sh.filter; if (f && r === f.r1 && c >= f.c1 && c <= f.c2) { const act = f.cols[c] && f.cols[c].length; d.append(el('span', { class: 'fbtn' + (act ? ' on' : ''), 'data-fc': c, title: 'Filter' }, '▾')); d.classList.add('fhead'); }
       frag.append(d);
@@ -198,14 +199,19 @@ function niceStep(raw) { const e = Math.pow(10, Math.floor(Math.log10(raw))), f 
 function chartSVG(ch, w, h) {
   const d = chartData(ch), svg = SV('svg', { viewBox: `0 0 ${w} ${h}`, width: w, height: h }), T = (x, y, s, a, size, col) => { const t = SV('text', { x, y, 'text-anchor': a || 'middle', 'font-size': size || 12, fill: col || '#444' }); t.textContent = s; svg.append(t); };
   if (!d || !d.series.length) { T(w / 2, h / 2, 'Keine Daten', 'middle', 14); return svg; }
-  const top = 30, legendH = d.series.length > 1 || ch.kind === 'pie' ? 22 : 0; if (ch.title) T(w / 2, 20, ch.title, 'middle', 14, '#111');
-  if (ch.kind === 'pie') { const vals = d.series[0].values.map(v => Math.max(0, v)), tot = vals.reduce((a, b) => a + b, 0) || 1, r = Math.min(w * .35, (h - top - 10) / 2), cx = w * .36, cy = top + (h - top) / 2; let a0 = -Math.PI / 2;
-    vals.forEach((v, i) => { const a1 = a0 + v / tot * Math.PI * 2, lg = a1 - a0 > Math.PI ? 1 : 0; if (v / tot > .9999) svg.append(SV('circle', { cx, cy, r, fill: PAL[i % 6] })); else svg.append(SV('path', { d: `M${cx},${cy} L${cx + r * Math.cos(a0)},${cy + r * Math.sin(a0)} A${r},${r} 0 ${lg} 1 ${cx + r * Math.cos(a1)},${cy + r * Math.sin(a1)} Z`, fill: PAL[i % 6], stroke: '#fff', 'stroke-width': 1.5 })); a0 = a1; });
+  const top = 30, legendH = d.series.length > 1 || ch.kind === 'pie' || ch.kind === 'donut' ? 22 : 0; if (ch.title) T(w / 2, 20, ch.title, 'middle', 14, '#111');
+  if (ch.kind === 'pie' || ch.kind === 'donut') { const vals = d.series[0].values.map(v => Math.max(0, v)), tot = vals.reduce((a, b) => a + b, 0) || 1, r = Math.min(w * .35, (h - top - 10) / 2), cx = w * .36, cy = top + (h - top) / 2; let a0 = -Math.PI / 2;
+    vals.forEach((v, i) => { const a1 = a0 + v / tot * Math.PI * 2, lg = a1 - a0 > Math.PI ? 1 : 0; if (v / tot > .9999) svg.append(SV('circle', { cx, cy, r, fill: PAL[i % 6] })); else svg.append(SV('path', { d: `M${cx},${cy} L${cx + r * Math.cos(a0)},${cy + r * Math.sin(a0)} A${r},${r} 0 ${lg} 1 ${cx + r * Math.cos(a1)},${cy + r * Math.sin(a1)} Z`, fill: PAL[i % 6], stroke: '#fff', 'stroke-width': 1.5 })); a0 = a1; }); if (ch.kind === 'donut') svg.append(SV('circle', { cx, cy, r: r * .55, fill: '#fff' }));
     d.labels.forEach((l, i) => { svg.append(SV('rect', { x: w * .7, y: top + 6 + i * 20, width: 12, height: 12, fill: PAL[i % 6] })); T(w * .7 + 18, top + 16 + i * 20, l + ' (' + Math.round(vals[i] / tot * 100) + '%)', 'start', 12); }); return svg; }
+  if (ch.kind === 'hbar') { const L2 = 84, R2 = 16, B2 = 22 + legendH, pw2 = w - L2 - R2, ph2 = h - top - B2; let mx = 0; d.series.forEach(s => s.values.forEach(v => { mx = Math.max(mx, v); })); const st = niceStep(mx / 4 || 1); mx = Math.ceil(mx / st) * st || 1;
+    for (let v = 0; v <= mx + 1e-9; v += st) { const x = L2 + v / mx * pw2; svg.append(SV('line', { x1: x, x2: x, y1: top, y2: top + ph2, stroke: '#0002' })); T(x, top + ph2 + 14, String(+v.toFixed(2)), 'middle', 11); }
+    const n2 = d.labels.length, gh = ph2 / Math.max(1, n2); d.labels.forEach((l, i) => T(L2 - 5, top + gh * (i + .5) + 4, l.slice(0, 12), 'end', 11)); const bh = gh * .72 / d.series.length;
+    d.series.forEach((s, si) => s.values.forEach((v, i) => svg.append(SV('rect', { x: L2, y: top + gh * i + gh * .14 + si * bh, width: Math.max(1, Math.max(0, v) / mx * pw2), height: Math.max(1, bh - 2), fill: PAL[si % 6] }))));
+    if (legendH) d.series.forEach((s, si) => { const x = L2 + si * 120; svg.append(SV('rect', { x, y: h - 16, width: 11, height: 11, fill: PAL[si % 6] })); T(x + 16, h - 6, s.name.slice(0, 14), 'start', 11); }); return svg; }
   const L = 46, R = 12, B = 26 + legendH, pw = w - L - R, ph = h - top - B; let max = 0, min = 0; d.series.forEach(s => s.values.forEach(v => { max = Math.max(max, v); min = Math.min(min, v); })); const step = niceStep((max - min) / 4 || 1); max = Math.ceil(max / step) * step || 1; min = Math.floor(min / step) * step;
   for (let v = min; v <= max + 1e-9; v += step) { const y = top + ph - (v - min) / (max - min) * ph; svg.append(SV('line', { x1: L, x2: w - R, y1: y, y2: y, stroke: '#0002' })); T(L - 5, y + 4, String(+v.toFixed(2)), 'end', 11); }
   const n = d.labels.length, gw = pw / Math.max(1, n); d.labels.forEach((l, i) => T(L + gw * (i + .5), top + ph + 16, l.slice(0, 12), 'middle', 11));
-  if (ch.kind === 'line') d.series.forEach((s, si) => { const pts = s.values.map((v, i) => [L + gw * (i + .5), top + ph - (v - min) / (max - min) * ph]); svg.append(SV('polyline', { points: pts.map(p => p.join(',')).join(' '), fill: 'none', stroke: PAL[si % 6], 'stroke-width': 2.5 })); pts.forEach(p => svg.append(SV('circle', { cx: p[0], cy: p[1], r: 3.5, fill: PAL[si % 6] }))); });
+  if (ch.kind === 'line' || ch.kind === 'area') d.series.forEach((s, si) => { const pts = s.values.map((v, i) => [L + gw * (i + .5), top + ph - (v - min) / (max - min) * ph]); if (ch.kind === 'area' && pts.length) svg.append(SV('polygon', { points: [[pts[0][0], top + ph - (0 - min) / (max - min) * ph]].concat(pts, [[pts[pts.length - 1][0], top + ph - (0 - min) / (max - min) * ph]]).map(p => p.join(',')).join(' '), fill: PAL[si % 6], 'fill-opacity': .3 })); svg.append(SV('polyline', { points: pts.map(p => p.join(',')).join(' '), fill: 'none', stroke: PAL[si % 6], 'stroke-width': 2.5 })); pts.forEach(p => svg.append(SV('circle', { cx: p[0], cy: p[1], r: 3.5, fill: PAL[si % 6] }))); });
   else { const bw = gw * .72 / d.series.length; d.series.forEach((s, si) => s.values.forEach((v, i) => { const y0 = top + ph - (0 - min) / (max - min) * ph, y1 = top + ph - (v - min) / (max - min) * ph; svg.append(SV('rect', { x: L + gw * i + gw * .14 + si * bw, y: Math.min(y0, y1), width: Math.max(1, bw - 2), height: Math.abs(y1 - y0), fill: PAL[si % 6] })); })); }
   if (legendH) d.series.forEach((s, si) => { const x = L + si * 120; svg.append(SV('rect', { x, y: h - 16, width: 11, height: 11, fill: PAL[si % 6] })); T(x + 16, h - 6, s.name.slice(0, 14), 'start', 11); });
   return svg;
