@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>WebOffice Präsentation</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2048%2048%22%20width%3D%2248%22%20height%3D%2248%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22pa%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FF9A74%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23E4573A%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22pb%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23D9482B%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%239C2A12%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2224%22%20r%3D%2218%22%20fill%3D%22url(%23pa)%22%2F%3E%3Cpath%20d%3D%22M30%2024V6a18%2018%200%200%201%2018%2018z%22%20fill%3D%22%23fff%22%20fill-opacity%3D%22.38%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2214%22%20width%3D%2224%22%20height%3D%2224%22%20rx%3D%224%22%20fill%3D%22url(%23pb)%22%2F%3E%3Cpath%20d%3D%22M10.6%2032V20.6h4.4a3.7%203.7%200%200%201%200%207.4h-4.4%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E">
 <!--
   WebOffice Präsentation – eigenständiger Präsentationseditor (eine Datei, offline, ohne externe Abhängigkeiten).
   Alle Bibliotheken (ZIP-Schreiben/-Lesen, Sanitizer, Animations-Engine) sind eigener Code ohne Fremdlizenzen.
@@ -176,17 +177,82 @@ button,select,input,textarea{font:inherit;color:inherit}
   .pp-print-page{page-break-after:always;break-after:page;position:relative;overflow:hidden}
   .pp-print-page:last-child{page-break-after:auto}
 }
+/* Gemeinsames Office-Erscheinungsbild (Titelleiste, Reiter, Menüband, Statusleiste).
+   Wird nach dem App-CSS eingebunden und überschreibt dessen Grundwerte. Farbe kommt aus --ac. */
+:root{--rb:#f3f3f3;--rbd:#d2d2d2;--hv2:#e1e1e1;--ring:#0f6cbd}
+#titlebar{height:42px;gap:2px;padding:0 8px 0 10px;background:var(--ac);position:relative}
+#titlebar .logo{width:28px;height:28px;margin:0 8px 0 0;background:none;border-radius:0;display:block;flex:none}
+#titlebar .qa{width:32px;height:32px;border-radius:4px}
+#titlebar .qa:hover:not(:disabled){background:rgba(255,255,255,.22)}
+#docname{background:transparent;border:1px solid transparent;border-radius:4px;padding:4px 8px;width:auto;min-width:120px;max-width:300px;margin:0 0 0 6px;font-size:13px;font-weight:600;text-overflow:ellipsis}
+#docname:hover{background:rgba(255,255,255,.16)}
+#docname:focus{background:#fff;color:#222}
+#savestat{margin-left:12px;opacity:.85;font-size:12px}
+#tsearch{position:absolute;left:50%;top:7px;transform:translateX(-50%);width:min(34vw,420px);height:28px;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);border-radius:4px;padding:0 8px;color:#fff;transition:background .12s}
+#tsearch:hover,#tsearch:focus-within{background:#fff;color:#222;border-color:#fff}
+#tsearch input{flex:1;min-width:0;border:0;background:transparent;color:inherit;outline:none;height:26px;font-size:13px}
+#tsearch input::placeholder{color:inherit;opacity:.85}
+#tsearch .ic{width:16px;height:16px}
+#tsres{display:none;position:absolute;left:-1px;right:-1px;top:30px;background:#fff;color:#222;border:1px solid var(--rbd);border-radius:4px;box-shadow:0 8px 24px rgba(0,0,0,.25);max-height:60vh;overflow:auto;z-index:300;padding:4px 0}
+#tsres.open{display:block}
+#tsres button{display:flex;width:100%;align-items:center;gap:8px;border:0;background:none;text-align:left;padding:6px 10px;cursor:pointer;font-size:13px}
+#tsres button:hover,#tsres button.sel{background:var(--acl,#e8f0fe)}
+#tsres small{color:#777;margin-left:auto;font-size:11px}
+#tsres .none{padding:8px 12px;color:#777}
+.rb-flash{animation:rbflash 1.4s ease-out 2}
+@keyframes rbflash{0%{box-shadow:0 0 0 3px var(--ac)}100%{box-shadow:0 0 0 3px transparent}}
+/* Reiterzeile liegt auf der Akzentfarbe, aktiver Reiter verschmilzt mit dem Menüband */
+#tabs{background:var(--ac);border-bottom:0;padding:0 8px 0 6px;gap:1px;align-items:flex-end;height:32px}
+.tab{height:30px;padding:0 13px;color:#fff;border:0;border-radius:4px 4px 0 0;font-size:13px;position:relative}
+.tab:hover{background:rgba(255,255,255,.18)}
+.tab.on{background:var(--rb);color:var(--ac);font-weight:600;border-bottom:0}
+.tab.on::after{content:"";position:absolute;left:12px;right:12px;bottom:2px;height:2px;background:var(--ac);border-radius:2px}
+.tab:first-child{font-weight:600}
+.tab:first-child:hover:not(.on){background:rgba(0,0,0,.2)}
+.tab.ctx{background:rgba(255,255,255,.28);color:#fff}.tab.ctx.on{background:var(--rb);color:var(--ac)}
+#ribbon{background:var(--rb);border-bottom:1px solid var(--rbd);padding:5px 6px 3px;min-height:96px;gap:0;align-items:stretch}
+.grp{padding:0 6px;border-right:1px solid var(--rbd);position:relative}
+.grp:last-child{border-right:0}
+.grp .items{align-content:flex-start;gap:2px}
+.grp .gn{font-size:11px;color:#555;padding-top:2px;letter-spacing:.1px}
+.rb-btn{border-radius:3px;min-width:50px;height:64px;gap:1px}
+.rb-btn:hover:not(:disabled){background:var(--hv2);border-color:#c8c8c8}
+.rb-btn:active:not(:disabled){background:#d0d0d0}
+.rb-btn.on{background:#cfcfcf;border-color:#a8a8a8}
+.rb-btn.sm{height:26px;border-radius:3px}
+.rb-field input,.rb-field select{border:1px solid #b8b8b8;border-radius:3px;background:#fff}
+.rb-field input:hover,.rb-field select:hover{border-color:#777}
+.rb-field input:focus,.rb-field select:focus{outline:1px solid var(--ring);border-color:var(--ring)}
+/* Statusleiste mit Ansichtsschaltern und Zoomregler */
+#status{display:flex;align-items:center;gap:14px;height:26px;padding:0 10px;background:var(--rb);border-top:1px solid var(--rbd);font-size:12px;color:#444;flex:none}
+#status .sp{flex:1}
+#status label{display:flex;align-items:center;gap:6px}
+.zm{display:flex;align-items:center;gap:6px}
+.zm button{width:20px;height:20px;border:0;background:none;border-radius:3px;cursor:pointer;font-size:16px;line-height:1;color:#333;padding:0}
+.zm button:hover{background:var(--hv2)}
+.zm input[type=range]{width:110px;accent-color:var(--ac);margin:0}
+.zm output{min-width:42px;text-align:right}
+.vsw{display:flex;gap:1px}
+.vsw button{width:26px;height:22px;border:0;background:none;border-radius:3px;display:grid;place-items:center;cursor:pointer;color:#333}
+.vsw button:hover{background:var(--hv2)}.vsw button.on{background:#d4d4d4;color:var(--ac)}
+@media (max-width:760px){#tsearch{display:none}#docname{max-width:140px}}
+.fitbtn{border:0;background:none;border-radius:3px;padding:2px 8px;cursor:pointer;font-size:12px;color:#333}.fitbtn:hover{background:var(--hv2)}
+.grp{flex:none}
+#savestat{margin-left:auto;margin-right:4px;max-width:22vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#tsearch{width:min(32vw,400px)}
+@media (max-width:1100px){#savestat{display:none}}
 </style>
 </head>
 <body>
 <div id="app">
   <div id="titlebar">
-    <div class="logo" aria-hidden="true">P</div>
+    <img class="logo" alt="" src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2048%2048%22%20width%3D%2248%22%20height%3D%2248%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22pa%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FF9A74%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23E4573A%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22pb%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23D9482B%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%239C2A12%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2224%22%20r%3D%2218%22%20fill%3D%22url(%23pa)%22%2F%3E%3Cpath%20d%3D%22M30%2024V6a18%2018%200%200%201%2018%2018z%22%20fill%3D%22%23fff%22%20fill-opacity%3D%22.38%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2214%22%20width%3D%2224%22%20height%3D%2224%22%20rx%3D%224%22%20fill%3D%22url(%23pb)%22%2F%3E%3Cpath%20d%3D%22M10.6%2032V20.6h4.4a3.7%203.7%200%200%201%200%207.4h-4.4%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E">
     <button class="qa" id="qSave" title="Projekt speichern (Strg+S)" aria-label="Projekt speichern"></button>
     <button class="qa" id="qUndo" title="Rückgängig (Strg+Z)" aria-label="Rückgängig"></button>
     <button class="qa" id="qRedo" title="Wiederholen (Strg+Y)" aria-label="Wiederholen"></button>
     <input id="docname" value="Präsentation" aria-label="Dateiname" maxlength="80">
     <span id="savestat" role="status">–</span>
+    <div id="tsearch" role="search"><span id="tsic"></span><input id="tsin" type="search" placeholder="Suchen (Befehle, Reiter) – Alt+Q" aria-label="Befehle suchen" autocomplete="off"><div id="tsres" role="listbox"></div></div>
   </div>
   <div id="tabs" role="tablist"></div>
   <div id="ribbon" role="toolbar"></div>
@@ -1253,7 +1319,9 @@ function renderStatus() {
     b('thumbs', 'Folienleiste ein-/ausblenden', S.thumbsOn, () => { S.thumbsOn = !S.thumbsOn; renderStage(true); renderStatus(); }),
     b('notes', 'Notizen ein-/ausblenden', S.notesOn, () => { S.notesOn = !S.notesOn; renderStage(true); renderStatus(); }),
     b('paneright', 'Seitenleiste rechts ein-/ausblenden', S.rightOn, () => { S.rightOn = !S.rightOn; renderStage(true); renderStatus(); }),
-    b('slideadd', 'Normalansicht', S.view === 'normal', () => setView('normal')), b('grid', 'Folienübersicht', S.view === 'sorter', () => setView('sorter')), el('span', null, 'Zoom'), zs);
+    b('slideadd', 'Normalansicht', S.view === 'normal', () => setView('normal')), b('grid', 'Folienübersicht', S.view === 'sorter', () => setView('sorter')),
+    el('button', { class: 'fitbtn', title: 'Folie an Fenster anpassen', onclick: () => { S.zoom = 'fit'; renderStage(true); renderStatus(); } }, 'Anpassen'),
+    zoomWidget({ min: 25, max: 300, get: () => S.z || 1, set: v => { S.zoom = v; renderStage(true); renderStatus(); } }));
 }
 function setView(v) { if (S.editing) endEdit(); S.view = v; render(); }
 
@@ -2213,6 +2281,73 @@ async function exportPptx() {
       report.skipped.length ? el('p', { class: 'hint' }, 'Hinweise: ' + Array.from(new Set(report.skipped)).join('; ')) : '', report.animSkipped ? el('p', { class: 'hint' }, report.animSkipped + ' Effekt(e) auf nicht exportierten Objekten wurden ausgelassen.') : '') });
   } catch (e) { console.error(e); toast('PPTX-Export fehlgeschlagen: ' + e.message, true); }
 }
+/* Gemeinsame Befehlssuche in der Titelleiste („Was möchten Sie tun?“): sammelt Befehle aller Reiter,
+   springt zum Reiter und hebt die Schaltfläche hervor. api = { tabs(), build(id), go(id) } */
+function initTellMe(api) {
+  const box = document.getElementById('tsearch'), inp = document.getElementById('tsin'), res = document.getElementById('tsres');
+  if (!box || !inp) return;
+  document.getElementById('tsic').innerHTML = '<svg class="ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5.5 5.5"/></svg>';
+  let index = null, shown = [], sel = 0;
+  const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  function harvest() {
+    if (index) return index; index = [];
+    for (const [id, tl] of api.tabs()) {
+      let nodes = []; try { nodes = api.build(id); } catch (e) { continue; }
+      const holder = document.createElement('div'); holder.append(...nodes);
+      holder.querySelectorAll('.grp').forEach(g => {
+        const gn = (g.querySelector('.gn') || {}).textContent || '';
+        g.querySelectorAll('.rb-btn, .rb-field').forEach(b => {
+          const t = (b.textContent || '').trim() || b.title || b.getAttribute('aria-label') || '';
+          if (t && !index.some(x => x.tab === id && x.label === t)) index.push({ tab: id, tabLabel: tl, label: t, group: gn, key: norm(t + ' ' + gn + ' ' + tl) });
+        });
+      });
+    }
+    return index;
+  }
+  function show(q) {
+    const words = norm(q).split(/\s+/).filter(Boolean);
+    shown = words.length ? harvest().filter(x => words.every(w => x.key.includes(w))).slice(0, 14) : [];
+    sel = 0; res.replaceChildren();
+    if (!words.length) { res.classList.remove('open'); return; }
+    if (!shown.length) { const n = document.createElement('div'); n.className = 'none'; n.textContent = 'Kein Befehl gefunden.'; res.append(n); }
+    shown.forEach((x, i) => { const b = document.createElement('button'); b.className = i === 0 ? 'sel' : ''; b.type = 'button'; b.append(x.label); const s = document.createElement('small'); s.textContent = x.tabLabel + ' › ' + x.group; b.append(s); b.onmousedown = e => { e.preventDefault(); pick(x); }; res.append(b); });
+    res.classList.add('open');
+  }
+  function pick(x) {
+    api.go(x.tab); inp.value = ''; res.classList.remove('open'); inp.blur();
+    setTimeout(() => {
+      const b = [...document.querySelectorAll('#ribbon .rb-btn, #ribbon .rb-field')].find(e => ((e.textContent || '').trim() || e.title || e.getAttribute('aria-label')) === x.label);
+      if (b) { b.scrollIntoView({ block: 'nearest', inline: 'center' }); b.classList.add('rb-flash'); setTimeout(() => b.classList.remove('rb-flash'), 3000); }
+    }, 60);
+  }
+  inp.addEventListener('input', () => show(inp.value));
+  inp.addEventListener('focus', () => { if (inp.value) show(inp.value); });
+  inp.addEventListener('blur', () => setTimeout(() => res.classList.remove('open'), 120));
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (!shown.length) return; sel = (sel + (e.key === 'ArrowDown' ? 1 : shown.length - 1)) % shown.length; [...res.querySelectorAll('button')].forEach((b, i) => b.classList.toggle('sel', i === sel)); }
+    else if (e.key === 'Enter' && shown[sel]) { e.preventDefault(); pick(shown[sel]); }
+    else if (e.key === 'Escape') { inp.value = ''; res.classList.remove('open'); inp.blur(); }
+  });
+  document.addEventListener('keydown', e => { if (e.altKey && (e.key === 'q' || e.key === 'Q')) { e.preventDefault(); inp.focus(); inp.select(); } });
+}
+
+/* Zoomregler und Ansichtsschalter für die Statusleiste. cfg = { get(): Zahl(1 = 100 %), set(v), min, max } */
+function zoomWidget(cfg) {
+  const w = document.createElement('div'); w.className = 'zm';
+  const mk = (t, l) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.setAttribute('aria-label', l); b.title = l; return b; };
+  const minus = mk('−', 'Verkleinern'), plus = mk('+', 'Vergrößern'), rng = document.createElement('input'), out = document.createElement('output');
+  rng.type = 'range'; rng.min = cfg.min || 25; rng.max = cfg.max || 300; rng.step = 5; rng.setAttribute('aria-label', 'Zoom');
+  const apply = pct => { cfg.set(Math.max(+rng.min, Math.min(+rng.max, pct)) / 100); w.update(); };
+  rng.oninput = () => apply(+rng.value); minus.onclick = () => apply(Math.round(cfg.get() * 100 / 10) * 10 - 10); plus.onclick = () => apply(Math.round(cfg.get() * 100 / 10) * 10 + 10);
+  w.update = () => { const p = Math.round(cfg.get() * 100); rng.value = p; out.textContent = p + ' %'; };
+  w.append(minus, rng, plus, out); w.update(); return w;
+}
+/* Verdrahtung der gemeinsamen Titelleisten-Suche */
+window.addEventListener('DOMContentLoaded', () => initTellMe({
+  tabs: () => TAB_DEF,
+  build: id => { const keep = ribbonControls; ribbonControls = []; try { return RIBBON[id](); } finally { ribbonControls = keep; } },
+  go: id => { S.tab = id; S._rkey = null; buildRibbon(); buildTabs(); }
+}));
 </script>
 </body>
 </html>

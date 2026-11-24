@@ -8,7 +8,8 @@ const want = process.argv[2] ? [process.argv[2]] : Object.keys(apps);
 for (const a of want) {
   const tpl = path.join(root, 'src', a, 'template.html');
   if (!fs.existsSync(tpl)) { console.log('übersprungen:', a); continue; }
-  const out = fs.readFileSync(tpl, 'utf8').replace(/@@include ([\w./-]+)@@/g, (_, f) => inc(f).replace(/<\/script/gi, '<\\/script'));
+  const icon = n => 'data:image/svg+xml,' + encodeURIComponent(fs.readFileSync(path.join(root, 'icons', n + '.svg'), 'utf8').trim()).replace(/'/g, '%27');
+  const out = fs.readFileSync(tpl, 'utf8').replace(/@@include ([\w./-]+)@@/g, (_, f) => inc(f).replace(/<\/script/gi, '<\\/script')).replace(/@@appicon:(\w+)@@/g, (_, n) => icon(n));
   fs.writeFileSync(path.join(root, apps[a]), out);
   console.log('gebaut:', apps[a], (out.length / 1024).toFixed(0) + ' kB');
 }

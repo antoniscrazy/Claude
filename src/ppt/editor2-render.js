@@ -102,7 +102,9 @@ function renderStatus() {
     b('thumbs', 'Folienleiste ein-/ausblenden', S.thumbsOn, () => { S.thumbsOn = !S.thumbsOn; renderStage(true); renderStatus(); }),
     b('notes', 'Notizen ein-/ausblenden', S.notesOn, () => { S.notesOn = !S.notesOn; renderStage(true); renderStatus(); }),
     b('paneright', 'Seitenleiste rechts ein-/ausblenden', S.rightOn, () => { S.rightOn = !S.rightOn; renderStage(true); renderStatus(); }),
-    b('slideadd', 'Normalansicht', S.view === 'normal', () => setView('normal')), b('grid', 'Folienübersicht', S.view === 'sorter', () => setView('sorter')), el('span', null, 'Zoom'), zs);
+    b('slideadd', 'Normalansicht', S.view === 'normal', () => setView('normal')), b('grid', 'Folienübersicht', S.view === 'sorter', () => setView('sorter')),
+    el('button', { class: 'fitbtn', title: 'Folie an Fenster anpassen', onclick: () => { S.zoom = 'fit'; renderStage(true); renderStatus(); } }, 'Anpassen'),
+    zoomWidget({ min: 25, max: 300, get: () => S.z || 1, set: v => { S.zoom = v; renderStage(true); renderStatus(); } }));
 }
 function setView(v) { if (S.editing) endEdit(); S.view = v; render(); }
 

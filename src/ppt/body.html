@@ -1,11 +1,12 @@
 <div id="app">
   <div id="titlebar">
-    <div class="logo" aria-hidden="true">P</div>
+    <img class="logo" alt="" src="@@appicon:powerpoint@@">
     <button class="qa" id="qSave" title="Projekt speichern (Strg+S)" aria-label="Projekt speichern"></button>
     <button class="qa" id="qUndo" title="Rückgängig (Strg+Z)" aria-label="Rückgängig"></button>
     <button class="qa" id="qRedo" title="Wiederholen (Strg+Y)" aria-label="Wiederholen"></button>
     <input id="docname" value="Präsentation" aria-label="Dateiname" maxlength="80">
     <span id="savestat" role="status">–</span>
+    <div id="tsearch" role="search"><span id="tsic"></span><input id="tsin" type="search" placeholder="Suchen (Befehle, Reiter) – Alt+Q" aria-label="Befehle suchen" autocomplete="off"><div id="tsres" role="listbox"></div></div>
   </div>
   <div id="tabs" role="tablist"></div>
   <div id="ribbon" role="toolbar"></div>

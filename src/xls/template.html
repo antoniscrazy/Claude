@@ -4,12 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>WebOffice Tabellenkalkulation</title>
+<link rel="icon" type="image/svg+xml" href="@@appicon:excel@@">
 <!--
   WebOffice Tabellenkalkulation – eigenständige Tabellenkalkulation (eine Datei, offline, ohne externe Abhängigkeiten).
   Formelparser, Auswertung, ZIP/XLSX-Lesen und -Schreiben sind eigener Code ohne Fremdlizenzen. Kein eval, kein new Function.
 -->
 <style>
 @@include xls/style.css@@
+@@include shared/chrome.css@@
 </style>
 </head>
 <body>
@@ -23,6 +25,8 @@
 @@include xls/xl2-grid.js@@
 @@include xls/xl3-commands.js@@
 @@include xls/xl4-io.js@@
+@@include shared/chrome.js@@
+@@include xls/z-glue.js@@
 </script>
 </body>
 </html>

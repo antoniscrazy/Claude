@@ -4,12 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>WebOffice Textverarbeitung</title>
+<link rel="icon" type="image/svg+xml" href="@@appicon:word@@">
 <!--
   WebOffice Textverarbeitung – eigenständige, seitenorientierte Textverarbeitung (eine Datei, offline, ohne externe Abhängigkeiten).
   ZIP/DOCX-Schreiben, Sanitizer und Paginierung sind eigener Code ohne Fremdlizenzen.
 -->
 <style>
 @@include doc/style.css@@
+@@include shared/chrome.css@@
 </style>
 </head>
 <body>
@@ -23,6 +25,8 @@
 @@include doc/d2-layout.js@@
 @@include doc/d3-commands.js@@
 @@include doc/d4-io.js@@
+@@include shared/chrome.js@@
+@@include doc/z-glue.js@@
 </script>
 </body>
 </html>

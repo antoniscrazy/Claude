@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>WebOffice Präsentation</title>
+<link rel="icon" type="image/svg+xml" href="@@appicon:powerpoint@@">
 <!--
   WebOffice Präsentation – eigenständiger Präsentationseditor (eine Datei, offline, ohne externe Abhängigkeiten).
   Alle Bibliotheken (ZIP-Schreiben/-Lesen, Sanitizer, Animations-Engine) sind eigener Code ohne Fremdlizenzen.
@@ -13,6 +14,7 @@
 </style>
 <style>
 @@include ppt/style.css@@
+@@include shared/chrome.css@@
 </style>
 </head>
 <body>
@@ -32,6 +34,8 @@
 @@include ppt/editor5-ribbon.js@@
 @@include ppt/editor6-io.js@@
 @@include ppt/editor7-pptx.js@@
+@@include shared/chrome.js@@
+@@include ppt/z-glue.js@@
 </script>
 </body>
 </html>

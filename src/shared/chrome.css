@@ -1,0 +1,64 @@
+/* Gemeinsames Office-Erscheinungsbild (Titelleiste, Reiter, Menüband, Statusleiste).
+   Wird nach dem App-CSS eingebunden und überschreibt dessen Grundwerte. Farbe kommt aus --ac. */
+:root{--rb:#f3f3f3;--rbd:#d2d2d2;--hv2:#e1e1e1;--ring:#0f6cbd}
+#titlebar{height:42px;gap:2px;padding:0 8px 0 10px;background:var(--ac);position:relative}
+#titlebar .logo{width:28px;height:28px;margin:0 8px 0 0;background:none;border-radius:0;display:block;flex:none}
+#titlebar .qa{width:32px;height:32px;border-radius:4px}
+#titlebar .qa:hover:not(:disabled){background:rgba(255,255,255,.22)}
+#docname{background:transparent;border:1px solid transparent;border-radius:4px;padding:4px 8px;width:auto;min-width:120px;max-width:300px;margin:0 0 0 6px;font-size:13px;font-weight:600;text-overflow:ellipsis}
+#docname:hover{background:rgba(255,255,255,.16)}
+#docname:focus{background:#fff;color:#222}
+#savestat{margin-left:12px;opacity:.85;font-size:12px}
+#tsearch{position:absolute;left:50%;top:7px;transform:translateX(-50%);width:min(34vw,420px);height:28px;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);border-radius:4px;padding:0 8px;color:#fff;transition:background .12s}
+#tsearch:hover,#tsearch:focus-within{background:#fff;color:#222;border-color:#fff}
+#tsearch input{flex:1;min-width:0;border:0;background:transparent;color:inherit;outline:none;height:26px;font-size:13px}
+#tsearch input::placeholder{color:inherit;opacity:.85}
+#tsearch .ic{width:16px;height:16px}
+#tsres{display:none;position:absolute;left:-1px;right:-1px;top:30px;background:#fff;color:#222;border:1px solid var(--rbd);border-radius:4px;box-shadow:0 8px 24px rgba(0,0,0,.25);max-height:60vh;overflow:auto;z-index:300;padding:4px 0}
+#tsres.open{display:block}
+#tsres button{display:flex;width:100%;align-items:center;gap:8px;border:0;background:none;text-align:left;padding:6px 10px;cursor:pointer;font-size:13px}
+#tsres button:hover,#tsres button.sel{background:var(--acl,#e8f0fe)}
+#tsres small{color:#777;margin-left:auto;font-size:11px}
+#tsres .none{padding:8px 12px;color:#777}
+.rb-flash{animation:rbflash 1.4s ease-out 2}
+@keyframes rbflash{0%{box-shadow:0 0 0 3px var(--ac)}100%{box-shadow:0 0 0 3px transparent}}
+/* Reiterzeile liegt auf der Akzentfarbe, aktiver Reiter verschmilzt mit dem Menüband */
+#tabs{background:var(--ac);border-bottom:0;padding:0 8px 0 6px;gap:1px;align-items:flex-end;height:32px}
+.tab{height:30px;padding:0 13px;color:#fff;border:0;border-radius:4px 4px 0 0;font-size:13px;position:relative}
+.tab:hover{background:rgba(255,255,255,.18)}
+.tab.on{background:var(--rb);color:var(--ac);font-weight:600;border-bottom:0}
+.tab.on::after{content:"";position:absolute;left:12px;right:12px;bottom:2px;height:2px;background:var(--ac);border-radius:2px}
+.tab:first-child{font-weight:600}
+.tab:first-child:hover:not(.on){background:rgba(0,0,0,.2)}
+.tab.ctx{background:rgba(255,255,255,.28);color:#fff}.tab.ctx.on{background:var(--rb);color:var(--ac)}
+#ribbon{background:var(--rb);border-bottom:1px solid var(--rbd);padding:5px 6px 3px;min-height:96px;gap:0;align-items:stretch}
+.grp{padding:0 6px;border-right:1px solid var(--rbd);position:relative}
+.grp:last-child{border-right:0}
+.grp .items{align-content:flex-start;gap:2px}
+.grp .gn{font-size:11px;color:#555;padding-top:2px;letter-spacing:.1px}
+.rb-btn{border-radius:3px;min-width:50px;height:64px;gap:1px}
+.rb-btn:hover:not(:disabled){background:var(--hv2);border-color:#c8c8c8}
+.rb-btn:active:not(:disabled){background:#d0d0d0}
+.rb-btn.on{background:#cfcfcf;border-color:#a8a8a8}
+.rb-btn.sm{height:26px;border-radius:3px}
+.rb-field input,.rb-field select{border:1px solid #b8b8b8;border-radius:3px;background:#fff}
+.rb-field input:hover,.rb-field select:hover{border-color:#777}
+.rb-field input:focus,.rb-field select:focus{outline:1px solid var(--ring);border-color:var(--ring)}
+/* Statusleiste mit Ansichtsschaltern und Zoomregler */
+#status{display:flex;align-items:center;gap:14px;height:26px;padding:0 10px;background:var(--rb);border-top:1px solid var(--rbd);font-size:12px;color:#444;flex:none}
+#status .sp{flex:1}
+#status label{display:flex;align-items:center;gap:6px}
+.zm{display:flex;align-items:center;gap:6px}
+.zm button{width:20px;height:20px;border:0;background:none;border-radius:3px;cursor:pointer;font-size:16px;line-height:1;color:#333;padding:0}
+.zm button:hover{background:var(--hv2)}
+.zm input[type=range]{width:110px;accent-color:var(--ac);margin:0}
+.zm output{min-width:42px;text-align:right}
+.vsw{display:flex;gap:1px}
+.vsw button{width:26px;height:22px;border:0;background:none;border-radius:3px;display:grid;place-items:center;cursor:pointer;color:#333}
+.vsw button:hover{background:var(--hv2)}.vsw button.on{background:#d4d4d4;color:var(--ac)}
+@media (max-width:760px){#tsearch{display:none}#docname{max-width:140px}}
+.fitbtn{border:0;background:none;border-radius:3px;padding:2px 8px;cursor:pointer;font-size:12px;color:#333}.fitbtn:hover{background:var(--hv2)}
+.grp{flex:none}
+#savestat{margin-left:auto;margin-right:4px;max-width:22vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#tsearch{width:min(32vw,400px)}
+@media (max-width:1100px){#savestat{display:none}}
