@@ -47,6 +47,7 @@ function render() {
           if (s.wr) d.classList.add('wrap'); if (s.bd) { if (s.bd.t) d.style.borderTop = '1.5px solid #222'; if (s.bd.b) d.style.borderBottom = '1.5px solid #222'; if (s.bd.l) d.style.borderLeft = '1.5px solid #222'; if (s.bd.r) d.style.borderRight = '1.5px solid #222'; }
         }
       }
+      if (sh.cf && sh.cf.length) { const x = cfStyle(sh, r, c, cell); if (x) { if (x.bg) d.style.background = x.bg; if (x.co) d.style.color = x.co; if (x.b) d.style.fontWeight = '700'; } }
       const f = sh.filter; if (f && r === f.r1 && c >= f.c1 && c <= f.c2) { const act = f.cols[c] && f.cols[c].length; d.append(el('span', { class: 'fbtn' + (act ? ' on' : ''), 'data-fc': c, title: 'Filter' }, '▾')); d.classList.add('fhead'); }
       frag.append(d);
     }
