@@ -68,3 +68,4 @@
 #app.rbmin #ribbon{display:none}
 .grp .items{flex-wrap:nowrap;max-width:none}
 .grp{flex:1 0 auto}
+.rb-split{display:inline-flex}.rb-split .cmain{min-width:30px;padding:2px 4px;position:relative;border-radius:3px 0 0 3px}.rb-split .carr{min-width:14px;padding:0 3px;font-size:9px;border-radius:0 3px 3px 0}.cbar{position:absolute;left:5px;right:5px;bottom:1px;height:3px;border-radius:1px}.palette{padding:6px;width:236px}.palette .pl{font-size:11px;color:#555;margin:4px 0 3px}.palette .pg{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;margin-bottom:2px}.palette .sw{height:20px;border:1px solid rgba(0,0,0,.2);border-radius:2px;cursor:pointer;padding:0}.palette .sw:hover{outline:2px solid #1b6ef3;z-index:1}.palette .pa{display:block;width:100%;text-align:left;border:0;background:none;padding:6px 4px;cursor:pointer;margin-top:3px;border-radius:3px}.palette .pa:hover{background:var(--hov)}

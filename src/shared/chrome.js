@@ -64,3 +64,25 @@ function zoomWidget(cfg) {
   w.update = () => { const p = Math.round(cfg.get() * 100); rng.value = p; out.textContent = p + ' %'; };
   w.append(minus, rng, plus, out); w.update(); return w;
 }
+
+/* ---- Office-Farbpalette und Split-Button (von allen Apps genutzt) ---- */
+const OFFICE_BASE = ['#ffffff', '#000000', '#e7e6e6', '#44546a', '#4472c4', '#ed7d31', '#a5a5a5', '#ffc000', '#5b9bd5', '#70ad47'], OFFICE_STD = ['#c00000', '#ff0000', '#ffc000', '#ffff00', '#92d050', '#00b050', '#00b0f0', '#0070c0', '#002060', '#7030a0'];
+const shade = (hex, f) => { const c = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)); return '#' + c.map(v => Math.round(f >= 0 ? v + (255 - v) * f : v * (1 + f)).toString(16).padStart(2, '0')).join(''); };
+function colorMenuNode(apply, noneLabel) {
+  const wrap = el('div', { class: 'palette' }), mkSw = (c, t) => { const b = el('button', { class: 'sw', title: t || c, style: 'background:' + c }); b.addEventListener('mousedown', e => e.preventDefault()); b.addEventListener('click', () => { closeMenu(); apply(c); }); return b; };
+  wrap.append(el('div', { class: 'pl' }, 'Designfarben'), el('div', { class: 'pg' }, ...OFFICE_BASE.map(c => mkSw(c))));
+  const GW = ['#f2f2f2', '#d9d9d9', '#bfbfbf', '#a6a6a6', '#808080'], GB = ['#7f7f7f', '#595959', '#404040', '#262626', '#0d0d0d'];
+  [.8, .6, .4, -.25, -.5].forEach((f, i) => wrap.append(el('div', { class: 'pg' }, ...OFFICE_BASE.map(c => mkSw(c === '#ffffff' ? GW[i] : c === '#000000' ? GB[i] : shade(c, f))))));
+  wrap.append(el('div', { class: 'pl' }, 'Standardfarben'), el('div', { class: 'pg' }, ...OFFICE_STD.map(c => mkSw(c))));
+  const none = el('button', { class: 'pa' }, noneLabel); none.addEventListener('mousedown', e => e.preventDefault()); none.addEventListener('click', () => { closeMenu(); apply(null); }); wrap.append(none);
+  const more = el('button', { class: 'pa' }, 'Weitere Farben …'); more.addEventListener('mousedown', e => { e.preventDefault(); (typeof saveSel === 'function' && saveSel()); }); more.addEventListener('click', () => { closeMenu(); const inp = el('input', { type: 'color', style: 'position:fixed;left:-99px' }); document.body.append(inp); inp.addEventListener('change', () => { apply(inp.value); inp.remove(); }); inp.addEventListener('blur', () => setTimeout(() => inp.remove(), 300)); inp.click(); }); wrap.append(more);
+  return wrap;
+}
+const LASTC = { font: '#c00000', hi: '#ffff00', xfont: '#c00000', xfill: '#ffff00', pfont: '#c00000', pfill: '#e8553d', pline: '#3a4660' };
+function colorSplit(o) {
+  const bar = el('span', { class: 'cbar', style: 'background:' + LASTC[o.id] }), main = el('button', { class: 'rb-btn sm cmain', title: o.tip, 'aria-label': o.tip, html: icon(o.icon, 18) }), arr = el('button', { class: 'rb-btn sm carr', title: o.tip + ' – Farbe wählen', 'aria-label': o.tip + ' – Farbe wählen', html: '▾' });
+  main.append(bar); [main, arr].forEach(b => b.addEventListener('mousedown', e => { e.preventDefault(); (typeof saveSel === 'function' && saveSel()); }));
+  const go = c => { if (c) { LASTC[o.id] = c; bar.style.background = c; } o.apply(c); };
+  main.addEventListener('click', () => go(LASTC[o.id])); arr.addEventListener('click', () => showMenu(main, [{ node: colorMenuNode(go, o.none) }]));
+  const w = el('span', { class: 'rb-split' }, main, arr); w._upd = () => { const dis = o.en ? !o.en() : false; main.disabled = dis; arr.disabled = dis; }; if (o.reg) o.reg.push(w); return w;
+}

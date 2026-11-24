@@ -92,3 +92,32 @@ function transAll(fn, label) { S.proj.slides.forEach((s, i) => { s.transition = 
   const st = document.createElement('style'); st.textContent = '#scaler.gray{filter:grayscale(1)}'; document.head.append(st);
   const _rs2 = renderStage; renderStage = function (f) { _rs2(f); const sc = $('#scaler'); if (sc) sc.classList.toggle('gray', !!S.gray); };
 })();
+
+/* PowerPoint: Office-Farbpaletten für Schrift-, Füll- und Konturfarbe (Start) */
+(() => {
+  const base = RIBBON.start;
+  RIBBON.start = () => {
+    const g = base();
+    g.forEach(grp => grp.querySelectorAll('input[type=color]').forEach(inp => {
+      const lab = inp.closest('label'), t = (inp.title || '') + ' ' + (lab ? lab.textContent : ''); let sp = null;
+      if (/Schriftfarbe/.test(t)) sp = colorSplit({ id: 'pfont', icon: 'fontcolor', tip: 'Schriftfarbe', none: 'Automatisch', en: textSel, reg: ribbonControls, apply: c => applyTextStyle('color', c || '@tx') });
+      else if (/Füllung|Füllfarbe/.test(t)) sp = colorSplit({ id: 'pfill', icon: 'fill', tip: 'Fülleffekt – Füllfarbe', none: 'Keine Füllung', en: () => selObjs().some(o => ['shape', 'text'].includes(o.type)), reg: ribbonControls, apply: c => setFill(c || 'none') });
+      else if (/Kontur/.test(t)) sp = colorSplit({ id: 'pline', icon: 'outline', tip: 'Formkontur – Konturfarbe', none: 'Keine Kontur', en: () => selObjs().some(o => ['shape', 'text', 'line', 'image'].includes(o.type)), reg: ribbonControls, apply: c => setStroke(c || 'none') });
+      if (sp) { const host = lab || inp; host.replaceWith(sp); sp._upd(); }
+    }));
+    return g;
+  };
+})();
+
+/* PowerPoint: Einfügen-Schaltfläche (Objekte der internen Zwischenablage, Bild oder Text aus dem System) */
+async function pasteButton() {
+  if (S.editing) { toast('Im Textfeld bitte Strg+V verwenden.'); return; }
+  if (S.clip) { pasteObjs(); return; }
+  try {
+    if (navigator.clipboard.read) { for (const it of await navigator.clipboard.read()) { const ty = it.types.find(x => /^image\//.test(x)); if (ty) { addImageFile(new File([await it.getType(ty)], 'Bild.' + ty.split('/')[1], { type: ty })); return; } } }
+    const t = await navigator.clipboard.readText(); if (!t.trim()) { toast('Die Zwischenablage ist leer.'); return; }
+    const W = S.proj.size.w, H = S.proj.size.h; addObject(mkText(W * .2, H * .4, W * .6, 100, t.split('\n').map(H_).join(''), { size: 24 }, { name: 'Textfeld' }));
+  } catch (e) { toast('Der Browser erlaubt den Zugriff auf die Zwischenablage nicht – bitte Strg+V verwenden.', true); }
+}
+(() => { const base = RIBBON.start; RIBBON.start = () => { const g = base(), cb = g.find(x => (x.querySelector('.gn') || {}).textContent === 'Zwischenablage'); if (cb) cb.querySelector('.items').prepend(B({ icon: 'paste', label: 'Einfügen', tip: 'Einfügen (Strg+V)', fn: pasteButton })); return g; }; })();
+if (!IC.paste) IC.paste = '<rect x="6" y="5" width="12" height="16" rx="1"/><path d="M9 5V3h6v2M9 11h6M9 15h6"/>';

@@ -91,6 +91,9 @@ function ungroupSel() {
 function toggleLockHide(kind) { const os = selObjs(); if (!os.length) return; const v = !os.every(o => o[kind]); os.forEach(o => { if (v) o[kind] = true; else delete o[kind]; }); commit(kind === 'hidden' ? 'Ausblenden' : 'Sperren'); }
 
 /* ---------- Formatierung von Text und Objekten ---------- */
+/** Platzhaltergröße (xxx-large) aus fontSize=7 durch die gewählte Größe ersetzen – nur für neu getippten bzw. markierten Text */
+function fixSizeSpans(t) { t.querySelectorAll('span').forEach(sp => { const fs = sp.style.fontSize; if (fs === 'xxx-large' || fs === '-webkit-xxx-large') sp.style.fontSize = S.pendPx || '20px'; }); }
+document.addEventListener('input', e => { if (S.editing && S.pendPx && e.target.closest) { const t = e.target.closest('.pp-txt'); if (t) fixSizeSpans(t); } });
 function applyTextStyle(prop, val) {
   const ae = document.activeElement;
   if (S.editing && S.savedRange !== undefined) { // innerhalb der Textbearbeitung: Auswahl formatieren
@@ -99,7 +102,7 @@ function applyTextStyle(prop, val) {
     document.execCommand('styleWithCSS', false, false);
     if (prop === 'bold') document.execCommand('bold'); else if (prop === 'italic') document.execCommand('italic'); else if (prop === 'underline') document.execCommand('underline'); else if (prop === 'strike') document.execCommand('strikeThrough');
     else if (prop === 'color') document.execCommand('foreColor', false, toHex(val));
-    else if (prop === 'size') { document.execCommand('fontSize', false, '7'); t.querySelectorAll('font[size="7"]').forEach(f => { f.dataset.px = Math.round(val * 4 / 3) + 'px'; }); fixFontTags(t); }
+    else if (prop === 'size') { S.pendPx = Math.round(val * 4 / 3 * 100) / 100 + 'px'; document.execCommand('styleWithCSS', false, true); document.execCommand('fontSize', false, '7'); fixSizeSpans(t); fixFontTags(t); }
     else if (prop === 'font') document.execCommand('fontName', false, val.replace(/"/g, ''));
     else if (prop === 'align') document.execCommand({ left: 'justifyLeft', center: 'justifyCenter', right: 'justifyRight' }[val]);
     else { applyObjStyle(prop, val); return; }

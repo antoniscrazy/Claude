@@ -32,7 +32,7 @@ function showMenu(anchor, items) {
   closeMenu();
   const m = el('div', { class: 'menu', role: 'menu' });
   items.forEach(it => {
-    if (it === '-') { m.append(el('hr')); return; }
+    if (it === '-') { m.append(el('hr')); return; } if (it.node) { m.append(it.node); return; }
     const b = el('button', { role: 'menuitem', disabled: it.disabled, html: (it.icon ? icon(it.icon, 18) : '') + '<span></span>' });
     b.lastChild.textContent = it.label; b.addEventListener('click', () => { closeMenu(); it.fn && it.fn(); }); m.append(b);
   });

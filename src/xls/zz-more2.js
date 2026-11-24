@@ -73,3 +73,40 @@ function toggleEl(sel, label) { const e = $(sel); e.style.display = e.style.disp
   wrap('view', g => { g.push(GR('Fenster', B({ icon: 'fbar', label: 'Formelleiste', on: () => $('#fbar').style.display !== 'none', fn: () => toggleEl('#fbar') }), B({ icon: 'showf', label: 'Formeln anzeigen', on: () => !!S.showF, fn: toggleShowF }), B({ icon: 'fullscr', label: 'Vollbild', fn: () => { const d = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen(); } })), GR('Navigation', B({ icon: 'gotoc', label: 'Gehe zu …', tip: 'Zelle oder Bereich ansteuern', fn: gotoCell }), B({ icon: 'widths', label: 'Alle Spalten anpassen', fn: fitAllColumns }), B({ icon: 'cellfmt', label: 'Standardbreiten', tip: 'Spaltenbreiten und Zeilenhöhen zurücksetzen', fn: () => { const sh = cur(); sh.colW = {}; sh.rowH = {}; sh.rowM = {}; commit('Standardbreiten'); } }))); return g; });
   const st = document.createElement('style'); st.textContent = '.cell.hasnote::after{content:"";position:absolute;right:0;top:0;border:5px solid transparent;border-top-color:#d00;border-right-color:#d00}'; document.head.append(st);
 })();
+
+/* =====================================================================
+   Excel: Schriftgruppe im Office-Stil (Schriftart, Größenfeld, Farbpaletten, Durchgestrichen)
+   ===================================================================== */
+const XFONTS = ['Calibri', 'Arial', 'Times New Roman', 'Courier New', 'Georgia', 'Verdana', 'Segoe UI', 'Tahoma', 'Trebuchet MS', 'Consolas', 'Cambria', 'Comic Sans MS'];
+function xSizeCombo() {
+  const dl = el('datalist', { id: 'xszlist' }, ...[8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 36, 48, 72].map(n => el('option', { value: String(n) })));
+  const inp = el('input', { type: 'text', list: 'xszlist', class: 'szin', title: 'Schriftgrad (pt)', 'aria-label': 'Schriftgrad', size: 3, inputmode: 'numeric' });
+  const apply = () => { const v = parseFloat(inp.value.replace(',', '.')); if (!isFinite(v) || v < 6 || v > 72) { toast('Bitte eine Größe zwischen 6 und 72 pt eingeben.', true); inp.value = String(aStyle().sz || 11); return; } setStyle('sz', v === 11 ? null : v); focusGrid(); };
+  inp.addEventListener('change', apply); inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); apply(); } });
+  const w = el('label', { class: 'rb-field' }, inp, dl); w._upd = () => { if (document.activeElement !== inp) inp.value = String(aStyle().sz || 11); }; ribbonCtl.push(w); return w;
+}
+function xFontCombo() {
+  const sel = el('select', { class: 'fontsel', title: 'Schriftart', 'aria-label': 'Schriftart', onchange: e => { setStyle('fn', e.target.value === 'Calibri' ? null : e.target.value); focusGrid(); } }, ...XFONTS.map(n => el('option', { value: n, style: 'font-family:"' + n + '"' }, n)));
+  const w = el('label', { class: 'rb-field' }, sel); w._upd = () => { if (document.activeElement !== sel) sel.value = aStyle().fn || 'Calibri'; }; ribbonCtl.push(w); return w;
+}
+(() => {
+  const st = document.createElement('style'); st.textContent = '.fontsel{width:140px}.szin{width:46px;height:26px;border:1px solid #b8b8b8;border-radius:3px;padding:0 4px;text-align:center}'; document.head.append(st);
+  const base = RIB.start;
+  RIB.start = () => {
+    const g = base(), i = g.findIndex(x => (x.querySelector('.gn') || {}).textContent === 'Schrift');
+    if (i >= 0) g[i] = GR('Schrift', col(el('div', { class: 'rb-field' }, xFontCombo(), xSizeCombo(), B({ icon: 'sizeup', sm: 1, tip: 'Schrift vergrößern', fn: () => bumpSize(1) }), B({ icon: 'sizedown', sm: 1, tip: 'Schrift verkleinern', fn: () => bumpSize(-1) })),
+      el('div', { class: 'rb-field' }, B({ icon: 'bold', sm: 1, tip: 'Fett (Strg+B)', on: () => !!aStyle().b, fn: () => toggleStyle('b') }), B({ icon: 'italic', sm: 1, tip: 'Kursiv (Strg+I)', on: () => !!aStyle().i, fn: () => toggleStyle('i') }), B({ icon: 'underline', sm: 1, tip: 'Unterstrichen (Strg+U)', on: () => !!aStyle().u, fn: () => toggleStyle('u') }), B({ icon: 'strike', sm: 1, tip: 'Durchgestrichen', on: () => !!aStyle().s, fn: () => toggleStyle('s') }),
+        B({ icon: 'border', sm: 1, tip: 'Rahmen', menu: () => [{ label: 'Alle Rahmenlinien', fn: () => setBorders('all') }, { label: 'Außenrahmen', fn: () => setBorders('outer') }, { label: 'Unten', fn: () => setBorders('bottom') }, { label: 'Oben', fn: () => setBorders('top') }, { label: 'Kein Rahmen', fn: () => setBorders('none') }] }),
+        colorSplit({ id: 'xfill', icon: 'fill', tip: 'Füllfarbe', none: 'Keine Füllung', reg: ribbonCtl, apply: c => setStyle('bg', c) }), colorSplit({ id: 'xfont', icon: 'fontcolor', tip: 'Schriftfarbe', none: 'Automatisch', reg: ribbonCtl, apply: c => setStyle('co', c) }))));
+    return g;
+  };
+  if (!IC.strike) IC.strike = '<path d="M5 12h14M8 7c1-2 7-3 8 0M16 17c-1 2-7 3-8 0"/>';
+  if (!IC.underline) IC.underline = '<path d="M7 4v7a5 5 0 0010 0V4M5 20h14"/>';
+})();
+
+/* Excel: Einfügen-Schaltfläche liest die Zwischenablage wirklich */
+async function pasteButton() {
+  try { const t = await navigator.clipboard.readText(); if (!t) { toast('Die Zwischenablage ist leer.'); return; } pasteText(t); }
+  catch (e) { if (S.clip) { pasteText(S.clip.tsv); } else toast('Der Browser erlaubt den Zugriff auf die Zwischenablage nicht – bitte Strg+V verwenden.', true); }
+}
+(() => { const base = RIB.start; RIB.start = () => { const g = base(), cb = g.find(x => (x.querySelector('.gn') || {}).textContent === 'Zwischenablage'); if (cb) { const first = cb.querySelector('.rb-btn'); if (first) first.replaceWith(B({ icon: 'paste', label: 'Einfügen', tip: 'Einfügen (Strg+V)', fn: pasteButton })); } return g; }; })();

@@ -168,6 +168,7 @@ button,select,input,textarea{font:inherit;color:inherit}
 #app.rbmin #ribbon{display:none}
 .grp .items{flex-wrap:nowrap;max-width:none}
 .grp{flex:1 0 auto}
+.rb-split{display:inline-flex}.rb-split .cmain{min-width:30px;padding:2px 4px;position:relative;border-radius:3px 0 0 3px}.rb-split .carr{min-width:14px;padding:0 3px;font-size:9px;border-radius:0 3px 3px 0}.cbar{position:absolute;left:5px;right:5px;bottom:1px;height:3px;border-radius:1px}.palette{padding:6px;width:236px}.palette .pl{font-size:11px;color:#555;margin:4px 0 3px}.palette .pg{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;margin-bottom:2px}.palette .sw{height:20px;border:1px solid rgba(0,0,0,.2);border-radius:2px;cursor:pointer;padding:0}.palette .sw:hover{outline:2px solid #1b6ef3;z-index:1}.palette .pa{display:block;width:100%;text-align:left;border:0;background:none;padding:6px 4px;cursor:pointer;margin-top:3px;border-radius:3px}.palette .pa:hover{background:var(--hov)}
 </style>
 </head>
 <body>
@@ -559,10 +560,12 @@ function ensureSel() { if (!selInDoc()) restoreSel(); }
 
 /* ---------- Zeichenformat ---------- */
 function fixFonts() {
+  // Spans mit „xxx-large“ stammen von fontSize=7 (Platzhalter) und erhalten die gemerkte Größe; Text daneben bleibt unverändert
+  $$('#doc span').forEach(sp => { const fs = sp.style.fontSize; if (fs === 'xxx-large' || fs === '-webkit-xxx-large') sp.style.fontSize = S.pendingPx || '14.7px'; });
   $$('#doc font').forEach(f => { const sp = document.createElement('span'); if (f.size === '7' && f.dataset.px) sp.style.fontSize = f.dataset.px; else if (f.size === '7' && S.pendingPx) sp.style.fontSize = S.pendingPx; if (f.face) sp.style.fontFamily = f.face; if (f.color) sp.style.color = f.color; sp.append(...f.childNodes); f.replaceWith(sp); });
 }
 function exec(cmd, val, css) { ensureSel(); document.execCommand('styleWithCSS', false, !!css); document.execCommand(cmd, false, val); fixFonts(); saveSel(); onInput(); checkpoint(); refreshRibbon(); }
-function setFontSize(pt) { ensureSel(); S.pendingPx = Math.round(pt * 96 / 72 * 10) / 10 + 'px'; document.execCommand('styleWithCSS', false, false); document.execCommand('fontSize', false, '7'); fixFonts(); S.pendingPx = null; saveSel(); onInput(); checkpoint(); refreshRibbon(); }
+function setFontSize(pt) { ensureSel(); pt = clamp(+pt || 11, 1, 400); S.pendingPx = Math.round(pt * 96 / 72 * 100) / 100 + 'px'; document.execCommand('styleWithCSS', false, true); document.execCommand('fontSize', false, '7'); fixFonts(); saveSel(); onInput(); checkpoint(); refreshRibbon(); }
 function queryState(c) { try { return document.queryCommandState(c); } catch (e) { return false; } }
 function curFontSizePt() { const s = getSelection(); if (!s.rangeCount) return 11; let n = s.anchorNode; if (n && n.nodeType === 3) n = n.parentNode; if (!n || !docEl().contains(n)) return 11; return Math.round(parseFloat(getComputedStyle(n).fontSize) * 72 / 96 * 2) / 2; }
 function curFontFamily() { const s = getSelection(); let n = s.anchorNode; if (n && n.nodeType === 3) n = n.parentNode; if (!n || !docEl().contains(n)) return ''; const f = getComputedStyle(n).fontFamily.replace(/"/g, '').split(',')[0].trim().toLowerCase(); const m = FONTS.find(x => x[1].toLowerCase() === f); return m ? m[0] : ''; }
@@ -870,7 +873,7 @@ function helpDialog() {
 /* ---------- Tastatur & Verdrahtung ---------- */
 function bindAll() {
   const d = docEl(); d.spellcheck = true; d.lang = 'de'; try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch (e) { }
-  d.addEventListener('input', onInput); d.addEventListener('load', () => schedulePaginate(), true); if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => schedulePaginate());
+  d.addEventListener('input', () => { if (S.pendingPx) fixFonts(); onInput(); }); d.addEventListener('load', () => schedulePaginate(), true); if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => schedulePaginate());
   d.addEventListener('keydown', e => {
     const k = e.key, mod = e.ctrlKey || e.metaKey;
     if (S.curImg && (k === 'Delete' || k === 'Backspace')) { e.preventDefault(); deleteImage(); return; }
@@ -1072,6 +1075,47 @@ function gotoPage() { const n = el('input', { type: 'number', min: 1, max: S.pag
   wrap('review', g => { g.push(GR('Textanalyse', B({ icon: 'read', label: 'Lesbarkeit', fn: readability }), B({ icon: 'freq', label: 'Häufige Wörter', fn: topWords }), B({ icon: 'dupw', label: 'Doppelte Wörter', fn: dupWords })), GR('Bereinigen', B({ icon: 'clean', label: 'Doppelte Leerzeichen', fn: cleanSpaces }), B({ icon: 'clear', label: 'Formatierung löschen', fn: clearFormat })), GR('Navigieren', B({ icon: 'gopage', label: 'Gehe zu Seite …', fn: gotoPage }))); return g; });
   wrap('view', g => { g.push(GR('Fenster', B({ icon: 'ribbonmin', label: 'Menüband einklappen', tip: 'Doppelklick auf einen Reiter oder Strg+F1', on: () => $('#app').classList.contains('rbmin'), fn: () => { toggleRibbonMin(); refreshRibbon(); } }), B({ icon: 'focus', label: 'Fokus', tip: 'Navigation und Menüband ausblenden', fn: () => { const on = !$('#app').classList.contains('rbmin'); if (on !== $('#app').classList.contains('rbmin')) toggleRibbonMin(); S.navOn = !on; $('#nav').style.display = S.navOn ? 'flex' : 'none'; setZoom(S.zoomMode === 'fit' ? 'fit' : S.zoom); refreshRibbon(); } }), B({ icon: 'fullscr', label: 'Vollbild', fn: () => { const d = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen(); } })), GR('Gehe zu', B({ icon: 'gopage', label: 'Gehe zu Seite …', fn: gotoPage }))); return g; });
 })();
+
+/* =====================================================================
+   Word: Schriftgruppe im Office-Stil (Schriftart-/Größenfeld, Farbpaletten, Format übertragen, echtes Einfügen)
+   ===================================================================== */
+['Arial Black', 'Calibri', 'Cambria', 'Candara', 'Comic Sans MS', 'Consolas', 'Impact', 'Palatino Linotype', 'Tahoma', 'Century Gothic', 'Garamond', 'Lucida Console'].forEach(n => { if (!FONTS.some(f => f[1] === n)) FONTS.push(['"' + n + '",sans-serif', n]); });
+function sizeCombo() {
+  const dl = el('datalist', { id: 'szlist' }, ...[8, 9, 10, 10.5, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72].map(n => el('option', { value: String(n).replace('.', ',') })));
+  const inp = el('input', { type: 'text', list: 'szlist', class: 'szin', title: 'Schriftgrad (pt)', 'aria-label': 'Schriftgrad', size: 3, inputmode: 'decimal', onmousedown: saveSel, onfocus: saveSel });
+  const apply = () => { const v = parseFloat(inp.value.replace(',', '.')); if (!isFinite(v) || v < 1 || v > 400) { toast('Bitte eine Größe zwischen 1 und 400 pt eingeben.', true); inp.value = String(curFontSizePt()).replace('.', ','); return; } restoreSel(); setFontSize(v); };
+  inp.addEventListener('change', apply); inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); apply(); } });
+  const w = el('label', { class: 'rb-field szw' }, inp, dl); w._upd = () => { if (document.activeElement !== inp) inp.value = String(curFontSizePt()).replace('.', ','); }; ribCtl.push(w); return w;
+}
+function fontCombo() {
+  const sel = el('select', { class: 'fontsel', title: 'Schriftart', 'aria-label': 'Schriftart', onmousedown: saveSel, onchange: e => { restoreSel(); if (e.target.value) exec('fontName', e.target.value.replace(/"/g, ''), true); } }, el('option', { value: '' }, '–'), ...FONTS.map(([v, t]) => el('option', { value: v, style: 'font-family:' + v }, t)));
+  const w = el('label', { class: 'rb-field' }, sel); w._upd = () => { if (document.activeElement !== sel) sel.value = curFontFamily() || ''; }; ribCtl.push(w); return w;
+}
+/* Format übertragen */
+let painter = null;
+function grabFormat() { ensureSel(); const s = getSelection(); if (!s.rangeCount) return null; let n = s.getRangeAt(0).startContainer; if (n.nodeType === 3) n = n.parentNode; if (!docEl().contains(n)) return null; const cs = getComputedStyle(n); return { pt: curFontSizePt(), fam: curFontFamily(), color: cs.color, bold: +cs.fontWeight >= 600, italic: cs.fontStyle === 'italic', ul: (cs.textDecorationLine || '').includes('underline'), st: (cs.textDecorationLine || '').includes('line-through') }; }
+function applyFormat(f) { setFontSize(f.pt); if (f.fam) exec('fontName', f.fam.replace(/"/g, ''), true); exec('foreColor', f.color, true); [['bold', 'bold'], ['italic', 'italic'], ['underline', 'ul'], ['strikeThrough', 'st']].forEach(([c, k]) => { if (queryState(c) !== !!f[k]) exec(c); }); }
+function togglePainter() { if (painter) { painter = null; docEl().classList.remove('painting'); refreshRibbon(); return; } painter = grabFormat(); if (!painter) { toast('Bitte zuerst in formatierten Text klicken.'); return; } docEl().classList.add('painting'); toast('Format aufgenommen – jetzt Text markieren.'); refreshRibbon(); }
+document.addEventListener('mouseup', () => { if (!painter) return; setTimeout(() => { const s = getSelection(); if (s.rangeCount && !s.isCollapsed && docEl().contains(s.anchorNode)) { saveSel(); applyFormat(painter); painter = null; docEl().classList.remove('painting'); refreshRibbon(); } }, 0); });
+/* Einfügen aus der Zwischenablage (Schaltfläche) */
+async function pasteFromClipboard() {
+  docEl().focus(); restoreSel();
+  try { if (navigator.clipboard && navigator.clipboard.read) { const items = await navigator.clipboard.read(); for (const it of items) { if (it.types.includes('text/html')) { const html = await (await it.getType('text/html')).text(); document.execCommand('insertHTML', false, sanitizeInline(html)); onInput(); return; } } } const t = await navigator.clipboard.readText(); document.execCommand('insertText', false, t); onInput(); }
+  catch (e) { toast('Der Browser erlaubt den Zugriff auf die Zwischenablage nicht – bitte Strg+V verwenden.', true); }
+}
+(() => {
+  const st = document.createElement('style'); st.textContent = '.rb-split{display:inline-flex}.rb-split .cmain{min-width:30px;padding:2px 4px;position:relative;border-radius:3px 0 0 3px}.rb-split .carr{min-width:14px;padding:0 3px;font-size:9px;border-radius:0 3px 3px 0}.cbar{position:absolute;left:5px;right:5px;bottom:1px;height:3px;border-radius:1px}.fontsel{width:150px}.szin{width:46px;height:26px;border:1px solid #b8b8b8;border-radius:3px;padding:0 4px;text-align:center}.palette{padding:6px;width:236px}.palette .pl{font-size:11px;color:#555;margin:4px 0 3px}.palette .pg{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;margin-bottom:2px}.palette .sw{height:20px;border:1px solid rgba(0,0,0,.2);border-radius:2px;cursor:pointer;padding:0}.palette .sw:hover{outline:2px solid #1b6ef3;z-index:1}.palette .pa{display:block;width:100%;text-align:left;border:0;background:none;padding:6px 4px;cursor:pointer;margin-top:3px;border-radius:3px}.palette .pa:hover{background:var(--hov)}#doc.painting{cursor:copy}'; document.head.append(st);
+  const startBase = RIB.start;
+  RIB.start = () => {
+    const g = startBase(), i = g.findIndex(x => (x.querySelector('.gn') || {}).textContent === 'Schriftart');
+    if (i >= 0) g[i] = GR('Schriftart', col(el('div', { class: 'rb-field' }, fontCombo(), sizeCombo(), B({ icon: 'sizeup', sm: 1, tip: 'Schrift vergrößern (Strg+>)', fn: () => bumpFont(1) }), B({ icon: 'sizedown', sm: 1, tip: 'Schrift verkleinern (Strg+<)', fn: () => bumpFont(-1) }), B({ icon: 'casechg', sm: 1, tip: 'Groß-/Kleinschreibung', menu: caseMenu }), B({ icon: 'clear', sm: 1, tip: 'Alle Formatierungen löschen', fn: clearFormat })),
+      el('div', { class: 'rb-field' }, B({ icon: 'bold', sm: 1, tip: 'Fett (Strg+B)', on: () => queryState('bold'), fn: () => exec('bold') }), B({ icon: 'italic', sm: 1, tip: 'Kursiv (Strg+I)', on: () => queryState('italic'), fn: () => exec('italic') }), B({ icon: 'underline', sm: 1, tip: 'Unterstrichen (Strg+U)', on: () => queryState('underline'), fn: () => exec('underline') }), B({ icon: 'strike', sm: 1, tip: 'Durchgestrichen', on: () => queryState('strikeThrough'), fn: () => exec('strikeThrough') }), B({ icon: 'sub', sm: 1, tip: 'Tiefgestellt', on: () => queryState('subscript'), fn: () => exec('subscript') }), B({ icon: 'sup', sm: 1, tip: 'Hochgestellt', on: () => queryState('superscript'), fn: () => exec('superscript') }),
+        colorSplit({ id: 'hi', icon: 'highlight', tip: 'Texthervorhebungsfarbe', none: 'Keine Farbe', apply: c => exec('hiliteColor', c || 'transparent', true) }), colorSplit({ id: 'font', icon: 'fontcolor', tip: 'Schriftfarbe', none: 'Automatisch', apply: c => exec('foreColor', c || '#1d2330', true) }))));
+    const cb = g.find(x => (x.querySelector('.gn') || {}).textContent === 'Zwischenablage'); if (cb) { const first = cb.querySelector('.rb-btn'); if (first) { const nb = B({ icon: 'paste', label: 'Einfügen', tip: 'Einfügen (Strg+V)', fn: pasteFromClipboard }); first.replaceWith(nb); } cb.querySelector('.items').append(B({ icon: 'painter', label: 'Format übertragen', tip: 'Format übernehmen und auf Text anwenden', on: () => !!painter, fn: togglePainter })); }
+    return g;
+  };
+  IC.painter = '<path d="M5 4h10v5H5zM15 6h3v6h-8v3M10 15v5h2v-5"/>';
+})();
 /* Gemeinsame Befehlssuche in der Titelleiste („Was möchten Sie tun?“): sammelt Befehle aller Reiter,
    springt zum Reiter und hebt die Schaltfläche hervor. api = { tabs(), build(id), go(id) } */
 function initTellMe(api) {
@@ -1137,6 +1181,28 @@ function zoomWidget(cfg) {
   rng.oninput = () => apply(+rng.value); minus.onclick = () => apply(Math.round(cfg.get() * 100 / 10) * 10 - 10); plus.onclick = () => apply(Math.round(cfg.get() * 100 / 10) * 10 + 10);
   w.update = () => { const p = Math.round(cfg.get() * 100); rng.value = p; out.textContent = p + ' %'; };
   w.append(minus, rng, plus, out); w.update(); return w;
+}
+
+/* ---- Office-Farbpalette und Split-Button (von allen Apps genutzt) ---- */
+const OFFICE_BASE = ['#ffffff', '#000000', '#e7e6e6', '#44546a', '#4472c4', '#ed7d31', '#a5a5a5', '#ffc000', '#5b9bd5', '#70ad47'], OFFICE_STD = ['#c00000', '#ff0000', '#ffc000', '#ffff00', '#92d050', '#00b050', '#00b0f0', '#0070c0', '#002060', '#7030a0'];
+const shade = (hex, f) => { const c = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)); return '#' + c.map(v => Math.round(f >= 0 ? v + (255 - v) * f : v * (1 + f)).toString(16).padStart(2, '0')).join(''); };
+function colorMenuNode(apply, noneLabel) {
+  const wrap = el('div', { class: 'palette' }), mkSw = (c, t) => { const b = el('button', { class: 'sw', title: t || c, style: 'background:' + c }); b.addEventListener('mousedown', e => e.preventDefault()); b.addEventListener('click', () => { closeMenu(); apply(c); }); return b; };
+  wrap.append(el('div', { class: 'pl' }, 'Designfarben'), el('div', { class: 'pg' }, ...OFFICE_BASE.map(c => mkSw(c))));
+  const GW = ['#f2f2f2', '#d9d9d9', '#bfbfbf', '#a6a6a6', '#808080'], GB = ['#7f7f7f', '#595959', '#404040', '#262626', '#0d0d0d'];
+  [.8, .6, .4, -.25, -.5].forEach((f, i) => wrap.append(el('div', { class: 'pg' }, ...OFFICE_BASE.map(c => mkSw(c === '#ffffff' ? GW[i] : c === '#000000' ? GB[i] : shade(c, f))))));
+  wrap.append(el('div', { class: 'pl' }, 'Standardfarben'), el('div', { class: 'pg' }, ...OFFICE_STD.map(c => mkSw(c))));
+  const none = el('button', { class: 'pa' }, noneLabel); none.addEventListener('mousedown', e => e.preventDefault()); none.addEventListener('click', () => { closeMenu(); apply(null); }); wrap.append(none);
+  const more = el('button', { class: 'pa' }, 'Weitere Farben …'); more.addEventListener('mousedown', e => { e.preventDefault(); (typeof saveSel === 'function' && saveSel()); }); more.addEventListener('click', () => { closeMenu(); const inp = el('input', { type: 'color', style: 'position:fixed;left:-99px' }); document.body.append(inp); inp.addEventListener('change', () => { apply(inp.value); inp.remove(); }); inp.addEventListener('blur', () => setTimeout(() => inp.remove(), 300)); inp.click(); }); wrap.append(more);
+  return wrap;
+}
+const LASTC = { font: '#c00000', hi: '#ffff00', xfont: '#c00000', xfill: '#ffff00', pfont: '#c00000', pfill: '#e8553d', pline: '#3a4660' };
+function colorSplit(o) {
+  const bar = el('span', { class: 'cbar', style: 'background:' + LASTC[o.id] }), main = el('button', { class: 'rb-btn sm cmain', title: o.tip, 'aria-label': o.tip, html: icon(o.icon, 18) }), arr = el('button', { class: 'rb-btn sm carr', title: o.tip + ' – Farbe wählen', 'aria-label': o.tip + ' – Farbe wählen', html: '▾' });
+  main.append(bar); [main, arr].forEach(b => b.addEventListener('mousedown', e => { e.preventDefault(); (typeof saveSel === 'function' && saveSel()); }));
+  const go = c => { if (c) { LASTC[o.id] = c; bar.style.background = c; } o.apply(c); };
+  main.addEventListener('click', () => go(LASTC[o.id])); arr.addEventListener('click', () => showMenu(main, [{ node: colorMenuNode(go, o.none) }]));
+  const w = el('span', { class: 'rb-split' }, main, arr); w._upd = () => { const dis = o.en ? !o.en() : false; main.disabled = dis; arr.disabled = dis; }; if (o.reg) o.reg.push(w); return w;
 }
 /* Verdrahtung der gemeinsamen Titelleisten-Suche und des Zoomreglers */
 window.addEventListener('DOMContentLoaded', () => {

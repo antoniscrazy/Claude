@@ -43,7 +43,7 @@ function render() {
         let al = s && s.al; if (!al) al = typeof v === 'number' ? 'r' : (typeof v === 'boolean' || isErr) ? 'c' : 'l'; d.style.textAlign = { l: 'left', c: 'center', r: 'right' }[al];
         if (isErr) { d.classList.add('err'); d.title = v.code + ' – ' + v.msg; }
         if (s) {
-          if (s.b) d.style.fontWeight = '700'; if (s.i) d.style.fontStyle = 'italic'; if (s.u) d.style.textDecoration = 'underline'; if (s.co) d.style.color = s.co; if (s.bg) d.style.background = s.bg; if (s.sz) d.style.fontSize = s.sz + 'pt';
+          if (s.b) d.style.fontWeight = '700'; if (s.i) d.style.fontStyle = 'italic'; if (s.u || s.s) d.style.textDecoration = (s.u ? 'underline ' : '') + (s.s ? 'line-through' : ''); if (s.fn) d.style.fontFamily = '"' + s.fn + '",sans-serif'; if (s.co) d.style.color = s.co; if (s.bg) d.style.background = s.bg; if (s.sz) d.style.fontSize = s.sz + 'pt';
           if (s.wr) d.classList.add('wrap'); if (s.bd) { if (s.bd.t) d.style.borderTop = '1.5px solid #222'; if (s.bd.b) d.style.borderBottom = '1.5px solid #222'; if (s.bd.l) d.style.borderLeft = '1.5px solid #222'; if (s.bd.r) d.style.borderRight = '1.5px solid #222'; }
         }
       }

@@ -27,10 +27,12 @@ function ensureSel() { if (!selInDoc()) restoreSel(); }
 
 /* ---------- Zeichenformat ---------- */
 function fixFonts() {
+  // Spans mit „xxx-large“ stammen von fontSize=7 (Platzhalter) und erhalten die gemerkte Größe; Text daneben bleibt unverändert
+  $$('#doc span').forEach(sp => { const fs = sp.style.fontSize; if (fs === 'xxx-large' || fs === '-webkit-xxx-large') sp.style.fontSize = S.pendingPx || '14.7px'; });
   $$('#doc font').forEach(f => { const sp = document.createElement('span'); if (f.size === '7' && f.dataset.px) sp.style.fontSize = f.dataset.px; else if (f.size === '7' && S.pendingPx) sp.style.fontSize = S.pendingPx; if (f.face) sp.style.fontFamily = f.face; if (f.color) sp.style.color = f.color; sp.append(...f.childNodes); f.replaceWith(sp); });
 }
 function exec(cmd, val, css) { ensureSel(); document.execCommand('styleWithCSS', false, !!css); document.execCommand(cmd, false, val); fixFonts(); saveSel(); onInput(); checkpoint(); refreshRibbon(); }
-function setFontSize(pt) { ensureSel(); S.pendingPx = Math.round(pt * 96 / 72 * 10) / 10 + 'px'; document.execCommand('styleWithCSS', false, false); document.execCommand('fontSize', false, '7'); fixFonts(); S.pendingPx = null; saveSel(); onInput(); checkpoint(); refreshRibbon(); }
+function setFontSize(pt) { ensureSel(); pt = clamp(+pt || 11, 1, 400); S.pendingPx = Math.round(pt * 96 / 72 * 100) / 100 + 'px'; document.execCommand('styleWithCSS', false, true); document.execCommand('fontSize', false, '7'); fixFonts(); saveSel(); onInput(); checkpoint(); refreshRibbon(); }
 function queryState(c) { try { return document.queryCommandState(c); } catch (e) { return false; } }
 function curFontSizePt() { const s = getSelection(); if (!s.rangeCount) return 11; let n = s.anchorNode; if (n && n.nodeType === 3) n = n.parentNode; if (!n || !docEl().contains(n)) return 11; return Math.round(parseFloat(getComputedStyle(n).fontSize) * 72 / 96 * 2) / 2; }
 function curFontFamily() { const s = getSelection(); let n = s.anchorNode; if (n && n.nodeType === 3) n = n.parentNode; if (!n || !docEl().contains(n)) return ''; const f = getComputedStyle(n).fontFamily.replace(/"/g, '').split(',')[0].trim().toLowerCase(); const m = FONTS.find(x => x[1].toLowerCase() === f); return m ? m[0] : ''; }
