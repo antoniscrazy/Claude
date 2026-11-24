@@ -9,7 +9,7 @@ function woLoad() { try { const raw = localStorage.getItem('webOffice.settings.'
 function woSave() { try { localStorage.setItem('webOffice.settings.' + WO.app, JSON.stringify(WO.cfg)); } catch (e) { } }
 function woApply() {
   const c = WO.cfg, r = document.documentElement, dark = c.theme === 'dark' || (c.theme === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
-  r.dataset.theme = dark ? 'dark' : 'light'; r.dataset.canvas = c.canvasDark && dark ? 'dark' : 'light'; r.dataset.contrast = c.contrast ? 'high' : 'normal'; r.dataset.motion = c.reduceMotion ? 'reduce' : 'normal';
+  r.dataset.theme = dark ? 'dark' : 'light'; let cs = document.querySelector('meta[name=color-scheme]'); if (cs) cs.content = dark ? 'dark' : 'only light'; r.dataset.canvas = c.canvasDark && dark ? 'dark' : 'light'; r.dataset.contrast = c.contrast ? 'high' : 'normal'; r.dataset.motion = c.reduceMotion ? 'reduce' : 'normal';
   const touch = c.touch === 'on' || (c.touch === 'auto' && window.matchMedia && matchMedia('(pointer: coarse)').matches); r.dataset.touch = touch ? 'on' : 'off';
   r.style.setProperty('--ui-font', clamp(+c.uiFont || 13, 11, 18) + 'px');
   if (c.accent) { r.style.setProperty('--ac', c.accent); r.style.setProperty('--ac2', c.accent); } else { r.style.removeProperty('--ac'); r.style.removeProperty('--ac2'); }

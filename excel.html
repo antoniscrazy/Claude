@@ -2,6 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
+<meta name="color-scheme" content="only light">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>WebOffice Tabellenkalkulation</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2048%2048%22%20width%3D%2248%22%20height%3D%2248%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22ea%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2333C481%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23169C5B%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22eb%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231B8F55%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230A5C32%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20x%3D%2212%22%20y%3D%224%22%20width%3D%2233%22%20height%3D%2240%22%20rx%3D%224%22%20fill%3D%22url(%23ea)%22%2F%3E%3Cpath%20d%3D%22M12%2014.5h33M12%2024h33M12%2033.5h33M34%204v40%22%20stroke%3D%22%23fff%22%20stroke-opacity%3D%22.55%22%20stroke-width%3D%221.6%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2214%22%20width%3D%2224%22%20height%3D%2224%22%20rx%3D%224%22%20fill%3D%22url(%23eb)%22%2F%3E%3Cpath%20d%3D%22M9.2%2021.2l11.6%209.6M20.8%2021.2L9.2%2030.8%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222.6%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E">
@@ -193,7 +194,7 @@ select{background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),
 input[type=checkbox],input[type=radio],input[type=range],input[type=color]{-webkit-appearance:auto;appearance:auto}
 input[type=color]{background:none;padding:1px;border:1px solid var(--bd)}
 /* ---- Helles Design: Eingabefelder immer ausdrücklich weiß (kein schwarzer Systemhintergrund) ---- */
-html{color-scheme:light}
+html{color-scheme:only light}
 :where(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),select,textarea){background-color:#fff;color:#1d2330}
 #namebox,#fx,#fq,#fr,.dlg input,.dlg select,.dlg textarea,#notes textarea,.szin,.fontsel{background-color:#fff;color:#1d2330;border:1px solid #b8b8b8;border-radius:4px}
 #namebox,#fx{height:28px}
@@ -1929,7 +1930,7 @@ function woLoad() { try { const raw = localStorage.getItem('webOffice.settings.'
 function woSave() { try { localStorage.setItem('webOffice.settings.' + WO.app, JSON.stringify(WO.cfg)); } catch (e) { } }
 function woApply() {
   const c = WO.cfg, r = document.documentElement, dark = c.theme === 'dark' || (c.theme === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
-  r.dataset.theme = dark ? 'dark' : 'light'; r.dataset.canvas = c.canvasDark && dark ? 'dark' : 'light'; r.dataset.contrast = c.contrast ? 'high' : 'normal'; r.dataset.motion = c.reduceMotion ? 'reduce' : 'normal';
+  r.dataset.theme = dark ? 'dark' : 'light'; let cs = document.querySelector('meta[name=color-scheme]'); if (cs) cs.content = dark ? 'dark' : 'only light'; r.dataset.canvas = c.canvasDark && dark ? 'dark' : 'light'; r.dataset.contrast = c.contrast ? 'high' : 'normal'; r.dataset.motion = c.reduceMotion ? 'reduce' : 'normal';
   const touch = c.touch === 'on' || (c.touch === 'auto' && window.matchMedia && matchMedia('(pointer: coarse)').matches); r.dataset.touch = touch ? 'on' : 'off';
   r.style.setProperty('--ui-font', clamp(+c.uiFont || 13, 11, 18) + 'px');
   if (c.accent) { r.style.setProperty('--ac', c.accent); r.style.setProperty('--ac2', c.accent); } else { r.style.removeProperty('--ac'); r.style.removeProperty('--ac2'); }
