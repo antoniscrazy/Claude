@@ -1,0 +1,30 @@
+<div id="app">
+  <div id="titlebar">
+    <div class="logo" aria-hidden="true">P</div>
+    <button class="qa" id="qSave" title="Projekt speichern (Strg+S)" aria-label="Projekt speichern"></button>
+    <button class="qa" id="qUndo" title="Rückgängig (Strg+Z)" aria-label="Rückgängig"></button>
+    <button class="qa" id="qRedo" title="Wiederholen (Strg+Y)" aria-label="Wiederholen"></button>
+    <input id="docname" value="Präsentation" aria-label="Dateiname" maxlength="80">
+    <span id="savestat" role="status">–</span>
+  </div>
+  <div id="tabs" role="tablist"></div>
+  <div id="ribbon" role="toolbar"></div>
+  <div id="work">
+    <div id="thumbs" tabindex="-1" aria-label="Folienminiaturen"><div id="insmark"></div><div id="thumbList"></div></div>
+    <div id="center">
+      <div id="stageArea"><div id="scaler"></div></div>
+      <div id="sorter" aria-label="Folienübersicht"></div>
+      <div id="notes"><label for="notesText">Notizen</label><textarea id="notesText" placeholder="Notizen für die Referentenansicht …"></textarea></div>
+    </div>
+    <div id="right">
+      <div id="rtabs"><button data-t="format">Format</button><button data-t="select">Auswahl</button><button data-t="anim">Animationen</button></div>
+      <div id="rbody"></div>
+    </div>
+  </div>
+  <div id="status"></div>
+</div>
+<div id="show"></div>
+<div id="printArea"></div>
+<div id="toast" role="alert"></div>
+<input type="file" id="fileProj" accept=".json,application/json" hidden>
+<input type="file" id="fileImg" accept="image/png,image/jpeg,image/gif,image/webp" hidden>

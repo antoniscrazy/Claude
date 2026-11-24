@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WebOffice Präsentation</title>
+<!--
+  WebOffice Präsentation – eigenständiger Präsentationseditor (eine Datei, offline, ohne externe Abhängigkeiten).
+  Alle Bibliotheken (ZIP-Schreiben/-Lesen, Sanitizer, Animations-Engine) sind eigener Code ohne Fremdlizenzen.
+-->
+<style id="rt-css">
+@@include ppt/runtime.css@@
+</style>
+<style>
+@@include ppt/style.css@@
+</style>
+</head>
+<body>
+@@include ppt/body.html@@
+<script>
+@@include shared/zip.js@@
+</script>
+<script id="rt-js">
+@@include ppt/runtime.js@@
+</script>
+<script>
+@@include ppt/icons.js@@
+@@include ppt/editor1-core.js@@
+@@include ppt/editor2-render.js@@
+@@include ppt/editor3-interact.js@@
+@@include ppt/editor4-commands.js@@
+@@include ppt/editor5-ribbon.js@@
+@@include ppt/editor6-io.js@@
+@@include ppt/editor7-pptx.js@@
+</script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+<div id="app">
+  <div id="titlebar">
+    <div class="logo" aria-hidden="true">X</div>
+    <button class="qa" id="qSave" title="Projekt speichern (Strg+S)" aria-label="Projekt speichern"></button>
+    <button class="qa" id="qUndo" title="Rückgängig (Strg+Z)" aria-label="Rückgängig"></button>
+    <button class="qa" id="qRedo" title="Wiederholen (Strg+Y)" aria-label="Wiederholen"></button>
+    <input id="docname" value="Mappe1" aria-label="Dateiname" maxlength="80">
+    <span id="savestat" role="status">–</span>
+  </div>
+  <div id="tabs" role="tablist"></div>
+  <div id="ribbon" role="toolbar"></div>
+  <div id="fbar"><input id="namebox" aria-label="Namensfeld" value="A1" spellcheck="false"><span class="fxl" aria-hidden="true">fx</span><input id="fx" aria-label="Formelleiste" spellcheck="false" autocomplete="off"></div>
+  <div id="gridwrap">
+    <div id="corner" title="Alles auswählen"></div>
+    <div id="colhead"><div id="colhin"></div></div>
+    <div id="rowhead"><div id="rowhin"></div></div>
+    <div id="viewport" tabindex="0" aria-label="Tabellenblatt">
+      <div id="content"><div id="cells"></div><div id="chartlayer"></div><div id="sellayer"></div><textarea id="ed" aria-label="Zelleingabe" spellcheck="false"></textarea></div>
+    </div>
+  </div>
+  <div id="sheetbar"><div id="sheettabs" role="tablist"></div></div>
+  <div id="status"><span id="stsel"></span><span id="stq"></span><span class="sp"></span><span id="savestat2"></span></div>
+</div>
+<div id="measure"></div>
+<textarea id="clipbox" aria-hidden="true" tabindex="-1"></textarea>
+<div id="toast" role="alert"></div>
+<input type="file" id="fileIn" accept=".json,.xlsx,.csv,.tsv,.txt" hidden>

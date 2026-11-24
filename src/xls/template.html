@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WebOffice Tabellenkalkulation</title>
+<!--
+  WebOffice Tabellenkalkulation – eigenständige Tabellenkalkulation (eine Datei, offline, ohne externe Abhängigkeiten).
+  Formelparser, Auswertung, ZIP/XLSX-Lesen und -Schreiben sind eigener Code ohne Fremdlizenzen. Kein eval, kein new Function.
+-->
+<style>
+@@include xls/style.css@@
+</style>
+</head>
+<body>
+@@include xls/body.html@@
+<script>
+@@include shared/zip.js@@
+</script>
+<script>
+@@include xls/icons.js@@
+@@include xls/xl1-core.js@@
+@@include xls/xl2-grid.js@@
+@@include xls/xl3-commands.js@@
+@@include xls/xl4-io.js@@
+</script>
+</body>
+</html>
