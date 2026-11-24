@@ -168,7 +168,7 @@ function helpDialog() {
 /* ---------- Tastatur & Verdrahtung ---------- */
 function bindAll() {
   const d = docEl(); d.spellcheck = true; d.lang = 'de'; try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch (e) { }
-  d.addEventListener('input', () => { if (S.pendingPx) fixFonts(); onInput(); }); d.addEventListener('load', () => schedulePaginate(), true); if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => schedulePaginate());
+  d.addEventListener('input', e => { if (e.inputType && /^delete/.test(e.inputType)) resetEmptyFormat(); if (S.pendingPx) fixFonts(); onInput(); }); d.addEventListener('load', () => schedulePaginate(), true); if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => schedulePaginate());
   d.addEventListener('keydown', e => {
     const k = e.key, mod = e.ctrlKey || e.metaKey;
     if (S.curImg && (k === 'Delete' || k === 'Backspace')) { e.preventDefault(); deleteImage(); return; }

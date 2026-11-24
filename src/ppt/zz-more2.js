@@ -121,3 +121,5 @@ async function pasteButton() {
 }
 (() => { const base = RIBBON.start; RIBBON.start = () => { const g = base(), cb = g.find(x => (x.querySelector('.gn') || {}).textContent === 'Zwischenablage'); if (cb) cb.querySelector('.items').prepend(B({ icon: 'paste', label: 'Einfügen', tip: 'Einfügen (Strg+V)', fn: pasteButton })); return g; }; })();
 if (!IC.paste) IC.paste = '<rect x="6" y="5" width="12" height="16" rx="1"/><path d="M9 5V3h6v2M9 11h6M9 15h6"/>';
+
+(() => { const base = RIBBON.file; RIBBON.file = () => { const g = base(); g.push(G_('Einstellungen', B({ icon: 'gear', label: 'Einstellungen', tip: 'Design, Dunkelmodus, Touch und mehr', fn: openSettings }))); return g; }; IC.gear = '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.600 5.600l2.100 2.100M16.300 16.300l2.100 2.100M5.600 18.400l2.100-2.100M16.300 7.700l2.100-2.100"/>'; })();

@@ -109,3 +109,5 @@ async function pasteFromClipboard() {
   };
   IC.painter = '<path d="M5 4h10v5H5zM15 6h3v6h-8v3M10 15v5h2v-5"/>';
 })();
+
+(() => { const base = RIB.file; RIB.file = () => { const g = base(); g.push(GR('Einstellungen', B({ icon: 'gear', label: 'Einstellungen', tip: 'Design, Dunkelmodus, Touch und mehr', fn: openSettings }))); return g; }; IC.gear = '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.600 5.600l2.100 2.100M16.300 16.300l2.100 2.100M5.600 18.400l2.100-2.100M16.300 7.700l2.100-2.100"/>'; })();

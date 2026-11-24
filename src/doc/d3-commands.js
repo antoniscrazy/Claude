@@ -170,3 +170,12 @@ function openFind(focusReplace) {
 }
 function closeFind() { $('#findbar').style.display = 'none'; S.findOn = false; if (window.CSS && CSS.highlights) { CSS.highlights.delete('find'); CSS.highlights.delete('findcur'); } FIND.matches = []; FIND.i = -1; docEl().focus({ preventScroll: true }); restoreSel(); }
 function setZoom(z) { S.zoom = z === 'fit' ? clamp(($('#scroller').clientWidth - 48) / pageGeom().W, .3, 2) : z; paginate(); const zs = $('#zoomsel'); if (zs) zs.value = z === 'fit' ? 'fit' : String(z); }
+
+/* Nach dem Löschen eines ganzen Absatzes/Dokuments keine Zeichenformate (fett, kursiv, Größe …) übernehmen */
+function clearTypingState() { ['bold', 'italic', 'underline', 'strikeThrough', 'subscript', 'superscript'].forEach(cmd => { try { if (document.queryCommandState(cmd)) document.execCommand(cmd); } catch (e) { } }); }
+function resetEmptyFormat() {
+  const d = docEl(), s = getSelection();
+  if (!d.querySelector('p,h1,h2,h3,li,table,figure,.b-pb')) { d.innerHTML = '<p><br></p>'; const r = document.createRange(); r.setStart(d.firstChild, 0); r.collapse(true); s.empty(); s.addRange(r); clearTypingState(); S.pendingPx = null; return; }
+  if (!s.rangeCount) return; let n = s.getRangeAt(0).startContainer; if (n.nodeType === 3) n = n.parentNode; const blk = n.closest && n.closest('p,h1,h2,h3,li,td,th'); if (!blk || !d.contains(blk)) return;
+  if (blk.textContent.replace(/[\u200b\s]/g, '') === '') { if (blk.querySelector('b,i,u,s,sub,sup,span,strong,em,font,strike')) blk.innerHTML = '<br>'; const r = document.createRange(); r.setStart(blk, 0); r.collapse(true); s.empty(); s.addRange(r); clearTypingState(); S.pendingPx = null; }
+}

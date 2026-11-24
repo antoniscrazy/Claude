@@ -110,3 +110,5 @@ async function pasteButton() {
   catch (e) { if (S.clip) { pasteText(S.clip.tsv); } else toast('Der Browser erlaubt den Zugriff auf die Zwischenablage nicht – bitte Strg+V verwenden.', true); }
 }
 (() => { const base = RIB.start; RIB.start = () => { const g = base(), cb = g.find(x => (x.querySelector('.gn') || {}).textContent === 'Zwischenablage'); if (cb) { const first = cb.querySelector('.rb-btn'); if (first) first.replaceWith(B({ icon: 'paste', label: 'Einfügen', tip: 'Einfügen (Strg+V)', fn: pasteButton })); } return g; }; })();
+
+(() => { const base = RIB.file; RIB.file = () => { const g = base(); g.push(GR('Einstellungen', B({ icon: 'gear', label: 'Einstellungen', tip: 'Design, Dunkelmodus, Touch und mehr', fn: openSettings }))); return g; }; IC.gear = '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.600 5.600l2.100 2.100M16.300 16.300l2.100 2.100M5.600 18.400l2.100-2.100M16.300 7.700l2.100-2.100"/>'; })();

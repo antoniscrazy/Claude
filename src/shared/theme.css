@@ -1,0 +1,115 @@
+/* =====================================================================
+   Gemeinsames Design: explizit helle Eingabefelder, Dunkelmodus, Touch-Modus, Kontrast, Bewegung, Fixierung gegen Verrutschen
+   ===================================================================== */
+/* ---- Seite bleibt stehen (kein Verrutschen/Überscrollen), Touch-freundlich ---- */
+html,body{position:fixed;inset:0;width:100%;height:100%;overflow:hidden;overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%;-webkit-tap-highlight-color:transparent;font-size:var(--ui-font,13px)}
+#app{position:absolute;inset:0;height:auto;overflow:hidden}
+#titlebar,#tabs,#ribbon,#status,#sheetbar,#fbar,.rb-btn,.tab,.stab,.th,.menu,.dlg h3{-webkit-user-select:none;user-select:none}
+button,.rb-btn,.tab,.stab,select,summary,label{touch-action:manipulation}
+#tabs,#ribbon{touch-action:pan-x;overscroll-behavior:contain}
+#viewport,#scroller,#thumbs,#right,#nav,#navlist,#rbody,.dlg .bd,.menu,#sorter,#notes textarea{overscroll-behavior:contain}
+#scaler,#ovl{touch-action:none}
+input,select,textarea{-webkit-appearance:none;appearance:none}
+select{background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 11px) 55%,calc(100% - 7px) 55%;background-size:4px 4px,4px 4px;background-repeat:no-repeat;padding-right:20px!important}
+input[type=checkbox],input[type=radio],input[type=range],input[type=color]{-webkit-appearance:auto;appearance:auto}
+input[type=color]{background:none;padding:1px;border:1px solid var(--bd)}
+/* ---- Helles Design: Eingabefelder immer ausdrücklich weiß (kein schwarzer Systemhintergrund) ---- */
+html{color-scheme:light}
+:where(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),select,textarea){background-color:#fff;color:#1d2330}
+#namebox,#fx,#fq,#fr,.dlg input,.dlg select,.dlg textarea,#notes textarea,.szin,.fontsel{background-color:#fff;color:#1d2330;border:1px solid #b8b8b8;border-radius:4px}
+#namebox,#fx{height:28px}
+::placeholder{color:#8a8f99;opacity:1}
+/* ---- Dunkles Design ---- */
+html[data-theme=dark]{color-scheme:dark;--bg:#1e1f22;--bd:#4a4c53;--tx:#e8e9ed;--mut:#a3a6ae;--hov:#3a3c42;--act:#4a4d55;--acl:#33363c;--rb:#2d2e32;--rbd:#45474d;--hv2:#3d3f45}
+html[data-theme=dark] body,html[data-theme=dark] #app{background:#1e1f22;color:#e8e9ed}
+html[data-theme=dark] #ribbon,html[data-theme=dark] #fbar,html[data-theme=dark] #findbar,html[data-theme=dark] #nav,html[data-theme=dark] #right,html[data-theme=dark] #notes,html[data-theme=dark] .pvbar{background:#2d2e32;color:#e8e9ed;border-color:#45474d}
+html[data-theme=dark] #status,html[data-theme=dark] #sheetbar{background:#26272a;color:#c9cbd2;border-color:#45474d}
+html[data-theme=dark] #thumbs{background:#222326;border-color:#45474d}
+html[data-theme=dark] #center,html[data-theme=dark] #stageArea,html[data-theme=dark] #scroller,html[data-theme=dark] #sorter{background:#17181a}
+html[data-theme=dark] .tab.on{background:#2d2e32}
+html[data-theme=dark] .grp{border-color:#45474d}
+html[data-theme=dark] .grp .gn{color:#a9acb4}
+html[data-theme=dark] .rb-btn{color:#e8e9ed}
+html[data-theme=dark] .rb-btn:hover:not(:disabled){background:#3d3f45;border-color:#5a5d65}
+html[data-theme=dark] .rb-btn.on{background:#4f525a;border-color:#6a6d76}
+html[data-theme=dark] .rb-btn:active:not(:disabled){background:#555860}
+html[data-theme=dark] :where(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),select,textarea),html[data-theme=dark] #namebox,html[data-theme=dark] #fx,html[data-theme=dark] #fq,html[data-theme=dark] #fr,html[data-theme=dark] .dlg input,html[data-theme=dark] .dlg select,html[data-theme=dark] .dlg textarea,html[data-theme=dark] #notes textarea,html[data-theme=dark] .szin,html[data-theme=dark] .fontsel,html[data-theme=dark] .rb-field input,html[data-theme=dark] .rb-field select{background-color:#1b1c1f;color:#e8e9ed;border-color:#5a5d65}
+html[data-theme=dark] #docname:focus{background:#1b1c1f;color:#e8e9ed}
+html[data-theme=dark] #tsearch:hover,html[data-theme=dark] #tsearch:focus-within{background:#1b1c1f;color:#e8e9ed;border-color:#5a5d65}
+html[data-theme=dark] #tsres{background:#2b2c30;color:#e8e9ed;border-color:#4a4c53}
+html[data-theme=dark] #tsres button:hover,html[data-theme=dark] #tsres button.sel{background:#3a3c42}
+html[data-theme=dark] .menu,html[data-theme=dark] .dlg,html[data-theme=dark] .palette{background:#2b2c30;color:#e8e9ed;border-color:#4a4c53}
+html[data-theme=dark] .dlg h3,html[data-theme=dark] .dlg .ft{border-color:#45474d}
+html[data-theme=dark] .menu button{color:#e8e9ed}
+html[data-theme=dark] .menu button:hover:not(:disabled),html[data-theme=dark] .menu button:focus-visible{background:#3d3f45}
+html[data-theme=dark] .menu hr{border-color:#4a4c53}
+html[data-theme=dark] .btn{background:#34363b;color:#e8e9ed;border-color:#5a5d65}
+html[data-theme=dark] .btn:hover{background:#40434a}
+html[data-theme=dark] .btn.pri{background:var(--ac);border-color:var(--ac);color:#fff}
+html[data-theme=dark] .hint,html[data-theme=dark] .dlg .hint{color:#a3a6ae}
+html[data-theme=dark] .palette .pa:hover,html[data-theme=dark] #nav .navi:hover{background:#3a3c42}
+html[data-theme=dark] .navi,html[data-theme=dark] #nav h4,html[data-theme=dark] .navi.l2,html[data-theme=dark] .np{color:#cfd1d8}
+html[data-theme=dark] .zm button,html[data-theme=dark] .fitbtn,html[data-theme=dark] .vsw button{color:#e8e9ed}
+html[data-theme=dark] .zm button:hover,html[data-theme=dark] .fitbtn:hover,html[data-theme=dark] .vsw button:hover{background:#3d3f45}
+html[data-theme=dark] #status button{color:#e8e9ed}
+html[data-theme=dark] #corner,html[data-theme=dark] #colhead,html[data-theme=dark] #rowhead{background:#2d2e32;border-color:#45474d}
+html[data-theme=dark] .ch,html[data-theme=dark] .rh{color:#c9cbd2;border-color:#45474d;background:#2d2e32}
+html[data-theme=dark] .ch.sel,html[data-theme=dark] .rh.sel{background:#33503f;color:#bfe6cf}
+html[data-theme=dark] .stab{color:#cfd1d8}
+html[data-theme=dark] .stab.on{background:#2d2e32;color:var(--ac)}
+html[data-theme=dark] .th .n,html[data-theme=dark] #notes label{color:#a3a6ae}
+html[data-theme=dark] #rtabs button{color:#cfd1d8}
+html[data-theme=dark] .li,html[data-theme=dark] .fx,html[data-theme=dark] #rbody label,html[data-theme=dark] #rbody{color:#e8e9ed}
+html[data-theme=dark] .tplc{background:#2b2c30;border-color:#4a4c53;color:#e8e9ed}
+html[data-theme=dark] .pvbar{background:#2d2e32}
+html[data-theme=dark] .tab.ctx{background:rgba(255,255,255,.2)}
+/* Dokumentfläche optional abdunkeln (nur Anzeige) */
+html[data-canvas=dark] .sheet,html[data-canvas=dark] #viewport{filter:invert(1) hue-rotate(180deg)}
+html[data-canvas=dark] .sheet img,html[data-canvas=dark] .sheet figure,html[data-canvas=dark] .xchart svg{filter:invert(1) hue-rotate(180deg)}
+/* ---- Hoher Kontrast ---- */
+html[data-contrast=high]{--bd:#000;--rbd:#000}
+html[data-contrast=high] .rb-btn,html[data-contrast=high] .tab,html[data-contrast=high] .btn,html[data-contrast=high] input,html[data-contrast=high] select{border-color:#000!important}
+html[data-contrast=high] .grp .gn,html[data-contrast=high] #status{color:#000}
+html[data-theme=dark][data-contrast=high] .rb-btn,html[data-theme=dark][data-contrast=high] .btn,html[data-theme=dark][data-contrast=high] input,html[data-theme=dark][data-contrast=high] select{border-color:#fff!important}
+/* ---- Bewegung reduzieren ---- */
+html[data-motion=reduce] *,html[data-motion=reduce] *::before,html[data-motion=reduce] *::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+/* ---- Touch-Modus: größere Bedienelemente ---- */
+html[data-touch=on] .rb-btn{min-width:56px;height:70px}
+html[data-touch=on] .rb-btn.sm{height:36px;min-width:36px;padding:2px 9px}
+html[data-touch=on] .tab{height:36px;padding:0 16px}
+html[data-touch=on] #tabs{height:38px}
+html[data-touch=on] .rb-field input,html[data-touch=on] .rb-field select,html[data-touch=on] .fontsel,html[data-touch=on] .szin{height:34px;font-size:15px}
+html[data-touch=on] #titlebar .qa{width:40px;height:40px}
+html[data-touch=on] #titlebar{height:48px}
+html[data-touch=on] #tsearch{top:9px;height:30px}
+html[data-touch=on] .menu button{padding:12px 16px;font-size:15px}
+html[data-touch=on] .btn{padding:10px 16px;font-size:15px}
+html[data-touch=on] #status{height:34px}
+html[data-touch=on] .zm button{width:30px;height:30px;font-size:20px}
+html[data-touch=on] .zm input[type=range]{width:140px}
+html[data-touch=on] .stab{padding:8px 18px}
+html[data-touch=on] .th{padding:4px 0}
+/* ---- Einstellungsdialog ---- */
+.setdlg h4{margin:14px 0 6px;font-size:12px;letter-spacing:.4px;text-transform:uppercase;color:var(--mut)}
+.setdlg h4:first-child{margin-top:0}
+.setrow{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:7px 0;border-bottom:1px solid rgba(128,128,128,.18)}
+.setrow label{flex:1;cursor:pointer}
+.setrow small{display:block;color:var(--mut);font-size:11.5px;margin-top:1px}
+.setrow select{min-width:150px;height:30px;border:1px solid #b8b8b8;border-radius:4px;padding:0 8px}
+.swatches{display:flex;gap:6px;flex-wrap:wrap}
+.swatches button{width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
+.swatches button.on{border-color:var(--tx);box-shadow:0 0 0 2px var(--bg,#fff) inset}
+.switch{position:relative;width:42px;height:24px;flex:none}
+.switch input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer;z-index:1}
+.switch span{position:absolute;inset:0;border-radius:12px;background:#9aa0aa;transition:background .15s}
+.switch span::after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .15s}
+.switch input:checked+span{background:var(--ac)}
+.switch input:checked+span::after{transform:translateX(18px)}
+.switch input:focus-visible+span{outline:2px solid var(--ac2,#1b6ef3);outline-offset:2px}
+@media print{html,body{position:static!important;overflow:visible!important;height:auto!important}#app{position:static!important}}
+/* Dokumentflächen behalten dunkle Schrift auf hellem Grund */
+html[data-theme=dark] #viewport,html[data-theme=dark] .xchart,html[data-theme=dark] #ed,html[data-theme=dark] .sheet,html[data-theme=dark] #scaler{color:#1d2330}
+html[data-theme=dark] #ed{background:#fff;color:#1d2330;border-color:var(--ac)}
+html[data-theme=dark] .xch-bar{color:#1d2330}
+html[data-theme=dark] .tab.on{background:#2d2e32;color:#fff}
+html[data-theme=dark] #colhead .ch,html[data-theme=dark] #rowhead .rh{background:#2d2e32}
