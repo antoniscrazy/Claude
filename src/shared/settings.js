@@ -4,9 +4,9 @@
    Außerdem: Fixierung der Seite gegen Verrutschen auf Touch-Geräten.
    ===================================================================== */
 const WO = { app: 'app', cfg: {}, extra: [], accent0: '' };
-const WO_DEFAULTS = { theme: 'light', accent: '', canvasDark: false, touch: 'auto', contrast: false, reduceMotion: false, uiFont: 13, autosave: true, ribbonMin: false };
-function woLoad() { try { const raw = localStorage.getItem('webOffice.settings.' + WO.app); if (raw) return Object.assign({}, WO_DEFAULTS, JSON.parse(raw)); } catch (e) { } return Object.assign({}, WO_DEFAULTS); }
-function woSave() { try { localStorage.setItem('webOffice.settings.' + WO.app, JSON.stringify(WO.cfg)); } catch (e) { } }
+const WO_DEFAULTS = { theme: 'auto', accent: '', canvasDark: false, touch: 'auto', contrast: false, reduceMotion: false, uiFont: 13, autosave: true, ribbonMin: false };
+function woLoad() { try { const raw = localStorage.getItem('webOffice.settings.v2.' + WO.app); if (raw) return Object.assign({}, WO_DEFAULTS, JSON.parse(raw)); } catch (e) { } return Object.assign({}, WO_DEFAULTS); }
+function woSave() { try { localStorage.setItem('webOffice.settings.v2.' + WO.app, JSON.stringify(WO.cfg)); } catch (e) { } }
 function woApply() {
   const c = WO.cfg, r = document.documentElement, dark = c.theme === 'dark' || (c.theme === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
   r.dataset.theme = dark ? 'dark' : 'light'; let cs = document.querySelector('meta[name=color-scheme]'); if (cs) cs.content = dark ? 'dark' : 'only light'; r.dataset.canvas = c.canvasDark && dark ? 'dark' : 'light'; r.dataset.contrast = c.contrast ? 'high' : 'normal'; r.dataset.motion = c.reduceMotion ? 'reduce' : 'normal';
