@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Granny's Wiener Escape 3D 🌭</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Creepster&family=Fredoka+One&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#000;overflow:hidden;font-family:'Fredoka One',cursive;}
+#c{display:block;width:100vw;height:100vh;cursor:none;}
+
+#ui{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;}
+#hud{position:absolute;top:16px;left:20px;color:#ffcc44;font-size:1.3rem;text-shadow:0 0 12px #ff8800,0 2px 4px #000;}
+#scoreBar{position:absolute;top:50px;left:20px;color:#ff9966;font-size:0.95rem;text-shadow:0 0 8px #ff6622,0 2px 4px #000;}
+#danger{position:absolute;top:16px;right:20px;font-size:1.1rem;color:#ff3344;text-shadow:0 0 10px red;text-align:right;}
+#crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.6);font-size:24px;line-height:1;text-shadow:0 0 4px #000;}
+
+/* Sprint bar */
+#sprintBar{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);width:220px;text-align:center;}
+#sprintLabel{color:#44ddff;font-size:0.8rem;text-shadow:0 0 8px #44ddff;margin-bottom:3px;letter-spacing:2px;}
+#sprintBg{width:220px;height:14px;background:rgba(0,0,0,0.6);border:2px solid rgba(68,221,255,0.4);border-radius:10px;overflow:hidden;}
+#sprintFill{height:100%;width:100%;background:linear-gradient(90deg,#0099cc,#44ddff);border-radius:10px;transition:width 0.05s;}
+#sprintExhausted{color:#ff6644;font-size:0.7rem;margin-top:3px;display:none;animation:flashText 0.5s infinite;letter-spacing:2px;}
+
+/* Minimap */
+#minimap{position:absolute;top:16px;right:20px;bottom:auto;}
+#minimapCanvas{width:140px;height:140px;border:2px solid rgba(255,100,100,0.5);border-radius:4px;box-shadow:0 0 12px rgba(255,0,0,0.4);background:#0a0005;}
+
+/* Overlays */
+.overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+background:radial-gradient(ellipse at center,#0d0008 0%,#000 100%);z-index:50;pointer-events:all;
+animation:fadeIn 0.4s ease;}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+.hidden{display:none!important;}
+
+.title{font-family:'Creepster',cursive;font-size:clamp(2.5rem,9vw,5.5rem);color:#ff2244;
+text-shadow:0 0 30px #ff003388,0 0 80px #ff003344,0 4px 12px #000;animation:flicker 3s infinite;text-align:center;line-height:1.05;}
+.subtitle{color:#ffcc44;font-size:1rem;margin:4px 0 20px;text-shadow:0 0 8px #ff8800;letter-spacing:3px;}
+.dog-icon{font-size:4.5rem;animation:bounce 1s ease-in-out infinite alternate;margin-bottom:10px;}
+.inst-box{background:rgba(255,255,255,0.04);border:1px solid rgba(255,100,100,0.2);border-radius:16px;
+padding:18px 28px;margin-bottom:24px;max-width:500px;}
+.inst{color:#ccc;font-size:0.9rem;text-align:center;line-height:2.2;}
+.inst b{color:#ffcc44;}
+.inst .red{color:#ff4455;}
+.inst .grn{color:#44ff88;}
+.inst .blu{color:#44ddff;}
+
+.btn{background:linear-gradient(135deg,#cc1133,#880022);color:#fff;border:none;
+padding:16px 52px;font-family:'Creepster',cursive;font-size:2.2rem;border-radius:50px;
+cursor:pointer;box-shadow:0 0 30px #ff224466,0 4px 20px #0008;transition:all .2s;letter-spacing:2px;
+pointer-events:all;position:relative;overflow:hidden;}
+.btn::after{content:'';position:absolute;inset:0;background:linear-gradient(transparent 50%,rgba(255,255,255,0.08));pointer-events:none;}
+.btn:hover{transform:scale(1.08);box-shadow:0 0 60px #ff2244aa,0 4px 20px #0008;}
+.btn:active{transform:scale(0.97);}
+.btn.green{background:linear-gradient(135deg,#22aa44,#116622);box-shadow:0 0 30px #44ff8844,0 4px 20px #0008;}
+.btn.green:hover{box-shadow:0 0 60px #44ff88aa,0 4px 20px #0008;}
+
+/* FX layers */
+#vignette{position:fixed;inset:0;pointer-events:none;z-index:5;
+background:radial-gradient(ellipse at 50% 50%,transparent 30%,rgba(0,0,0,0.92) 100%);}
+#bloodFlash{position:fixed;inset:0;pointer-events:none;z-index:6;background:rgba(255,0,30,0);transition:background .08s;}
+#scareFlash{position:fixed;inset:0;pointer-events:none;z-index:7;background:rgba(255,255,255,0);transition:background .1s;}
+#scanlines{position:fixed;inset:0;pointer-events:none;z-index:4;opacity:0.06;
+background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,1) 2px,rgba(0,0,0,1) 4px);}
+
+#jumpscareContainer{position:fixed;inset:0;pointer-events:none;z-index:8;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.08s;}
+#jumpscareText{font-family:'Creepster',cursive;font-size:clamp(4rem,15vw,9rem);color:#ff0000;text-shadow:0 0 40px red,0 0 80px #ff000066;animation:shake 0.08s infinite;}
+
+#warningMsg{position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);
+font-family:'Creepster',cursive;font-size:clamp(1.5rem,6vw,3.5rem);color:#ff0000;
+text-shadow:0 0 30px currentColor;pointer-events:none;opacity:0;transition:opacity 0.25s;text-align:center;white-space:nowrap;}
+
+/* Toast notifications */
+#toast{position:absolute;bottom:130px;left:50%;transform:translateX(-50%);
+font-family:'Creepster',cursive;font-size:1.4rem;color:#fff;
+text-shadow:0 0 20px currentColor;pointer-events:none;opacity:0;
+transition:opacity 0.3s;text-align:center;padding:8px 20px;
+background:rgba(0,0,0,0.6);border-radius:12px;border:1px solid rgba(255,255,255,0.15);}
+
+/* Health/proximity ring */
+#proximityRing{position:fixed;inset:0;pointer-events:none;z-index:3;border-radius:0;
+box-shadow:inset 0 0 0 0 rgba(255,0,0,0);transition:box-shadow 0.2s;}
+
+@keyframes flicker{0%,100%{opacity:1;}92%{opacity:1;}93%{opacity:.4;}95%{opacity:1;}97%{opacity:.2;}99%{opacity:1;}}
+@keyframes bounce{from{transform:translateY(0) rotate(-5deg);}to{transform:translateY(-16px) rotate(5deg);}}
+@keyframes shake{0%{transform:translate(-4px,-3px) rotate(-1.5deg);}25%{transform:translate(4px,3px) rotate(1.5deg);}50%{transform:translate(-3px,4px) rotate(-0.8deg);}75%{transform:translate(3px,-4px) rotate(0.8deg);}100%{transform:translate(-4px,-3px) rotate(-1.5deg);}}
+@keyframes flashText{0%,100%{opacity:1;}50%{opacity:0;}}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.05);}}
+
+/* mobile */
+#mpad{position:fixed;bottom:24px;left:24px;display:none;z-index:20;pointer-events:all;}
+.dpad{display:grid;grid-template-columns:56px 56px 56px;grid-template-rows:56px 56px;gap:8px;}
+.dpad button{background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.2);
+border-radius:14px;color:#fff;font-size:1.5rem;cursor:pointer;
+-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:background 0.1s;}
+.dpad button:active{background:rgba(255,255,255,.25);}
+#sprintBtn{position:fixed;bottom:24px;right:24px;width:75px;height:75px;
+background:rgba(0,180,255,0.2);border:2px solid rgba(0,180,255,0.5);border-radius:50%;
+color:#44ddff;font-size:0.75rem;font-family:'Fredoka One';cursor:pointer;z-index:20;
+-webkit-tap-highlight-color:transparent;touch-action:manipulation;text-align:center;
+display:none;align-items:center;justify-content:center;flex-direction:column;}
+@media(max-width:768px){#mpad{display:block;}#sprintBtn{display:flex;}}
+
+#winmsg,#losemsg{font-family:'Creepster',cursive;font-size:clamp(2rem,7vw,4rem);margin-bottom:8px;text-align:center;}
+#winscore,#losescore{color:#ffcc44;font-size:1.1rem;margin-bottom:24px;text-align:center;line-height:1.8;}
+
+/* Key bindings display */
+.keybind{display:inline-block;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);
+border-radius:5px;padding:1px 7px;font-size:0.8rem;font-family:'Fredoka One';color:#fff;margin:0 2px;}
+
+/* Stats bar */
+.statsRow{display:flex;gap:20px;margin-bottom:18px;justify-content:center;flex-wrap:wrap;}
+.stat{text-align:center;padding:10px 18px;background:rgba(255,255,255,0.05);border-radius:12px;border:1px solid rgba(255,200,100,0.2);}
+.stat .val{font-size:2rem;color:#ffcc44;display:block;text-shadow:0 0 12px #ff8800;}
+.stat .lbl{font-size:0.7rem;color:#888;letter-spacing:2px;text-transform:uppercase;}
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="scanlines"></div>
+<div id="vignette"></div>
+<div id="bloodFlash"></div>
+<div id="scareFlash"></div>
+<div id="proximityRing"></div>
+<div id="jumpscareContainer"><div id="jumpscareText">👵 BOO!</div></div>
+
+<div id="ui">
+<div id="hud">🦴 <span id="boneCount">0</span> / <span id="boneTotal">0</span> &nbsp;<span id="doorHint" style="color:#44ff88;display:none;animation:pulse 0.8s infinite">🚪 FIND THE DOOR!</span></div>
+<div id="scoreBar">🌭 Wieners rescued: <span id="wienerCount">0</span></div>
+<div id="crosshair">·</div>
+<div id="warningMsg"></div>
+<div id="toast"></div>
+
+<div id="sprintBar">
+<div id="sprintLabel">⚡ SPRINT</div>
+<div id="sprintBg"><div id="sprintFill"></div></div>
+<div id="sprintExhausted">EXHAUSTED!</div>
+</div>
+
+<div id="minimap">
+<canvas id="minimapCanvas" width="140" height="140"></canvas>
+</div>
+
+<div id="danger"></div>
+</div>
+
+<!-- START SCREEN -->
+<div class="overlay" id="startScreen">
+<div class="dog-icon">🌭</div>
+<div class="title">Granny's<br>Wiener Escape</div>
+<div class="subtitle">🦴 3D DELUXE EDITION 🦴</div>
+<div class="inst-box">
+<div class="inst">
+You're a <b>dachshund</b> trapped in Granny's haunted house!<br>
+Collect all <b>🦴 bones</b> &amp; rescue <b>🌭 wiener pups</b>!<br>
+Then find the <span class="grn">🚪 glowing door</span> to escape!<br>
+Avoid <span class="red">👵 GRANNY</span> — she crochets dogs into sweaters!<br>
+Grab <span class="blu">⚡ cyan orbs</span> to refill sprint · <b>⭐ stars</b> scare her!<br><br>
+<span class="keybind">WASD</span> Move &nbsp;·&nbsp; <span class="keybind">Mouse</span> Look &nbsp;·&nbsp; <span class="keybind">Shift</span> Sprint<br>
+<span class="keybind">Click</span> to lock mouse
+</div>
+</div>
+<button class="btn" id="startBtn">🌭 START RUNNING! 🌭</button>
+</div>
+
+<!-- GAME OVER -->
+<div class="overlay hidden" id="loseScreen">
+<div class="dog-icon" style="filter:grayscale(1) brightness(.4)">🧶</div>
+<div id="losemsg" style="color:#ff2244">CAUGHT BY GRANNY!</div>
+<div class="statsRow">
+<div class="stat"><span class="val" id="loseBones">0</span><span class="lbl">Bones</span></div>
+<div class="stat"><span class="val" id="loseWieners">0</span><span class="lbl">Wieners</span></div>
+</div>
+<div id="losescore"></div>
+<button class="btn" id="retryBtn">🔁 Try Again</button>
+</div>
+
+<!-- WIN -->
+<div class="overlay hidden" id="winScreen">
+<div class="dog-icon">🐕</div>
+<div id="winmsg" style="color:#44ff88">YOU ESCAPED! 🏆</div>
+<div class="statsRow">
+<div class="stat"><span class="val" id="winBones">0</span><span class="lbl">Bones</span></div>
+<div class="stat"><span class="val" id="winWieners">0</span><span class="lbl">Wieners</span></div>
+<div class="stat"><span class="val" id="winTime">0s</span><span class="lbl">Time</span></div>
+</div>
+<div id="winscore"></div>
+<button class="btn green" id="playAgainBtn">🏆 Play Again</button>
+</div>
+
+<!-- Mobile controls -->
+<div id="mpad">
+<div class="dpad">
+<div></div><button id="mu">▲</button><div></div>
+<button id="ml">◀</button><button id="md">▼</button><button id="mr">▶</button>
+</div>
+</div>
+<button id="sprintBtn">⚡<br>SPRINT</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ===================== BUTTON WIRING (safe, no inline onclick) =====================
+window.addEventListener('DOMContentLoaded', () => {
+document.getElementById('startBtn').addEventListener('click', startGame);
+document.getElementById('retryBtn').addEventListener('click', startGame);
+document.getElementById('playAgainBtn').addEventListener('click', startGame);
+});
+
+// ===================== THREE.JS SETUP =====================
+const renderer = new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setClearColor(0x000000);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x080003, 0.095);
+
+const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 100);
+
+function onResize(){
+renderer.setSize(innerWidth, innerHeight);
+camera.aspect = innerWidth/innerHeight;
+camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', onResize);
+onResize();
+
+// ===================== CONSTANTS =====================
+const CELL = 3;
+const MAP_W = 20;
+const MAP_H = 20;
+
+// ===================== STATE =====================
+let gameActive = false;
+let bonesCollected = 0;
+let totalBones = 0;
+let wienersSaved = 0;
+let doorOpen = false;
+let clock = new THREE.Clock();
+let sprintStamina = 100;
+let sprintExhausted = false;
+let isSprinting = false;
+let grannyEyeMeshes = [];
+let spawnedItems = [];
+let spawnTimer = 0;
+let ghostMeshes = [];
+let gameStartTime = 0;
+let toastTimer = 0;
+
+// ===================== INPUT =====================
+const keys = {};
+const mob = {w:false,s:false,a:false,d:false,sprint:false};
+document.addEventListener('keydown', e=>{keys[e.code]=true;e.preventDefault&&(e.code==='Space'||e.code.startsWith('Arrow'))&&e.preventDefault();});
+document.addEventListener('keyup', e=>{keys[e.code]=false;});
+
+['mu','md','ml','mr'].forEach((id,i)=>{
+const dirs=['w','s','a','d'];
+const el=document.getElementById(id);
+if(!el)return;
+el.addEventListener('touchstart',e=>{e.preventDefault();mob[dirs[i]]=true;},{passive:false});
+el.addEventListener('touchend', e=>{e.preventDefault();mob[dirs[i]]=false;},{passive:false});
+el.addEventListener('mousedown', ()=>mob[dirs[i]]=true);
+document.addEventListener('mouseup', ()=>mob[dirs[i]]=false);
+});
+
+const sprintBtnEl = document.getElementById('sprintBtn');
+sprintBtnEl.addEventListener('touchstart',e=>{e.preventDefault();mob.sprint=true;},{passive:false});
+sprintBtnEl.addEventListener('touchend', e=>{e.preventDefault();mob.sprint=false;},{passive:false});
+sprintBtnEl.addEventListener('mousedown', ()=>mob.sprint=true);
+document.addEventListener('mouseup', ()=>mob.sprint=false);
+
+let yaw=0, pitch=0;
+const canvas3d = document.getElementById('c');
+canvas3d.addEventListener('click', ()=>{ if(gameActive) canvas3d.requestPointerLock(); });
+document.addEventListener('mousemove', e=>{
+if(document.pointerLockElement===canvas3d){
+yaw -= e.movementX * 0.002;
+pitch -= e.movementY * 0.002;
+pitch = Math.max(-Math.PI/3, Math.min(Math.PI/3, pitch));
+}
+});
+
+// ===================== AUDIO (Web Audio) =====================
+let audioCtx = null;
+function getAudioCtx(){
+if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+return audioCtx;
+}
+function playTone(freq, type='sine', dur=0.15, vol=0.15, delay=0){
+try{
+const ctx=getAudioCtx();
+const osc=ctx.createOscillator();
+const gain=ctx.createGain();
+osc.connect(gain); gain.connect(ctx.destination);
+osc.type=type; osc.frequency.value=freq;
+gain.gain.setValueAtTime(vol, ctx.currentTime+delay);
+gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+delay+dur);
+osc.start(ctx.currentTime+delay);
+osc.stop(ctx.currentTime+delay+dur);
+}catch(e){}
+}
+function playBonePickup(){ playTone(660,'triangle',0.15,0.18); setTimeout(()=>playTone(880,'triangle',0.1,0.15),80); }
+function playWienerPickup(){ [440,554,659,880].forEach((f,i)=>playTone(f,'sine',0.15,0.2,i*0.07)); }
+function playDoorOpen(){ [330,440,550,660,880].forEach((f,i)=>playTone(f,'triangle',0.2,0.2,i*0.06)); }
+function playJumpscare(){ playTone(110,'sawtooth',0.6,0.4); playTone(220,'sawtooth',0.3,0.3,0.1); }
+function playFootstep(sprint){
+const f=sprint?180:140;
+playTone(f+(Math.random()*20-10),'sine',0.06,0.06);
+}
+let footstepTimer=0;
+
+// ===================== MATERIALS =====================
+const matFloor = new THREE.MeshLambertMaterial({color:0x160a10});
+const matWall = new THREE.MeshLambertMaterial({color:0x3d1e2e});
+const matWall2 = new THREE.MeshLambertMaterial({color:0x2a1322});
+const matCeil = new THREE.MeshLambertMaterial({color:0x0e0609});
+const matFurn = new THREE.MeshLambertMaterial({color:0x4a2234});
+const matBone = new THREE.MeshLambertMaterial({color:0xf5ead0,emissive:0xffcc44,emissiveIntensity:0.7});
+const matDoor = new THREE.MeshLambertMaterial({color:0x553322});
+const matDoorOpen=new THREE.MeshLambertMaterial({color:0x22aa44,emissive:0x44ff88,emissiveIntensity:1.2});
+const matGranny = new THREE.MeshLambertMaterial({color:0x5a3060});
+const matGrannyHead=new THREE.MeshLambertMaterial({color:0xe8c9a0});
+const matGrannyHair=new THREE.MeshLambertMaterial({color:0xcccccc});
+const matEyeRed =new THREE.MeshLambertMaterial({color:0xff0000,emissive:0xff2200,emissiveIntensity:3});
+const matNeedle =new THREE.MeshLambertMaterial({color:0xffcc44,emissive:0xffaa00,emissiveIntensity:1});
+const matWiener =new THREE.MeshLambertMaterial({color:0xcc5522,emissive:0xff7733,emissiveIntensity:0.5});
+const matWienerBelly=new THREE.MeshLambertMaterial({color:0xe8b090});
+const matNose =new THREE.MeshLambertMaterial({color:0x111111});
+const matDogDark=new THREE.MeshLambertMaterial({color:0x8b4513});
+const matCandleFlame=new THREE.MeshLambertMaterial({color:0xffaa00,emissive:0xff6600,emissiveIntensity:3});
+const matGhost =new THREE.MeshLambertMaterial({color:0xaaddff,emissive:0x8888ff,emissiveIntensity:0.9,transparent:true,opacity:0.35});
+const matBlood =new THREE.MeshLambertMaterial({color:0x660000,emissive:0x220000,emissiveIntensity:0.4});
+const matSpeedBoost=new THREE.MeshLambertMaterial({color:0x00ffff,emissive:0x00ccff,emissiveIntensity:1.5,transparent:true,opacity:0.9});
+const matScaredStar=new THREE.MeshLambertMaterial({color:0xffff00,emissive:0xffff00,emissiveIntensity:2});
+const matWeb =new THREE.MeshLambertMaterial({color:0xffffff,transparent:true,opacity:0.15});
+
+function box(w,h,d){ return new THREE.BoxGeometry(w,h,d); }
+function sphere(r,s=8){ return new THREE.SphereGeometry(r,s,s); }
+function cyl(rt,rb,h,s=8){ return new THREE.CylinderGeometry(rt,rb,h,s); }
+
+// ===================== MAP =====================
+let grid=[], wallMeshes=[], boneMeshes=[], doorMesh=null, granny3d=null;
+let grannyPos = new THREE.Vector3();
+let grannyPath=[], grannyNextCell=null;
+let grannyPathTimer = 0;
+let grannyBaseSpeed = 2.6;
+let grannySpeed = 2.6;
+let grannyLight3d = null;
+let grannyAngryTimer = 0;
+let grannyScare=false, grannyScareTimer=0;
+let blinkTimer=1.8, eyeOpen=true;
+let flashlight3d = null;
+let playerFlashlightTarget = null;
+let wienerMeshes = [];
+let candleMeshes = [];
+let playerPos = new THREE.Vector3();
+const playerHeight = 0.6;
+
+// Minimap
+const miniCtx = document.getElementById('minimapCanvas').getContext('2d');
+
+function clearScene(){
+const toRemove=[];
+scene.traverse(o=>{ if(o!==scene) toRemove.push(o); });
+toRemove.forEach(o=>scene.remove(o));
+wallMeshes=[]; boneMeshes=[]; grannyEyeMeshes=[];
+wienerMeshes=[]; candleMeshes=[]; spawnedItems=[]; ghostMeshes=[];
+grannyPath=[]; grannyNextCell=null;
+}
+
+function buildMap(){
+clearScene();
+grid=[];
+for(let r=0;r<MAP_H;r++){
+grid[r]=[];
+for(let c=0;c<MAP_W;c++){
+grid[r][c]=(r===0||r===MAP_H-1||c===0||c===MAP_W-1)?1:0;
+}
+}
+// Interior walls — room-like layout
+for(let i=0;i<44;i++){
+const r=2+Math.floor(Math.random()*(MAP_H-4));
+const c=2+Math.floor(Math.random()*(MAP_W-4));
+const w=1+Math.floor(Math.random()*4);
+const h=1+Math.floor(Math.random()*2);
+for(let dr=0;dr<h;dr++) for(let dc=0;dc<w;dc++)
+if(r+dr<MAP_H-1&&c+dc<MAP_W-1) grid[r+dr][c+dc]=1;
+}
+// Ensure player area is clear
+const free=[];
+for(let r=0;r<MAP_H;r++) for(let c=0;c<MAP_W;c++) if(grid[r][c]===0) free.push({r,c});
+const shuffle=arr=>{for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;};
+shuffle(free);
+
+const pCell=free[0];
+// Clear 3x3 around player
+for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
+const nr=pCell.r+dr, nc=pCell.c+dc;
+if(nr>0&&nr<MAP_H-1&&nc>0&&nc<MAP_W-1) grid[nr][nc]=0;
+}
+
+const freeList=[];
+for(let r=0;r<MAP_H;r++) for(let c=0;c<MAP_W;c++) if(grid[r][c]===0) freeList.push({r,c});
+shuffle(freeList);
+
+let gCell=freeList.find(f=>Math.abs(f.r-pCell.r)+Math.abs(f.c-pCell.c)>12)||freeList[freeList.length-1];
+
+playerPos.set(pCell.c*CELL, playerHeight, pCell.r*CELL);
+camera.position.copy(playerPos);
+grannyPos.set(gCell.c*CELL, 0, gCell.r*CELL);
+
+totalBones = 10;
+bonesCollected = 0; wienersSaved = 0; doorOpen = false;
+boneMeshes=[]; wienerMeshes=[]; spawnedItems=[]; ghostMeshes=[];
+document.getElementById('wienerCount').textContent='0';
+
+const others=freeList.filter(f=>(f.r!==pCell.r||f.c!==pCell.c)&&(f.r!==gCell.r||f.c!==gCell.c));
+const boneSpots=others.slice(2,2+totalBones);
+const wienerSpots=others.slice(2+totalBones,2+totalBones+5);
+const doorCell=others[others.length-4];
+
+const halfW=MAP_W*CELL/2, halfH=MAP_H*CELL/2;
+
+// Floor
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(MAP_W*CELL,MAP_H*CELL),matFloor);
+floor.rotation.x=-Math.PI/2; floor.position.set(halfW-CELL/2,0,halfH-CELL/2);
+floor.receiveShadow=true; scene.add(floor);
+
+// Ceiling
+const ceil=new THREE.Mesh(new THREE.PlaneGeometry(MAP_W*CELL,MAP_H*CELL),matCeil);
+ceil.rotation.x=Math.PI/2; ceil.position.set(halfW-CELL/2,2.6,halfH-CELL/2); scene.add(ceil);
+
+// Walls
+for(let r=0;r<MAP_H;r++) for(let c=0;c<MAP_W;c++){
+if(grid[r][c]!==1) continue;
+const isEdge=(r===0||r===MAP_H-1||c===0||c===MAP_W-1);
+const mat=isEdge?(Math.random()>0.5?matWall:matWall2):matFurn;
+const h=isEdge?2.6:1.9;
+const wm=new THREE.Mesh(box(CELL,h,CELL),mat);
+wm.position.set(c*CELL,h/2,r*CELL); wm.castShadow=true; wm.receiveShadow=true;
+scene.add(wm); wallMeshes.push({mesh:wm,c,r,h});
+// Blood splatters
+if(Math.random()<0.07&&isEdge){
+for(let s=0;s<1+Math.floor(Math.random()*2);s++){
+const splat=new THREE.Mesh(new THREE.CircleGeometry(0.08+Math.random()*0.2,6),matBlood);
+splat.rotation.y=Math.random()*Math.PI*2; splat.rotation.x=Math.PI/2*(Math.random()<0.5?1:-1);
+splat.position.set(c*CELL+(Math.random()-0.5)*0.3,0.4+Math.random()*1.2,r*CELL+(Math.random()-0.5)*0.3);
+scene.add(splat);
+}
+}
+// Cobwebs in corners
+if(Math.random()<0.04&&!isEdge){
+const web=new THREE.Mesh(new THREE.PlaneGeometry(0.5,0.5),matWeb);
+web.position.set(c*CELL,2.1,r*CELL); web.rotation.x=Math.PI/2; scene.add(web);
+}
+}
+
+// Door — glowing green
+{
+const dm=new THREE.Mesh(box(CELL,2.4,0.2),matDoor);
+dm.position.set(doorCell.c*CELL,1.2,doorCell.r*CELL);
+dm.castShadow=true; scene.add(dm);
+doorMesh={mesh:dm,c:doorCell.c,r:doorCell.r};
+// Door frame
+const frame=new THREE.Mesh(box(CELL+0.15,2.5,0.1),new THREE.MeshLambertMaterial({color:0x331a0a}));
+frame.position.set(doorCell.c*CELL,1.25,doorCell.r*CELL-0.08);
+scene.add(frame);
+}
+
+// Bones
+boneSpots.forEach(spot=>{
+const g=new THREE.Group();
+const shaft=new THREE.Mesh(cyl(0.055,0.055,0.5,8),matBone);
+shaft.rotation.z=Math.PI/2; g.add(shaft);
+[-0.25,0.25].forEach(x=>{
+const k=new THREE.Mesh(sphere(0.1,6),matBone); k.position.set(x,0,0); g.add(k);
+});
+g.position.set(spot.c*CELL,0.5,spot.r*CELL);
+const light=new THREE.PointLight(0xffcc44,1.0,3.5); light.position.set(0,0.3,0); g.add(light);
+scene.add(g); boneMeshes.push({group:g,c:spot.c,r:spot.r,collected:false});
+});
+
+// Wiener dogs
+wienerSpots.forEach(spot=>{
+const g=buildWienerDog();
+g.position.set(spot.c*CELL,0.2,spot.r*CELL);
+const light=new THREE.PointLight(0xff8844,1.2,3); g.add(light);
+scene.add(g); wienerMeshes.push({group:g,c:spot.c,r:spot.r,saved:false});
+});
+
+// Candles
+for(let i=0;i<10;i++){
+const spot=freeList[Math.floor(Math.random()*freeList.length)];
+const cg=new THREE.Group();
+const stick=new THREE.Mesh(cyl(0.05,0.06,0.38,8),new THREE.MeshLambertMaterial({color:0xffeedd}));
+stick.position.y=0.19; cg.add(stick);
+const flame=new THREE.Mesh(sphere(0.07,6),matCandleFlame); flame.position.y=0.44; cg.add(flame);
+const cl=new THREE.PointLight(0xff8833,0.9+Math.random()*0.4,5); cl.position.y=0.44; cg.add(cl);
+cg.position.set(spot.c*CELL+(Math.random()-0.5)*0.6,0,spot.r*CELL+(Math.random()-0.5)*0.6);
+scene.add(cg); candleMeshes.push({group:cg,light:cl,baseIntensity:cl.intensity});
+}
+
+// Ghosts
+for(let i=0;i<6;i++){
+const spot=freeList[Math.floor(Math.random()*freeList.length)];
+const g=buildGhost();
+g.position.set(spot.c*CELL,1.5+Math.random()*0.5,spot.r*CELL);
+g.userData.floatOffset=Math.random()*Math.PI*2;
+g.userData.floatSpeed=0.3+Math.random()*0.3;
+g.userData.driftAngle=Math.random()*Math.PI*2;
+g.userData.driftSpeed=0.3+Math.random()*0.3;
+scene.add(g); ghostMeshes.push(g);
+}
+
+// Granny
+granny3d=buildGranny();
+granny3d.position.copy(grannyPos);
+scene.add(granny3d);
+
+// Lights
+scene.add(new THREE.AmbientLight(0x110008, 0.6));
+
+grannyLight3d=new THREE.PointLight(0xff0000,2.0,8);
+grannyLight3d.position.set(0,2,0);
+granny3d.add(grannyLight3d);
+
+flashlight3d=new THREE.SpotLight(0xfff8e8,4.0,22,Math.PI/5.5,0.3,1.0);
+flashlight3d.castShadow=false;
+playerFlashlightTarget=new THREE.Object3D();
+playerFlashlightTarget.position.set(0,0,-10);
+camera.add(flashlight3d);
+camera.add(playerFlashlightTarget);
+flashlight3d.target=playerFlashlightTarget;
+
+const playerFill=new THREE.PointLight(0x553333,0.5,3);
+playerFill.position.set(0,-0.2,0);
+camera.add(playerFill);
+scene.add(camera);
+
+document.getElementById('boneCount').textContent=0;
+document.getElementById('boneTotal').textContent=totalBones;
+document.getElementById('doorHint').style.display='none';
+sprintStamina=100; sprintExhausted=false; isSprinting=false;
+updateSprintBar();
+spawnTimer=8;
+grannyBaseSpeed=2.6; grannySpeed=grannyBaseSpeed;
+grannyScare=false; grannyScareTimer=0;
+blinkTimer=1.8; eyeOpen=true;
+grannyAngryTimer=0;
+yaw=Math.random()*Math.PI*2;
+gameStartTime=Date.now();
+}
+
+// ===================== MODELS =====================
+function buildWienerDog(){
+const g=new THREE.Group();
+const body=new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.13,0.72,10),matWiener);
+body.rotation.z=Math.PI/2; body.position.y=0.18; g.add(body);
+const belly=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,0.52,8),matWienerBelly);
+belly.rotation.z=Math.PI/2; belly.position.set(0,0.13,0); g.add(belly);
+const head=new THREE.Mesh(sphere(0.15,8),matWiener); head.position.set(-0.43,0.26,0); g.add(head);
+const snout=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.085,0.15,8),matDogDark);
+snout.rotation.z=Math.PI/2; snout.position.set(-0.58,0.23,0); g.add(snout);
+const nose=new THREE.Mesh(sphere(0.04,6),matNose); nose.position.set(-0.65,0.24,0); g.add(nose);
+[-0.065,0.065].forEach(z=>{
+const ear=new THREE.Mesh(new THREE.SphereGeometry(0.07,6,4),matDogDark);
+ear.scale.set(0.5,0.85,1); ear.position.set(-0.39,0.38,z); g.add(ear);
+const eye=new THREE.Mesh(sphere(0.03,6),matNose); eye.position.set(-0.51,0.29,z); g.add(eye);
+const shine=new THREE.Mesh(sphere(0.015,4),new THREE.MeshLambertMaterial({color:0xffffff,emissive:0xffffff,emissiveIntensity:1}));
+shine.position.set(-0.53,0.3,z+0.01); g.add(shine);
+});
+const tail=new THREE.Mesh(cyl(0.025,0.04,0.27,6),matWiener);
+tail.rotation.z=-0.45; tail.position.set(0.45,0.32,0); g.add(tail);
+[[-0.26,-0.055],[0.2,-0.055],[-0.26,0.055],[0.2,0.055]].forEach(([x,z])=>{
+const leg=new THREE.Mesh(cyl(0.04,0.04,0.22,6),matDogDark); leg.position.set(x,0.02,z); g.add(leg);
+});
+// Halo ring
+const ring=new THREE.Mesh(new THREE.TorusGeometry(0.28,0.025,6,20),matWiener);
+ring.position.y=0.55; ring.rotation.x=Math.PI/2; g.add(ring);
+g.rotation.y=Math.random()*Math.PI*2;
+return g;
+}
+
+function buildGranny(){
+const g=new THREE.Group();
+const body=new THREE.Mesh(new THREE.CylinderGeometry(0.33,0.45,1.15,10),matGranny);
+body.position.y=0.58; g.add(body);
+// Dress ruffles
+const skirt=new THREE.Mesh(new THREE.CylinderGeometry(0.52,0.62,0.4,10),matGranny);
+skirt.position.y=0.2; g.add(skirt);
+const head=new THREE.Mesh(sphere(0.3,10),matGrannyHead); head.position.y=1.45; g.add(head);
+const hair=new THREE.Mesh(sphere(0.26,8),matGrannyHair); hair.position.y=1.7; g.add(hair);
+const bun=new THREE.Mesh(sphere(0.16,8),matGrannyHair); bun.position.set(0,1.84,0); g.add(bun);
+[-0.12,0.12].forEach(x=>{
+const eye=new THREE.Mesh(sphere(0.075,8),matEyeRed); eye.position.set(x,1.46,0.27); g.add(eye);
+grannyEyeMeshes.push(eye);
+const pupil=new THREE.Mesh(sphere(0.038,6),matNose); pupil.position.set(x,1.46,0.33); g.add(pupil);
+const eyeGlow=new THREE.PointLight(0xff0000,0.7,2); eyeGlow.position.set(x,1.46,0.32); g.add(eyeGlow);
+});
+const nose=new THREE.Mesh(sphere(0.048,6),matDogDark); nose.position.set(0,1.36,0.31); g.add(nose);
+for(let i=0;i<5;i++){
+const tooth=new THREE.Mesh(box(0.04,0.07,0.04),new THREE.MeshLambertMaterial({color:0xffeecc}));
+tooth.position.set(-0.1+i*0.05,1.26+Math.abs(i-2)*0.025,0.3); g.add(tooth);
+}
+[-1,1].forEach(side=>{
+const arm=new THREE.Mesh(cyl(0.07,0.07,0.68,6),matGranny);
+arm.rotation.z=side*0.65; arm.position.set(side*0.5,0.88,0); g.add(arm);
+const forearm=new THREE.Mesh(cyl(0.06,0.06,0.52,6),matGrannyHead);
+forearm.rotation.z=side*0.42; forearm.position.set(side*0.75,1.12,0); g.add(forearm);
+const needle=new THREE.Mesh(cyl(0.022,0.022,1.0,4),matNeedle);
+needle.rotation.z=side*(-0.75); needle.position.set(side*0.9,1.22,0); g.add(needle);
+});
+[-0.15,0.15].forEach(x=>{
+const leg=new THREE.Mesh(cyl(0.1,0.1,0.5,6),matGranny); leg.position.set(x,-0.06,0); g.add(leg);
+const shoe=new THREE.Mesh(box(0.22,0.1,0.3),new THREE.MeshLambertMaterial({color:0x111111}));
+shoe.position.set(x,-0.32,0.04); g.add(shoe);
+});
+g.castShadow=true;
+return g;
+}
+
+function buildGhost(){
+const g=new THREE.Group();
+const body=new THREE.Mesh(sphere(0.27,8),matGhost); g.add(body);
+const tail=new THREE.Mesh(cyl(0.2,0.04,0.32,6),matGhost); tail.position.y=-0.28; g.add(tail);
+[-0.1,0.1].forEach(x=>{
+const eye=new THREE.Mesh(sphere(0.055,6),new THREE.MeshLambertMaterial({color:0x0022ff,emissive:0x0044ff,emissiveIntensity:2.5}));
+eye.position.set(x,0.06,0.23); g.add(eye);
+});
+const glow=new THREE.PointLight(0x6688ff,0.6,3); g.add(glow);
+return g;
+}
+
+// ===================== POWERUP SPAWN =====================
+function spawnItem(freeCell){
+const type=Math.random()<0.45?'speed':'scare';
+const g=new THREE.Group();
+if(type==='speed'){
+const orb=new THREE.Mesh(sphere(0.2,10),matSpeedBoost); g.add(orb);
+const ring=new THREE.Mesh(new THREE.TorusGeometry(0.32,0.04,6,20),matSpeedBoost); ring.rotation.x=Math.PI/2; g.add(ring);
+const light=new THREE.PointLight(0x00ffff,1.5,4); g.add(light);
+g.userData.type='speed';
+} else {
+const star=new THREE.Mesh(sphere(0.2,8),matScaredStar); g.add(star);
+const ring=new THREE.Mesh(new THREE.TorusGeometry(0.32,0.04,6,20),matScaredStar); ring.rotation.x=Math.PI/2; g.add(ring);
+const light=new THREE.PointLight(0xffff00,1.5,4); g.add(light);
+g.userData.type='scare';
+}
+g.position.set(freeCell.c*CELL,0.65,freeCell.r*CELL);
+scene.add(g);
+spawnedItems.push({group:g,c:freeCell.c,r:freeCell.r,picked:false});
+}
+
+// ===================== BFS PATHFINDING =====================
+function bfsPath(fromC,fromR,toC,toR){
+const key=(c,r)=>c*100+r;
+const visited=new Set([key(fromC,fromR)]);
+const queue=[{c:fromC,r:fromR,path:[]}];
+const dirs=[{c:1,r:0},{c:-1,r:0},{c:0,r:1},{c:0,r:-1},{c:1,r:1},{c:-1,r:1},{c:1,r:-1},{c:-1,r:-1}];
+while(queue.length){
+const cur=queue.shift();
+if(cur.c===toC&&cur.r===toR) return cur.path;
+for(const d of dirs){
+const nc=cur.c+d.c, nr=cur.r+d.r;
+if(nc<0||nr<0||nc>=MAP_W||nr>=MAP_H) continue;
+if(Math.abs(d.c)===1&&Math.abs(d.r)===1){
+if(grid[cur.r]?.[nc]===1||grid[nr]?.[cur.c]===1) continue;
+}
+const k=key(nc,nr);
+if(!visited.has(k)&&grid[nr]?.[nc]===0){
+visited.add(k);
+queue.push({c:nc,r:nr,path:[...cur.path,{c:nc,r:nr}]});
+}
+}
+}
+return [];
+}
+
+// ===================== COLLISION =====================
+function collidesWall(x,z,radius=0.4){
+const c=Math.round(x/CELL), r=Math.round(z/CELL);
+for(let dc=-1;dc<=1;dc++) for(let dr=-1;dr<=1;dr++){
+const nc=c+dc, nr=r+dr;
+if(nc<0||nr<0||nc>=MAP_W||nr>=MAP_H) continue;
+if(grid[nr]?.[nc]===1){
+if(Math.abs(x-nc*CELL)<CELL/2+radius&&Math.abs(z-nr*CELL)<CELL/2+radius) return true;
+}
+}
+return false;
+}
+
+// ===================== SPRINT BAR =====================
+function updateSprintBar(){
+const fill=document.getElementById('sprintFill');
+const label=document.getElementById('sprintExhausted');
+fill.style.width=sprintStamina+'%';
+fill.style.background=sprintStamina>50?'linear-gradient(90deg,#0099cc,#44ddff)':
+sprintStamina>25?'linear-gradient(90deg,#cc8800,#ffcc00)':'linear-gradient(90deg,#cc2200,#ff4400)';
+label.style.display=sprintExhausted?'block':'none';
+}
+
+// ===================== TOAST =====================
+let toastQueue=[];
+function showToast(txt, color='#ffffff'){
+toastQueue.push({txt,color});
+}
+function processToast(dt){
+const el=document.getElementById('toast');
+if(toastTimer>0){
+toastTimer-=dt;
+if(toastTimer<=0) el.style.opacity='0';
+return;
+}
+if(toastQueue.length>0){
+const next=toastQueue.shift();
+el.textContent=next.txt;
+el.style.color=next.color;
+el.style.opacity='1';
+toastTimer=2.2;
+}
+}
+
+let warningTimer=0;
+function showWarning(txt,color='#ff0000'){
+const el=document.getElementById('warningMsg');
+el.textContent=txt; el.style.color=color; el.style.opacity='1';
+warningTimer=2.0;
+}
+
+// ===================== JUMPSCARE =====================
+function triggerJumpscare(txt='👵 BOO!'){
+playJumpscare();
+const el=document.getElementById('jumpscareContainer');
+document.getElementById('jumpscareText').textContent=txt;
+el.style.opacity='1';
+document.getElementById('scareFlash').style.background='rgba(255,255,255,0.85)';
+setTimeout(()=>{
+el.style.opacity='0';
+document.getElementById('scareFlash').style.background='rgba(255,255,255,0)';
+},700);
+}
+
+// ===================== MINIMAP =====================
+function drawMinimap(){
+const mw=140, mh=140;
+miniCtx.clearRect(0,0,mw,mh);
+miniCtx.fillStyle='rgba(8,0,5,0.85)';
+miniCtx.fillRect(0,0,mw,mh);
+
+const cw=mw/MAP_W, ch=mh/MAP_H;
+// Walls
+for(let r=0;r<MAP_H;r++) for(let c=0;c<MAP_W;c++){
+if(grid[r]?.[c]===1){
+miniCtx.fillStyle=(r===0||r===MAP_H-1||c===0||c===MAP_W-1)?'#3d1e2e':'#4a2234';
+miniCtx.fillRect(c*cw,r*ch,cw,ch);
+}
+}
+// Bones
+boneMeshes.forEach(b=>{
+if(b.collected) return;
+miniCtx.fillStyle='#ffcc44';
+miniCtx.beginPath();
+miniCtx.arc(b.c*cw+cw/2,b.r*ch+ch/2,2,0,Math.PI*2);
+miniCtx.fill();
+});
+// Wieners
+wienerMeshes.forEach(w=>{
+if(w.saved) return;
+miniCtx.fillStyle='#ff7733';
+miniCtx.beginPath();
+miniCtx.arc(w.c*cw+cw/2,w.r*ch+ch/2,2.5,0,Math.PI*2);
+miniCtx.fill();
+});
+// Door
+if(doorMesh){
+miniCtx.fillStyle=doorOpen?'#44ff88':'#553322';
+miniCtx.fillRect(doorMesh.c*cw,doorMesh.r*ch,cw,ch);
+}
+// Granny
+const gc=grannyPos.x/CELL, gr=grannyPos.z/CELL;
+miniCtx.fillStyle=grannyScare?'#ffff00':'#ff0000';
+miniCtx.shadowBlur=6; miniCtx.shadowColor=miniCtx.fillStyle;
+miniCtx.beginPath();
+miniCtx.arc(gc*cw,gr*ch,4,0,Math.PI*2);
+miniCtx.fill();
+miniCtx.shadowBlur=0;
+// Player
+const pc=playerPos.x/CELL, pr=playerPos.z/CELL;
+miniCtx.fillStyle='#44ddff';
+miniCtx.shadowBlur=5; miniCtx.shadowColor='#44ddff';
+miniCtx.beginPath();
+miniCtx.arc(pc*cw,pr*ch,4,0,Math.PI*2);
+miniCtx.fill();
+// Direction indicator
+miniCtx.strokeStyle='#44ddff';
+miniCtx.lineWidth=1.5;
+miniCtx.beginPath();
+miniCtx.moveTo(pc*cw,pr*ch);
+miniCtx.lineTo(pc*cw-Math.sin(yaw)*10,pr*ch-Math.cos(yaw)*10);
+miniCtx.stroke();
+miniCtx.shadowBlur=0;
+}
+
+// ===================== MAIN GAME LOOP =====================
+let flashIntensity=0;
+let animId=null;
+let bobTime=0;
+
+function startGame(){
+['startScreen','loseScreen','winScreen'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+gameActive=true;
+buildMap();
+clock.start();
+if(animId) cancelAnimationFrame(animId);
+tick();
+}
+
+function tick(){
+if(!gameActive){animId=null;return;}
+animId=requestAnimationFrame(tick);
+const dt=Math.min(clock.getDelta(),0.05);
+update(dt);
+renderer.render(scene,camera);
+}
+
+function update(dt){
+const t=Date.now()*0.001;
+
+// Sprint
+const wantSprint=(keys['ShiftLeft']||keys['ShiftRight']||keys['Space']||mob.sprint);
+isSprinting=wantSprint&&!sprintExhausted&&sprintStamina>0;
+if(isSprinting){
+sprintStamina=Math.max(0,sprintStamina-dt*26);
+if(sprintStamina<=0) sprintExhausted=true;
+} else {
+sprintStamina=Math.min(100,sprintStamina+dt*(sprintExhausted?7:15));
+if(sprintExhausted&&sprintStamina>=30) sprintExhausted=false;
+}
+updateSprintBar();
+
+// Player movement
+const moveSpeed=isSprinting?8.5:4.5;
+const forward=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw));
+const right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
+let move=new THREE.Vector3();
+if(keys['KeyW']||keys['ArrowUp']||mob.w) move.add(forward);
+if(keys['KeyS']||keys['ArrowDown']||mob.s) move.sub(forward);
+if(keys['KeyA']||keys['ArrowLeft']||mob.a) move.sub(right);
+if(keys['KeyD']||keys['ArrowRight']||mob.d) move.add(right);
+const isMoving=move.lengthSq()>0;
+if(isMoving){
+move.normalize().multiplyScalar(moveSpeed*dt);
+const nx=playerPos.x+move.x, nz=playerPos.z+move.z;
+if(!collidesWall(nx,playerPos.z)) playerPos.x=nx;
+if(!collidesWall(playerPos.x,nz)) playerPos.z=nz;
+// Footsteps
+footstepTimer-=dt;
+if(footstepTimer<=0){ playFootstep(isSprinting); footstepTimer=isSprinting?0.22:0.35; }
+}
+playerPos.x=Math.max(0.6,Math.min((MAP_W-1)*CELL-0.6,playerPos.x));
+playerPos.z=Math.max(0.6,Math.min((MAP_H-1)*CELL-0.6,playerPos.z));
+
+// Head bob
+bobTime+=dt*(isMoving?(isSprinting?9:5):0);
+const bobY=isMoving?Math.sin(bobTime)*0.065:0;
+const bobX=isMoving?Math.sin(bobTime*0.5)*0.022:0;
+camera.position.set(playerPos.x+bobX,playerHeight+bobY,playerPos.z);
+camera.rotation.order='YXZ';
+camera.rotation.y=yaw;
+camera.rotation.x=pitch;
+
+// Granny AI
+const dist3d=grannyPos.distanceTo(playerPos);
+const pGC=Math.round(playerPos.x/CELL), pGR=Math.round(playerPos.z/CELL);
+const gGC=Math.round(grannyPos.x/CELL), gGR=Math.round(grannyPos.z/CELL);
+
+if(!grannyScare){
+const boneFury=bonesCollected*0.2;
+const closeFury=dist3d<4?1.3:1.0;
+grannySpeed=grannyBaseSpeed*(1+boneFury)*closeFury;
+} else { grannySpeed=1.1; }
+
+grannyPathTimer-=dt;
+if(grannyPathTimer<=0){
+grannyPathTimer=0.5;
+if(grannyScare){
+const awayC=Math.max(1,Math.min(MAP_W-2,gGC+(gGC-pGC)));
+const awayR=Math.max(1,Math.min(MAP_H-2,gGR+(gGR-pGR)));
+grannyPath=bfsPath(gGC,gGR,awayC,awayR);
+} else {
+grannyPath=bfsPath(gGC,gGR,pGC,pGR);
+}
+}
+
+if(grannyScareTimer>0){
+grannyScareTimer-=dt;
+if(grannyScareTimer<=0) grannyScare=false;
+granny3d.visible=Math.floor(t*10)%2===0;
+} else { granny3d.visible=true; }
+
+if(!grannyNextCell||grannyPos.distanceTo(new THREE.Vector3(grannyNextCell.c*CELL,0,grannyNextCell.r*CELL))<0.12){
+if(grannyPath.length>0) grannyNextCell=grannyPath.shift();
+}
+if(grannyNextCell){
+const target=new THREE.Vector3(grannyNextCell.c*CELL,0,grannyNextCell.r*CELL);
+const toT=target.clone().sub(grannyPos);
+if(toT.length()>0.05){ toT.normalize().multiplyScalar(grannySpeed*dt); grannyPos.add(toT); }
+const angle=Math.atan2(playerPos.x-grannyPos.x,playerPos.z-grannyPos.z);
+granny3d.rotation.y=angle;
+}
+granny3d.position.set(grannyPos.x,Math.abs(Math.sin(t*7))*0.05,grannyPos.z);
+
+// Blink
+blinkTimer-=dt;
+if(blinkTimer<=0){
+eyeOpen=!eyeOpen; blinkTimer=eyeOpen?(1.5+Math.random()*2):0.11;
+const intensity=eyeOpen?3:0;
+grannyEyeMeshes.forEach(e=>e.material.emissiveIntensity=intensity);
+}
+
+// Bones
+boneMeshes.forEach(b=>{
+if(b.collected) return;
+b.group.rotation.y+=dt*2.8;
+b.group.position.y=0.5+Math.sin(t*2.5+b.c)*0.15;
+if(Math.hypot(playerPos.x-b.group.position.x,playerPos.z-b.group.position.z)<1.05){
+b.collected=true; scene.remove(b.group);
+bonesCollected++;
+document.getElementById('boneCount').textContent=bonesCollected;
+playBonePickup();
+if(bonesCollected>=totalBones){
+doorOpen=true;
+doorMesh.mesh.material=matDoorOpen;
+const dl=new THREE.PointLight(0x44ff88,3,6);
+dl.position.set(doorMesh.c*CELL,1,doorMesh.r*CELL); scene.add(dl);
+document.getElementById('doorHint').style.display='inline';
+showWarning('🚪 ALL BONES COLLECTED! FIND THE DOOR!','#44ff88');
+playDoorOpen();
+} else {
+grannyAngryTimer=0.6;
+if(bonesCollected===5) showToast('😡 GRANNY IS GETTING ANGRY!','#ff8800');
+if(bonesCollected===8) showToast('😡 GRANNY IS FURIOUS!','#ff4400');
+}
+}
+});
+
+// Wieners
+wienerMeshes.forEach(w=>{
+if(w.saved) return;
+w.group.rotation.y+=dt*1.8;
+w.group.position.y=0.2+Math.sin(t*3.5+w.c)*0.08;
+if(Math.hypot(playerPos.x-w.group.position.x,playerPos.z-w.group.position.z)<1.15){
+w.saved=true; scene.remove(w.group);
+wienersSaved++;
+document.getElementById('wienerCount').textContent=wienersSaved;
+playWienerPickup();
+showToast('🌭 WIENER RESCUED! +1','#ff9944');
+}
+});
+
+// Powerups
+spawnedItems.forEach(item=>{
+if(item.picked) return;
+item.group.rotation.y+=dt*3.5;
+item.group.position.y=0.65+Math.sin(t*4.5+item.c)*0.12;
+if(Math.hypot(playerPos.x-item.group.position.x,playerPos.z-item.group.position.z)<1.1){
+item.picked=true; scene.remove(item.group);
+if(item.group.userData.type==='speed'){
+sprintStamina=100; sprintExhausted=false;
+showToast('⚡ SPRINT FULLY RECHARGED!','#44ddff');
+playBonePickup();
+} else {
+grannyScare=true; grannyScareTimer=5.5;
+triggerJumpscare('😱 GRANNY SCARED!');
+showToast('⭐ GRANNY IS RUNNING AWAY!','#ffff44');
+}
+}
+});
+
+spawnTimer-=dt;
+if(spawnTimer<=0&&gameActive){
+spawnTimer=9+Math.random()*7;
+const af=[];
+for(let r=1;r<MAP_H-1;r++) for(let c=1;c<MAP_W-1;c++) if(grid[r][c]===0) af.push({r,c});
+if(af.length) spawnItem(af[Math.floor(Math.random()*af.length)]);
+}
+
+// Ghosts
+ghostMeshes.forEach(g=>{
+g.userData.floatOffset+=dt*g.userData.floatSpeed;
+g.position.y=1.3+Math.sin(g.userData.floatOffset)*0.32;
+g.userData.driftAngle+=dt*g.userData.driftSpeed*0.2;
+const dx=Math.sin(g.userData.driftAngle)*0.4*dt;
+const dz=Math.cos(g.userData.driftAngle)*0.4*dt;
+if(!collidesWall(g.position.x+dx,g.position.z,0.2)) g.position.x+=dx;
+if(!collidesWall(g.position.x,g.position.z+dz,0.2)) g.position.z+=dz;
+g.rotation.y=Math.sin(t*0.6)*0.35;
+g.children.forEach(c=>{if(c.material?.opacity!==undefined) c.material.opacity=0.2+Math.sin(t*3.5+g.userData.floatOffset)*0.13;});
+});
+
+// Candle flicker
+candleMeshes.forEach(c=>{
+c.light.intensity=c.baseIntensity*(0.82+Math.sin(t*8+c.group.position.x)*0.18+Math.random()*0.08);
+});
+
+// Door check
+if(doorOpen&&doorMesh){
+if(Math.hypot(playerPos.x-doorMesh.c*CELL,playerPos.z-doorMesh.r*CELL)<1.3){
+endGame(true); return;
+}
+}
+
+// Caught
+if(dist3d<0.95&&!grannyScare){
+triggerJumpscare('👵 GOT YOU!');
+gameActive=false;
+setTimeout(()=>endGame(false),350);
+return;
+}
+
+// Near miss flash
+if(dist3d<2.2&&!grannyScare&&Math.random()<dt*0.6){
+document.getElementById('scareFlash').style.background='rgba(255,0,0,0.2)';
+setTimeout(()=>document.getElementById('scareFlash').style.background='rgba(255,255,255,0)',120);
+}
+
+// Blood overlay
+const flashTarget=!grannyScare?(dist3d<2.5?0.35:dist3d<5?0.15:dist3d<8?0.05:0):0;
+flashIntensity+=(flashTarget-flashIntensity)*0.1;
+document.getElementById('bloodFlash').style.background=`rgba(255,0,30,${flashIntensity})`;
+
+// Proximity ring
+const pRingIntensity=!grannyScare?Math.max(0,(8-dist3d)/8)*60:0;
+document.getElementById('proximityRing').style.boxShadow=
+pRingIntensity>0?`inset 0 0 ${pRingIntensity}px ${pRingIntensity*0.5}px rgba(255,0,0,${pRingIntensity/200})`:'none';
+
+// Warning fade
+if(warningTimer>0){ warningTimer-=dt; if(warningTimer<=0) document.getElementById('warningMsg').style.opacity='0'; }
+
+// Toast
+processToast(dt);
+
+// Danger text
+const dangerEl=document.getElementById('danger');
+if(grannyScare) dangerEl.innerHTML='😂 <span style="color:#ffff44">GRANNY RUNNING AWAY!</span>';
+else if(dist3d<2.0) dangerEl.innerHTML='💀 <span style="color:#ff0000;animation:flashText 0.15s infinite;display:inline-block">SHE\'S RIGHT BEHIND YOU!!!</span>';
+else if(dist3d<3.5) dangerEl.textContent='⚠️ GRANNY IS RIGHT THERE!!!';
+else if(dist3d<6) dangerEl.textContent='😱 She\'s getting closer...';
+else if(dist3d<10) dangerEl.textContent='👀 Granny is hunting you...';
+else dangerEl.textContent='';
+
+// Granny light
+if(grannyAngryTimer>0){
+grannyAngryTimer-=dt;
+if(grannyLight3d) grannyLight3d.intensity=2+Math.sin(t*25)*4;
+} else {
+if(grannyLight3d) grannyLight3d.intensity=grannyScare?0.3:2.0;
+}
+
+drawMinimap();
+}
+
+function endGame(won){
+gameActive=false;
+document.exitPointerLock?.();
+const elapsed=Math.round((Date.now()-gameStartTime)/1000);
+setTimeout(()=>{
+if(won){
+document.getElementById('winScreen').classList.remove('hidden');
+document.getElementById('winBones').textContent=`${bonesCollected}/${totalBones}`;
+document.getElementById('winWieners').textContent=wienersSaved;
+document.getElementById('winTime').textContent=elapsed+'s';
+document.getElementById('winscore').textContent='Freedom tastes like a hot dog! 🌭';
+} else {
+document.getElementById('loseScreen').classList.remove('hidden');
+document.getElementById('loseBones').textContent=`${bonesCollected}/${totalBones}`;
+document.getElementById('loseWieners').textContent=wienersSaved;
+document.getElementById('losescore').textContent='You\'ve been crocheted into a sweater... 🧶';
+}
+},450);
+}
+</script>
+</body>
+</html>
+
+
+On Thu, May 7, 2026 at 1:26 PM Jacob Johnson <jacob.johnson@student.kpsdschools.org> wrote:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Granny's Wiener Escape 3D 🌭</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Creepster&family=Fredoka+One&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#000;overflow:hidden;font-family:'Fredoka One',cursive;}
+#c{display:block;width:100vw;height:100vh;}
+
+#ui{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;}
+
+...
+
+[Message clipped]  View entire message
