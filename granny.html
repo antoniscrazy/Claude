@@ -51,6 +51,15 @@ window.pokiReady = true; window._cachedAdPositions = {};
   window.shareableURL = function () { window.unityGame.SendMessage(name, "shareableURLResolved", location.href); };
 })();
 window.YaGames = window.YaGames || { init: function () { return Promise.resolve({ adv: { showFullscreenAdv: function (o) { o && o.callbacks && o.callbacks.onClose && o.callbacks.onClose(true); }, showRewardedVideo: function (o) { o && o.callbacks && o.callbacks.onRewarded && o.callbacks.onRewarded(); o && o.callbacks && o.callbacks.onClose && o.callbacks.onClose(); } }, getPlayer: function () { return Promise.resolve({ getData: function () { return Promise.resolve({}); }, setData: function () { return Promise.resolve(); }, getName: function () { return "Player"; }, getMode: function () { return "lite"; } }); }, getLeaderboards: function () { return Promise.resolve({ getLeaderboardPlayerEntry: function () { return Promise.resolve(null); }, setLeaderboardScore: function () { return Promise.resolve(); } }); }, features: { LoadingAPI: { ready: function () {} }, GameplayAPI: { start: function () {}, stop: function () {} } }, environment: { i18n: { lang: "de" } }, on: function () {}, dispatchEvent: function () {} }); } };
+// Yandex-SDK-Ersatz: Die Spielbuild ruft YaGames fuer Werbung auf. Belohnung wird sofort gewaehrt, keine Werbung.
+window.YaGames = { init: function () { return Promise.resolve({
+  deviceInfo: { type: "desktop" },
+  adv: {
+    showRewardedVideo: function (o) { var c = (o && o.callbacks) || {}; c.onOpen && c.onOpen(); c.onRewarded && c.onRewarded(); c.onClose && c.onClose(true); return Promise.resolve(); },
+    showFullscreenAdv: function (o) { var c = (o && o.callbacks) || {}; c.onOpen && c.onOpen(); c.onClose && c.onClose(false); return Promise.resolve(); }
+  },
+  getPlayer: function () { return Promise.reject(new Error("no player")); }
+}); } };
 const tx = document.getElementById("tx"), pf = document.getElementById("pf");
 async function get(f, kind) { const r = await fetch(BASE + f); if (!r.ok) throw new Error(f + ": " + r.status); return r[kind](); }
 (async () => {
@@ -70,7 +79,7 @@ async function get(f, kind) { const r = await fetch(BASE + f); if (!r.ok) throw 
       streamingAssetsUrl: BASE + "StreamingAssets",
       companyName: "Granny", productName: "Granny", productVersion: "1.0.0"
     }, p => { pf.style.width = (50 + p * 50) + "%"; });
-    window.unityGame = inst;
+    window.unityGame = inst; window.myGameInstance = inst;
     document.getElementById("ld").remove();
   } catch (e) { tx.textContent = "Fehler beim Laden: " + (e.message || e); }
 })();
