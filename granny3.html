@@ -23,6 +23,18 @@
   }
   #moki-back:hover { opacity: 1; transform: scale(1.05); }
 </style>
+<style>
+#pad{display:none;position:fixed;left:0;right:0;bottom:12px;justify-content:space-between;padding:0 12px;z-index:9;pointer-events:none;touch-action:none;user-select:none;-webkit-user-select:none}
+#pad.show{display:flex}
+#pad .grp{display:grid;gap:8px;pointer-events:auto}
+#pad .l{grid-template-columns:repeat(3,58px);grid-template-rows:repeat(2,58px)}
+#pad .r{grid-template-columns:repeat(3,58px);grid-template-rows:repeat(2,58px)}
+#pad button{font:800 18px system-ui,sans-serif;border:0;border-radius:14px;background:rgba(255,255,255,.22);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.5);touch-action:none}
+#pad button:active,#pad button.on{background:rgba(0,229,168,.6)}
+#pad .e{visibility:hidden}
+#look{display:none;position:fixed;top:46px;right:0;width:45%;bottom:120px;z-index:8;touch-action:none}
+#look.show{display:block}
+</style>
 </head>
 <body>
 <div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
@@ -69,6 +81,49 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
     window.unityGame = inst;
     document.getElementById("ld").remove();
   } catch (e) { tx.textContent = "Fehler beim Laden: " + (e.message || e); }
+})();
+</script>
+<div id="look"></div>
+<div id="pad"><div class="grp l"><span class="e"></span><button data-k="w">W</button><span class="e"></span><button data-k="a">A</button><button data-k="s">S</button><button data-k="d">D</button></div><div class="grp r"><button data-k="e">E</button><button data-k="sp">Space</button><button data-k="c">C</button><button data-k="r">R</button><button data-k="f">F</button></div></div>
+<script>
+(function(){
+  const KEYS={w:{key:"w",code:"KeyW",keyCode:87},a:{key:"a",code:"KeyA",keyCode:65},s:{key:"s",code:"KeyS",keyCode:83},d:{key:"d",code:"KeyD",keyCode:68},
+    e:{key:"e",code:"KeyE",keyCode:69},sp:{key:" ",code:"Space",keyCode:32},c:{key:"c",code:"KeyC",keyCode:67},r:{key:"r",code:"KeyR",keyCode:82},f:{key:"f",code:"KeyF",keyCode:70}};
+  const pad=document.getElementById("pad"), look=document.getElementById("look");
+  function fire(type,k){
+    const target=document.getElementById("c")||document.body;
+    target.dispatchEvent(new KeyboardEvent(type,{key:k.key,code:k.code,keyCode:k.keyCode,which:k.keyCode,bubbles:true,cancelable:true}));
+  }
+  const held=new Set();
+  function down(b){ const k=KEYS[b.dataset.k]; if(!k||held.has(k.key)) return; held.add(k.key); b.classList.add("on"); const c=document.getElementById("c"); if(c&&c.focus) c.focus(); fire("keydown",k); }
+  function up(b){ const k=KEYS[b.dataset.k]; if(!k||!held.has(k.key)) return; held.delete(k.key); b.classList.remove("on"); fire("keyup",k); }
+  const btns=[...document.querySelectorAll("#pad button")];
+  btns.forEach(b=>{
+    b.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); down(b); });
+    b.addEventListener("pointerup",e=>{ e.preventDefault(); e.stopPropagation(); up(b); });
+    b.addEventListener("pointercancel",()=>up(b));
+    b.addEventListener("pointerleave",()=>up(b));
+  });
+  // Umsehen: Ziehen im rechten Bereich schickt Mausbewegung an das Spiel.
+  let lx=null, ly=null, lid=null;
+  look.addEventListener("pointerdown",e=>{ lid=e.pointerId; lx=e.clientX; ly=e.clientY; look.setPointerCapture(e.pointerId); });
+  look.addEventListener("pointermove",e=>{
+    if(e.pointerId!==lid) return;
+    const dx=e.clientX-lx, dy=e.clientY-ly; lx=e.clientX; ly=e.clientY;
+    const c=document.getElementById("c"); if(!c) return;
+    c.dispatchEvent(new MouseEvent("mousemove",{clientX:e.clientX,clientY:e.clientY,movementX:dx*2,movementY:dy*2,bubbles:true}));
+  });
+  const endLook=e=>{ if(e.pointerId===lid) lid=null; };
+  look.addEventListener("pointerup",endLook); look.addEventListener("pointercancel",endLook);
+  function hide(){ pad.classList.remove("show"); look.classList.remove("show"); btns.forEach(up); }
+  window.addEventListener("blur",hide);
+  document.addEventListener("keydown",e=>{ if(e.key==="Escape") hide(); });
+  // Erscheint nur in der Runde: nach Tippen auf PLAY (rechts unten im Story-Bildschirm).
+  document.addEventListener("pointerdown",e=>{
+    if(e.target.closest && e.target.closest("#pad, #look")) return;
+    const inStartZone = e.clientY > innerHeight*0.76 && e.clientY < innerHeight*0.86 && Math.abs(e.clientX-innerWidth*0.695) < innerWidth*0.08;
+    if(inStartZone){ pad.classList.add("show"); look.classList.add("show"); }
+  },true);
 })();
 </script>
 </body>
