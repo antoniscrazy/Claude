@@ -456,8 +456,6 @@ html.lu-open body{overflow:hidden}
 .lu-card{position:relative;width:min(560px,100%);max-height:min(94vh,760px);overflow:auto;padding:26px 26px 22px;border-radius:28px;background:linear-gradient(180deg,#171e5a,#101645);border:1px solid #ffffff22;box-shadow:0 30px 90px #000c;color:var(--text)}
 .lu-card.in{animation:luin .4s cubic-bezier(.2,.9,.3,1) both}
 @keyframes luin{from{opacity:0;transform:translateY(14px) scale(.98)}}
-.lu-x{position:absolute;top:14px;right:14px;width:38px;height:38px;border:0;border-radius:50%;background:#ffffff14;color:#fff;font-size:16px;cursor:pointer}
-.lu-x:hover{background:#ffffff2a}
 .lu-top{display:flex;align-items:center;gap:12px;margin-bottom:6px}
 .lu-chip{padding:5px 13px;border-radius:99px;background:var(--accent2);color:#3a2a00;font-weight:800;font-size:13px}
 .lu-n{color:var(--muted);font-size:13px;font-weight:700}
@@ -488,6 +486,18 @@ html.lu-open body{overflow:hidden}
 .lu-acts{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
 @media(max-width:520px){.lu-card{padding:20px 18px 18px}.lu-hero,.lu-sv,.lu-dev{font-size:36px}.lu-mock .lu-b:nth-of-type(1){display:none}}
 @media(prefers-reduced-motion:reduce){.lu-card.in,.lu-hero .lu-arrow,.lu-mock .lu-hl,.lu-dots i{animation:none}}
+
+/* Update-Bildschirm: echte Elemente */
+.lu-hwrap{margin:10px 0;overflow:hidden;border-radius:16px}
+.lu-hdr{display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(10,13,43,.85);border:1px solid #ffffff12;border-radius:16px;pointer-events:none;width:max-content;max-width:none}
+.lu-hdr .search{flex:1;min-width:120px}
+.lu-hdr .lu-hl{box-shadow:0 0 0 3px #00e5a888;animation:luglow 1.6s ease-in-out infinite}
+.lu-visw{margin:10px 0}
+.lu-visw .lu-static{position:static;inset:auto;display:block;background:none;padding:0;z-index:auto;pointer-events:none}
+.lu-visw .lu-static .box{margin:0 auto;box-shadow:0 8px 24px #0009}
+.lu-visw .lu-static .atabs button.on,.lu-visw .lu-static .go{box-shadow:0 0 0 3px #00e5a888}
+@keyframes luglow{50%{box-shadow:0 0 0 7px #00e5a822}}
+.lu-acts .btn:disabled{opacity:.55;cursor:not-allowed}
 
 </style>
 <style>
@@ -5319,14 +5329,27 @@ window.MOKI_LAUNCH=Object.assign(window.MOKI_LAUNCH||{},{"blastar": "\u003c!DOCT
     o.addEventListener("click", e => { if (e.target === o || e.target.dataset.a === "close") close(); }); addEventListener("keydown", k);
     document.body.appendChild(o); o.close = close; return o;
   }
-  function authDialog(tab) {
-    const o = modal(`<h3>Moki-Konto</h3>
-      <div class="atabs"><button type="button" data-t="in" class="on">Anmelden</button><button type="button" data-t="up">Konto erstellen</button></div>
-      <p class="ainfo"></p>
-      <label class="tf-lab" for="ac-n">Name</label><input id="ac-n" class="tf-in-txt" maxlength="20" autocomplete="username" autocapitalize="off" spellcheck="false">
-      <label class="tf-lab" for="ac-p">Passwort</label><input id="ac-p" class="tf-in-txt" type="password" maxlength="72" autocomplete="current-password">
+  const INFO = { in: "Melde dich an, dann werden deine Spielstände auf diesem Gerät geladen.", up: "Wähle einen Namen und ein Passwort. Du bist danach sofort angemeldet. Deine Spielstände werden gesichert und sind auf jedem Gerät da. Es gibt keine E-Mail, merke dir das Passwort gut, es kann nicht zurückgesetzt werden." };
+  // Der Aufbau der Fenster steht an einer Stelle, damit der Update-Bildschirm exakt dasselbe zeigen kann
+  function authHtml(mode, sample) {
+    sample = sample || {};
+    return `<h3>Moki-Konto</h3>
+      <div class="atabs"><button type="button" data-t="in" class="${mode === "in" ? "on" : ""}">Anmelden</button><button type="button" data-t="up" class="${mode === "up" ? "on" : ""}">Konto erstellen</button></div>
+      <p class="ainfo">${INFO[mode]}</p>
+      <label class="tf-lab" for="ac-n">Name</label><input id="ac-n" class="tf-in-txt" maxlength="20" autocomplete="username" autocapitalize="off" spellcheck="false" value="${esc(sample.name || "")}">
+      <label class="tf-lab" for="ac-p">Passwort</label><input id="ac-p" class="tf-in-txt" type="password" maxlength="72" autocomplete="current-password" value="${esc(sample.pw || "")}">
       <div class="tf-err" id="ac-e" role="alert"></div>
-      <div class="acts"><button class="btn" type="button" data-a="close">Abbrechen</button><button class="btn go" type="button" id="ac-go">Anmelden</button></div>`);
+      <div class="acts"><button class="btn" type="button" data-a="close">Abbrechen</button><button class="btn go" type="button" id="ac-go">${mode === "in" ? "Anmelden" : "Konto erstellen"}</button></div>`;
+  }
+  function menuHtml(name, bytes) {
+    const used = ((bytes || 0) / 1024).toFixed(1), pct = Math.min(100, Math.round((bytes || 0) / 4000000 * 100));
+    return `<h3>Hallo, ${esc(name)}!</h3><p>Du bist angemeldet. Deine Spielstände werden automatisch gesichert und auf anderen Geräten geladen, sobald du dich dort anmeldest.</p>
+      <div class="amet"><div class="amet-b"><i style="width:${pct}%"></i></div><small>Gesicherte Daten: ${used} KB von 4000 KB</small></div>
+      <div class="tf-err" id="ac-e" role="alert"></div>
+      <div class="acts amenu"><button class="btn" type="button" data-a="close">Schließen</button><button class="btn" type="button" id="ac-save">Jetzt sichern</button><button class="btn" type="button" id="ac-out">Abmelden</button><button class="btn" type="button" id="ac-del">Konto löschen</button></div>`;
+  }
+  function authDialog(tab) {
+    const o = modal(authHtml("in"));
     let mode = tab || "in"; const $ = s => o.querySelector(s);
     const set = m => { mode = m; o.querySelectorAll(".atabs button").forEach(b => b.classList.toggle("on", b.dataset.t === m)); $("#ac-go").textContent = m === "in" ? "Anmelden" : "Konto erstellen"; $("#ac-p").autocomplete = m === "in" ? "current-password" : "new-password"; $(".ainfo").textContent = m === "in" ? "Melde dich an, dann werden deine Spielstände auf diesem Gerät geladen." : "Wähle einen Namen und ein Passwort. Du bist danach sofort angemeldet. Deine Spielstände werden gesichert und sind auf jedem Gerät da. Es gibt keine E-Mail, merke dir das Passwort gut, es kann nicht zurückgesetzt werden."; $("#ac-e").textContent = ""; };
     o.querySelectorAll(".atabs button").forEach(b => b.addEventListener("click", () => set(b.dataset.t))); set(mode);
@@ -5345,11 +5368,7 @@ window.MOKI_LAUNCH=Object.assign(window.MOKI_LAUNCH||{},{"blastar": "\u003c!DOCT
     $("#ac-n").focus();
   }
   function menuDialog() {
-    const used = ((acct.bytes || 0) / 1024).toFixed(1), pct = Math.min(100, Math.round((acct.bytes || 0) / 4000000 * 100));
-    const o = modal(`<h3>Hallo, ${esc(acct.name)}!</h3><p>Du bist angemeldet. Deine Spielstände werden automatisch gesichert und auf anderen Geräten geladen, sobald du dich dort anmeldest.</p>
-      <div class="amet"><div class="amet-b"><i style="width:${pct}%"></i></div><small>Gesicherte Daten: ${used} KB von 4000 KB</small></div>
-      <div class="tf-err" id="ac-e" role="alert"></div>
-      <div class="acts amenu"><button class="btn" type="button" data-a="close">Schließen</button><button class="btn" type="button" id="ac-save">Jetzt sichern</button><button class="btn" type="button" id="ac-out">Abmelden</button><button class="btn" type="button" id="ac-del">Konto löschen</button></div>`);
+    const o = modal(menuHtml(acct.name, acct.bytes));
     const $ = s => o.querySelector(s);
     $("#ac-save").addEventListener("click", async () => { $("#ac-save").disabled = true; $("#ac-save").textContent = "Sichere …"; warned = false; hold = 0; await sync({ deep: true, force: true }); $("#ac-save").textContent = "Gesichert ✓"; setTimeout(() => { if (o.isConnected) { o.close(); menuDialog(); } }, 700); });
     $("#ac-out").addEventListener("click", async () => { try { await rpc("moki_acc_logout", { p_token: acct.token }); } catch (e) {} logoutLocal(); o.close(); toast("Abgemeldet. Deine Spielstände bleiben auf diesem Gerät und im Konto."); });
@@ -5362,16 +5381,17 @@ window.MOKI_LAUNCH=Object.assign(window.MOKI_LAUNCH||{},{"blastar": "\u003c!DOCT
   document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("#acc"); if (!b) return; e.preventDefault(); if (acct) menuDialog(); else authDialog("in"); });
   renderBtn(); setTimeout(renderBtn, 600);
   if (acct) setTimeout(() => sync({ first: true, force: true }), 1200);
-  window.MOKI_ACC = { get name() { return acct && acct.name; }, sync: () => sync({ deep: true, force: true }) };
+  window.MOKI_ACC = { html: { auth: authHtml, menu: menuHtml }, get name() { return acct && acct.name; }, sync: () => sync({ deep: true, force: true }) };
 })();
 
 </script>
 <script>
-// Update-Bildschirm zum Moki-Konto: erklaert Schritt fuer Schritt, wie alles geht. Erscheint genau einmal pro Browser.
+// Update-Bildschirm zum Moki-Konto: erklaert Schritt fuer Schritt, wie alles geht. Erscheint genau einmal pro Browser,
+// kann nicht weggeklickt werden (jede Seite muss gelesen werden) und zeigt die echten Moki-Elemente (Kopfzeile, Anmeldefenster).
 // Wer das Intro (Cutscene) noch nicht gesehen hat, bekommt erst das Intro und danach diese Erklaerung.
 (function () {
   "use strict";
-  const KEY = "moki-update-login-v1", root = document.documentElement;
+  const KEY = "moki-update-login-v1", root = document.documentElement, WAIT = 3;   // Sekunden, bevor "Weiter" geht
   const seen = () => { try { if (localStorage.getItem(KEY)) return true; } catch (e) {} try { if (sessionStorage.getItem(KEY)) return true; } catch (e) {} try { return document.cookie.indexOf(KEY + "=1") > -1; } catch (e) { return false; } };
   const mark = () => { try { localStorage.setItem(KEY, "1"); } catch (e) {} try { sessionStorage.setItem(KEY, "1"); } catch (e) {} try { document.cookie = KEY + "=1; max-age=31536000; path=/; SameSite=Lax"; } catch (e) {} };
   if (seen()) return;
@@ -5379,50 +5399,75 @@ window.MOKI_LAUNCH=Object.assign(window.MOKI_LAUNCH||{},{"blastar": "\u003c!DOCT
   const forced = /[?&]update(=1)?(&|$)/.test(location.search);   // zum Testen: ?update
 
   const SL = [
-    { t: "Neu: Moki-Konten", c: "Update", e: "☁️", p: "Ab jetzt kannst du dir ein eigenes Moki-Konto machen. Dein Fortschritt in den Spielen wird gesichert und ist auf jedem Gerät da, auf dem du dich anmeldest.", l: ["Du brauchst nur einen Namen und ein Passwort.", "Du bist danach sofort angemeldet und bleibst es in diesem Browser.", "Auf den nächsten Seiten erkläre ich dir alles Schritt für Schritt. Das dauert etwa eine Minute."], v: "hero" },
-    { t: "1. Konto erstellen", c: "Schritt 1", p: "Oben rechts neben „Einladen“ findest du den Knopf „Anmelden“.", l: ["Tippe darauf und wechsle oben im Fenster auf „Konto erstellen“.", "Denk dir einen Namen aus: 3 bis 20 Zeichen, also Buchstaben, Zahlen, Leerzeichen, Punkt, Strich oder Unterstrich.", "Wähle ein Passwort mit mindestens 6 Zeichen.", "Tippe auf „Konto erstellen“. Fertig, du bist angemeldet und dein Name steht oben im Knopf."], v: "header" },
-    { t: "2. Was wird gesichert?", c: "Schritt 2", p: "Moki sichert deinen Fortschritt von allein im Hintergrund. Du musst nichts drücken.", l: ["Spielstände wie Level, Münzen und Fortschritt, bei allen Spielen, die im Browser speichern.", "Deine Favoriten und deine zuletzt gespielten Spiele.", "Alles, was du auf Moki sammelst, zum Beispiel im Adventskalender.", "Gesichert wird, wenn du ein Spiel verlässt, alle paar Minuten und wenn du die Seite schließt. Es wird nur gesendet, was sich wirklich geändert hat, deshalb braucht es kaum Daten.", "Du kannst es auch von Hand anstoßen: Tippe auf deinen Namen und dann auf „Jetzt sichern“."], v: "save" },
-    { t: "3. Auf einem anderen Gerät", c: "Schritt 3", p: "Du willst auf dem Tablet oder auf einem anderen Computer weiterspielen? Kein Problem.", l: ["Öffne Moki auf dem anderen Gerät und tippe auf „Anmelden“.", "Gib denselben Namen und dasselbe Passwort ein.", "Deine Spielstände werden geladen. Danach startet die Seite einmal neu und alles ist da.", "Ab dann bleiben beide Geräte automatisch auf demselben Stand."], v: "devices" },
-    { t: "4. Das solltest du wissen", c: "Wichtig", p: "Damit nichts schiefgeht, merk dir diese Punkte:", l: ["Es gibt keine E-Mail. Darum kann dein Passwort nicht zurückgesetzt werden. Merk es dir gut oder schreib es auf.", "Gespeichert werden nur dein Name, dein Passwort (verschlüsselt) und deine Spielstände. Sonst nichts.", "Jedes Konto hat 4 MB Platz. Das reicht normalerweise locker. Unter deinem Namen siehst du, wie viel schon belegt ist.", "„Abmelden“ beendet nur die Anmeldung. Deine Spielstände bleiben auf dem Gerät und im Konto.", "„Konto löschen“ (mit Passwort) löscht alles, was im Konto gesichert ist. Auf dem Gerät bleibt alles.", "Manche Spiele speichern gar nichts. Da gibt es dann auch nichts zu sichern."], v: "info" },
-    { t: "Los geht's!", c: "Fertig", e: "🎮", p: "Jetzt weißt du alles. Erstelle dein Konto am besten gleich, dann ist dein Fortschritt von Anfang an sicher.", l: ["Du findest die Erklärung später nicht wieder, aber du erreichst alles über den Knopf oben rechts.", "Viel Spaß beim Spielen!"], v: "end" }
+    { t: "Neu: Moki-Konten", c: "Update", p: "Ab jetzt kannst du dir ein eigenes Moki-Konto machen. Dein Fortschritt in den Spielen wird gesichert und ist auf jedem Gerät da, auf dem du dich anmeldest.", l: ["Du brauchst nur einen Namen und ein Passwort.", "Du bist danach sofort angemeldet und bleibst es in diesem Browser.", "Auf den nächsten Seiten erkläre ich dir alles Schritt für Schritt. Das dauert etwa eine Minute."], v: "hero" },
+    { t: "1. Anmelden öffnen", c: "Schritt 1", p: "Oben in der Kopfzeile findest du den Knopf „Anmelden“, direkt neben „Einladen“.", l: ["Tippe auf „Anmelden“. Es öffnet sich ein Fenster."], v: "header" },
+    { t: "2. Konto erstellen", c: "Schritt 2", p: "So sieht das Fenster aus. Wechsle oben auf „Konto erstellen“.", l: ["Denk dir einen Namen aus: 3 bis 20 Zeichen, also Buchstaben, Zahlen, Leerzeichen, Punkt, Strich oder Unterstrich.", "Wähle ein Passwort mit mindestens 6 Zeichen.", "Tippe auf „Konto erstellen“. Fertig, du bist angemeldet und dein Name steht oben im Knopf."], v: "up" },
+    { t: "3. Was wird gesichert?", c: "Schritt 3", p: "Moki sichert deinen Fortschritt von allein im Hintergrund. Du musst nichts drücken.", l: ["Spielstände wie Level, Münzen und Fortschritt, bei allen Spielen, die im Browser speichern.", "Deine Favoriten und deine zuletzt gespielten Spiele.", "Alles, was du auf Moki sammelst, zum Beispiel im Adventskalender.", "Gesichert wird, wenn du ein Spiel verlässt, alle paar Minuten und wenn du die Seite schließt. Es wird nur gesendet, was sich wirklich geändert hat, deshalb braucht es kaum Daten.", "Von Hand geht es so: Tippe auf deinen Namen und dann auf „Jetzt sichern“. Dort kannst du dich auch abmelden oder das Konto löschen."], v: "menu" },
+    { t: "4. Auf einem anderen Gerät", c: "Schritt 4", p: "Du willst auf dem Tablet oder auf einem anderen Computer weiterspielen? Kein Problem.", l: ["Öffne Moki auf dem anderen Gerät und tippe auf „Anmelden“.", "Gib denselben Namen und dasselbe Passwort ein und tippe auf „Anmelden“.", "Deine Spielstände werden geladen. Danach startet die Seite einmal neu und alles ist da.", "Ab dann bleiben beide Geräte automatisch auf demselben Stand."], v: "in" },
+    { t: "5. Das solltest du wissen", c: "Wichtig", p: "Damit nichts schiefgeht, merk dir diese Punkte:", l: ["Es gibt keine E-Mail. Darum kann dein Passwort nicht zurückgesetzt werden. Merk es dir gut oder schreib es auf.", "Gespeichert werden nur dein Name, dein Passwort (verschlüsselt) und deine Spielstände. Sonst nichts.", "Jedes Konto hat 4 MB Platz. Das reicht normalerweise locker. Unter deinem Namen siehst du, wie viel schon belegt ist.", "„Abmelden“ beendet nur die Anmeldung. Deine Spielstände bleiben auf dem Gerät und im Konto.", "„Konto löschen“ (mit Passwort) löscht alles, was im Konto gesichert ist. Auf dem Gerät bleibt alles.", "Manche Spiele speichern gar nichts. Da gibt es dann auch nichts zu sichern."], v: "info" },
+    { t: "Los geht's!", c: "Fertig", p: "Jetzt weißt du alles. Erstelle dein Konto am besten gleich, dann ist dein Fortschritt von Anfang an sicher.", l: ["Du findest diese Erklärung später nicht wieder, aber du erreichst alles über den Knopf „Anmelden“ oben in der Kopfzeile.", "Viel Spaß beim Spielen!"], v: "end" }
   ];
 
-  let el = null, i = 0;
+  let el = null, i = 0, tm = 0; const visited = new Set();
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  function visual(k) {
-    if (k === "hero" || k === "end") return `<div class="lu-vis lu-hero" aria-hidden="true"><span class="lu-ic">👤</span><span class="lu-arrow">⇄</span><span class="lu-ic">☁️</span></div>`;
-    if (k === "header") return `<div class="lu-vis lu-mock" aria-hidden="true"><b class="lu-logo">moki</b><i></i><span class="lu-b">Zufall</span><span class="lu-b">Einladen</span><span class="lu-b lu-hl">👤 Anmelden</span></div><div class="lu-vis lu-form" aria-hidden="true"><em>Anmelden</em><em class="on">Konto erstellen</em><u>Name</u><u>Passwort</u><s>Konto erstellen</s></div>`;
-    if (k === "save") return `<div class="lu-vis lu-sv" aria-hidden="true"><span>🎮</span><span class="lu-dots"><i></i><i></i><i></i></span><span>☁️</span></div>`;
-    if (k === "devices") return `<div class="lu-vis lu-dev" aria-hidden="true"><span>📱</span><span class="lu-dots"><i></i><i></i><i></i></span><span>☁️</span><span class="lu-dots"><i></i><i></i><i></i></span><span>💻</span></div>`;
-    if (k === "info") return `<div class="lu-vis lu-hero" aria-hidden="true"><span class="lu-ic">🔒</span></div>`;
-    return "";
+  const noIds = h => h.replace(/ id="[^"]*"/g, "");
+  const A = () => (window.MOKI_ACC && window.MOKI_ACC.html) || null;
+  // Echte Kopfzeile: die Elemente werden aus der Seite kopiert, damit alles genauso aussieht
+  function realHeader(host) {
+    const hd = document.createElement("div"); hd.className = "lu-hdr"; hd.setAttribute("inert", "");
+    const parts = [".logo", ".search", "#rnd", "#inv", "#acc", ".badge"];
+    parts.forEach(sel => { const n = document.querySelector("header " + sel); if (!n) return; const c = n.cloneNode(true); c.removeAttribute("id"); c.querySelectorAll("[id]").forEach(x => x.removeAttribute("id")); c.setAttribute("tabindex", "-1"); if (sel === "#acc") c.classList.add("lu-hl"); hd.appendChild(c); });
+    const wrap = document.createElement("div"); wrap.className = "lu-hwrap"; wrap.appendChild(hd); host.appendChild(wrap);
+    requestAnimationFrame(() => { const k = Math.min(1, wrap.clientWidth / Math.max(1, hd.scrollWidth)); if (k < 1) { hd.style.transform = "scale(" + k + ")"; hd.style.transformOrigin = "left top"; wrap.style.height = Math.ceil(hd.offsetHeight * k) + "px"; } });
+  }
+  function dialog(html) { return `<div class="modal amodal lu-static" inert>${`<div class="box">${noIds(html)}</div>`}</div>`; }
+  function visual(host, k) {
+    const a = A();
+    if (k === "header") { realHeader(host); return; }
+    if (k === "up" && a) { host.insertAdjacentHTML("beforeend", dialog(a.auth("up", { name: "MeinName", pw: "geheim123" }))); return; }
+    if (k === "in" && a) { host.insertAdjacentHTML("beforeend", dialog(a.auth("in", { name: "MeinName", pw: "geheim123" }))); return; }
+    if (k === "menu" && a) { host.insertAdjacentHTML("beforeend", dialog(a.menu("MeinName", 184320))); return; }
+    if (k === "hero" || k === "end") host.insertAdjacentHTML("beforeend", `<div class="lu-vis lu-hero" aria-hidden="true"><span class="lu-ic">👤</span><span class="lu-arrow">⇄</span><span class="lu-ic">☁️</span></div>`);
+    else if (k === "info") host.insertAdjacentHTML("beforeend", `<div class="lu-vis lu-hero" aria-hidden="true"><span class="lu-ic">🔒</span></div>`);
   }
   function render() {
-    const s = SL[i], last = i === SL.length - 1;
-    el.querySelector(".lu-card").innerHTML = `
-      <button type="button" class="lu-x" aria-label="Schließen" data-a="close">✕</button>
+    const s = SL[i], last = i === SL.length - 1, first = visited.has(i);
+    visited.add(i); clearInterval(tm);
+    const card = el.querySelector(".lu-card");
+    card.innerHTML = `
       <div class="lu-top"><span class="lu-chip">${esc(s.c)}</span><span class="lu-n">${i + 1} / ${SL.length}</span></div>
       <h2 id="lu-t">${esc(s.t)}</h2>
-      ${visual(s.v)}
+      <div class="lu-visw"></div>
       <p class="lu-p">${esc(s.p)}</p>
       <ul>${s.l.map(x => `<li>${esc(x)}</li>`).join("")}</ul>
       <div class="lu-dotsrow">${SL.map((_, k) => `<i class="${k === i ? "on" : ""}"></i>`).join("")}</div>
-      <div class="lu-acts">${i > 0 ? `<button type="button" class="btn" data-a="back">Zurück</button>` : `<button type="button" class="btn" data-a="close">Später</button>`}
-        ${last ? `<button type="button" class="btn go" data-a="create">Konto erstellen</button>` : `<button type="button" class="btn go" data-a="next">Weiter</button>`}</div>`;
-    const c = el.querySelector(".lu-card"); c.classList.remove("in"); void c.offsetWidth; c.classList.add("in");
-    const b = el.querySelector(".go"); if (b) b.focus({ preventScroll: true });
+      <div class="lu-acts">${i > 0 ? `<button type="button" class="btn" data-a="back">Zurück</button>` : ""}
+        ${last ? `<button type="button" class="btn" data-a="create" disabled>Konto erstellen</button><button type="button" class="btn go" data-a="done" disabled>Verstanden</button>` : `<button type="button" class="btn go" data-a="next" disabled>Weiter</button>`}</div>`;
+    visual(card.querySelector(".lu-visw"), s.v);
+    card.classList.remove("in"); void card.offsetWidth; card.classList.add("in"); card.scrollTop = 0;
+    const btns = [...card.querySelectorAll("[data-a=next],[data-a=create],[data-a=done]")], label = btns.map(b => b.textContent);
+    let left = first ? 0 : WAIT;
+    const tick = () => {
+      if (left > 0) { btns.forEach((b, n) => { b.textContent = label[n] + " (" + left + ")"; }); left--; tm = setTimeout(tick, 1000); }
+      else { btns.forEach((b, n) => { b.textContent = label[n]; b.disabled = false; }); const g = card.querySelector(".go"); if (g) g.focus({ preventScroll: true }); }
+    };
+    tick();
   }
   function close(create) {
-    if (!el) return; el.classList.remove("show"); const e = el; el = null; removeEventListener("keydown", key); root.classList.remove("lu-open");
+    if (!el) return; clearTimeout(tm); el.classList.remove("show"); const e = el; el = null; removeEventListener("keydown", key, true); root.classList.remove("lu-open");
+    document.querySelectorAll("[data-luinert]").forEach(c => { c.removeAttribute("inert"); delete c.dataset.luinert; });
     setTimeout(() => { e.remove(); if (create) { const a = document.getElementById("acc"); if (a) a.click(); } }, 350);
   }
-  function key(e) { if (e.key === "Escape") close(); else if (e.key === "ArrowRight" && i < SL.length - 1) { i++; render(); } else if (e.key === "ArrowLeft" && i > 0) { i--; render(); } }
+  // Escape und andere Tasten tun nichts: der Bildschirm bleibt, bis alles gelesen ist
+  function key(e) { if (!el) return; if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); return; } if (e.key === "ArrowRight") { const b = el.querySelector("[data-a=next]"); if (b && !b.disabled) { i++; render(); } } else if (e.key === "ArrowLeft" && i > 0) { i--; render(); } }
   function open() {
     mark();
     el = document.createElement("div"); el.id = "lupd"; el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true"); el.setAttribute("aria-labelledby", "lu-t");
-    el.innerHTML = '<div class="lu-card"></div>'; document.body.appendChild(el); root.classList.add("lu-open"); i = 0; render();
-    el.addEventListener("click", e => { const b = e.target.closest("[data-a]"); if (!b) return; const a = b.dataset.a; if (a === "next" && i < SL.length - 1) { i++; render(); } else if (a === "back" && i > 0) { i--; render(); } else if (a === "close") close(); else if (a === "create") close(true); });
-    addEventListener("keydown", key); requestAnimationFrame(() => el && el.classList.add("show"));
+    el.innerHTML = '<div class="lu-card"></div>';
+    [...document.body.children].forEach(c => { if (!c.hasAttribute("inert")) { c.setAttribute("inert", ""); c.dataset.luinert = "1"; } });
+    document.body.appendChild(el); root.classList.add("lu-open"); i = 0; visited.clear(); render();
+    el.addEventListener("click", e => { const b = e.target.closest("[data-a]"); if (!b || b.disabled) return; const a = b.dataset.a; if (a === "next" && i < SL.length - 1) { i++; render(); } else if (a === "back" && i > 0) { i--; render(); } else if (a === "done") close(); else if (a === "create") close(true); });
+    addEventListener("keydown", key, true); requestAnimationFrame(() => el && el.classList.add("show"));
   }
   // Erst zeigen, wenn Intro (Cutscene), Spiel-Player und andere Fenster weg sind
   const busy = () => root.classList.contains("mi-on") || root.classList.contains("intro-on") || !!document.getElementById("player") || !!document.querySelector(".modal,.agiftv,.advm,.ann,#rz");

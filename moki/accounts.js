@@ -204,14 +204,27 @@
     o.addEventListener("click", e => { if (e.target === o || e.target.dataset.a === "close") close(); }); addEventListener("keydown", k);
     document.body.appendChild(o); o.close = close; return o;
   }
-  function authDialog(tab) {
-    const o = modal(`<h3>Moki-Konto</h3>
-      <div class="atabs"><button type="button" data-t="in" class="on">Anmelden</button><button type="button" data-t="up">Konto erstellen</button></div>
-      <p class="ainfo"></p>
-      <label class="tf-lab" for="ac-n">Name</label><input id="ac-n" class="tf-in-txt" maxlength="20" autocomplete="username" autocapitalize="off" spellcheck="false">
-      <label class="tf-lab" for="ac-p">Passwort</label><input id="ac-p" class="tf-in-txt" type="password" maxlength="72" autocomplete="current-password">
+  const INFO = { in: "Melde dich an, dann werden deine Spielstände auf diesem Gerät geladen.", up: "Wähle einen Namen und ein Passwort. Du bist danach sofort angemeldet. Deine Spielstände werden gesichert und sind auf jedem Gerät da. Es gibt keine E-Mail, merke dir das Passwort gut, es kann nicht zurückgesetzt werden." };
+  // Der Aufbau der Fenster steht an einer Stelle, damit der Update-Bildschirm exakt dasselbe zeigen kann
+  function authHtml(mode, sample) {
+    sample = sample || {};
+    return `<h3>Moki-Konto</h3>
+      <div class="atabs"><button type="button" data-t="in" class="${mode === "in" ? "on" : ""}">Anmelden</button><button type="button" data-t="up" class="${mode === "up" ? "on" : ""}">Konto erstellen</button></div>
+      <p class="ainfo">${INFO[mode]}</p>
+      <label class="tf-lab" for="ac-n">Name</label><input id="ac-n" class="tf-in-txt" maxlength="20" autocomplete="username" autocapitalize="off" spellcheck="false" value="${esc(sample.name || "")}">
+      <label class="tf-lab" for="ac-p">Passwort</label><input id="ac-p" class="tf-in-txt" type="password" maxlength="72" autocomplete="current-password" value="${esc(sample.pw || "")}">
       <div class="tf-err" id="ac-e" role="alert"></div>
-      <div class="acts"><button class="btn" type="button" data-a="close">Abbrechen</button><button class="btn go" type="button" id="ac-go">Anmelden</button></div>`);
+      <div class="acts"><button class="btn" type="button" data-a="close">Abbrechen</button><button class="btn go" type="button" id="ac-go">${mode === "in" ? "Anmelden" : "Konto erstellen"}</button></div>`;
+  }
+  function menuHtml(name, bytes) {
+    const used = ((bytes || 0) / 1024).toFixed(1), pct = Math.min(100, Math.round((bytes || 0) / 4000000 * 100));
+    return `<h3>Hallo, ${esc(name)}!</h3><p>Du bist angemeldet. Deine Spielstände werden automatisch gesichert und auf anderen Geräten geladen, sobald du dich dort anmeldest.</p>
+      <div class="amet"><div class="amet-b"><i style="width:${pct}%"></i></div><small>Gesicherte Daten: ${used} KB von 4000 KB</small></div>
+      <div class="tf-err" id="ac-e" role="alert"></div>
+      <div class="acts amenu"><button class="btn" type="button" data-a="close">Schließen</button><button class="btn" type="button" id="ac-save">Jetzt sichern</button><button class="btn" type="button" id="ac-out">Abmelden</button><button class="btn" type="button" id="ac-del">Konto löschen</button></div>`;
+  }
+  function authDialog(tab) {
+    const o = modal(authHtml("in"));
     let mode = tab || "in"; const $ = s => o.querySelector(s);
     const set = m => { mode = m; o.querySelectorAll(".atabs button").forEach(b => b.classList.toggle("on", b.dataset.t === m)); $("#ac-go").textContent = m === "in" ? "Anmelden" : "Konto erstellen"; $("#ac-p").autocomplete = m === "in" ? "current-password" : "new-password"; $(".ainfo").textContent = m === "in" ? "Melde dich an, dann werden deine Spielstände auf diesem Gerät geladen." : "Wähle einen Namen und ein Passwort. Du bist danach sofort angemeldet. Deine Spielstände werden gesichert und sind auf jedem Gerät da. Es gibt keine E-Mail, merke dir das Passwort gut, es kann nicht zurückgesetzt werden."; $("#ac-e").textContent = ""; };
     o.querySelectorAll(".atabs button").forEach(b => b.addEventListener("click", () => set(b.dataset.t))); set(mode);
@@ -230,11 +243,7 @@
     $("#ac-n").focus();
   }
   function menuDialog() {
-    const used = ((acct.bytes || 0) / 1024).toFixed(1), pct = Math.min(100, Math.round((acct.bytes || 0) / 4000000 * 100));
-    const o = modal(`<h3>Hallo, ${esc(acct.name)}!</h3><p>Du bist angemeldet. Deine Spielstände werden automatisch gesichert und auf anderen Geräten geladen, sobald du dich dort anmeldest.</p>
-      <div class="amet"><div class="amet-b"><i style="width:${pct}%"></i></div><small>Gesicherte Daten: ${used} KB von 4000 KB</small></div>
-      <div class="tf-err" id="ac-e" role="alert"></div>
-      <div class="acts amenu"><button class="btn" type="button" data-a="close">Schließen</button><button class="btn" type="button" id="ac-save">Jetzt sichern</button><button class="btn" type="button" id="ac-out">Abmelden</button><button class="btn" type="button" id="ac-del">Konto löschen</button></div>`);
+    const o = modal(menuHtml(acct.name, acct.bytes));
     const $ = s => o.querySelector(s);
     $("#ac-save").addEventListener("click", async () => { $("#ac-save").disabled = true; $("#ac-save").textContent = "Sichere …"; warned = false; hold = 0; await sync({ deep: true, force: true }); $("#ac-save").textContent = "Gesichert ✓"; setTimeout(() => { if (o.isConnected) { o.close(); menuDialog(); } }, 700); });
     $("#ac-out").addEventListener("click", async () => { try { await rpc("moki_acc_logout", { p_token: acct.token }); } catch (e) {} logoutLocal(); o.close(); toast("Abgemeldet. Deine Spielstände bleiben auf diesem Gerät und im Konto."); });
@@ -247,5 +256,5 @@
   document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("#acc"); if (!b) return; e.preventDefault(); if (acct) menuDialog(); else authDialog("in"); });
   renderBtn(); setTimeout(renderBtn, 600);
   if (acct) setTimeout(() => sync({ first: true, force: true }), 1200);
-  window.MOKI_ACC = { get name() { return acct && acct.name; }, sync: () => sync({ deep: true, force: true }) };
+  window.MOKI_ACC = { html: { auth: authHtml, menu: menuHtml }, get name() { return acct && acct.name; }, sync: () => sync({ deep: true, force: true }) };
 })();

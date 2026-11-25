@@ -434,8 +434,6 @@ html.lu-open body{overflow:hidden}
 .lu-card{position:relative;width:min(560px,100%);max-height:min(94vh,760px);overflow:auto;padding:26px 26px 22px;border-radius:28px;background:linear-gradient(180deg,#171e5a,#101645);border:1px solid #ffffff22;box-shadow:0 30px 90px #000c;color:var(--text)}
 .lu-card.in{animation:luin .4s cubic-bezier(.2,.9,.3,1) both}
 @keyframes luin{from{opacity:0;transform:translateY(14px) scale(.98)}}
-.lu-x{position:absolute;top:14px;right:14px;width:38px;height:38px;border:0;border-radius:50%;background:#ffffff14;color:#fff;font-size:16px;cursor:pointer}
-.lu-x:hover{background:#ffffff2a}
 .lu-top{display:flex;align-items:center;gap:12px;margin-bottom:6px}
 .lu-chip{padding:5px 13px;border-radius:99px;background:var(--accent2);color:#3a2a00;font-weight:800;font-size:13px}
 .lu-n{color:var(--muted);font-size:13px;font-weight:700}
@@ -466,3 +464,15 @@ html.lu-open body{overflow:hidden}
 .lu-acts{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
 @media(max-width:520px){.lu-card{padding:20px 18px 18px}.lu-hero,.lu-sv,.lu-dev{font-size:36px}.lu-mock .lu-b:nth-of-type(1){display:none}}
 @media(prefers-reduced-motion:reduce){.lu-card.in,.lu-hero .lu-arrow,.lu-mock .lu-hl,.lu-dots i{animation:none}}
+
+/* Update-Bildschirm: echte Elemente */
+.lu-hwrap{margin:10px 0;overflow:hidden;border-radius:16px}
+.lu-hdr{display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(10,13,43,.85);border:1px solid #ffffff12;border-radius:16px;pointer-events:none;width:max-content;max-width:none}
+.lu-hdr .search{flex:1;min-width:120px}
+.lu-hdr .lu-hl{box-shadow:0 0 0 3px #00e5a888;animation:luglow 1.6s ease-in-out infinite}
+.lu-visw{margin:10px 0}
+.lu-visw .lu-static{position:static;inset:auto;display:block;background:none;padding:0;z-index:auto;pointer-events:none}
+.lu-visw .lu-static .box{margin:0 auto;box-shadow:0 8px 24px #0009}
+.lu-visw .lu-static .atabs button.on,.lu-visw .lu-static .go{box-shadow:0 0 0 3px #00e5a888}
+@keyframes luglow{50%{box-shadow:0 0 0 7px #00e5a822}}
+.lu-acts .btn:disabled{opacity:.55;cursor:not-allowed}
