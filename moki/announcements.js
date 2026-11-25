@@ -28,8 +28,8 @@
   function busy() {
     const up = document.querySelector("#upd.open");
     const intro = document.documentElement.classList.contains("intro-on") || document.documentElement.classList.contains("mi-on");
-    const pl = document.getElementById("player");
-    return !!(up || intro || pl);
+    const pl = document.getElementById("player"), lu = document.getElementById("lupd");
+    return !!(up || intro || pl || lu);
   }
   function waitFree() {
     return new Promise(res => { const t = setInterval(() => { if (!busy()) { clearInterval(t); res(); } }, 500); });

@@ -426,3 +426,43 @@ html.rz-on #mainGrid .tile.rz-win{transform:scale(1.34);z-index:6;box-shadow:0 0
 .ainfo{font-size:13px;color:var(--muted);margin-bottom:4px}
 .amet{margin:12px 0}.amet-b{height:8px;border-radius:99px;background:#ffffff22;overflow:hidden}.amet-b i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}.amet small{color:var(--muted)}
 .amenu{flex-wrap:wrap}
+
+/* ---- Update-Bildschirm: Moki-Konto ---- */
+#lupd{position:fixed;inset:0;z-index:99993;display:grid;place-items:center;padding:16px;background:radial-gradient(900px 500px at 50% 0,#1b2f6b88,transparent 70%),rgba(4,6,22,.88);backdrop-filter:blur(8px);opacity:0;transition:opacity .35s}
+#lupd.show{opacity:1}
+html.lu-open body{overflow:hidden}
+.lu-card{position:relative;width:min(560px,100%);max-height:min(94vh,760px);overflow:auto;padding:26px 26px 22px;border-radius:28px;background:linear-gradient(180deg,#171e5a,#101645);border:1px solid #ffffff22;box-shadow:0 30px 90px #000c;color:var(--text)}
+.lu-card.in{animation:luin .4s cubic-bezier(.2,.9,.3,1) both}
+@keyframes luin{from{opacity:0;transform:translateY(14px) scale(.98)}}
+.lu-x{position:absolute;top:14px;right:14px;width:38px;height:38px;border:0;border-radius:50%;background:#ffffff14;color:#fff;font-size:16px;cursor:pointer}
+.lu-x:hover{background:#ffffff2a}
+.lu-top{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.lu-chip{padding:5px 13px;border-radius:99px;background:var(--accent2);color:#3a2a00;font-weight:800;font-size:13px}
+.lu-n{color:var(--muted);font-size:13px;font-weight:700}
+.lu-card h2{font-size:clamp(24px,5vw,32px);line-height:1.1;margin:10px 0 12px;letter-spacing:-.4px;padding-right:40px}
+.lu-p{font-size:16.5px;line-height:1.5;color:#e6eaff;margin:10px 0}
+.lu-card ul{margin:10px 0 4px;padding-left:20px;display:grid;gap:8px;color:#cfd6ff;font-size:15px;line-height:1.45}
+.lu-card li::marker{color:var(--accent)}
+.lu-vis{margin:10px 0;display:flex;align-items:center;justify-content:center;gap:14px;font-size:44px}
+.lu-hero{padding:14px;border-radius:22px;background:radial-gradient(300px 120px at 50% 50%,#00e5a822,transparent 70%),#ffffff0c}
+.lu-hero .lu-arrow{font-size:34px;color:var(--accent);animation:lupulse 1.6s ease-in-out infinite}
+@keyframes lupulse{50%{transform:scale(1.2);opacity:.6}}
+.lu-mock{font-size:14px;gap:8px;padding:12px 14px;border-radius:16px;background:#0b1030;border:1px solid #ffffff1a;justify-content:flex-start}
+.lu-mock .lu-logo{font-size:22px;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;margin-right:auto}
+.lu-mock .lu-b{padding:7px 12px;border-radius:99px;background:#252d73;font-weight:700;white-space:nowrap}
+.lu-mock .lu-hl{background:var(--accent);color:#04201a;box-shadow:0 0 0 3px #00e5a855;animation:luglow 1.6s ease-in-out infinite}
+@keyframes luglow{50%{box-shadow:0 0 0 7px #00e5a822}}
+.lu-form{font-size:13px;flex-wrap:wrap;gap:8px;padding:12px;border-radius:16px;background:#0b1030;border:1px solid #ffffff1a}
+.lu-form em{font-style:normal;flex:1 1 40%;text-align:center;padding:7px;border-radius:10px;background:#252d73;font-weight:700}
+.lu-form em.on{background:var(--accent);color:#04201a}
+.lu-form u{flex:1 1 100%;text-decoration:none;padding:9px 12px;border-radius:10px;background:#050818;border:1px solid #ffffff22;color:var(--muted);text-align:left}
+.lu-form s{flex:1 1 100%;text-decoration:none;padding:9px;border-radius:10px;background:var(--accent);color:#04201a;font-weight:800;text-align:center}
+.lu-sv,.lu-dev{padding:12px;border-radius:22px;background:#ffffff0c}
+.lu-dots{display:flex;gap:6px}.lu-dots i{width:9px;height:9px;border-radius:50%;background:var(--accent);animation:ludot 1.2s infinite}
+.lu-dots i:nth-child(2){animation-delay:.2s}.lu-dots i:nth-child(3){animation-delay:.4s}
+@keyframes ludot{0%,100%{opacity:.25;transform:scale(.7)}50%{opacity:1;transform:scale(1.2)}}
+.lu-dotsrow{display:flex;justify-content:center;gap:8px;margin:16px 0 4px}
+.lu-dotsrow i{width:8px;height:8px;border-radius:50%;background:#ffffff33;transition:.2s}.lu-dotsrow i.on{width:22px;border-radius:99px;background:var(--accent)}
+.lu-acts{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+@media(max-width:520px){.lu-card{padding:20px 18px 18px}.lu-hero,.lu-sv,.lu-dev{font-size:36px}.lu-mock .lu-b:nth-of-type(1){display:none}}
+@media(prefers-reduced-motion:reduce){.lu-card.in,.lu-hero .lu-arrow,.lu-mock .lu-hl,.lu-dots i{animation:none}}
