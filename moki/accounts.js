@@ -12,7 +12,7 @@
   const J = { get(k, d) { try { const v = JSON.parse(LS.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }, set(k, v) { try { LS.setItem(k, JSON.stringify(v)); } catch (e) {} } };
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const toast = msg => { if (typeof mtoast === "function") mtoast(msg); };
-  let acct = J.get(KEY, null), snap = J.get(SNAP, {}), seq = +LS.getItem(SEQ) || 0, busy = false, lastPush = 0;
+  let acct = J.get(KEY, null), snap = J.get(SNAP, {}), seq = +LS.getItem(SEQ) || 0, busy = false, lastPush = 0, lastRun = 0, nextPull = 0, hold = 0, holdN = 0, warned = false, sent = [];
   const SKIP = {};
 
   async function rpc(fn, args) {
@@ -110,9 +110,12 @@
     const list = [];
     for (const it of items) list.push({ i: it.id, t: snap[it.id][1], v: await pack(it.v) });
     let part = [], size = 0;
+    const hourAgo = Date.now() - 3600000; sent = sent.filter(x => x[0] > hourAgo);
+    if (sent.reduce((a, x) => a + x[1], 0) + list.reduce((a, x) => a + x.v.length, 0) > 6000000) throw new Error("limit");   // hoechstens 6 MB pro Stunde senden
     const flush = async () => {
-      if (!part.length) return; const r = await rpc("moki_sync_push", { p_token: acct.token, p_items: part }); part = []; size = 0;
-      if (r.err === "quota") { toast("Dein Moki-Speicher ist voll. Neue Spielstände werden nicht mehr gesichert."); throw new Error("quota"); }
+      if (!part.length) return; sent.push([Date.now(), size]); const r = await rpc("moki_sync_push", { p_token: acct.token, p_items: part }); part = []; size = 0;
+      if (r.err === "quota") { if (!warned) { warned = true; toast("Dein Moki-Speicher ist voll. Neue Spielstände werden vorerst nicht mehr gesichert."); } throw new Error("quota"); }
+      if (r.err === "limit") throw new Error("limit");
       if (r.err === "session") { logoutLocal(); toast("Du wurdest abgemeldet. Bitte melde dich neu an."); throw new Error("session"); }
       if (!r.ok) throw new Error("push");
       acct.bytes = r.bytes; J.set(KEY, acct); if (r.seq > seq) { seq = r.seq; LS.setItem(SEQ, String(seq)); }
@@ -167,20 +170,26 @@
   }
 
   // ---------- Ablauf ----------
-  async function sync(deep, first) {
-    if (!acct || busy) return; busy = true;
+  // opts: deep = auch Spiele-Datenbanken lesen, first = Anmeldung/Start, force = sofort, gap = Mindestabstand zum letzten Lauf, noPull = nur senden
+  async function sync(o) {
+    o = o || {}; if (!acct || busy) return; const now = Date.now();
+    if (!o.force && now < hold) return;
+    if (!o.force && now - lastRun < (o.gap == null ? 120000 : o.gap)) return;
+    busy = true; lastRun = now;
     try {
-      const ch = await pull();
-      await push(first ? "init" : deep);
-      if (ch && first && !document.getElementById("player")) { toast("Deine Spielstände wurden geladen. Seite wird neu gestartet …"); setTimeout(() => location.reload(), 900); }
-    } catch (e) { /* offline oder voll: spaeter erneut */ }
+      if (!o.noPull && (o.force || o.first || now >= nextPull)) { nextPull = now + 300000; const ch = await pull(); if (ch && o.first && !document.getElementById("player")) { toast("Deine Spielstände wurden geladen. Seite wird neu gestartet …"); setTimeout(() => location.reload(), 900); } }
+      await push(o.first ? "init" : !!o.deep);
+      holdN = 0;
+    } catch (e) {
+      const m = String(e && e.message); if (m === "quota" || m === "limit") hold = Date.now() + 3600000; else { holdN = Math.min(holdN + 1, 6); hold = Date.now() + 60000 * Math.pow(2, holdN); }
+    }
     busy = false; renderBtn();
   }
   function logoutLocal() { acct = null; LS.removeItem(KEY); renderBtn(); }
-  setInterval(() => { if (acct && !document.hidden) sync(!!document.getElementById("player")); }, 75000);
-  document.addEventListener("visibilitychange", () => { if (document.hidden) sync(true); else if (acct && Date.now() - lastPush > 20000) sync(false); });
-  addEventListener("pagehide", () => { if (acct) sync(true); });
-  new MutationObserver(() => { if (!document.getElementById("player") && acct && document.body.dataset.pl === "1") { document.body.dataset.pl = ""; setTimeout(() => sync(true), 2500); } else if (document.getElementById("player")) document.body.dataset.pl = "1"; }).observe(document.body, { childList: true });
+  setInterval(() => { if (acct && !document.hidden) sync({ deep: !!document.getElementById("player"), gap: 110000 }); }, 120000);
+  document.addEventListener("visibilitychange", () => { if (!acct) return; if (document.hidden) sync({ deep: true, gap: 30000, noPull: true }); else sync({ gap: 110000 }); });
+  addEventListener("pagehide", () => { if (acct) sync({ deep: true, gap: 30000, noPull: true }); });
+  new MutationObserver(() => { if (!document.getElementById("player") && acct && document.body.dataset.pl === "1") { document.body.dataset.pl = ""; setTimeout(() => sync({ deep: true, gap: 30000, noPull: true }), 2500); } else if (document.getElementById("player")) document.body.dataset.pl = "1"; }).observe(document.body, { childList: true });
 
   // ---------- Oberflaeche ----------
   const ERR = { name: "Der Name braucht 3 bis 20 Zeichen (Buchstaben, Zahlen, Leerzeichen, _ . -).", pw: "Das Passwort braucht mindestens 6 Zeichen.", taken: "Diesen Namen gibt es schon. Nimm einen anderen.", busy: "Gerade werden viele Konten erstellt. Versuche es später noch einmal.", bad: "Name oder Passwort stimmt nicht.", locked: "Zu viele falsche Versuche. Bitte warte 10 Minuten.", net: "Keine Verbindung. Prüfe dein Internet und versuche es noch einmal.", session: "Du bist nicht mehr angemeldet." };
@@ -214,7 +223,7 @@
         const r = await rpc(mode === "in" ? "moki_acc_login" : "moki_acc_register", { p_name: name, p_pw: pw });
         if (!r.ok) { $("#ac-e").textContent = ERR[r.err] || "Das hat nicht geklappt."; bt.disabled = false; bt.textContent = mode === "in" ? "Anmelden" : "Konto erstellen"; return; }
         acct = { name: r.name, token: r.token, bytes: r.bytes || 0 }; J.set(KEY, acct); seq = 0; LS.setItem(SEQ, "0"); snap = {}; J.set(SNAP, snap);
-        renderBtn(); o.close(); toast(mode === "in" ? "Angemeldet als " + r.name : "Konto erstellt. Willkommen, " + r.name + "!"); sync(true, true);
+        renderBtn(); o.close(); toast(mode === "in" ? "Angemeldet als " + r.name : "Konto erstellt. Willkommen, " + r.name + "!"); hold = 0; warned = false; sync({ deep: true, first: true, force: true });
       } catch (e) { $("#ac-e").textContent = ERR.net; bt.disabled = false; bt.textContent = mode === "in" ? "Anmelden" : "Konto erstellen"; }
     };
     $("#ac-go").addEventListener("click", go); o.querySelectorAll("input").forEach(i => i.addEventListener("keydown", e => { if (e.key === "Enter") go(); }));
@@ -227,7 +236,7 @@
       <div class="tf-err" id="ac-e" role="alert"></div>
       <div class="acts amenu"><button class="btn" type="button" data-a="close">Schließen</button><button class="btn" type="button" id="ac-save">Jetzt sichern</button><button class="btn" type="button" id="ac-out">Abmelden</button><button class="btn" type="button" id="ac-del">Konto löschen</button></div>`);
     const $ = s => o.querySelector(s);
-    $("#ac-save").addEventListener("click", async () => { $("#ac-save").disabled = true; $("#ac-save").textContent = "Sichere …"; await sync(true); $("#ac-save").textContent = "Gesichert ✓"; setTimeout(() => { if (o.isConnected) { o.close(); menuDialog(); } }, 700); });
+    $("#ac-save").addEventListener("click", async () => { $("#ac-save").disabled = true; $("#ac-save").textContent = "Sichere …"; warned = false; hold = 0; await sync({ deep: true, force: true }); $("#ac-save").textContent = "Gesichert ✓"; setTimeout(() => { if (o.isConnected) { o.close(); menuDialog(); } }, 700); });
     $("#ac-out").addEventListener("click", async () => { try { await rpc("moki_acc_logout", { p_token: acct.token }); } catch (e) {} logoutLocal(); o.close(); toast("Abgemeldet. Deine Spielstände bleiben auf diesem Gerät und im Konto."); });
     $("#ac-del").addEventListener("click", () => {
       $(".acts").style.display = "none"; $("p").textContent = "Konto wirklich löschen? Alle gesicherten Spielstände im Konto werden gelöscht. Auf diesem Gerät bleibt alles. Gib zur Bestätigung dein Passwort ein.";
@@ -237,6 +246,6 @@
   }
   document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("#acc"); if (!b) return; e.preventDefault(); if (acct) menuDialog(); else authDialog("in"); });
   renderBtn(); setTimeout(renderBtn, 600);
-  if (acct) setTimeout(() => sync(false, true), 1200);
-  window.MOKI_ACC = { get name() { return acct && acct.name; }, sync: () => sync(true) };
+  if (acct) setTimeout(() => sync({ first: true, force: true }), 1200);
+  window.MOKI_ACC = { get name() { return acct && acct.name; }, sync: () => sync({ deep: true, force: true }) };
 })();
