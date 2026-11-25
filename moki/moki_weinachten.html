@@ -2431,7 +2431,7 @@ function openPlayer(id) {
     const gm = games.find(g => g.id === id) || (window.MOKI_XMAS_GAMES || []).find(g => g.id === id);
     if (gm && html.includes('<div id="bar">')) {
       html = html.replace('<div id="bar">', () => '<div id="bar"><span id="moki-gt">' + esc(gm.title) + '</span>')
-        .replace("</head>", () => "<style>#bar{justify-content:space-between!important;align-items:center!important;gap:12px}#moki-gt{color:#fff;font:800 15px 'Segoe UI',system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;opacity:.92}#moki-back{flex:none}</style></head>");
+        .replace("</head>", () => "<style>#bar{justify-content:space-between!important;align-items:center!important;gap:12px}#moki-gt{color:#fff;font:800 15px 'Segoe UI',system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;opacity:.92}#moki-back{flex:none}" + (window.MOKI_XMAS_BARCSS || "") + "</style></head>");
     }
   }
   if (!html) { if (location.hash.startsWith("#/play/")) history.replaceState(null, "", location.pathname + location.search); return; }
@@ -2872,6 +2872,15 @@ window.MOKI_LAUNCH=Object.assign(window.MOKI_LAUNCH||{},{"blastar": "\u003c!DOCT
       games.push(Object.assign({ colors: ["#8a1c2e", "#17314a"], xmas: true }, g)); try { known.add(g.id); } catch (e) {}
     });
   }
+  // Weihnachtliche Leiste ueber den Spielen (wird in den Player-Launcher eingesetzt)
+  window.MOKI_XMAS_BARCSS = "#bar{position:relative;background:linear-gradient(180deg,#3a1022,#150a1e)!important;border-bottom:2px solid #f6c66766;box-shadow:0 4px 18px #0008;z-index:6}" +
+    "#bar::before,#bar::after{content:'';position:absolute;left:0;right:0;bottom:-9px;height:14px;pointer-events:none;background-repeat:repeat-x}" +
+    "#bar::before{background-image:radial-gradient(circle at 12px 8px,#ff4d6d 0 4px,transparent 5px),radial-gradient(circle at 52px 8px,#00e5a8 0 4px,transparent 5px),radial-gradient(circle at 92px 8px,#3da5ff 0 4px,transparent 5px);background-size:120px 14px;filter:drop-shadow(0 0 4px #ff4d6d);animation:xbl 1.6s steps(1) infinite}" +
+    "#bar::after{background-image:radial-gradient(circle at 32px 8px,#ffd23f 0 4px,transparent 5px),radial-gradient(circle at 72px 8px,#ff4d6d 0 4px,transparent 5px),radial-gradient(circle at 112px 8px,#c77dff 0 4px,transparent 5px);background-size:120px 14px;filter:drop-shadow(0 0 4px #ffd23f);animation:xbl 1.6s steps(1) .8s infinite}" +
+    "@keyframes xbl{0%{opacity:1}50%{opacity:.3}}" +
+    "#moki-gt{color:#ffe3a0!important;text-shadow:0 0 10px #f6c66777;opacity:1!important}#moki-gt::before{content:'\\2744\\FE0F  ';font-size:.9em}" +
+    "#moki-back{background:linear-gradient(90deg,#d6263b,#f6c667)!important;color:#fff!important;text-shadow:0 1px 2px #0007;border:1px solid #ffe3a099}" +
+    "@media(prefers-reduced-motion:reduce){#bar::before,#bar::after{animation:none}}";
   const findGame = id => games.find(g => g.id === id) || (window.MOKI_XMAS_GAMES || []).find(g => g.id === id);
 
   // ---------- Quiz: pro Tuerchen eine Frage (erste Antwort ist die richtige, die Reihenfolge wird pro Tag fest gemischt) ----------

@@ -2181,7 +2181,7 @@ function openPlayer(id) {
     const gm = games.find(g => g.id === id) || (window.MOKI_XMAS_GAMES || []).find(g => g.id === id);
     if (gm && html.includes('<div id="bar">')) {
       html = html.replace('<div id="bar">', () => '<div id="bar"><span id="moki-gt">' + esc(gm.title) + '</span>')
-        .replace("</head>", () => "<style>#bar{justify-content:space-between!important;align-items:center!important;gap:12px}#moki-gt{color:#fff;font:800 15px 'Segoe UI',system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;opacity:.92}#moki-back{flex:none}</style></head>");
+        .replace("</head>", () => "<style>#bar{justify-content:space-between!important;align-items:center!important;gap:12px}#moki-gt{color:#fff;font:800 15px 'Segoe UI',system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;opacity:.92}#moki-back{flex:none}" + (window.MOKI_XMAS_BARCSS || "") + "</style></head>");
     }
   }
   if (!html) { if (location.hash.startsWith("#/play/")) history.replaceState(null, "", location.pathname + location.search); return; }
