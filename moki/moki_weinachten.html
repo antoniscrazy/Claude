@@ -499,6 +499,11 @@ html.lu-open body{overflow:hidden}
 @keyframes luglow{50%{box-shadow:0 0 0 7px #00e5a822}}
 .lu-acts .btn:disabled{opacity:.55;cursor:not-allowed}
 
+/* Seitenleiste: eigenes Scrollen, wenn sie hoeher als der Bildschirm ist (das Mausrad scrollt dann die Leiste, nicht die Spiele) */
+#side{max-height:calc(100vh - 110px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#ffffff33 transparent;padding-right:4px}
+#side::-webkit-scrollbar{width:6px}#side::-webkit-scrollbar-thumb{background:#ffffff33;border-radius:99px}
+@media(max-width:900px){#side{max-height:none;overflow-y:visible;padding-right:0}}
+
 </style>
 <style>
 /* Moki Weihnachten: Winter-Design, Adventskalender, Lichterkette, Schnee. Wird nur in moki_weinachten.html eingebettet (build.py). */
