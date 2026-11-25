@@ -1081,6 +1081,17 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "granny3",
+    title: "Granny 3",
+    url: "#/play/granny3",
+    category: "Abenteuer",
+    image: "granny3.jpg",
+    colors: ["#2b2b2b", "#8b0000"],
+    description: "Return the School: Entkomme aus der Schule, bevor Granny dich erwischt. Achtung, nichts für schwache Nerven.",
+    added: "2026-11-25",
+    featured: false
+  },
+  {
     id: "stickman-bike",
     title: "Stickman Bike",
     url: "#/play/stickman-bike",
