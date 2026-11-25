@@ -5160,7 +5160,7 @@ window.MOKI_LAUNCH=Object.assign(window.MOKI_LAUNCH||{},{"blastar": "\u003c!DOCT
 <script>
 // Moki-Konten: Name und Passwort, automatisch angemeldet im Browser. Spielstaende (localStorage und IndexedDB der Spiele)
 // werden komprimiert gesichert und auf anderen Geraeten wieder geladen. Es wird nur gesendet, was sich geaendert hat.
-// Die Datenbank ist nur ueber geprueft Funktionen erreichbar (moki_acc_*, moki_sync_*), pro Konto sind hoechstens 4 MB erlaubt.
+// Die Datenbank ist nur ueber geprueft Funktionen erreichbar (moki_acc_*, moki_sync_*), pro Konto sind hoechstens 20 MB erlaubt.
 (function () {
   "use strict";
   const CFG = window.MOKI_CFG || {};
@@ -5228,7 +5228,7 @@ window.MOKI_LAUNCH=Object.assign(window.MOKI_LAUNCH||{},{"blastar": "\u003c!DOCT
   function snapLS(out) {
     for (let i = 0; i < LS.length; i++) {
       const k = LS.key(i); if (SKIP_LS.test(k) || k.length > 200) continue;
-      const v = LS.getItem(k); if (v == null || v.length > 900000) continue; out.set("ls:" + k, v);
+      const v = LS.getItem(k); if (v == null || v.length > 2000000) continue; out.set("ls:" + k, v);
     }
   }
   const req = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
@@ -5248,7 +5248,7 @@ window.MOKI_LAUNCH=Object.assign(window.MOKI_LAUNCH||{},{"blastar": "\u003c!DOCT
           for (let i = 0; i < keys.length; i++) {
             try {
               const k = enc(keys[i]), s = JSON.stringify([k, enc(vals[i])]), id = "ix:" + name + "|" + sn + "|" + JSON.stringify(k);
-              if (s.length > 900000 || id.length > 300) continue; total += s.length; if (total > 3000000) { over = true; break; } local.set(id, s);
+              if (s.length > 3000000 || id.length > 300) continue; total += s.length; if (total > 10000000) { over = true; break; } local.set(id, s);
             } catch (e) { if (e !== SKIP) throw e; }
           }
           if (over) break;
@@ -5268,10 +5268,11 @@ window.MOKI_LAUNCH=Object.assign(window.MOKI_LAUNCH||{},{"blastar": "\u003c!DOCT
     dbs.forEach(n => { const id = "ixs:" + n; if (cur.has(id) && !items.some(i => i.id === id)) { snap[id] = [hash(cur.get(id)), now]; items.push({ id, v: cur.get(id) }); } });
     if (!items.length) return;
     const list = [];
-    for (const it of items) list.push({ i: it.id, t: snap[it.id][1], v: await pack(it.v) });
+    for (const it of items) { const pv = await pack(it.v); if (pv.length > 2900000) continue; list.push({ i: it.id, t: snap[it.id][1], v: pv }); }   // zu grosse Einzelwerte werden nicht gesichert
+    if (!list.length) { J.set(SNAP, snap); return; }
     let part = [], size = 0;
     const hourAgo = Date.now() - 3600000; sent = sent.filter(x => x[0] > hourAgo);
-    if (sent.reduce((a, x) => a + x[1], 0) + list.reduce((a, x) => a + x.v.length, 0) > 6000000) throw new Error("limit");   // hoechstens 6 MB pro Stunde senden
+    if (sent.reduce((a, x) => a + x[1], 0) + list.reduce((a, x) => a + x.v.length, 0) > 20000000) throw new Error("limit");   // hoechstens 20 MB pro Stunde senden
     const flush = async () => {
       if (!part.length) return; sent.push([Date.now(), size]); const r = await rpc("moki_sync_push", { p_token: acct.token, p_items: part }); part = []; size = 0;
       if (r.err === "quota") { if (!warned) { warned = true; toast("Dein Moki-Speicher ist voll. Neue Spielstände werden vorerst nicht mehr gesichert."); } throw new Error("quota"); }
@@ -5306,7 +5307,7 @@ window.MOKI_LAUNCH=Object.assign(window.MOKI_LAUNCH||{},{"blastar": "\u003c!DOCT
     if (!acct) return 0;
     const w = await rpc("moki_acc_who", { p_token: acct.token });
     if (w.err === "session") { logoutLocal(); toast("Du wurdest abgemeldet. Bitte melde dich neu an."); return 0; }
-    acct.name = w.name; acct.bytes = w.bytes; J.set(KEY, acct); renderBtn();
+    acct.name = w.name; acct.bytes = w.bytes; acct.quota = w.quota || acct.quota; J.set(KEY, acct); renderBtn();
     if (!(w.seq > seq)) return 0;
     const r = await rpc("moki_sync_pull", { p_token: acct.token, p_since: seq });
     if (!r.ok) return 0;
@@ -5376,10 +5377,11 @@ window.MOKI_LAUNCH=Object.assign(window.MOKI_LAUNCH||{},{"blastar": "\u003c!DOCT
       <div class="tf-err" id="ac-e" role="alert"></div>
       <div class="acts"><button class="btn" type="button" data-a="close">Abbrechen</button><button class="btn go" type="button" id="ac-go">${mode === "in" ? "Anmelden" : "Konto erstellen"}</button></div>`;
   }
-  function menuHtml(name, bytes) {
-    const used = ((bytes || 0) / 1024).toFixed(1), pct = Math.min(100, Math.round((bytes || 0) / 4000000 * 100));
+  const fmt = n => n >= 1e6 ? (n / 1e6).toFixed(1).replace(".0", "") + " MB" : Math.max(0, Math.round(n / 1000)) + " KB";
+  function menuHtml(name, bytes, quota) {
+    quota = quota || 20000000; const used = fmt(bytes || 0), pct = Math.min(100, Math.round((bytes || 0) / quota * 100));
     return `<h3>Hallo, ${esc(name)}!</h3><p>Du bist angemeldet. Deine Spielstände werden automatisch gesichert und auf anderen Geräten geladen, sobald du dich dort anmeldest.</p>
-      <div class="amet"><div class="amet-b"><i style="width:${pct}%"></i></div><small>Gesicherte Daten: ${used} KB von 4000 KB</small></div>
+      <div class="amet"><div class="amet-b"><i style="width:${pct}%"></i></div><small>Gesicherte Daten: ${used} von ${fmt(quota)}</small></div>
       <div class="tf-err" id="ac-e" role="alert"></div>
       <div class="acts amenu"><button class="btn" type="button" data-a="close">Schließen</button><button class="btn" type="button" id="ac-save">Jetzt sichern</button><button class="btn" type="button" id="ac-out">Abmelden</button><button class="btn" type="button" id="ac-del">Konto löschen</button></div>`;
   }
@@ -5395,7 +5397,7 @@ window.MOKI_LAUNCH=Object.assign(window.MOKI_LAUNCH||{},{"blastar": "\u003c!DOCT
       try {
         const r = await rpc(mode === "in" ? "moki_acc_login" : "moki_acc_register", { p_name: name, p_pw: pw });
         if (!r.ok) { $("#ac-e").textContent = ERR[r.err] || "Das hat nicht geklappt."; bt.disabled = false; bt.textContent = mode === "in" ? "Anmelden" : "Konto erstellen"; return; }
-        acct = { name: r.name, token: r.token, bytes: r.bytes || 0 }; J.set(KEY, acct); seq = 0; LS.setItem(SEQ, "0"); snap = {}; J.set(SNAP, snap);
+        acct = { name: r.name, token: r.token, bytes: r.bytes || 0, quota: r.quota || 20000000 }; J.set(KEY, acct); seq = 0; LS.setItem(SEQ, "0"); snap = {}; J.set(SNAP, snap);
         renderBtn(); o.close(); toast(mode === "in" ? "Angemeldet als " + r.name : "Konto erstellt. Willkommen, " + r.name + "!"); hold = 0; warned = false; sync({ deep: true, first: true, force: true });
       } catch (e) { $("#ac-e").textContent = ERR.net; bt.disabled = false; bt.textContent = mode === "in" ? "Anmelden" : "Konto erstellen"; }
     };
@@ -5403,7 +5405,7 @@ window.MOKI_LAUNCH=Object.assign(window.MOKI_LAUNCH||{},{"blastar": "\u003c!DOCT
     $("#ac-n").focus();
   }
   function menuDialog() {
-    const o = modal(menuHtml(acct.name, acct.bytes));
+    const o = modal(menuHtml(acct.name, acct.bytes, acct.quota));
     const $ = s => o.querySelector(s);
     $("#ac-save").addEventListener("click", async () => { $("#ac-save").disabled = true; $("#ac-save").textContent = "Sichere …"; warned = false; hold = 0; await sync({ deep: true, force: true }); $("#ac-save").textContent = "Gesichert ✓"; setTimeout(() => { if (o.isConnected) { o.close(); menuDialog(); } }, 700); });
     $("#ac-out").addEventListener("click", async () => { try { await rpc("moki_acc_logout", { p_token: acct.token }); } catch (e) {} logoutLocal(); o.close(); toast("Abgemeldet. Deine Spielstände bleiben auf diesem Gerät und im Konto."); });
@@ -5439,7 +5441,7 @@ window.MOKI_LAUNCH=Object.assign(window.MOKI_LAUNCH||{},{"blastar": "\u003c!DOCT
     { t: "2. Konto erstellen", c: "Schritt 2", p: "So sieht das Fenster aus. Wechsle oben auf „Konto erstellen“.", l: ["Denk dir einen Namen aus: 3 bis 20 Zeichen, also Buchstaben, Zahlen, Leerzeichen, Punkt, Strich oder Unterstrich.", "Wähle ein Passwort mit mindestens 6 Zeichen.", "Tippe auf „Konto erstellen“. Fertig, du bist angemeldet und dein Name steht oben im Knopf."], v: "up" },
     { t: "3. Was wird gesichert?", c: "Schritt 3", p: "Moki sichert deinen Fortschritt von allein im Hintergrund. Du musst nichts drücken.", l: ["Spielstände wie Level, Münzen und Fortschritt, bei allen Spielen, die im Browser speichern.", "Deine Favoriten und deine zuletzt gespielten Spiele.", "Alles, was du auf Moki sammelst, zum Beispiel im Adventskalender.", "Gesichert wird, wenn du ein Spiel verlässt, alle paar Minuten und wenn du die Seite schließt. Es wird nur gesendet, was sich wirklich geändert hat, deshalb braucht es kaum Daten.", "Von Hand geht es so: Tippe auf deinen Namen und dann auf „Jetzt sichern“. Dort kannst du dich auch abmelden oder das Konto löschen."], v: "menu" },
     { t: "4. Auf einem anderen Gerät", c: "Schritt 4", p: "Du willst auf dem Tablet oder auf einem anderen Computer weiterspielen? Kein Problem.", l: ["Öffne Moki auf dem anderen Gerät und tippe auf „Anmelden“.", "Gib denselben Namen und dasselbe Passwort ein und tippe auf „Anmelden“.", "Deine Spielstände werden geladen. Danach startet die Seite einmal neu und alles ist da.", "Ab dann bleiben beide Geräte automatisch auf demselben Stand."], v: "in" },
-    { t: "5. Das solltest du wissen", c: "Wichtig", p: "Damit nichts schiefgeht, merk dir diese Punkte:", l: ["Es gibt keine E-Mail. Darum kann dein Passwort nicht zurückgesetzt werden. Merk es dir gut oder schreib es auf.", "Gespeichert werden nur dein Name, dein Passwort (verschlüsselt) und deine Spielstände. Sonst nichts.", "Jedes Konto hat 4 MB Platz. Das reicht normalerweise locker. Unter deinem Namen siehst du, wie viel schon belegt ist.", "„Abmelden“ beendet nur die Anmeldung. Deine Spielstände bleiben auf dem Gerät und im Konto.", "„Konto löschen“ (mit Passwort) löscht alles, was im Konto gesichert ist. Auf dem Gerät bleibt alles.", "Manche Spiele speichern gar nichts. Da gibt es dann auch nichts zu sichern."], v: "info" },
+    { t: "5. Das solltest du wissen", c: "Wichtig", p: "Damit nichts schiefgeht, merk dir diese Punkte:", l: ["Es gibt keine E-Mail. Darum kann dein Passwort nicht zurückgesetzt werden. Merk es dir gut oder schreib es auf.", "Gespeichert werden nur dein Name, dein Passwort (verschlüsselt) und deine Spielstände. Sonst nichts.", "Jedes Konto hat 20 MB Platz. Das reicht normalerweise locker. Unter deinem Namen siehst du, wie viel schon belegt ist.", "„Abmelden“ beendet nur die Anmeldung. Deine Spielstände bleiben auf dem Gerät und im Konto.", "„Konto löschen“ (mit Passwort) löscht alles, was im Konto gesichert ist. Auf dem Gerät bleibt alles.", "Manche Spiele speichern gar nichts. Da gibt es dann auch nichts zu sichern."], v: "info" },
     { t: "Los geht's!", c: "Fertig", p: "Jetzt weißt du alles. Erstelle dein Konto am besten gleich, dann ist dein Fortschritt von Anfang an sicher.", l: ["Du findest diese Erklärung später nicht wieder, aber du erreichst alles über den Knopf „Anmelden“ oben in der Kopfzeile.", "Viel Spaß beim Spielen!"], v: "end" }
   ];
 
@@ -5461,7 +5463,7 @@ window.MOKI_LAUNCH=Object.assign(window.MOKI_LAUNCH||{},{"blastar": "\u003c!DOCT
     if (k === "header") { realHeader(host); return; }
     if (k === "up" && a) { host.insertAdjacentHTML("beforeend", dialog(a.auth("up", { name: "MeinName", pw: "geheim123" }))); return; }
     if (k === "in" && a) { host.insertAdjacentHTML("beforeend", dialog(a.auth("in", { name: "MeinName", pw: "geheim123" }))); return; }
-    if (k === "menu" && a) { host.insertAdjacentHTML("beforeend", dialog(a.menu("MeinName", 184320))); return; }
+    if (k === "menu" && a) { host.insertAdjacentHTML("beforeend", dialog(a.menu("MeinName", 1843200, 20000000))); return; }
     if (k === "hero" || k === "end") host.insertAdjacentHTML("beforeend", `<div class="lu-vis lu-hero" aria-hidden="true"><span class="lu-ic">👤</span><span class="lu-arrow">⇄</span><span class="lu-ic">☁️</span></div>`);
     else if (k === "info") host.insertAdjacentHTML("beforeend", `<div class="lu-vis lu-hero" aria-hidden="true"><span class="lu-ic">🔒</span></div>`);
   }

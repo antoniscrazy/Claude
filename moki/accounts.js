@@ -1,6 +1,6 @@
 // Moki-Konten: Name und Passwort, automatisch angemeldet im Browser. Spielstaende (localStorage und IndexedDB der Spiele)
 // werden komprimiert gesichert und auf anderen Geraeten wieder geladen. Es wird nur gesendet, was sich geaendert hat.
-// Die Datenbank ist nur ueber geprueft Funktionen erreichbar (moki_acc_*, moki_sync_*), pro Konto sind hoechstens 4 MB erlaubt.
+// Die Datenbank ist nur ueber geprueft Funktionen erreichbar (moki_acc_*, moki_sync_*), pro Konto sind hoechstens 20 MB erlaubt.
 (function () {
   "use strict";
   const CFG = window.MOKI_CFG || {};
@@ -68,7 +68,7 @@
   function snapLS(out) {
     for (let i = 0; i < LS.length; i++) {
       const k = LS.key(i); if (SKIP_LS.test(k) || k.length > 200) continue;
-      const v = LS.getItem(k); if (v == null || v.length > 900000) continue; out.set("ls:" + k, v);
+      const v = LS.getItem(k); if (v == null || v.length > 2000000) continue; out.set("ls:" + k, v);
     }
   }
   const req = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
@@ -88,7 +88,7 @@
           for (let i = 0; i < keys.length; i++) {
             try {
               const k = enc(keys[i]), s = JSON.stringify([k, enc(vals[i])]), id = "ix:" + name + "|" + sn + "|" + JSON.stringify(k);
-              if (s.length > 900000 || id.length > 300) continue; total += s.length; if (total > 3000000) { over = true; break; } local.set(id, s);
+              if (s.length > 3000000 || id.length > 300) continue; total += s.length; if (total > 10000000) { over = true; break; } local.set(id, s);
             } catch (e) { if (e !== SKIP) throw e; }
           }
           if (over) break;
@@ -108,10 +108,11 @@
     dbs.forEach(n => { const id = "ixs:" + n; if (cur.has(id) && !items.some(i => i.id === id)) { snap[id] = [hash(cur.get(id)), now]; items.push({ id, v: cur.get(id) }); } });
     if (!items.length) return;
     const list = [];
-    for (const it of items) list.push({ i: it.id, t: snap[it.id][1], v: await pack(it.v) });
+    for (const it of items) { const pv = await pack(it.v); if (pv.length > 2900000) continue; list.push({ i: it.id, t: snap[it.id][1], v: pv }); }   // zu grosse Einzelwerte werden nicht gesichert
+    if (!list.length) { J.set(SNAP, snap); return; }
     let part = [], size = 0;
     const hourAgo = Date.now() - 3600000; sent = sent.filter(x => x[0] > hourAgo);
-    if (sent.reduce((a, x) => a + x[1], 0) + list.reduce((a, x) => a + x.v.length, 0) > 6000000) throw new Error("limit");   // hoechstens 6 MB pro Stunde senden
+    if (sent.reduce((a, x) => a + x[1], 0) + list.reduce((a, x) => a + x.v.length, 0) > 20000000) throw new Error("limit");   // hoechstens 20 MB pro Stunde senden
     const flush = async () => {
       if (!part.length) return; sent.push([Date.now(), size]); const r = await rpc("moki_sync_push", { p_token: acct.token, p_items: part }); part = []; size = 0;
       if (r.err === "quota") { if (!warned) { warned = true; toast("Dein Moki-Speicher ist voll. Neue Spielstände werden vorerst nicht mehr gesichert."); } throw new Error("quota"); }
@@ -146,7 +147,7 @@
     if (!acct) return 0;
     const w = await rpc("moki_acc_who", { p_token: acct.token });
     if (w.err === "session") { logoutLocal(); toast("Du wurdest abgemeldet. Bitte melde dich neu an."); return 0; }
-    acct.name = w.name; acct.bytes = w.bytes; J.set(KEY, acct); renderBtn();
+    acct.name = w.name; acct.bytes = w.bytes; acct.quota = w.quota || acct.quota; J.set(KEY, acct); renderBtn();
     if (!(w.seq > seq)) return 0;
     const r = await rpc("moki_sync_pull", { p_token: acct.token, p_since: seq });
     if (!r.ok) return 0;
@@ -216,10 +217,11 @@
       <div class="tf-err" id="ac-e" role="alert"></div>
       <div class="acts"><button class="btn" type="button" data-a="close">Abbrechen</button><button class="btn go" type="button" id="ac-go">${mode === "in" ? "Anmelden" : "Konto erstellen"}</button></div>`;
   }
-  function menuHtml(name, bytes) {
-    const used = ((bytes || 0) / 1024).toFixed(1), pct = Math.min(100, Math.round((bytes || 0) / 4000000 * 100));
+  const fmt = n => n >= 1e6 ? (n / 1e6).toFixed(1).replace(".0", "") + " MB" : Math.max(0, Math.round(n / 1000)) + " KB";
+  function menuHtml(name, bytes, quota) {
+    quota = quota || 20000000; const used = fmt(bytes || 0), pct = Math.min(100, Math.round((bytes || 0) / quota * 100));
     return `<h3>Hallo, ${esc(name)}!</h3><p>Du bist angemeldet. Deine Spielstände werden automatisch gesichert und auf anderen Geräten geladen, sobald du dich dort anmeldest.</p>
-      <div class="amet"><div class="amet-b"><i style="width:${pct}%"></i></div><small>Gesicherte Daten: ${used} KB von 4000 KB</small></div>
+      <div class="amet"><div class="amet-b"><i style="width:${pct}%"></i></div><small>Gesicherte Daten: ${used} von ${fmt(quota)}</small></div>
       <div class="tf-err" id="ac-e" role="alert"></div>
       <div class="acts amenu"><button class="btn" type="button" data-a="close">Schließen</button><button class="btn" type="button" id="ac-save">Jetzt sichern</button><button class="btn" type="button" id="ac-out">Abmelden</button><button class="btn" type="button" id="ac-del">Konto löschen</button></div>`;
   }
@@ -235,7 +237,7 @@
       try {
         const r = await rpc(mode === "in" ? "moki_acc_login" : "moki_acc_register", { p_name: name, p_pw: pw });
         if (!r.ok) { $("#ac-e").textContent = ERR[r.err] || "Das hat nicht geklappt."; bt.disabled = false; bt.textContent = mode === "in" ? "Anmelden" : "Konto erstellen"; return; }
-        acct = { name: r.name, token: r.token, bytes: r.bytes || 0 }; J.set(KEY, acct); seq = 0; LS.setItem(SEQ, "0"); snap = {}; J.set(SNAP, snap);
+        acct = { name: r.name, token: r.token, bytes: r.bytes || 0, quota: r.quota || 20000000 }; J.set(KEY, acct); seq = 0; LS.setItem(SEQ, "0"); snap = {}; J.set(SNAP, snap);
         renderBtn(); o.close(); toast(mode === "in" ? "Angemeldet als " + r.name : "Konto erstellt. Willkommen, " + r.name + "!"); hold = 0; warned = false; sync({ deep: true, first: true, force: true });
       } catch (e) { $("#ac-e").textContent = ERR.net; bt.disabled = false; bt.textContent = mode === "in" ? "Anmelden" : "Konto erstellen"; }
     };
@@ -243,7 +245,7 @@
     $("#ac-n").focus();
   }
   function menuDialog() {
-    const o = modal(menuHtml(acct.name, acct.bytes));
+    const o = modal(menuHtml(acct.name, acct.bytes, acct.quota));
     const $ = s => o.querySelector(s);
     $("#ac-save").addEventListener("click", async () => { $("#ac-save").disabled = true; $("#ac-save").textContent = "Sichere …"; warned = false; hold = 0; await sync({ deep: true, force: true }); $("#ac-save").textContent = "Gesichert ✓"; setTimeout(() => { if (o.isConnected) { o.close(); menuDialog(); } }, 700); });
     $("#ac-out").addEventListener("click", async () => { try { await rpc("moki_acc_logout", { p_token: acct.token }); } catch (e) {} logoutLocal(); o.close(); toast("Abgemeldet. Deine Spielstände bleiben auf diesem Gerät und im Konto."); });
