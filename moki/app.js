@@ -379,3 +379,13 @@ addEventListener("hashchange", playerFromHash);
 addEventListener("message", e => { if (e.data === "moki-close") closePlayer(); });
 addEventListener("keydown", e => { if (e.key === "Escape" && document.getElementById("player")) closePlayer(); });
 playerFromHash();
+
+// Seitenleiste: Mausrad und Wischen scrollen nur die Leiste, nie die Spiele daneben (auch wenn die Leiste gar nichts zu scrollen hat)
+(function () {
+  const side = document.getElementById("side"); if (!side) return;
+  const wide = () => matchMedia("(min-width:901px)").matches;
+  side.addEventListener("wheel", e => { if (!wide() || e.ctrlKey) return; e.preventDefault(); side.scrollTop += e.deltaY * (e.deltaMode === 1 ? 16 : 1); }, { passive: false });
+  let ty = null;
+  side.addEventListener("touchstart", e => { ty = e.touches[0].clientY; }, { passive: true });
+  side.addEventListener("touchmove", e => { if (!wide() || ty == null) return; e.preventDefault(); const y = e.touches[0].clientY; side.scrollTop -= y - ty; ty = y; }, { passive: false });
+})();

@@ -500,9 +500,9 @@ html.lu-open body{overflow:hidden}
 .lu-acts .btn:disabled{opacity:.55;cursor:not-allowed}
 
 /* Seitenleiste: eigenes Scrollen, wenn sie hoeher als der Bildschirm ist (das Mausrad scrollt dann die Leiste, nicht die Spiele) */
-#side{max-height:calc(100vh - 110px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#ffffff33 transparent;padding-right:4px}
-#side::-webkit-scrollbar{width:6px}#side::-webkit-scrollbar-thumb{background:#ffffff33;border-radius:99px}
-@media(max-width:900px){#side{max-height:none;overflow-y:visible;padding-right:0}}
+#side{max-height:calc(100vh - 110px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;-ms-overflow-style:none}
+#side::-webkit-scrollbar{display:none;width:0;height:0}
+@media(max-width:900px){#side{max-height:none;overflow-y:visible}}
 
 </style>
 <style>
@@ -2445,6 +2445,16 @@ addEventListener("hashchange", playerFromHash);
 addEventListener("message", e => { if (e.data === "moki-close") closePlayer(); });
 addEventListener("keydown", e => { if (e.key === "Escape" && document.getElementById("player")) closePlayer(); });
 playerFromHash();
+
+// Seitenleiste: Mausrad und Wischen scrollen nur die Leiste, nie die Spiele daneben (auch wenn die Leiste gar nichts zu scrollen hat)
+(function () {
+  const side = document.getElementById("side"); if (!side) return;
+  const wide = () => matchMedia("(min-width:901px)").matches;
+  side.addEventListener("wheel", e => { if (!wide() || e.ctrlKey) return; e.preventDefault(); side.scrollTop += e.deltaY * (e.deltaMode === 1 ? 16 : 1); }, { passive: false });
+  let ty = null;
+  side.addEventListener("touchstart", e => { ty = e.touches[0].clientY; }, { passive: true });
+  side.addEventListener("touchmove", e => { if (!wide() || ty == null) return; e.preventDefault(); const y = e.touches[0].clientY; side.scrollTop -= y - ty; ty = y; }, { passive: false });
+})();
 
 </script>
 <script>
