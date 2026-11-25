@@ -415,3 +415,14 @@ html.rz-on #mainGrid .tile.rz-win{transform:scale(1.34);z-index:6;box-shadow:0 0
 @keyframes rzfade{from{opacity:0}to{opacity:1}}
 @keyframes rzring{0%{transform:scale(1);opacity:.9}100%{transform:scale(14);opacity:0}}
 @keyframes rzspark{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--x),var(--y)) scale(.2);opacity:0}}
+
+/* ---- Moki-Konto ---- */
+#acc.on{background:var(--accent);color:#04201a}
+#acc span{max-width:110px;overflow:hidden;text-overflow:ellipsis}
+.amodal .box{width:min(440px,100%)}
+.atabs{display:flex;gap:8px;margin-bottom:12px}
+.atabs button{flex:1;padding:9px 10px;border:0;border-radius:12px;background:var(--panel2);color:var(--text);font:700 14px "Segoe UI",system-ui,sans-serif;cursor:pointer}
+.atabs button.on{background:var(--accent);color:#04201a}
+.ainfo{font-size:13px;color:var(--muted);margin-bottom:4px}
+.amet{margin:12px 0}.amet-b{height:8px;border-radius:99px;background:#ffffff22;overflow:hidden}.amet-b i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}.amet small{color:var(--muted)}
+.amenu{flex-wrap:wrap}

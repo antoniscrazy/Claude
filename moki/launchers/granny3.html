@@ -24,16 +24,16 @@
   #moki-back:hover { opacity: 1; transform: scale(1.05); }
 </style>
 <style>
-#pad{display:none;position:fixed;left:0;right:0;bottom:12px;justify-content:space-between;padding:0 12px;z-index:9;pointer-events:none;touch-action:none;user-select:none;-webkit-user-select:none}
-#pad.show{display:flex}
-#pad .grp{display:grid;gap:8px;pointer-events:auto}
-#pad .l{grid-template-columns:repeat(3,58px);grid-template-rows:repeat(2,58px)}
-#pad .r{grid-template-columns:repeat(3,58px);grid-template-rows:repeat(2,58px)}
-#pad button{font:800 18px system-ui,sans-serif;border:0;border-radius:14px;background:rgba(255,255,255,.22);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.5);touch-action:none}
-#pad button:active,#pad button.on{background:rgba(0,229,168,.6)}
-#pad .e{visibility:hidden}
-#look{display:none;position:fixed;top:46px;right:0;width:45%;bottom:120px;z-index:8;touch-action:none}
-#look.show{display:block}
+#ctl{display:none;position:fixed;inset:0;z-index:9;pointer-events:none;touch-action:none;user-select:none;-webkit-user-select:none}
+#ctl.show{display:block}
+#stick{position:absolute;left:20px;bottom:20px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.28);pointer-events:auto;touch-action:none}
+#knob{position:absolute;left:50%;top:50%;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;background:rgba(0,229,168,.5);pointer-events:none}
+#fire{position:absolute;right:20px;bottom:20px;width:112px;height:112px;border-radius:50%;border:0;background:rgba(192,23,58,.7);color:#fff;font:800 16px system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.5);pointer-events:auto;touch-action:none}
+#aim{position:absolute;right:146px;bottom:50px;width:78px;height:78px;border-radius:50%;border:0;background:rgba(255,255,255,.22);color:#fff;font:800 14px system-ui,sans-serif;pointer-events:auto;touch-action:none}
+#acts{position:absolute;right:20px;bottom:150px;display:grid;grid-template-columns:repeat(3,62px);grid-template-rows:repeat(2,50px);gap:8px;pointer-events:auto}
+#acts button{border:0;border-radius:12px;background:rgba(255,255,255,.22);color:#fff;font:800 15px system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.5);touch-action:none}
+#fire:active,#aim:active,#fire.on,#aim.on,#acts button:active,#acts button.on,#stick .on{background:rgba(0,229,168,.6)}
+#look{position:absolute;top:46px;right:0;width:50%;bottom:270px;pointer-events:auto;touch-action:none}
 </style>
 </head>
 <body>
@@ -85,45 +85,76 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
 })();
 </script>
 <div id="look"></div>
-<div id="pad"><div class="grp l"><span class="e"></span><button data-k="w">W</button><span class="e"></span><button data-k="a">A</button><button data-k="s">S</button><button data-k="d">D</button></div><div class="grp r"><button data-k="e">E</button><button data-k="sp">Space</button><button data-k="c">C</button><button data-k="r">R</button><button data-k="f">F</button></div></div>
+<div id="ctl">
+  <div id="stick"><div id="knob"></div></div>
+  <button id="aim">Zielen</button>
+  <button id="fire">Feuer</button>
+  <div id="acts"><button data-k="r">R</button><button data-k="f">F</button><button data-k="g">G</button><button data-k="sp">Sprung</button><button data-k="c">C</button><button data-k="sh">Sprint</button></div>
+</div>
 <script>
 (function(){
+  const $=id=>document.getElementById(id);
+  const ctl=$("ctl"), look=$("look"), stick=$("stick"), knob=$("knob"), fire=$("fire"), aim=$("aim");
   const KEYS={w:{key:"w",code:"KeyW",keyCode:87},a:{key:"a",code:"KeyA",keyCode:65},s:{key:"s",code:"KeyS",keyCode:83},d:{key:"d",code:"KeyD",keyCode:68},
-    e:{key:"e",code:"KeyE",keyCode:69},sp:{key:" ",code:"Space",keyCode:32},c:{key:"c",code:"KeyC",keyCode:67},r:{key:"r",code:"KeyR",keyCode:82},f:{key:"f",code:"KeyF",keyCode:70}};
-  const pad=document.getElementById("pad"), look=document.getElementById("look");
-  function fire(type,k){
-    const target=document.getElementById("c")||document.body;
-    target.dispatchEvent(new KeyboardEvent(type,{key:k.key,code:k.code,keyCode:k.keyCode,which:k.keyCode,bubbles:true,cancelable:true}));
-  }
+    r:{key:"r",code:"KeyR",keyCode:82},f:{key:"f",code:"KeyF",keyCode:70},g:{key:"g",code:"KeyG",keyCode:71},sp:{key:" ",code:"Space",keyCode:32},c:{key:"c",code:"KeyC",keyCode:67},sh:{key:"Shift",code:"ShiftLeft",keyCode:16}};
+  const canvas=()=>$("c")||document.body;
+  function key(type,k){ canvas().dispatchEvent(new KeyboardEvent(type,{key:k.key,code:k.code,keyCode:k.keyCode,which:k.keyCode,bubbles:true,cancelable:true})); }
+  function mouse(type,btn){ const c=canvas(); const r=c.getBoundingClientRect(); c.dispatchEvent(new MouseEvent(type,{button:btn,buttons:type==="mouseup"?0:(btn===0?1:2),clientX:r.left+r.width/2,clientY:r.top+r.height/2,bubbles:true,cancelable:true})); }
+  // Bewegung: linker Stick sendet W/A/S/D
   const held=new Set();
-  function down(b){ const k=KEYS[b.dataset.k]; if(!k||held.has(k.key)) return; held.add(k.key); b.classList.add("on"); const c=document.getElementById("c"); if(c&&c.focus) c.focus(); fire("keydown",k); }
-  function up(b){ const k=KEYS[b.dataset.k]; if(!k||!held.has(k.key)) return; held.delete(k.key); b.classList.remove("on"); fire("keyup",k); }
-  const btns=[...document.querySelectorAll("#pad button")];
-  btns.forEach(b=>{
-    b.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); down(b); });
-    b.addEventListener("pointerup",e=>{ e.preventDefault(); e.stopPropagation(); up(b); });
-    b.addEventListener("pointercancel",()=>up(b));
-    b.addEventListener("pointerleave",()=>up(b));
+  function setKeys(want){
+    for(const k of [...held]) if(!want.has(k)){ held.delete(k); key("keyup",KEYS[k]); }
+    for(const k of want) if(!held.has(k)){ held.add(k); key("keydown",KEYS[k]); }
+  }
+  let sid=null;
+  function stickMove(e){
+    const r=stick.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2, R=r.width/2;
+    let dx=(e.clientX-cx)/R, dy=(e.clientY-cy)/R; const len=Math.hypot(dx,dy); if(len>1){dx/=len;dy/=len;}
+    knob.style.transform=`translate(${dx*(R-40)}px,${dy*(R-40)}px)`;
+    const want=new Set(); const t=0.3;
+    if(dy<-t) want.add("w"); if(dy>t) want.add("s"); if(dx<-t) want.add("a"); if(dx>t) want.add("d");
+    setKeys(want);
+  }
+  function stickEnd(){ sid=null; knob.style.transform=""; setKeys(new Set()); }
+  stick.addEventListener("pointerdown",e=>{ e.preventDefault(); sid=e.pointerId; stick.setPointerCapture(e.pointerId); stickMove(e); });
+  stick.addEventListener("pointermove",e=>{ if(e.pointerId===sid) stickMove(e); });
+  stick.addEventListener("pointerup",e=>{ if(e.pointerId===sid) stickEnd(); });
+  stick.addEventListener("pointercancel",stickEnd);
+  // Feuer (Maus 1) und Zielen (Maus 2) halten
+  function hold(el,down,up,btn){
+    el.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); el.setPointerCapture(e.pointerId); el.classList.add("on"); mouse("mousedown",btn); });
+    el.addEventListener("pointerup",e=>{ e.preventDefault(); el.classList.remove("on"); mouse("mouseup",btn); });
+    el.addEventListener("pointercancel",()=>{ el.classList.remove("on"); mouse("mouseup",btn); });
+  }
+  hold(fire,0,0,0); hold(aim,0,0,2);
+  // Spieltasten (kurz antippen = einmal drücken)
+  document.querySelectorAll("#acts button").forEach(b=>{
+    const k=KEYS[b.dataset.k];
+    b.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); down(); });
+    let isDown=false; const down=()=>{ if(isDown) return; isDown=true; b.classList.add("on"); key("keydown",k); }; const up=()=>{ if(!isDown) return; isDown=false; b.classList.remove("on"); key("keyup",k); };
+    b.addEventListener("pointerup",e=>{ e.preventDefault(); up(); });
+    b.addEventListener("pointercancel",up);
+    b.addEventListener("pointerleave",up);
   });
-  // Umsehen: Ziehen im rechten Bereich schickt Mausbewegung an das Spiel.
+  // Umsehen: Ziehen rechts bewegt nur die Sicht, es wird KEIN Mausklick geschickt.
   let lx=null, ly=null, lid=null;
-  look.addEventListener("pointerdown",e=>{ lid=e.pointerId; lx=e.clientX; ly=e.clientY; look.setPointerCapture(e.pointerId); });
+  ["touchstart","touchmove"].forEach(t=>look.addEventListener(t,e=>e.preventDefault(),{passive:false}));
+  look.addEventListener("pointerdown",e=>{ e.preventDefault(); lid=e.pointerId; lx=e.clientX; ly=e.clientY; look.setPointerCapture(e.pointerId); });
   look.addEventListener("pointermove",e=>{
     if(e.pointerId!==lid) return;
     const dx=e.clientX-lx, dy=e.clientY-ly; lx=e.clientX; ly=e.clientY;
-    const c=document.getElementById("c"); if(!c) return;
-    c.dispatchEvent(new MouseEvent("mousemove",{clientX:e.clientX,clientY:e.clientY,movementX:dx*2,movementY:dy*2,bubbles:true}));
+    canvas().dispatchEvent(new MouseEvent("mousemove",{clientX:e.clientX,clientY:e.clientY,movementX:dx*2,movementY:dy*2,bubbles:true}));
   });
   const endLook=e=>{ if(e.pointerId===lid) lid=null; };
   look.addEventListener("pointerup",endLook); look.addEventListener("pointercancel",endLook);
-  function hide(){ pad.classList.remove("show"); look.classList.remove("show"); btns.forEach(up); }
+  function hide(){ ctl.classList.remove("show"); stickEnd(); fire.classList.remove("on"); aim.classList.remove("on"); }
   window.addEventListener("blur",hide);
   document.addEventListener("keydown",e=>{ if(e.key==="Escape") hide(); });
   // Erscheint nur in der Runde: nach Tippen auf PLAY (rechts unten im Story-Bildschirm).
   document.addEventListener("pointerdown",e=>{
-    if(e.target.closest && e.target.closest("#pad, #look")) return;
-    const inStartZone = e.clientY > innerHeight*0.76 && e.clientY < innerHeight*0.86 && Math.abs(e.clientX-innerWidth*0.695) < innerWidth*0.08;
-    if(inStartZone){ pad.classList.add("show"); look.classList.add("show"); }
+    if(e.target.closest && e.target.closest("#ctl, #look")) return;
+    const inPlay = e.clientY > innerHeight*0.76 && e.clientY < innerHeight*0.86 && Math.abs(e.clientX-innerWidth*0.695) < innerWidth*0.08;
+    if(inPlay) ctl.classList.add("show");
   },true);
 })();
 </script>
