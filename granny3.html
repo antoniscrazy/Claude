@@ -129,8 +129,8 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
   // Spieltasten (kurz antippen = einmal drücken)
   document.querySelectorAll("#acts button").forEach(b=>{
     const k=KEYS[b.dataset.k];
-    b.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); b.classList.add("on"); key("keydown",k); });
-    const up=()=>{ b.classList.remove("on"); key("keyup",k); };
+    b.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); down(); });
+    let isDown=false; const down=()=>{ if(isDown) return; isDown=true; b.classList.add("on"); key("keydown",k); }; const up=()=>{ if(!isDown) return; isDown=false; b.classList.remove("on"); key("keyup",k); };
     b.addEventListener("pointerup",e=>{ e.preventDefault(); up(); });
     b.addEventListener("pointercancel",up);
     b.addEventListener("pointerleave",up);
