@@ -46,15 +46,22 @@ const ORIGIN = new URL(BASE).origin;
 })();
 
 // --- Yandex-SDK-Ersatz: Werbung wird sofort als gesehen gemeldet, keine Anzeige.
-window.YaGames = { init: function () { return Promise.resolve({
+window.YaGames = { init: function () { var ys = {
   deviceInfo: { type: "desktop" },
+  environment: { i18n: { lang: "en", tld: "com" }, app: { id: "local" } },
+  features: {
+    GamesAPI: { getAllGames: function () { return Promise.resolve({ items: [], games: [] }); }, getGameByID: function () { return Promise.resolve({}); } },
+    LoadingAPI: { ready: function () {} },
+    GameplayAPI: { start: function () {}, stop: function () {} }
+  },
   adv: {
     showRewardedVideo: function (o) { var c = (o && o.callbacks) || {}; c.onOpen && c.onOpen(); c.onRewarded && c.onRewarded(); c.onClose && c.onClose(true); return Promise.resolve(); },
     showFullscreenAdv: function (o) { var c = (o && o.callbacks) || {}; c.onOpen && c.onOpen(); c.onClose && c.onClose(false); return Promise.resolve(); }
   },
   getPlayer: function () { return Promise.reject(new Error("no player")); },
-  getPayments: function () { return Promise.reject(new Error("no payments")); }
-}); } };
+  getPayments: function () { return Promise.reject(new Error("no payments")); },
+  getLeaderboards: function () { return Promise.reject(new Error("no lb")); }
+}; window.ysdk = ys; return Promise.resolve(ys); } };
 
 // Englisch automatisch: nach dem Laden einmal auf die britische Flagge tippen (Anteil der Canvas-Groesse).
 function pickEnglish(canvas) {
