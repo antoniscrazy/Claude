@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Granny</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #111; color: #fff; font-family: sans-serif; overflow: hidden; }
+  body { display: flex; flex-direction: column; }
+  #bar { flex: 0 0 auto; display: flex; justify-content: flex-end; padding: 6px 12px; background: #111; }
+  #wrap { flex: 1 1 auto; position: relative; min-height: 0; }
+  #c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; background: #000; outline: none; touch-action: none; }
+  #ld { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); text-align: center; width: 70%; max-width: 360px; }
+  #pb { height: 10px; border-radius: 5px; background: rgba(255,255,255,.15); overflow: hidden; margin-top: 8px; }
+  #pf { height: 100%; width: 0; background: #00e5a8; }
+  #moki-back {
+    padding: 9px 16px; border-radius: 999px;
+    background: linear-gradient(90deg, #00e5a8, #ffd23f);
+    color: #04201a; font: 800 14px "Segoe UI", system-ui, sans-serif;
+    text-decoration: none; box-shadow: 0 3px 12px rgba(0, 0, 0, .5); opacity: .92;
+  }
+  #moki-back:hover { opacity: 1; transform: scale(1.05); }
+</style>
+<style>
+#pad{display:none;position:fixed;left:0;right:0;bottom:12px;justify-content:space-between;padding:0 12px;z-index:9;pointer-events:none;touch-action:none;user-select:none;-webkit-user-select:none}
+#pad.show{display:flex}
+#pad .grp{display:grid;gap:8px;pointer-events:auto;grid-template-columns:repeat(3,58px);grid-template-rows:repeat(2,58px)}
+#pad button{font:800 18px system-ui,sans-serif;border:0;border-radius:14px;background:rgba(255,255,255,.22);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.5);touch-action:none}
+#pad button:active,#pad button.on{background:rgba(0,229,168,.6)}
+#pad .e{visibility:hidden}
+#look{display:none;position:fixed;top:46px;right:0;width:45%;bottom:120px;z-index:8;touch-action:none}
+#look.show{display:block}
+#tog{position:fixed;top:56px;right:12px;z-index:10;padding:7px 12px;border:0;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font:700 13px system-ui,sans-serif;touch-action:manipulation}
+#tog.on{background:rgba(0,229,168,.7);color:#04201a}
+</style>
+<style>html,body,body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}img,canvas{-webkit-user-drag:none}::selection{background:transparent}</style>
+<script>["selectstart","contextmenu","dragstart","copy","cut"].forEach(function(t){document.addEventListener(t,function(e){e.preventDefault();},true);});</script>
+</head>
+<body>
+<div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
+<div id="wrap"><canvas id="c" tabindex="-1"></canvas><div id="ld"><div id="tx">Lade Spiel …</div><div id="pb"><div id="pf"></div></div></div></div>
+<script>
+// Laedt das Spiel aus dem GitHub-Repo (raw.githubusercontent.com, fester Commit). Keine Werbung, keine Tracker.
+const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/5a204e1ebbccfa292ac2fe56478f9b8b134a13aa/granny-own/";
+const ORIGIN = new URL(BASE).origin;
+
+// --- Netz-Sperre: nur Repo-Ursprung, blob: und data: erlaubt.
+(function () {
+  function ok(u) { try { var x = new URL(String(u), location.href); return x.protocol === "blob:" || x.protocol === "data:" || x.origin === ORIGIN || x.protocol === "about:"; } catch (e) { return true; } }
+  var open = XMLHttpRequest.prototype.open, send = XMLHttpRequest.prototype.send;
+  XMLHttpRequest.prototype.open = function (m, u) { this._blocked = !ok(u); return open.apply(this, arguments); };
+  XMLHttpRequest.prototype.send = function () {
+    if (!this._blocked) return send.apply(this, arguments);
+    var x = this; setTimeout(function () { x.dispatchEvent(new ProgressEvent("error")); x.dispatchEvent(new ProgressEvent("loadend")); }, 0);
+  };
+  var f = window.fetch;
+  window.fetch = function (r) { return ok(r && r.url || r) ? f.apply(this, arguments) : Promise.reject(new TypeError("Failed to fetch")); };
+  if (navigator.sendBeacon) navigator.sendBeacon = function () { return false; };
+  window.open = function () { return null; };
+})();
+
+// --- Yandex-SDK-Ersatz: Werbung wird sofort als gesehen gemeldet, keine Anzeige.
+window.YaGames = { init: function () { var ys = {
+  deviceInfo: { type: "desktop" },
+  environment: { i18n: { lang: "en", tld: "com" }, app: { id: "local" } },
+  features: {
+    GamesAPI: { getAllGames: function () { return Promise.resolve({ items: [], games: [] }); }, getGameByID: function () { return Promise.resolve({}); } },
+    LoadingAPI: { ready: function () {} },
+    GameplayAPI: { start: function () {}, stop: function () {} }
+  },
+  adv: {
+    showRewardedVideo: function (o) { var c = (o && o.callbacks) || {}; c.onOpen && c.onOpen(); c.onRewarded && c.onRewarded(); c.onClose && c.onClose(true); return Promise.resolve(); },
+    showFullscreenAdv: function (o) { var c = (o && o.callbacks) || {}; c.onOpen && c.onOpen(); c.onClose && c.onClose(false); return Promise.resolve(); }
+  },
+  getPlayer: function () { return Promise.reject(new Error("no player")); },
+  getPayments: function () { return Promise.resolve(window.payments); },
+  getLeaderboards: function () { return Promise.reject(new Error("no lb")); }
+}; window.ysdk = ys; return Promise.resolve(ys); } };
+// Kauf-Ersatz: Kaeufe gelten sofort als erfolgreich (Skin wird freigeschaltet).
+window.payments = {
+  purchase: function (o) { var id = (o && (o.id || o.productID)) || ""; return Promise.resolve({ productID: id, purchaseToken: "local", signature: "local", id: id }); },
+  getPurchases: function () { return Promise.resolve([]); },
+  getCatalog: function () { return Promise.resolve([]); },
+  getPurchaseByID: function () { return Promise.resolve(null); }
+};
+
+// Englisch automatisch: nach dem Laden einmal auf die britische Flagge tippen (Anteil der Canvas-Groesse).
+function pickEnglish(canvas) {
+  var r = canvas.getBoundingClientRect();
+  var x = r.left + r.width * 0.534, y = r.top + r.height * 0.858;
+  var o = { clientX: x, clientY: y, bubbles: true, cancelable: true, buttons: 1 };
+  canvas.dispatchEvent(new MouseEvent("mousemove", o));
+  canvas.dispatchEvent(new MouseEvent("mousedown", o));
+  setTimeout(function () { canvas.dispatchEvent(new MouseEvent("mouseup", o)); }, 120);
+}
+
+const tx = document.getElementById("tx"), pf = document.getElementById("pf");
+(async () => {
+  try {
+    const get = (f, kind) => fetch(BASE + f).then(r => { if (!r.ok) throw new Error(f + ": " + r.status); return r[kind](); });
+    let done = 0; const bump = () => { done++; pf.style.width = (done / 4 * 50) + "%"; };
+    const [loaderTxt, fw, dataBlob, wasmBlob] = await Promise.all([
+      get("Build/Granny.loader.js", "text").then(x => { bump(); return x; }),
+      get("Build/Granny.framework.js", "blob").then(x => { bump(); return x; }),
+      get("Build/Granny.data", "blob").then(x => { bump(); return x; }),
+      get("Build/Granny.wasm", "blob").then(x => { bump(); return x; })
+    ]);
+    const s = document.createElement("script"); s.textContent = loaderTxt; document.body.appendChild(s);
+    tx.textContent = "Starte …";
+    const canvas = document.getElementById("c");
+    const inst = await createUnityInstance(canvas, {
+      dataUrl: URL.createObjectURL(new Blob([dataBlob], { type: "application/octet-stream" })),
+      codeUrl: URL.createObjectURL(new Blob([wasmBlob], { type: "application/wasm" })),
+      frameworkUrl: URL.createObjectURL(new Blob([fw], { type: "text/javascript" })),
+      streamingAssetsUrl: BASE + "StreamingAssets",
+      companyName: "Anastasia Kazantseva", productName: "Granny", productVersion: "1.0"
+    }, p => { pf.style.width = (50 + p * 50) + "%"; });
+    window.unityGame = inst; window.myGameInstance = inst;
+    document.getElementById("ld").remove();
+    setTimeout(function () { pickEnglish(canvas); }, 4000);
+  } catch (e) { tx.textContent = "Fehler beim Laden: " + (e.message || e); }
+})();
+</script>
+<button id="tog" type="button">Steuerung</button>
+<div id="look"></div>
+<div id="pad"><div class="grp"><span class="e"></span><button data-k="w">W</button><span class="e"></span><button data-k="a">A</button><button data-k="s">S</button><button data-k="d">D</button></div><div class="grp"><button data-k="e">E</button><button data-k="sp">Space</button><button data-k="c">C</button><button data-k="r">R</button><button data-k="f">F</button><button id="fire" type="button">Schießen</button></div></div>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const pad=$("pad"), look=$("look");
+  const KEYS={w:{key:"w",code:"KeyW",keyCode:87},a:{key:"a",code:"KeyA",keyCode:65},s:{key:"s",code:"KeyS",keyCode:83},d:{key:"d",code:"KeyD",keyCode:68},
+    e:{key:"e",code:"KeyE",keyCode:69},sp:{key:" ",code:"Space",keyCode:32},c:{key:"c",code:"KeyC",keyCode:67},r:{key:"r",code:"KeyR",keyCode:82},f:{key:"f",code:"KeyF",keyCode:70}};
+  const canvas=()=>$("c")||document.body;
+  function key(type,k){ canvas().dispatchEvent(new KeyboardEvent(type,{key:k.key,code:k.code,keyCode:k.keyCode,which:k.keyCode,bubbles:true,cancelable:true})); }
+  const btns=[...document.querySelectorAll("#pad button")];
+  btns.forEach(b=>{
+    const k=KEYS[b.dataset.k]; let isDown=false;
+    const down=()=>{ if(isDown) return; isDown=true; b.classList.add("on"); const c=canvas(); if(c.focus) c.focus(); key("keydown",k); };
+    const up=()=>{ if(!isDown) return; isDown=false; b.classList.remove("on"); key("keyup",k); };
+    b.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); down(); });
+    b.addEventListener("pointerup",e=>{ e.preventDefault(); up(); });
+    b.addEventListener("pointercancel",up); b.addEventListener("pointerleave",up);
+  });
+  // Schiessen: halten = Maus-Taste 1 im Spiel
+  const fireBtn=$("fire");
+  function mouseBtn(type){ const r=vcur(); canvas().dispatchEvent(new MouseEvent(type,{button:0,buttons:type==="mouseup"?0:1,clientX:r.x,clientY:r.y,bubbles:true,cancelable:true})); }
+  fireBtn.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); fireBtn.setPointerCapture(e.pointerId); fireBtn.classList.add("on"); mouseBtn("mousedown"); });
+  fireBtn.addEventListener("pointerup",e=>{ e.preventDefault(); fireBtn.classList.remove("on"); mouseBtn("mouseup"); });
+  fireBtn.addEventListener("pointercancel",()=>{ fireBtn.classList.remove("on"); mouseBtn("mouseup"); });
+  // Umsehen: sanft. Ziehen sammelt Bewegung, die pro Bild begrenzt und abgebaut wird, damit nichts durchdreht.
+  let lid=null, lx=0, ly=0, accX=0, accY=0, raf=0, vx=0, vy=0;
+  const MAX=18;
+  function vcur(){ const c=canvas().getBoundingClientRect(); return {x:c.left+c.width/2, y:c.top+c.height/2, w:c.width, h:c.height, l:c.left, t:c.top}; }
+  function step(){
+    let mx=Math.max(-MAX,Math.min(MAX,accX*0.3)), my=Math.max(-MAX,Math.min(MAX,accY*0.3));
+    accX-=mx; accY-=my;
+    if(Math.abs(mx)>0.01||Math.abs(my)>0.01){
+      const r=vcur();
+      vx=Math.max(r.l+2,Math.min(r.l+r.w-2,vx+mx)); vy=Math.max(r.t+2,Math.min(r.t+r.h-2,vy+my));
+      canvas().dispatchEvent(new MouseEvent("mousemove",{clientX:vx,clientY:vy,movementX:mx,movementY:my,bubbles:true}));
+    }
+    if(lid!==null||Math.abs(accX)>0.5||Math.abs(accY)>0.5){ raf=requestAnimationFrame(step); } else { raf=0; accX=0; accY=0; }
+  }
+  ["touchstart","touchmove"].forEach(t=>look.addEventListener(t,e=>e.preventDefault(),{passive:false}));
+  look.addEventListener("pointerdown",e=>{ e.preventDefault(); lid=e.pointerId; lx=e.clientX; ly=e.clientY; const r=vcur(); vx=r.x; vy=r.y; look.setPointerCapture(e.pointerId); if(!raf) raf=requestAnimationFrame(step); });
+  look.addEventListener("pointermove",e=>{
+    if(e.pointerId!==lid) return;
+    accX+=(e.clientX-lx)*1.0; accY+=(e.clientY-ly)*1.0; lx=e.clientX; ly=e.clientY;
+  });
+  const endLook=e=>{ if(e.pointerId===lid){ lid=null; } };
+  look.addEventListener("pointerup",endLook); look.addEventListener("pointercancel",endLook);
+  function hide(){ pad.classList.remove("show"); look.classList.remove("show"); btns.forEach(b=>{ if(b.classList.contains("on")) b.dispatchEvent(new PointerEvent("pointerup")); }); }
+  window.addEventListener("blur",hide);
+  document.addEventListener("keydown",e=>{ if(e.key==="Escape") hide(); });
+  // Erscheint in der Runde: Menue-Schritte merken, dann Start unten bzw. PLAY.
+  let stage=0;
+  function show(){ pad.classList.add("show"); look.classList.add("show"); tog.classList.add("on"); }
+  // Fallback: Steuerung per Knopf ein- und ausschalten, falls der Auto-Start nicht greift.
+  const tog=$("tog");
+  tog.addEventListener("click",()=>{ if(pad.classList.contains("show")){ pad.classList.remove("show"); look.classList.remove("show"); tog.classList.remove("on"); } else { show(); } });
+  document.addEventListener("pointerdown",e=>{
+    if(e.target.closest && e.target.closest("#pad, #look")) return;
+    const x=e.clientX, y=e.clientY, W=innerWidth, H=innerHeight;
+    if(stage===0 && y>H*0.62 && y<H*0.72 && Math.abs(x-W/2)<W*0.12){ stage=1; return; }
+    if(stage===1 && y>H*0.88 && Math.abs(x-W/2)<W*0.14){ stage=2; return; }
+    if(stage>=2 && y>H*0.88 && Math.abs(x-W/2)<W*0.14){ stage=3; show(); return; }
+    if(stage>=2 && y>H*0.62 && y<H*0.72 && Math.abs(x-W/2)<W*0.12){ stage=3; show(); return; }
+  },true);
+})();
+</script>
+</body>
+</html>

@@ -1081,6 +1081,17 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "granny-original",
+    title: "Granny Original",
+    url: "#/play/granny-original",
+    category: "Abenteuer",
+    image: "granny-original.jpg",
+    colors: ["#2b2b2b", "#8b0000"],
+    description: "Die Original-Version von Granny: Entkomme aus dem Haus, bevor sie dich erwischt. Achtung, nichts für schwache Nerven.",
+    added: "2026-11-26",
+    featured: false
+  },
+  {
     id: "granny3",
     title: "Granny 3",
     url: "#/play/granny3",
