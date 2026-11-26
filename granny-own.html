@@ -30,6 +30,8 @@
 #pad .e{visibility:hidden}
 #look{display:none;position:fixed;top:46px;right:0;width:45%;bottom:120px;z-index:8;touch-action:none}
 #look.show{display:block}
+#tog{position:fixed;top:56px;right:12px;z-index:10;padding:7px 12px;border:0;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font:700 13px system-ui,sans-serif;touch-action:manipulation}
+#tog.on{background:rgba(0,229,168,.7);color:#04201a}
 </style>
 </head>
 <body>
@@ -117,6 +119,7 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
   } catch (e) { tx.textContent = "Fehler beim Laden: " + (e.message || e); }
 })();
 </script>
+<button id="tog" type="button">Steuerung</button>
 <div id="look"></div>
 <div id="pad"><div class="grp"><span class="e"></span><button data-k="w">W</button><span class="e"></span><button data-k="a">A</button><button data-k="s">S</button><button data-k="d">D</button></div><div class="grp"><button data-k="e">E</button><button data-k="sp">Space</button><button data-k="c">C</button><button data-k="r">R</button><button data-k="f">F</button><span class="e"></span></div></div>
 <script>
@@ -160,7 +163,10 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
   document.addEventListener("keydown",e=>{ if(e.key==="Escape") hide(); });
   // Erscheint in der Runde: Menue-Schritte merken, dann Start unten bzw. PLAY.
   let stage=0;
-  function show(){ pad.classList.add("show"); look.classList.add("show"); }
+  function show(){ pad.classList.add("show"); look.classList.add("show"); tog.classList.add("on"); }
+  // Fallback: Steuerung per Knopf ein- und ausschalten, falls der Auto-Start nicht greift.
+  const tog=$("tog");
+  tog.addEventListener("click",()=>{ if(pad.classList.contains("show")){ pad.classList.remove("show"); look.classList.remove("show"); tog.classList.remove("on"); } else { show(); } });
   document.addEventListener("pointerdown",e=>{
     if(e.target.closest && e.target.closest("#pad, #look")) return;
     const x=e.clientX, y=e.clientY, W=innerWidth, H=innerHeight;
