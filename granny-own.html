@@ -137,6 +137,25 @@ function writeSkin(skin) {
     };
   });
 }
+// Alte Eintraege reparieren: Datum-Text wird wieder Date-Objekt (sonst Absturz beim Laden in Safari)
+function fixTimestamps() {
+  return new Promise(function (resolve) {
+    const req = indexedDB.open("/idbfs", 21);
+    req.onupgradeneeded = function () { if (!req.result.objectStoreNames.contains("FILE_DATA")) req.result.createObjectStore("FILE_DATA"); };
+    req.onerror = function () { resolve(); };
+    req.onsuccess = function () {
+      const db = req.result;
+      if (!db.objectStoreNames.contains("FILE_DATA")) { db.close(); return resolve(); }
+      const tx = db.transaction("FILE_DATA", "readwrite"); const st = tx.objectStore("FILE_DATA");
+      const kr = st.getAllKeys(); const vr = st.getAll();
+      vr.onsuccess = function () {
+        vr.result.forEach(function (v, i) { if (v && typeof v.timestamp === "string") { v.timestamp = new Date(v.timestamp); st.put(v, kr.result[i]); } });
+      };
+      tx.oncomplete = function () { db.close(); resolve(); };
+      tx.onerror = function () { db.close(); resolve(); };
+    };
+  });
+}
 function bootGame() {
 (async () => {
   try {
@@ -167,7 +186,7 @@ function bootGame() {
 }
 // Auswahl klicken -> speichern -> Spiel laden
 document.querySelectorAll("#pick button").forEach(function(b){ b.addEventListener("click", function(){ writeSkin(parseInt(b.dataset.skin,10)).then(function(){ sessionStorage.setItem("skinApplied","1"); location.reload(); }); }); });
-bootGame();
+fixTimestamps().then(bootGame);
 </script>
 <button id="tog" type="button">Steuerung</button>
 <div id="look"></div>
