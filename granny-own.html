@@ -83,7 +83,8 @@ window.YaGames = { init: function () { var ys = {
 window.payments = {
   purchase: function (o) { var id = (o && (o.id || o.productID)) || ""; return Promise.resolve({ productID: id, purchaseToken: "local", signature: "local", id: id }); },
   getPurchases: function () { return Promise.resolve([]); },
-  getCatalog: function () { return Promise.resolve([]); },
+  getCatalog: function () { var mk = function (id, title) { return { id: id, productID: id, title: title, description: title, price: "0", priceValue: "0", priceCurrencyCode: "RUB", imageURI: "" }; };
+    return Promise.resolve([ mk("granny_skin_ghost", "Granny Ghost Skin"), mk("boots", "Boots"), mk("disable_interstitial_ads", "Disable ads") ]); },
   getPurchaseByID: function () { return Promise.resolve(null); }
 };
 
