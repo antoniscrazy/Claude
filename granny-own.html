@@ -121,7 +121,7 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
 </script>
 <button id="tog" type="button">Steuerung</button>
 <div id="look"></div>
-<div id="pad"><div class="grp"><span class="e"></span><button data-k="w">W</button><span class="e"></span><button data-k="a">A</button><button data-k="s">S</button><button data-k="d">D</button></div><div class="grp"><button data-k="e">E</button><button data-k="sp">Space</button><button data-k="c">C</button><button data-k="r">R</button><button data-k="f">F</button><span class="e"></span></div></div>
+<div id="pad"><div class="grp"><span class="e"></span><button data-k="w">W</button><span class="e"></span><button data-k="a">A</button><button data-k="s">S</button><button data-k="d">D</button></div><div class="grp"><button data-k="e">E</button><button data-k="sp">Space</button><button data-k="c">C</button><button data-k="r">R</button><button data-k="f">F</button><button id="fire" type="button">Schießen</button></div></div>
 <script>
 (function(){
   const $=id=>document.getElementById(id);
@@ -139,19 +139,28 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
     b.addEventListener("pointerup",e=>{ e.preventDefault(); up(); });
     b.addEventListener("pointercancel",up); b.addEventListener("pointerleave",up);
   });
+  // Schiessen: halten = Maus-Taste 1 im Spiel
+  const fireBtn=$("fire");
+  function mouseBtn(type){ const r=vcur(); canvas().dispatchEvent(new MouseEvent(type,{button:0,buttons:type==="mouseup"?0:1,clientX:r.x,clientY:r.y,bubbles:true,cancelable:true})); }
+  fireBtn.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); fireBtn.setPointerCapture(e.pointerId); fireBtn.classList.add("on"); mouseBtn("mousedown"); });
+  fireBtn.addEventListener("pointerup",e=>{ e.preventDefault(); fireBtn.classList.remove("on"); mouseBtn("mouseup"); });
+  fireBtn.addEventListener("pointercancel",()=>{ fireBtn.classList.remove("on"); mouseBtn("mouseup"); });
   // Umsehen: sanft. Ziehen sammelt Bewegung, die pro Bild begrenzt und abgebaut wird, damit nichts durchdreht.
-  let lid=null, lx=0, ly=0, accX=0, accY=0, raf=0;
+  let lid=null, lx=0, ly=0, accX=0, accY=0, raf=0, vx=0, vy=0;
   const MAX=18;
+  function vcur(){ const c=canvas().getBoundingClientRect(); return {x:c.left+c.width/2, y:c.top+c.height/2, w:c.width, h:c.height, l:c.left, t:c.top}; }
   function step(){
     let mx=Math.max(-MAX,Math.min(MAX,accX*0.3)), my=Math.max(-MAX,Math.min(MAX,accY*0.3));
     accX-=mx; accY-=my;
     if(Math.abs(mx)>0.01||Math.abs(my)>0.01){
-      canvas().dispatchEvent(new MouseEvent("mousemove",{clientX:innerWidth/2,clientY:innerHeight/2,movementX:mx,movementY:my,bubbles:true}));
+      const r=vcur();
+      vx=Math.max(r.l+2,Math.min(r.l+r.w-2,vx+mx)); vy=Math.max(r.t+2,Math.min(r.t+r.h-2,vy+my));
+      canvas().dispatchEvent(new MouseEvent("mousemove",{clientX:vx,clientY:vy,movementX:mx,movementY:my,bubbles:true}));
     }
     if(lid!==null||Math.abs(accX)>0.5||Math.abs(accY)>0.5){ raf=requestAnimationFrame(step); } else { raf=0; accX=0; accY=0; }
   }
   ["touchstart","touchmove"].forEach(t=>look.addEventListener(t,e=>e.preventDefault(),{passive:false}));
-  look.addEventListener("pointerdown",e=>{ e.preventDefault(); lid=e.pointerId; lx=e.clientX; ly=e.clientY; look.setPointerCapture(e.pointerId); if(!raf) raf=requestAnimationFrame(step); });
+  look.addEventListener("pointerdown",e=>{ e.preventDefault(); lid=e.pointerId; lx=e.clientX; ly=e.clientY; const r=vcur(); vx=r.x; vy=r.y; look.setPointerCapture(e.pointerId); if(!raf) raf=requestAnimationFrame(step); });
   look.addEventListener("pointermove",e=>{
     if(e.pointerId!==lid) return;
     accX+=(e.clientX-lx)*1.0; accY+=(e.clientY-ly)*1.0; lx=e.clientX; ly=e.clientY;
