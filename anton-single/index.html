@@ -1,0 +1,1937 @@
+<!DOCTYPE html>
+<!-- Anton – Vibecoder · Single-File-Version (HTML + CSS + JS in einer Datei) -->
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Anton – Vibecoder | Ideen von mir, Code von der KI</title>
+  <meta name="description" content="Anton ist Vibecoder: Er baut Web-Apps und Windows-Apps. Die Ideen kommen von ihm, den Code schreibt die KI. Projekte: Moki, Flexspacepro und ein geheimes Labor.">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#07090a">
+  <meta name="color-scheme" content="dark">
+  <meta name="author" content="Anton">
+
+  <!-- Open Graph / Social Preview -->
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="de_DE">
+  <meta property="og:title" content="Anton – Vibecoder">
+  <meta property="og:description" content="Ideen von mir, Code von der KI. Web-Apps, Windows-Apps und ein Labor, das nie fertig wird.">
+  <!-- TODO: og:image braucht eine gehostete Bild-URL, z. B.
+       <meta property="og:image" content="https://deine-domain.de/og-image.png"> -->
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- Icons -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Anton%20Logo%22%3E%0A%20%20%3Crect%20x%3D%221.5%22%20y%3D%221.5%22%20width%3D%2261%22%20height%3D%2261%22%20rx%3D%2214%22%20fill%3D%22%230b0f0d%22%20stroke%3D%22%233dff9a%22%20stroke-opacity%3D%22.35%22%20stroke-width%3D%222%22/%3E%0A%20%20%3Cpath%20d%3D%22M13%2047%20L27%2015%20L41%2047%22%20fill%3D%22none%22%20stroke%3D%22%233dff9a%22%20stroke-width%3D%225.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%0A%20%20%3Cpath%20d%3D%22M19.5%2036%20H34.5%22%20fill%3D%22none%22%20stroke%3D%22%233dff9a%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22/%3E%0A%20%20%3Crect%20x%3D%2244%22%20y%3D%2242%22%20width%3D%2210%22%20height%3D%225.5%22%20rx%3D%221.2%22%20fill%3D%22%233dff9a%22/%3E%0A%3C/svg%3E" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAAQAElEQVR4AexdWXAcx3nuntn7wg0S4AGQBEGRoCiRdERLokkdKYs+KlEkS04lJSeuWLZkx6mk8pAHVyVxVR4UX3FiW3ac+KpK7JyOZdOpWLIlWxepw6JIQgQvkOAF4r733pnJ19Ozi8VemFnsNbuz+LfR093T0/393/T574zgdHsssRDIiYBAKv8RKfU6xDavfUOTc2u7a+d6164uSzIR2Lke4AAiAEW9DiLSyiuqEuSwdfjcezYE7u1vev9Ay0O3tz60t+X9u5vu2+G/a5t3/2bP7m7PQJclmQjs7gY4gAhAAS4G2kO3AUDACDABaQW4UjZy2ATHphbvgd7mB/cE7ul371hna/eJXicVy3bFCqBV1UtQUQSAgBFgAlIA672j17GxmdjKBWmJ8xV8Tmd/p/+e7S2/fZvv3Vucm1sFuy0FqUIUhR+gjRQIFSgTkVJLciKg4kOAFYQQQAcAOX5wAayzp9V351ZA7T+83bm9E+AjvIQilCovwevwH+prft+A97aN9g4/tE7UD68PDqmN2myizSaIEFEQBXyoILAYFQTLk4UAwBGoKApMbAKgs9lEaqNIB2g5sPDg0N7p996+EeBDBVAEAksiJSCHIhDXQFfTA7vs6wKpMrGiU4JyMyrYVB4Qmoq1PEUjIABUMMYmAFjAC1AZ1MnsoAIoAmNbpRRgC8lsi/xv39AEwnp2dVFxOSsUGhwH3wW0CSi+mrciSfGJheiVmfC5seCJa4vHLi08f27ufwdn//uE2aRCBQY4gAhAAS6ABujik4uAUYUTsLJ2FyADagBOKLodFgNFYGwLpdi7/Ox4Dd9ljRrORKAYEGE4LXqcyXMVlFKwsUInQ0hiIRw+P7744oXZZ04tvTQcevNKZPBm7NJUYnRemg0p4XgqpeXJQADgACIABbgAGqBbevEiYASY4QvjiYVIKj1uQkEUAH6qFcHQ1X9wu2f/prU0IUWSQ3DbA/ftwIAoVT4qEMEmCGpTISek2Ohc8NdXwf3F585GTo8mJpeSzE6dYXmKQQAwAszIqdHF54YAb/Ctq4BaSUg02d1QgaqDV5a5a2tH0/23UJedHRj/FkMOW7uv6b07bS0eXA5URWkE1lqgUFSR5fC58bmfnA4euxwbmQb3kcaSMiEAeGOXpwH13NHTaJ4BPiWs2cZdSgXMblhHY2vxNENZbd4iymCYHM7tHZg4UYc6QaVETLYWhBD0iAs/PxsZHKUyKxZCLKkQApKC5hngJ6aWcEWVIgJUg4EJO3TasLjg2NYOvyExQg6BYunCe/smijaCELiCSFEOQogUji0dv4weUV6M4tCSqiAA8Bd/dWHptctQBwoA1TAFacoSfPs2e+/oJeohYvWIXnJQl63p/h1Y9ESmWlciaMzAHGTh2aH4jTlEWVJ1BOLX55g6phZREsYPqEnQuhiMETFShCoRpUf0kUOkWK8Vm9kgA5liYCwIFB5I9Mr00svDJCHDb0mtIJCQ0YpDNbw8Aj6ipmhbiydwuJ+Imvp4gnyudk6+aB7uv3Or6Hdxv4CxJ2VZK7ISevt66M2roCWPIta/2kFAIVBN6OR1qAmFEihFFwMPRAy4fO/eCs+qsjo53Ld227uaeEa4ACUUfgXcfGU4OjwJvyU1i0D04uTSK8NQFkpI6TI/HN1N7t3dCCwsq5ADgwz3Let5Fmx7jDJmSKHYwvNnExOsV+NRlluzCEBNCy+cg8pQQoqPwDQIv3vneigXngJSiBxii8d3oJefTLHGRVm+iiQvvXQRA2Mebrm1j4C8EEm1HxgsQpW8zL47esVWbRzJQzLcvORga6CH+ohKCDiCoKVcevWSvGTNVzNgrPVDxo/jl3gpoUrK2w+BBg72CR47D892NZVnR3jf1ZNa6UKHwhOETt5AM8X9lmsuBBLji6HT13mZKdTOugFCnTbv/h4emO0iVXYgsXX47Ou1/ffUIDR2bTZ6cSJHaivIJAhEz0/Grs6gsJQsD06haFtn7v3b3OTw7tuMLCBUoMgInsRMMPjGFXgsKTEClc0u+ObVxGwI14RaoVx4IN69G+FmSw5yOHpaMRVmSSkRBEqwxycrS8cup2z8EGKJWRFQlODxy4pqrsmUy9RLxIDbsbklu0ZZ5BCoZ88Gno5S9VRCIhfGlYhleMFRMb0rh2KRC9rwgFJNxZ49G7OXTTPJ4ervFPj2P002G3EpMjROrE8dIRAdGpNjCVQo1Xhgcurs60RIuqwgB3WI7l1dPJqqHQr8odOjRLK2ToBE/QjWTMPv3OT1SSnas2s9CMADubuCHI4tbVRkIWhsBHyxFx+MxkameFLLrScEYpenJHW9iisaVaM2EcNNeFLCqJA6cHY3c3+KTaG3r1v7ahyTenMVEjqlLXsIojbycGzQCMAru0wONCm2dh8PJWri+NRSYmxBC7H+1R0CiZsL8Ul1g0xVN+rHfnBkF+HhskyOFGuoAG6w5KkxLU9aYde6XAUQiKj76pRQKJ1fzt6t7cDjUMCXS1ooRQimwlhwhceSOkZAmmA2p2oFmdLhwW4+XC5JcojUsV6jDCeRNBO0Jikcozp2lbiUmGb84EpHTZntjqARRSMHFtgJD6KE/RESt0YbgKoBJD7OhpVQujo9JZiu2tdrWy0aOZYHHJRyQOqAHELA5bt7a8cT72n/o7vgwW4ir5rlpiMQH1PHpAhKqt6enLRq5BBbtB+98OYFrY00F0Z6k4qt3dvzzd+77crf9P/0U5ueenDzFx+GZ8+Fz/b98ONpQyuTVq7ExZZmQ1A3MuWqh8eeJINGDsGt/kiJKJRQRCdmg3BNKi2P7Bs49Zm2R/dTyuqSXovAfTt2vfkXzQ/elh5o+RNz2j4t9liBBtXIQFRyUCrYVXIkwZRDZt1mc27v7Pnah8Xl33ajsisEUT1f/bC9S7NWWRFn/oPiaiCH2T4LO1clgODUbMMYOVJMIUSNBH9MugcrClu/85jAf6pJ8n5En7Pn6d/NG914EXIklqy0RgDqYo0FI4e2DUtIqhmWzPlkBHQoeizuCSGBe3d479wCjyVAQEmqO0UATgmVHG6tGSFEI45szpZj3acOEd2fzicNJNadqykTpqlbI4CgUkIlR7KPSdVMSXVCqaCa9/ju2uK5dYP+YjZ/cLc1c+FwKeFUt8IDCB92MHJQlSZasPpPXu6E1GMzOB1PHjZUTCoInU+8x9Ap9ZpYiiQHpMkackowcgjO5Y04HitHM1Pz8Jp10QY0f2DAaPHaP3onR8HoiXWWXs4aRSyPOUhqHKL1OKi7yZ6+0vmpw2gJUG5DIvpd7Y8dMHRKfSZW7Y1Z1VIEYI0GUR0WbOIv7v62x+4oWIG8kR1PHMwb1/AR9UCO9o8csAXcxanStbUjcGRXcefW/Vn1QI41TkrXeHodU8T05Ai8b8DZ27YWDQUOb3f1Z1rlryXDujnX9OTofLIE09HOT99bNxotYUXMTQ7c8YFD29cOR+uj+8TmIkcta796zeZgbnJ0/sk9JUFWcNo6Hr+7JFnVUyYmJgfu9dZH9pdKGR2PHySiidEoFQ5p+Zh5naPj4wdxx6dXZi1+e6e/9UN715JD/Z1r2ntFFDo+VuKOoPOPje3O1B8bMmpkVnK0PLIP93pGZdZ46Ll1g9cy8kgD0azkMGS6kVbfVbzWglg6QKYkh1HTjfQKF/ZbRh7p+JiSHEZNN9IrXNhPBaHjk5aFmAaS+chRnOmGVl0d/zr+4N3Y5tWRsP6TmI8cxZlu6NekuKqRh/68TJ7SZOTAPW3UdCM+Nm9UR5aRB0fMZORof8yw6cb4N16a/O5xXludrmXkwYEyGTk6DY4W5Whi+rvHJ5/+Fa+tftea0wIrM5EjYNx0Y/oHb0hz4cj5iYUXzqG2+sUy8gBWZiJHEaYbk0+/iEpCxp9+Ca4hsYw8TEMOV3+nUdONhefPos3ghFh8big6Ms39Ot3WRxvdyMM05CjCdCOjtRj/yi910oInw5ZvR2MbeZSSHBzTcrhFmG6gnVj8+dn0wkx//w1pMZIesqq/wY08zEGODuOmG+P/8EKG7pVwfOrbr2YEFj60N7aRhxnIYdx0Ay3E9A/ezFb8xD++rMjGnuPeyEYeJiBHyyOGTTcmv3UM7UQ2OeKj87M/PpUdXiDE08BGHiYgh1HTDbQNk9/MO3GdLGJO26hP8qh1chRhujH7zCm0EPkag+DrI6HTN/LF5gxvWCOPWidHEaYbE8mFr5yaRuD432eOVRFYQBrWyKOmyVGE6QZahdBqLyqc/Z+TcYOv0y6fkUcBUlY9qqbJUYTpxviXdbQKkjzxDW1ZXacCxIY08qhdclC3vf0jxp6sgvZg9kcn9eh76tvHsGGrJ2UqjdEN4dSJ5vXULjnADNyvhpCd+PqLOt/0gK3a6VwLIQUu5+xta7QnedQuOYxaVKAlmPrOsQLazYiatIw8MhDJOqxRchRtupFVwbwB2LC1jDzyoqNG1Cg51mK6odZLlzNexIJYIz3JoxbJ4Vqb6YYuXqiJLCMPFYa8Ti2SQzXdyFvinBFFtAE8H8vIg+OQ0605cpTEdCNnVXMGTltGHjlxUQNrjhwlMd1Qq6bLwebtlGXkkQeqGiNH6Uw38tQ3R7Bl5JEDFDWotshRQtMNtXa6HGzhWkYeOZGqLXKU1nQjZ4VzBlpGHjlhqSFylNx0I2eFcwZaRh45YakhcpTDdCNnnXMG1oWRR86aFR9YK+Qok+mGfmAsI49srGqFHOUy3ciucb4Qy8gjC5maIEdZTTeyqpw3YMoy8liJTU2QI5/phkJIPpHCsb5nnug7+skSypZ/+WhiNpR9RSCmBsKBd4XUt5FHTZAjn+kGJSSfuHraAge3lVwc6wPZVySEFwMxJPuTr/DZKU0XUn1yZJhuKGpjobq1CCZaDy6pwtXxkzyqT44M0w2q3qWqm8K/hjyUqOUjKz71+iSPKpMj23SjLG3GClWW4ACNR3ourY/W55M8qkyObNMNyu7MdORN4K/XJ3lUkxzZphumaDbAVorvSqnLJ3lUkxwdOZ66kQ37SiXUzFFGz2Kvxyd5VI8cuUw3zEINtHDZRa2/J3lUjRz5TDeAe820DgUKks0N4qm7J3lUjRz5TDeoGQakNA9t6mxBrDrkKGy6UeONR8ZoI50ndfUkD0KqQ47Cphu0thsPmk6HlX5aX69rqQI5dJpuqDeo6qxUQBWP9JSmnp7kUQVy6DTdUG9Q5kAlNz/33PkPPl0VmfzecRSAM5KVhvvyu2IdPcmj0uQownQjMbF482+fXXp5uCoy+ldHlWgiPxlyxNTNkzwqTY58phs5ME4GTeh+6kbyjFL+b+QneVSaHEYne0afulFKXiTzatgneVSUHBmmG0nwC/3nL0wplKL8cQ37JI+KkiPDdEOPWidXe26knkzWnmY87UkeOnOrAyOPypHD1b+mF6boVEmZkjXmkzwqR45s041VFVnE/bpqnkUnaMAneVSIHNmmG6sqKfuFKauelWnpSQAAC/tJREFUUtYE0433JI8KkSOX6cYqqsx+YcoqJ5Q5ugGf5FERcuQy3SisynwvTCl8VrljS/UkD+pxtH/srp5//v2+tf3uZtuPPrHx87/jO7itTBWvBDnymW4UqFK+F6YUOKUCUaV6kkfPVx/d/IWH2z60b42/u2m6p7/z8YP9Rz/pv39HOapfCXLkM93IV5/CL0zJd1ZlwieLmNOufF2LrcPX+tDe0pa2ozwvKiwhOXLXt7DpRs5zCr8wJecpFQsMrvl1Le49G0peWveurpLniQzLTo7CphsoQbZM1MbCV3bBeMgan+RhdBuPX3QVV0ntHK+S0FB0eclh725q/sCAoQLpeWGKoQxLnni2YV7XUl5y6DTdSNefrhempJ9QeX/DPMmjjOQownRD/wtTKk+J9Cs2yJM8ykgO05lupKu/sL9BjDzKSA4zmm4U5kR67GQDvK6lXOQwqelGuvoL+0tk5FH4IlWOLRc5Wn7rVqM1m/jar4yeUt3048YXxJofLvHyV1kRKBc5vHduMVTuhefPRi9MGjql6omLMPLwHeiterH1F6As5BBbPK7edv2FQMoi7kKcVXUxauThO7AlPHhTkeTSljz41rXSZshzE/i/0rqCx2Eow1oz3dBf+GmDRh7UJkjz4dJ2oHIkPvbFn+svs/6UZSFH/MZcYjakvxC1Zrqhv+RGjTyw/ksU5cZfHh35xPdHn/pZSeTsoS9FBm/qL7P+lGUhBy4fOnUDrh6pTdMNPSXnaQwZeaRgmfn3X4899WxJBPMmXpKSu+Uix+Q/vayzrDc//xzuP52JazBZfHR+6nuv6SyYoTff6syzfMlUcuTY09Pzs9BCpZo/Orjwi7OFUqhxwTeuTHwl1wxWjTWLc+MzP45enVm1tONffzF8Um+DumpuJU2QpW6VEowcckTSrpTc+BVcNi1kDf+ufPo/5HC8QAZSMHrpD7+HPrhAGlNEyaHYyOP/qqiA5itwbHR+9LM/zRdb3fBldScJwCnByKFEMlUoOO1rL258dH7o0Bfnnz2TM6vgiWvn7v1y/MZ8zljTBQZfGzn//q9FhnMs1YA00z944+zhLykRYz/IrhgI2ermlGDkkKOZ5KClaDlQt+iFyeFHv3XuyFcmv3MsfG4cIZDQyetX/vQ/wYzyjaRwlcpL8NjlM/ufuv7XRyOXNYqgppiIDd39hStP/lticqnyRdJ5xWx1yyolVHIsM1prVrKppPMyOZMFj49c+7P/Gjrwubea/xxy9vDfTX/3eM6UdRA48eUXzux9CtWEoKaYtUbOjNV4vZbVnewZ5TBr5Dg5tJYjGUWWO6Ear5ZVvFIgILgzh5hYWEPGjBy8g8GB+noT9p+6SjDmYBlZXzMgQJNDzFTrwCnByEEkhchqh6I6qA51ZlIJgZbUOgLFli+jo5ATEueDSg5CpHBUzZkq7HUnxNbqVQ8tpyEQsLX5UE+uenhSCxBJcsyEEQpR1P1C0eMQ/C4cWlL3CAhNLkEdRXDVo75Scl9MI0fsZnK9IdntOLoDSGdJ3SPg6GrS6phUPRaoeIhGjtQxEvDmxd7VzFNYbn0jYFMVDaVD9aymihIf01oKjRxKXEpMaas0vHmxtXmpwxqWMrjq+Itpqb3VgwpypcMTn1pS4urYghCNHAiNjmp8SU1o7d3JBgfRltQjAvasPgV7QKmKLpNjuWeRMWNhk1q7NexI4VSnHj6yXO5TCInfmEvVdZkc8mJEDsZ4BG9k7OubBJ+Th5jatQqfEwEo17aOTTu4upEmkcYBHC6TAwfRUY01iromRil139qNcEvqEgH3ng1QMarG1Q1PPDVpxUH6mAOHUew4a2NWIqv8cHQ3i23WghiwqTextfv4JJYrmlVPUbCLzjzJ74qWQ16MRi5p281KkiWe2zcmE1v/6wcBz75NvDIpRYcvTsohbVzBo1aQA0HLv6pQtMbD1uyx97QiypK6QcDR2yaqK+Cs2WBzD6IkpMiZTBP2THIoMSk8pNkfoCtSMHEhxDPQTQRaN9A0ekVEwb2bDSWhXKiYoxE6MwbVc3/KzSQHIiLnx+Wk7Scfxwpuu/ddPYiypA4Q8N7RI6i77ly5qJEciUcvTMCTITnIgR388OANng7MAr/gd2xqce1cD48lpkbANdCFSQaqALVCufBAQievE3X+AX9K4MlFDkKiV2akBW2fVk5gaMr6JfeuLlAE51hiUgTsG1vct7A7HMyAWnktpIVI7Oos92e4ucmBkcbSsctK8ve+iqTxw/MbPaJl6pEBoUkOMXdFh4LCghlQKDwQJSEtHbsET07JQw5CQKilV4b5OYwa6l4M1kz8B7dhZY2HW65ZEIDKfHdvhfpQYAw1oFB4iKIsvjwMRTN/rm9eciBxfHxx6a2r8EDQP7FpDyHULvre0ycELFMgYpYPlAWVUZuIAkOJUCU8kOBbVwv/YKIQOXB+bHgq9UMdZMoXTESPI3DvDvt6tiyPNJbUMgJQE5QFlaGQUB+UCA8kfGEiemkangKyCjlwZujEtfj4AjwQOTn4oDbBe9dW5/YOBFpSswg4d3RCTVAWSoihBtQHDwQKDWOGAl9BWZ0cGJwuvnpJWozwfOQEyMcmL+jAPHs2sjGOYK2PcWxqyRUoVOPZrW2tyYoCxfHySfNhKBRq5YcFXB3kwNkJeeGX55EpvBBZkmVcTc3esanVf6iP2Fl/hqgGEDNU0SH6D22HalBW1mDIClQGPwRKXHjxAkmo8wscFxR95CBEiSTmf3EurloXUkJZ65HsYmxtvqYjO53bOhRa8FJWZPkRgArQ1zc9sMum7qWDGZi1QlmUUFwc6oMSoUr49YhecrC8JHnxpeHw2eTOi0LkJD8Ehx2bt00PDNg3tbCU1rfiCChEwf5o05EB9PWCavyLEKYgNgRgpQkPjUF9JLl2xYJW+xohh5pX+PTo0msj2mqrQqSEjA/KgUjR6/Dd0eu//xZxnR+HllQMAdv6QOA3d/re1aPNSogCpUA1as9PoCysdIUHR42WxzA5cIHY1Zn5F84pMfZDbMq6GCIzimBlhbHU1uwOHOzzv3ena3e32GIZCpHyfcRWj+vW7sADu/x3b7M1uXEh3KUyRhgJfNGRUITI0QSUFbuu2fghRL8UQw7kLs2E5p8bSu2/EEYRBVRFyVA+QojN73LvWBe4r7/pAwPuvZvQlqA7RLgla0QAMNrW+QFp0wd3B+7d4e5fJ/qYnS9glxWmAoVtoTFa4EJQEFPTjIEnO+KslAgpn1GPHIrPPTsUPHGNP+gDp1OVIrI6l8EhF8HlcG1tR1vS8uBtgSO7fIf6PPs3Y4MXHaSt3Us9DtSKp7TcdATQCFOvAxA5elsBF0ADdIEjA4DRf7APkArJn8bjLNyTgB1jT6gAhxAoBaqBgpSk9QUCjUrx5MCVqEKiFydnjw6GBkflOOtlEEgUNpdJJCRJZUlK91QQRK/T3uF39rZhgxcdpP9wf/P7Blof3tfy8F5LMhBofXhv85EBQOTd3wO4ABqgE70OwMhAJkRRFHACIANqBa0FmhQ1AooInb4xe3QQqoGC1LAiHaHI89JOo7ISGRqbOzqI8bAiac+eYxQGL2RFSsgQVEMmuBnSTrO8RSGgKArABKSghcI4oY0tkJmSkEJDY3NHByNnx6EUhKxRSkAOrQQJGeNhEBaL9krafImxBDSXFSWhJBJSQuWKJMkQVJIJamtJTgRkBfhIMsNKSsiALpEAcCwpMOfAwgNRJBmwz/50MIIpib4FLpy1qpSOHPxSMSn89vXZZ04uvjocuTiZSC6680jUh3IfGhG1XVFkRZEsyYOArPIAi5mAi6CFgGj4EfUDeAHy4isXAThgJzGt2VYjS+CUmhy8SJISvzGPHbuF/zsz+5NTwTdGoldnMETikZa7FgQAY/TKDCAFsIAXIMdHF4ik0mct+eY6tzzkSLsSFmujIzPB10bmfnx65ocnZo+envvZmYUXzoPvS6+PBE9cC70zGnrnpiWZCAyOAhxABKAAF0ADdAAQMAZfHwGkADYN5rJ4y06OFaVGDxKOywuRxNQS+B67MoMRdeTMWOTMTUsyERgaAziACEABLoCmYFJanhZihY7SDv4fAAD//xeDMLAAAAAGSURBVAMA2N5TsIhiXzkAAAAASUVORK5CYII=">
+
+  <style>
+/* ==========================================================================
+   Anton – Vibecoder · style.css
+   Aufbau:
+     0. Design-Tokens
+     1. Reset & Basis
+     2. Hilfsklassen
+     3. Hintergrund (Canvas, Vignette, CRT)
+     4. Boot-Sequenz
+     5. Navigation
+     6. Hero
+     7. Sektionen allgemein, Reveal, Glitch
+     8. Code-Fenster + Syntax-Farben
+     9. Karten (Glow, Tilt, Scanlines), Buttons, Tags
+    10. Über mich · Stack · Projekte · Mockups · Labor
+    11. Terminal
+    12. Discord-Karte
+    13. Footer & Toast
+    14. Breakpoints (Tablet / Desktop)
+    15. Reduced Motion
+   ========================================================================== */
+
+/* 0. DESIGN-TOKENS ======================================================== */
+:root {
+  --bg:        #07090a;
+  --bg-2:      #0b0f0e;
+  --panel:     #0e1312;
+  --panel-2:   #121918;
+  --line:      rgba(255, 255, 255, .08);
+  --line-2:    rgba(255, 255, 255, .14);
+
+  --ink:       #e6ede9;
+  --ink-dim:   #9eaba5;   /* ~8:1 auf --bg */
+  --ink-faint: #7d8a84;   /* ~5:1 auf --bg */
+
+  --accent:      #3dff9a;           /* Neon-Grün */
+  --accent-ink:  #04110a;           /* Text auf Akzentflächen */
+  --accent-a10:  rgba(61, 255, 154, .10);
+  --accent-a20:  rgba(61, 255, 154, .20);
+  --accent-a40:  rgba(61, 255, 154, .40);
+  --glow:        0 0 24px rgba(61, 255, 154, .25), 0 0 2px rgba(61, 255, 154, .6);
+
+  --tk-key:  #7cd7ff;
+  --tk-str:  #ffd27a;
+  --tk-num:  #ff9e7a;
+  --tk-kw:   #c99bff;
+  --tk-com:  #6f7d77;
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "JetBrains Mono", "Cascadia Code", "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+
+  --radius: 14px;
+  --nav-h: 60px;
+  --gutter: 16px;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+}
+
+/* 1. RESET & BASIS ======================================================== */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+body.is-booting { overflow: hidden; }
+img, svg { display: block; max-width: 100%; }
+h1, h2, h3, h4, p, ul, figure { margin: 0; }
+ul { padding: 0; list-style: none; }
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { text-decoration-thickness: 2px; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+strong { color: var(--ink); font-weight: 650; }
+code { font-family: var(--font-mono); font-size: .92em; }
+::selection { background: var(--accent); color: var(--accent-ink); }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* 2. HILFSKLASSEN ========================================================= */
+.mono   { font-family: var(--font-mono); }
+.accent { color: var(--accent); }
+.dim    { color: var(--ink-faint); }
+.sr-only {
+  position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+.skip-link {
+  position: fixed; left: 12px; top: -60px; z-index: 200;
+  background: var(--accent); color: var(--accent-ink); padding: 8px 14px; border-radius: 8px;
+  font-weight: 600; text-decoration: none; transition: top .2s;
+}
+.skip-link:focus { top: 12px; }
+
+.container { width: 100%; max-width: 1160px; margin: 0 auto; padding: 0 var(--gutter); }
+.container--narrow { max-width: 860px; }
+
+/* Blinkender Cursor */
+.cursor {
+  display: inline-block; width: .55em; height: .9em; margin-left: .08em;
+  background: var(--accent); vertical-align: -.06em; box-shadow: var(--glow);
+  animation: blink 1.05s steps(1) infinite;
+}
+.cursor--thin { width: .5ch; height: 1.05em; vertical-align: -.2em; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* 3. HINTERGRUND ========================================================== */
+.bg-canvas {
+  position: fixed; inset: 0; width: 100%; height: 100%;
+  z-index: 0; pointer-events: none; opacity: .2;
+  transition: opacity .8s var(--ease);
+}
+.bg-canvas.is-intense { opacity: .55; }
+.bg-vignette {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(61, 255, 154, .07), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(61, 255, 154, .05), transparent 60%),
+    radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, .6) 100%);
+}
+/* CRT/Scanline-Overlay (abschaltbar über Nav) */
+.crt {
+  position: fixed; inset: 0; z-index: 90; pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgba(255,255,255,.025) 0 1px, transparent 1px 3px);
+  mix-blend-mode: overlay;
+  animation: crt-flicker 6s infinite;
+}
+html.crt-off .crt { display: none; }
+@keyframes crt-flicker { 0%, 100% { opacity: .9; } 50% { opacity: .75; } 51% { opacity: 1; } }
+
+main, .footer, .nav { position: relative; z-index: 1; }
+
+/* 4. BOOT-SEQUENZ ========================================================= */
+.boot {
+  position: fixed; inset: 0; z-index: 300;
+  display: grid; place-items: center;
+  background: var(--bg);
+  padding: var(--gutter);
+  /* Fallback, falls JS nicht startet: nach 6 s automatisch weg */
+  animation: boot-fallback .4s 6s forwards;
+}
+.boot.is-done { opacity: 0; visibility: hidden; transition: opacity .45s var(--ease), visibility 0s .45s; }
+@keyframes boot-fallback { to { opacity: 0; visibility: hidden; } }
+.boot__inner { width: min(620px, 100%); }
+.boot__log {
+  margin: 0 0 22px; min-height: 13em;
+  font: 500 .95rem/1.75 var(--font-mono); color: var(--ink-dim);
+  white-space: pre-wrap; word-break: break-word;
+}
+.boot__log .ok   { color: var(--accent); text-shadow: 0 0 10px var(--accent-a40); }
+.boot__log .hl   { color: var(--ink); }
+.boot__skip {
+  background: transparent; border: 1px solid var(--line-2); color: var(--ink-dim);
+  padding: 8px 14px; border-radius: 8px; font: .85rem var(--font-mono);
+  transition: color .2s, border-color .2s;
+}
+.boot__skip:hover, .boot__skip:focus-visible { color: var(--accent); border-color: var(--accent-a40); }
+.boot__skip kbd { font: inherit; opacity: .6; margin-left: 6px; }
+
+/* 5. NAVIGATION =========================================================== */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: var(--nav-h);
+  background: rgba(7, 9, 10, .72);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border-bottom: 1px solid var(--line);
+}
+.nav__inner {
+  height: 100%; max-width: 1160px; margin: 0 auto; padding: 0 var(--gutter);
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+}
+.nav__brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+.nav__name { font: 600 1rem var(--font-mono); letter-spacing: .02em; }
+
+/* Logo (inline SVG) */
+.logo { width: 34px; height: 34px; filter: drop-shadow(0 0 8px rgba(61,255,154,.35)); transition: filter .3s, transform .3s; }
+.nav__brand:hover .logo { filter: drop-shadow(0 0 14px rgba(61,255,154,.6)); transform: rotate(-4deg); }
+.logo__bg     { fill: #0b0f0d; stroke: var(--accent); stroke-opacity: .35; stroke-width: 2; }
+.logo__stroke { fill: none; stroke: var(--accent); stroke-width: 5.5; stroke-linecap: round; stroke-linejoin: round; }
+.logo__bar    { stroke-width: 5; }
+.logo__cursor { fill: var(--accent); animation: blink 1.05s steps(1) infinite; }
+.logo.is-glitch { animation: logo-glitch .5s steps(2) 2; }
+@keyframes logo-glitch {
+  0% { transform: translate(0); filter: drop-shadow(-3px 0 0 #ff3d8b) drop-shadow(3px 0 0 #3dd5ff); }
+  50% { transform: translate(2px, -1px) skewX(-8deg); }
+  100% { transform: translate(0); }
+}
+
+.nav__toggle {
+  width: 44px; height: 44px; display: grid; place-items: center;
+  background: transparent; border: 1px solid var(--line-2); border-radius: 10px;
+}
+.nav__burger, .nav__burger::before, .nav__burger::after {
+  display: block; width: 18px; height: 2px; background: var(--ink); border-radius: 2px;
+  transition: transform .25s var(--ease), opacity .2s;
+}
+.nav__burger { position: relative; }
+.nav__burger::before, .nav__burger::after { content: ""; position: absolute; left: 0; }
+.nav__burger::before { top: -6px; }
+.nav__burger::after  { top: 6px; }
+.nav__toggle[aria-expanded="true"] .nav__burger { background: transparent; }
+.nav__toggle[aria-expanded="true"] .nav__burger::before { transform: translateY(6px) rotate(45deg); }
+.nav__toggle[aria-expanded="true"] .nav__burger::after  { transform: translateY(-6px) rotate(-45deg); }
+
+/* Mobile: Menü als Klapp-Panel */
+.nav__menu {
+  position: absolute; top: var(--nav-h); left: 0; right: 0;
+  background: rgba(7, 9, 10, .97); border-bottom: 1px solid var(--line);
+  padding: 8px var(--gutter) 18px;
+  display: none;
+}
+.nav__menu.is-open { display: block; animation: drop .25s var(--ease); }
+@keyframes drop { from { opacity: 0; transform: translateY(-8px); } }
+.nav__menu ul { display: flex; flex-direction: column; }
+.nav__menu a {
+  display: block; padding: 12px 4px; color: var(--ink-dim); text-decoration: none;
+  font: 500 1rem var(--font-mono); border-bottom: 1px solid var(--line);
+  transition: color .2s;
+}
+.nav__menu a::before { content: "./"; color: var(--ink-faint); margin-right: 2px; }
+.nav__menu a:hover, .nav__menu a[aria-current="true"] { color: var(--accent); }
+.nav__menu a[aria-current="true"] { text-shadow: 0 0 12px var(--accent-a40); }
+
+.crt-toggle {
+  margin-top: 14px; padding: 7px 12px; border-radius: 8px;
+  background: transparent; border: 1px solid var(--line-2); color: var(--ink-dim);
+  font: .8rem var(--font-mono); letter-spacing: .05em;
+  transition: color .2s, border-color .2s, box-shadow .2s;
+}
+.crt-toggle[aria-pressed="true"] { color: var(--accent); border-color: var(--accent-a40); box-shadow: 0 0 12px var(--accent-a10); }
+
+/* 6. HERO ================================================================= */
+.hero {
+  position: relative;
+  min-height: 100vh; min-height: 100svh;
+  display: flex; align-items: center;
+  padding: calc(var(--nav-h) + 40px) var(--gutter) 60px;
+  overflow: hidden;
+}
+.hero__content { position: relative; z-index: 2; width: 100%; max-width: 1160px; margin: 0 auto; }
+.hero__prompt { color: var(--ink-dim); font-size: .95rem; margin-bottom: 10px; }
+.hero__title {
+  font-size: clamp(3.6rem, 17vw, 9.5rem);
+  font-weight: 700; line-height: .95; letter-spacing: -.04em;
+  color: var(--ink);
+  text-shadow: 0 0 40px rgba(61, 255, 154, .18);
+  min-height: 1em;
+}
+.hero__title .cursor { width: .45em; height: .75em; vertical-align: -.02em; }
+.hero__role { font-size: clamp(1.15rem, 4.5vw, 1.8rem); margin: 18px 0 22px; min-height: 1.5em; }
+#hero-role { text-shadow: 0 0 16px var(--accent-a40); }
+.hero__intro { max-width: 34em; color: var(--ink-dim); font-size: clamp(1.05rem, 2.4vw, 1.2rem); }
+.hero__scroll {
+  display: inline-flex; align-items: center; gap: 10px; margin-top: 38px;
+  color: var(--ink-dim); text-decoration: none; font-size: .95rem;
+  padding: 10px 14px; border: 1px solid var(--line); border-radius: 10px;
+  background: rgba(14, 19, 18, .6);
+  transition: color .2s, border-color .2s;
+}
+.hero__scroll:hover { color: var(--accent); border-color: var(--accent-a40); }
+.hero__arrow { display: inline-block; color: var(--accent); animation: bob 1.8s var(--ease) infinite; }
+@keyframes bob { 50% { transform: translateY(5px); } }
+
+/* Hintergrund-Codefenster im Hero (nur ab Tablet sichtbar) */
+.hero__bgwins { display: none; }
+
+/* 7. SEKTIONEN, REVEAL, GLITCH ============================================ */
+.section { padding: 84px 0; scroll-margin-top: var(--nav-h); }
+.section__head { margin-bottom: 40px; max-width: 46em; }
+.section__kicker { color: var(--accent); font-size: .85rem; letter-spacing: .04em; margin-bottom: 10px; }
+.section__title {
+  position: relative; display: inline-block;
+  font-size: clamp(2.1rem, 7vw, 3.4rem); line-height: 1.1; letter-spacing: -.025em; font-weight: 700;
+}
+.section__lead { color: var(--ink-dim); margin-top: 12px; }
+
+/* Reveal: nur wenn JS läuft (html.js), sonst ist alles sofort sichtbar */
+.js .reveal { opacity: 0; transform: translateY(22px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
+.js .reveal.is-visible { opacity: 1; transform: none; }
+
+/* Glitch: läuft einmal, wenn die Überschrift sichtbar wird */
+.glitch::before, .glitch::after {
+  content: attr(data-text);
+  position: absolute; inset: 0; pointer-events: none; opacity: 0;
+}
+.glitch::before { color: #ff3d8b; }
+.glitch::after  { color: #3dd5ff; }
+.is-visible .glitch::before { animation: glitch-a .55s steps(2) .15s 1; }
+.is-visible .glitch::after  { animation: glitch-b .55s steps(2) .15s 1; }
+@keyframes glitch-a {
+  0%   { opacity: .8; transform: translate(-3px, 1px); clip-path: inset(10% 0 60% 0); }
+  50%  { opacity: .8; transform: translate(3px, -1px); clip-path: inset(55% 0 15% 0); }
+  100% { opacity: 0;  transform: none; }
+}
+@keyframes glitch-b {
+  0%   { opacity: .8; transform: translate(3px, -1px); clip-path: inset(60% 0 5% 0); }
+  50%  { opacity: .8; transform: translate(-2px, 1px); clip-path: inset(5% 0 70% 0); }
+  100% { opacity: 0;  transform: none; }
+}
+
+/* 8. CODE-FENSTER ========================================================= */
+.codewin {
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 20px 50px -20px rgba(0, 0, 0, .7), inset 0 1px 0 rgba(255, 255, 255, .03);
+  overflow: hidden;
+}
+.codewin__bar, .project__bar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, .02);
+  font-size: .8rem; color: var(--ink-faint);
+}
+.codewin__file { font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dots { display: inline-flex; gap: 6px; flex: none; }
+.dots i { width: 10px; height: 10px; border-radius: 50%; background: #ff5f57; display: block; }
+.dots i:nth-child(2) { background: #febc2e; }
+.dots i:nth-child(3) { background: #28c840; }
+.codewin__body {
+  margin: 0; padding: 16px 18px 20px;
+  font: .84rem/1.7 var(--font-mono); color: var(--ink-dim);
+  white-space: pre-wrap; word-break: break-word; tab-size: 2;
+  min-height: 3em;
+}
+.codewin__body code { font-size: inherit; }
+/* Tipp-Cursor am Ende des Codes, während getippt wird */
+.codewin.is-typing .codewin__body code::after {
+  content: ""; display: inline-block; width: .55em; height: 1.05em; vertical-align: -.2em;
+  background: var(--accent); margin-left: 1px; animation: blink 1s steps(1) infinite;
+}
+/* Syntax-Farben */
+.tk-key  { color: var(--tk-key); }
+.tk-str  { color: var(--tk-str); }
+.tk-num  { color: var(--tk-num); }
+.tk-kw   { color: var(--tk-kw); }
+.tk-com  { color: var(--tk-com); font-style: italic; }
+.tk-fn   { color: var(--accent); }
+.tk-tag  { color: var(--tk-key); }
+.tk-attr { color: var(--tk-kw); }
+.tk-punc { color: var(--ink-faint); }
+.tk-cmd  { color: var(--ink); }
+.tk-ok   { color: var(--accent); }
+.tk-ai   { color: var(--tk-key); }
+
+/* 9. KARTEN, BUTTONS, TAGS ================================================ */
+.card {
+  --rx: 0deg; --ry: 0deg; --mx: 50%; --my: 50%;
+  position: relative;
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  transition: border-color .3s, box-shadow .3s, transform .35s var(--ease);
+  isolation: isolate;
+}
+/* Glow, der der Maus folgt */
+.card::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: -1; pointer-events: none;
+  background: radial-gradient(420px circle at var(--mx) var(--my), var(--accent-a10), transparent 60%);
+  opacity: 0; transition: opacity .3s;
+}
+/* Scanlines beim Hover */
+.card::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgba(61,255,154,.035) 0 1px, transparent 1px 4px);
+  opacity: 0; transition: opacity .3s;
+}
+.card:hover, .card:focus-within { border-color: var(--accent-a40); box-shadow: 0 0 0 1px var(--accent-a10), 0 18px 60px -20px rgba(61, 255, 154, .25); }
+.card:hover::before, .card:hover::after, .card:focus-within::before { opacity: 1; }
+.tilt.is-tilting { transform: perspective(1000px) rotateX(var(--rx)) rotateY(var(--ry)); transition: border-color .3s, box-shadow .3s, transform .08s linear; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 10px 18px; border-radius: 10px;
+  border: 1px solid var(--accent-a40); background: var(--accent-a10); color: var(--accent);
+  font: 600 .95rem var(--font-mono); text-decoration: none;
+  transition: background .2s, box-shadow .2s, transform .15s, color .2s;
+}
+.btn:hover { background: var(--accent-a20); box-shadow: var(--glow); text-decoration: none; }
+.btn:active { transform: translateY(1px); }
+.btn--primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn--primary:hover { background: #6dffb3; color: var(--accent-ink); }
+.btn--ghost { background: transparent; border-color: var(--line-2); color: var(--ink); }
+.btn--ghost:hover { border-color: var(--accent-a40); color: var(--accent); background: transparent; }
+.btn--block { width: 100%; }
+.btn__icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 22px; }
+.tag {
+  font-size: .76rem; padding: 4px 10px; border-radius: 999px;
+  color: var(--accent); border: 1px solid var(--accent-a20); background: var(--accent-a10);
+}
+
+/* 10a. ÜBER MICH ========================================================== */
+.about { display: grid; gap: 32px; }
+.about__text p { color: var(--ink-dim); margin-bottom: 1.1em; max-width: 36em; }
+.about__text p:last-child { margin-bottom: 0; }
+.codewin--about .codewin__body { min-height: 26em; }
+
+/* 10b. STACK ============================================================== */
+.stack { display: grid; gap: 16px; }
+.tool { display: flex; gap: 18px; align-items: flex-start; padding: 22px; }
+.tool__rank {
+  position: absolute; top: 14px; right: 16px;
+  font-size: .8rem; color: var(--ink-faint);
+}
+.tool__icon {
+  flex: none; width: 52px; height: 52px; border-radius: 12px; display: grid; place-items: center;
+  background: var(--accent-a10); border: 1px solid var(--accent-a20);
+}
+.tool__icon svg { width: 28px; height: 28px; fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.tool__label { font-size: .75rem; color: var(--accent); text-transform: uppercase; letter-spacing: .08em; }
+.tool__name { font-size: 1.35rem; margin: 2px 0 4px; }
+.tool__quip { color: var(--ink); font-weight: 500; }
+.tool__desc { color: var(--ink-dim); margin-top: 10px; font-size: .98rem; }
+
+.tool--main {
+  padding: 26px 22px;
+  border-color: var(--accent-a40);
+  background:
+    radial-gradient(600px 200px at 0% 0%, rgba(61, 255, 154, .12), transparent 70%),
+    linear-gradient(180deg, var(--panel-2), var(--panel));
+  box-shadow: 0 0 0 1px var(--accent-a10), 0 0 50px -10px rgba(61, 255, 154, .25);
+}
+.tool--main .tool__rank {
+  color: var(--accent-ink); background: var(--accent); padding: 3px 10px; border-radius: 999px;
+  font-weight: 700; box-shadow: var(--glow);
+}
+.tool--main .tool__icon { width: 64px; height: 64px; box-shadow: var(--glow); }
+.tool--main .tool__icon svg { width: 34px; height: 34px; }
+.tool--main .tool__name { font-size: clamp(1.7rem, 5vw, 2.3rem); }
+.tool--main .tool__quip { font-size: 1.1rem; color: var(--accent); font-family: var(--font-mono); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+.chip {
+  font-size: .82rem; padding: 7px 13px; border-radius: 999px;
+  border: 1px solid var(--line-2); background: rgba(14, 19, 18, .8); color: var(--ink-dim);
+  transition: border-color .2s, box-shadow .2s;
+}
+.chip:hover { border-color: var(--accent-a40); box-shadow: 0 0 14px var(--accent-a10); }
+
+.stack__wins { display: grid; gap: 16px; margin-top: 32px; }
+.stack__wins .codewin__body { min-height: 17em; }
+
+/* 10c. PROJEKTE =========================================================== */
+.projects { display: grid; gap: 20px; }
+.project { overflow: hidden; }
+.project__bar { justify-content: flex-start; }
+.project__bar .mono { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.project__badge {
+  margin-left: auto; flex: none; font-size: .72rem; padding: 3px 10px; border-radius: 999px;
+  background: var(--accent); color: var(--accent-ink); font-weight: 700; box-shadow: var(--glow);
+}
+.project__info { padding: 22px; }
+.project__info > p:not(.project__pitch) { color: var(--ink-dim); }
+.project__name { font-size: 1.6rem; letter-spacing: -.02em; }
+.project__pitch { font-size: .95rem; margin: 4px 0 12px; }
+.project--featured { border-color: var(--accent-a40); box-shadow: 0 0 60px -20px rgba(61, 255, 154, .3); }
+.project--featured .project__name { font-size: clamp(2.2rem, 8vw, 3.2rem); }
+.project--featured .project__pitch { font-size: 1.1rem; }
+.project__grid { display: grid; }
+.project__grid .mock { margin: 0 22px 22px; }
+
+/* Generische Vorschau-Mockups */
+.mock {
+  border: 1px solid var(--line); border-radius: 12px; background: var(--bg-2);
+  padding: 14px; position: relative; overflow: hidden;
+}
+.mock__url {
+  font-size: .75rem; padding: 6px 10px; border-radius: 8px; background: rgba(255,255,255,.04);
+  color: var(--ink-dim); margin-bottom: 12px;
+}
+.mock__ad {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: .75rem; padding: 8px 10px; margin-bottom: 12px; border-radius: 8px;
+  border: 1px dashed rgba(255, 61, 139, .45); color: var(--ink-faint);
+}
+.mock__ad span:first-child { text-decoration: line-through; text-decoration-color: #ff3d8b; }
+.mock__ok { color: var(--accent); }
+.mock__tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.tile {
+  aspect-ratio: 4 / 3; border-radius: 10px; position: relative; overflow: hidden;
+  border: 1px solid var(--line); background: var(--panel-2);
+  transition: transform .3s var(--ease), border-color .3s;
+}
+.tile::after { content: ""; position: absolute; }
+.project:hover .tile { border-color: var(--accent-a20); }
+.project:hover .tile:nth-child(odd) { transform: translateY(-3px); }
+/* Kleine abstrakte "Spiel"-Motive */
+.t1 { background: radial-gradient(circle at 30% 70%, var(--accent) 0 14%, transparent 15%), linear-gradient(160deg, #10261c, #0b1411); }
+.t2 { background: linear-gradient(90deg, transparent 45%, #7cd7ff 45% 55%, transparent 55%), linear-gradient(0deg, #0e1a24 50%, #0b1218 50%); }
+.t3 { background: conic-gradient(from 45deg at 50% 55%, #c99bff 0 25%, transparent 0) , #150f22; background-size: 100% 100%; }
+.t4 { background: repeating-linear-gradient(45deg, #ffd27a 0 6px, transparent 6px 14px), #1f180b; opacity: .85; }
+.t5 { background: radial-gradient(circle at 50% 50%, #ff9e7a 0 18%, transparent 19%), radial-gradient(circle at 20% 25%, #ff9e7a 0 7%, transparent 8%), #1f110c; }
+.t6 { background: linear-gradient(135deg, transparent 40%, var(--accent) 40% 48%, transparent 48%), linear-gradient(45deg, transparent 52%, #7cd7ff 52% 60%, transparent 60%), #0c1514; }
+
+.mock--flex { margin-top: 18px; }
+.cal { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.cal span { height: 22px; border-radius: 5px; background: rgba(255, 255, 255, .04); }
+.cal .cal__h { height: auto; background: none; font: .7rem var(--font-mono); color: var(--ink-faint); text-align: center; }
+.cal .on { background: var(--accent-a20); border: 1px solid var(--accent-a40); }
+.cal .me { background: var(--accent); box-shadow: var(--glow); animation: pulse 2.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .55; } }
+
+/* Ladebalken im Labor (wird nie fertig) */
+.loader { margin-top: 18px; }
+.loader__top { display: flex; justify-content: space-between; gap: 12px; font-size: .8rem; color: var(--ink-dim); margin-bottom: 8px; }
+.loader__top span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.loader__track { height: 10px; border-radius: 999px; background: rgba(255, 255, 255, .05); overflow: hidden; border: 1px solid var(--line); }
+.loader__fill {
+  height: 100%; width: 0%; border-radius: inherit;
+  background: repeating-linear-gradient(45deg, var(--accent) 0 8px, #2bd47e 8px 16px);
+  background-size: 22px 22px;
+  box-shadow: 0 0 14px var(--accent-a40);
+  transition: width .5s var(--ease);
+  animation: stripes .8s linear infinite;
+}
+@keyframes stripes { to { background-position: 22px 0; } }
+
+/* 11. TERMINAL ============================================================ */
+.term { overflow: hidden; }
+.term__out {
+  height: 320px; overflow-y: auto; padding: 16px 18px 6px;
+  font-size: .88rem; line-height: 1.65; color: var(--ink-dim);
+  scrollbar-width: thin; scrollbar-color: var(--accent-a20) transparent;
+}
+.term__out p { white-space: pre-wrap; word-break: break-word; margin-bottom: 4px; }
+.term__out .cmd { color: var(--ink); }
+.term__out .err { color: #ff7a9c; }
+.term__out .ok  { color: var(--accent); }
+.term__form {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 18px 16px; border-top: 1px solid var(--line); font-size: .9rem;
+}
+.term__prompt { flex: none; white-space: nowrap; }
+.term__input {
+  flex: 1; min-width: 0; background: transparent; border: 0; outline: none;
+  color: var(--ink); caret-color: var(--accent); font-family: var(--font-mono); font-size: 16px; /* 16px verhindert iOS-Zoom */
+  padding: 4px 0;
+}
+.term:focus-within { border-color: var(--accent-a40); }
+
+/* 12. DISCORD-KARTE ======================================================= */
+.dc-wrap { display: flex; justify-content: center; }
+.dc { width: 100%; max-width: 420px; overflow: hidden; background: #0d1211; }
+.dc__banner {
+  height: 120px; position: relative; overflow: hidden;
+  background:
+    radial-gradient(circle at 15% 120%, rgba(61, 255, 154, .55), transparent 55%),
+    radial-gradient(circle at 90% -20%, rgba(124, 215, 255, .35), transparent 55%),
+    linear-gradient(135deg, #0f2a1e, #0a1512 60%, #0e1f26);
+}
+.dc__banner::after {
+  content: ""; position: absolute; inset: 0;
+  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, .25) 0 1px, transparent 1px 3px);
+}
+.dc__banner-code {
+  position: absolute; right: 14px; top: 12px; font-size: .72rem; color: rgba(230, 237, 233, .7);
+  white-space: nowrap;
+}
+.dc__head { display: flex; justify-content: space-between; align-items: flex-start; padding: 0 16px; }
+.dc__avatar {
+  position: relative; width: 96px; height: 96px; margin-top: -48px; flex: none;
+  border-radius: 50%; border: 6px solid #0d1211; background: #0b0f0d;
+}
+.dc__avatar svg { width: 100%; height: 100%; border-radius: 50%; }
+.dc__status {
+  position: absolute; right: -2px; bottom: -2px; width: 26px; height: 26px; border-radius: 50%;
+  background: #23a55a; border: 5px solid #0d1211;
+}
+.dc__status[data-status="idle"]    { background: #f0b232; }
+.dc__status[data-status="dnd"]     { background: #f23f43; }
+.dc__status[data-status="offline"] { background: #80848e; }
+.dc__badges {
+  display: flex; gap: 4px; margin-top: 12px; padding: 4px 6px;
+  border-radius: 8px; background: rgba(0, 0, 0, .35); border: 1px solid var(--line);
+}
+.dc__badge { position: relative; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 6px; cursor: default; }
+.dc__badge svg { width: 18px; height: 18px; fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.dc__badge:hover, .dc__badge:focus-visible { background: var(--accent-a10); }
+/* Tooltip */
+.dc__badge::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translate(-50%, 4px);
+  background: #000; color: var(--ink); font: .75rem var(--font-sans); white-space: nowrap;
+  padding: 6px 9px; border-radius: 6px; border: 1px solid var(--line-2);
+  opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s; z-index: 5;
+}
+.dc__badge:hover::after, .dc__badge:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
+.dc__badge:last-child::after { left: auto; right: 0; transform: translate(0, 4px); }
+.dc__badge:last-child:hover::after, .dc__badge:last-child:focus-visible::after { transform: none; }
+
+.dc__body {
+  margin: 12px 16px 16px; padding: 16px; border-radius: 10px;
+  background: rgba(0, 0, 0, .35); border: 1px solid var(--line);
+}
+.dc__name { font-size: 1.45rem; line-height: 1.2; }
+.dc__tag { font-size: .78rem; color: var(--ink-dim); word-break: break-all; }
+.dc__block { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 12px; }
+.dc__label { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--ink); margin-bottom: 6px; }
+.dc__block p { color: var(--ink-dim); font-size: .92rem; }
+.dc__activity { font-size: .82rem !important; }
+.dc__roles { display: flex; flex-wrap: wrap; gap: 6px; }
+.dc__roles li {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: .78rem; padding: 3px 9px; border-radius: 6px;
+  background: rgba(255, 255, 255, .05); border: 1px solid var(--line); color: var(--ink-dim);
+}
+.dc__roles i { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+.dc__roles i.r2 { background: #7cd7ff; }
+.dc__roles i.r3 { background: #c99bff; }
+.dc__actions { display: grid; gap: 10px; margin-top: 18px; }
+
+/* 13. FOOTER & TOAST ====================================================== */
+.footer { border-top: 1px solid var(--line); padding: 40px 0 56px; background: rgba(7, 9, 10, .7); }
+.footer__inner { display: grid; gap: 6px; font-size: .85rem; color: var(--ink-dim); }
+.footer__exit { color: var(--ink); font-size: 1rem; margin-bottom: 6px; }
+.footer__hint { font-size: .72rem; opacity: .6; margin-top: 10px; letter-spacing: .15em; }
+
+.toast {
+  position: fixed; left: 50%; bottom: 24px; z-index: 250;
+  transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+  max-width: calc(100vw - 32px); width: max-content;
+  background: #0b120f; color: var(--ink); border: 1px solid var(--accent-a40);
+  padding: 12px 16px; border-radius: 10px; font-size: .88rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, .6), 0 0 24px var(--accent-a20);
+  transition: opacity .25s var(--ease), transform .25s var(--ease);
+}
+.toast.is-shown { opacity: 1; transform: translate(-50%, 0); }
+.toast::before { content: "> "; color: var(--accent); }
+
+/* Konami-Modus: kurzer Farbrausch */
+html.konami .section__title, html.konami .hero__title { animation: hue 1.2s linear infinite; }
+@keyframes hue { to { filter: hue-rotate(360deg); } }
+html.konami .hero__title { color: var(--accent); }
+
+/* 14. BREAKPOINTS ========================================================= */
+@media (min-width: 640px) {
+  :root { --gutter: 28px; }
+  .stack { grid-template-columns: 1fr 1fr; }
+  .tool--main { grid-column: 1 / -1; padding: 32px; }
+  .projects { grid-template-columns: 1fr 1fr; }
+  .project--featured { grid-column: 1 / -1; }
+  .project__grid { grid-template-columns: 1.1fr 1fr; align-items: center; }
+  .project__grid .mock { margin: 22px 22px 22px 0; }
+  .dc__actions { grid-template-columns: 1fr; }
+}
+
+@media (min-width: 900px) {
+  :root { --nav-h: 66px; --gutter: 32px; }
+  .section { padding: 120px 0; }
+
+  /* Desktop-Navigation: Menü inline */
+  .nav__toggle { display: none; }
+  .nav__menu {
+    position: static; display: flex !important; align-items: center; gap: 18px;
+    background: none; border: 0; padding: 0; animation: none !important;
+  }
+  .nav__menu ul { flex-direction: row; gap: 4px; }
+  .nav__menu a { border: 0; padding: 8px 12px; font-size: .88rem; border-radius: 8px; position: relative; }
+  .nav__menu a::before { content: none; }
+  .nav__menu a[aria-current="true"] { background: var(--accent-a10); }
+  .crt-toggle { margin-top: 0; }
+
+  .about { grid-template-columns: 1.05fr 1fr; gap: 48px; align-items: start; }
+  .stack { grid-template-columns: 1.3fr 1fr; }
+  .tool--main { grid-column: 1; grid-row: 1 / span 2; flex-direction: column; justify-content: center; }
+  .stack__wins { grid-template-columns: 1fr 1fr; }
+  .project__info { padding: 28px; }
+  .project--featured .project__info { padding: 36px; }
+  .project__grid .mock { margin: 28px 28px 28px 0; }
+
+  .dc-wrap { justify-content: center; }
+
+  /* Hero-Hintergrundfenster */
+  .hero__bgwins { display: block; position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+  .codewin--bg { position: absolute; width: 400px; opacity: .3; transform: rotate(-2deg); filter: saturate(.9); }
+  .codewin--bg .codewin__body { font-size: .78rem; min-height: 22em; }
+  .codewin--a { right: 4%; top: 16%; }
+  .codewin--b { right: 18%; bottom: 6%; transform: rotate(2deg); width: 430px; opacity: .22; }
+}
+
+@media (min-width: 1200px) {
+  .codewin--a { right: 6%; }
+  .codewin--b { right: 24%; }
+}
+
+/* Touch-Geräte: kein Tilt-Hover-Effekt nötig */
+@media (hover: none) {
+  .card::after { display: none; }
+}
+
+/* 15. REDUCED MOTION ====================================================== */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+  .boot { display: none !important; }
+  .cursor, .logo__cursor { animation: none !important; }
+  .crt { animation: none; }
+  .js .reveal { opacity: 1; transform: none; }
+  .glitch::before, .glitch::after { display: none; }
+  .tilt.is-tilting { transform: none; }
+  .loader__fill { animation: none; }
+  .bg-canvas { opacity: .12; }
+}
+
+</style>
+
+  <!-- Ohne JavaScript: Boot-Screen sofort ausblenden, alles bleibt lesbar -->
+  <noscript><style>#boot{display:none !important}</style></noscript>
+</head>
+<body>
+
+  <!-- =========================================================
+       1. BOOT-SEQUENZ (wird von js/main.js befüllt und entfernt)
+       Fallback: CSS blendet sie nach ein paar Sekunden selbst aus.
+       ========================================================= -->
+  <div id="boot" class="boot" aria-hidden="true">
+    <div class="boot__inner">
+      <pre class="boot__log" id="boot-log"></pre>
+      <button type="button" class="boot__skip" id="boot-skip">Überspringen <kbd>Esc</kbd></button>
+    </div>
+  </div>
+
+  <!-- Hintergrund: Code-Regen (Canvas) + Vignette + CRT-Overlay -->
+  <canvas id="bg-canvas" class="bg-canvas" aria-hidden="true"></canvas>
+  <div class="bg-vignette" aria-hidden="true"></div>
+  <div class="crt" aria-hidden="true"></div>
+
+  <a class="skip-link" href="#main">Zum Inhalt springen</a>
+
+  <!-- =========================================================
+       2. NAVIGATION
+       ========================================================= -->
+  <header class="nav" id="nav">
+    <div class="nav__inner">
+      <a href="#top" class="nav__brand" id="brand" aria-label="Anton – nach oben">
+        <svg class="logo" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+          <rect x="1.5" y="1.5" width="61" height="61" rx="14" class="logo__bg"/>
+          <path d="M13 47 L27 15 L41 47" class="logo__stroke"/>
+          <path d="M19.5 36 H34.5" class="logo__stroke logo__bar"/>
+          <rect x="44" y="42" width="10" height="5.5" rx="1.2" class="logo__cursor"/>
+        </svg>
+        <span class="nav__name">anton<span class="accent">.dev</span></span>
+      </a>
+
+      <button type="button" class="nav__toggle" id="nav-toggle" aria-expanded="false" aria-controls="nav-menu">
+        <span class="sr-only">Menü</span>
+        <span class="nav__burger" aria-hidden="true"></span>
+      </button>
+
+      <nav class="nav__menu" id="nav-menu" aria-label="Hauptnavigation">
+        <ul>
+          <li><a href="#ueber-mich" data-nav>Über mich</a></li>
+          <li><a href="#stack" data-nav>Stack</a></li>
+          <li><a href="#projekte" data-nav>Projekte</a></li>
+          <li><a href="#terminal" data-nav>Terminal</a></li>
+          <li><a href="#discord" data-nav>Discord</a></li>
+        </ul>
+        <button type="button" class="crt-toggle" id="crt-toggle" aria-pressed="true" title="Scanline-Overlay an/aus">
+          <span aria-hidden="true">▤</span> CRT
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- =========================================================
+         3. HERO
+         ========================================================= -->
+    <section class="hero" id="top" aria-labelledby="hero-title">
+
+      <!-- Dekorative Code-Fenster im Hintergrund (tippen sich selbst, in Schleife) -->
+      <div class="hero__bgwins" aria-hidden="true">
+        <div class="codewin codewin--bg codewin--a" data-lang="html" data-loop>
+          <div class="codewin__bar"><span class="dots"><i></i><i></i><i></i></span><span class="codewin__file">index.html</span></div>
+<pre class="codewin__body"><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="de"&gt;
+  &lt;head&gt;
+    &lt;title&gt;Neue Idee&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;main id="app"&gt;
+      &lt;h1&gt;Hallo Welt&lt;/h1&gt;
+      &lt;button class="btn"&gt;Los&lt;/button&gt;
+    &lt;/main&gt;
+    &lt;script src="app.js"&gt;&lt;/script&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+        </div>
+
+        <div class="codewin codewin--bg codewin--b" data-lang="js" data-loop>
+          <div class="codewin__bar"><span class="dots"><i></i><i></i><i></i></span><span class="codewin__file">app.js</span></div>
+<pre class="codewin__body"><code>// Anton: "Mach, dass der Button was Cooles macht."
+const btn = document.querySelector(".btn");
+
+btn.addEventListener("click", async () =&gt; {
+  const idee = await claude.frag("Was Cooles?");
+  render(idee);
+  konfetti(42);
+});
+
+function render(idee) {
+  app.innerHTML = `&lt;p&gt;${idee}&lt;/p&gt;`;
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="hero__content">
+        <p class="hero__prompt mono"><span class="accent">gast@anton</span>:<span class="dim">~</span>$ whoami</p>
+
+        <h1 class="hero__title mono" id="hero-title">
+          <span class="sr-only">Anton</span>
+          <span class="hero__name" id="hero-name" aria-hidden="true">Anton</span><span class="cursor" aria-hidden="true"></span>
+        </h1>
+
+        <p class="hero__role mono">
+          <span class="sr-only">Vibecoder, Web-App-Schmied, Ideengeber und Prompt-Flüsterer</span>
+          <span aria-hidden="true"><span class="dim">&gt;</span> <span id="hero-role" class="accent">Vibecoder</span><span class="cursor cursor--thin"></span></span>
+        </p>
+
+        <p class="hero__intro">
+          Ich baue Web-Apps und Windows-Apps. Die Ideen kommen von mir, den Code schreibt die KI.
+          Arbeitsteilung, wie sie im Buche steht. Nur dass das Buch auch die KI geschrieben hätte.
+        </p>
+
+        <a href="#ueber-mich" class="hero__scroll mono">
+          <span class="dim">$</span> cd ./ueber-mich
+          <span class="hero__arrow" aria-hidden="true">↓</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         4. ÜBER MICH
+         ========================================================= -->
+    <section class="section" id="ueber-mich" aria-labelledby="about-title">
+      <div class="container">
+        <header class="section__head reveal">
+          <p class="section__kicker mono">01 <span class="dim">//</span> cat ueber-mich.md</p>
+          <h2 class="section__title glitch" id="about-title" data-text="Über mich">Über mich</h2>
+        </header>
+
+        <div class="about">
+          <div class="about__text reveal">
+            <p>
+              Hi, ich bin <strong>Anton</strong>, und ich bin <strong class="accent">Vibecoder</strong>.
+              Das heißt: Ich habe die Ideen, und die KI (Claude) schreibt den Code. Den ganzen. Jede Zeile.
+              Auch die Semikolons.
+            </p>
+            <p>
+              Klassischer Entwickler? Nö. Ich habe nie gelernt, einen Bubble-Sort von Hand zu schreiben, und ich habe
+              auch nicht vor, damit anzufangen. Dafür kann ich sehr ausdauernd beschreiben, was ich will, bis es da ist.
+            </p>
+            <p>
+              Mein Job ist der spannende Teil: mir ausdenken, was es noch nicht gibt, entscheiden, wie es sich
+              anfühlen soll, und so lange nachhaken, bis es passt. Die KI übernimmt den Teil mit den geschweiften Klammern.
+            </p>
+            <p>
+              Manche nennen das Schummeln. Ich nenne es Delegieren. Und ganz ehrlich: Auch diese Website hat die KI geschrieben.
+              Ich habe nur gesagt, wie sie aussehen soll. Und dass da ein Easter Egg rein muss.
+            </p>
+          </div>
+
+          <div class="codewin codewin--about reveal" data-lang="json" aria-hidden="true">
+            <div class="codewin__bar"><span class="dots"><i></i><i></i><i></i></span><span class="codewin__file">anton.json</span></div>
+<pre class="codewin__body"><code>{
+  "name": "Anton",
+  "rolle": "Vibecoder",
+  "baut": ["Web-Apps", "Windows-Apps"],
+  "werkzeug": "Claude Code",
+  "skills": [
+    "Ideen haben",
+    "Prompts schreiben",
+    "Nachfragen, bis es passt"
+  ],
+  "code_selbst_geschrieben": 0,
+  "stolz_drauf": true,
+  "superkraft": "Beschreiben, bis es existiert",
+  "schwaeche": "Semikolons"
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         5. STACK / WERKZEUGE
+         ========================================================= -->
+    <section class="section" id="stack" aria-labelledby="stack-title">
+      <div class="container">
+        <header class="section__head reveal">
+          <p class="section__kicker mono">02 <span class="dim">//</span> ls ./werkzeuge</p>
+          <h2 class="section__title glitch" id="stack-title" data-text="Mein Stack">Mein Stack</h2>
+          <p class="section__lead">Kurz und ehrlich. Mehr brauche ich nicht. Na gut, eine Idee pro Tag schadet auch nicht.</p>
+        </header>
+
+        <div class="stack">
+          <!-- Nr. 1: Claude Code (Hauptwerkzeug) -->
+          <article class="tool tool--main card tilt reveal">
+            <span class="tool__rank mono" aria-label="Platz 1">#1</span>
+            <div class="tool__icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48"><rect x="4" y="8" width="40" height="32" rx="6"/><path d="M13 20l6 5-6 5M23 31h11"/></svg>
+            </div>
+            <div class="tool__body">
+              <p class="tool__label mono">main()</p>
+              <h3 class="tool__name">Claude Code</h3>
+              <p class="tool__quip">Macht die Arbeit, ich nehme das Lob.</p>
+              <p class="tool__desc">
+                Mein Hauptwerkzeug. Ich beschreibe, Claude Code baut. Es plant, schreibt, debuggt, räumt auf
+                und erklärt mir geduldig zum dritten Mal, was eine Race Condition ist.
+              </p>
+            </div>
+          </article>
+
+          <article class="tool card tilt reveal">
+            <span class="tool__rank mono" aria-label="Platz 2">#2</span>
+            <div class="tool__icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48"><path d="M8 6h32l-3 34-13 4-13-4z"/><path d="M17 16h15l-1 12-7 2-7-2-.5-4"/></svg>
+            </div>
+            <div class="tool__body">
+              <p class="tool__label mono">am meisten genutzt</p>
+              <h3 class="tool__name">HTML5</h3>
+              <p class="tool__quip">Läuft überall, braucht nix, beschwert sich nie.</p>
+            </div>
+          </article>
+
+          <article class="tool card tilt reveal">
+            <span class="tool__rank mono" aria-label="Platz 3">#3</span>
+            <div class="tool__icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48"><path d="M27 4L9 28h15l-3 16 18-24H24z"/></svg>
+            </div>
+            <div class="tool__body">
+              <p class="tool__label mono">backend &amp; daten</p>
+              <h3 class="tool__name">Supabase</h3>
+              <p class="tool__quip">Datenbank und Login, ohne dass ich je einen Server streicheln muss.</p>
+            </div>
+          </article>
+        </div>
+
+        <ul class="chips reveal" aria-label="Weitere Eigenschaften">
+          <li class="chip mono">Programmiersprache Nr. 1: <span class="accent">Deutsch</span></li>
+          <li class="chip mono">IDE: <span class="accent">ein Chatfenster</span></li>
+          <li class="chip mono">Debugger: <span class="accent">„geht nicht, fix das“</span></li>
+        </ul>
+
+        <!-- Zwei sich selbst tippende Fenster: Terminal-Session + SQL -->
+        <div class="stack__wins">
+          <div class="codewin reveal" data-lang="sh" aria-hidden="true">
+            <div class="codewin__bar"><span class="dots"><i></i><i></i><i></i></span><span class="codewin__file">terminal — so ungefähr läuft das</span></div>
+<pre class="codewin__body"><code>$ claude
+&gt; Bau mir eine Spieleseite. Ohne Werbung.
+● Gute Idee. Ich lege einen Plan an.
+✔ index.html erstellt
+✔ spiele.js erstellt
+✔ werbung.js nicht erstellt (absichtlich)
+&gt; Und mach es schöner.
+● Klar. Was genau?
+&gt; Weiß ich noch nicht. Ich seh es, wenn es da ist.
+● Verstanden. Ich probier mal was.</code></pre>
+          </div>
+
+          <div class="codewin reveal" data-lang="sql" aria-hidden="true">
+            <div class="codewin__bar"><span class="dots"><i></i><i></i><i></i></span><span class="codewin__file">supabase/raeume.sql</span></div>
+<pre class="codewin__body"><code>-- Geschrieben von: der KI. Abgenickt von: Anton.
+create table buchungen (
+  id uuid primary key default gen_random_uuid(),
+  raum_id uuid references raeume(id),
+  von timestamptz not null,
+  bis timestamptz not null
+);
+
+select name from raeume
+where id not in (
+  select raum_id from buchungen
+  where now() between von and bis
+);</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         6. PROJEKTE
+         ========================================================= -->
+    <section class="section" id="projekte" aria-labelledby="projects-title">
+      <div class="container">
+        <header class="section__head reveal">
+          <p class="section__kicker mono">03 <span class="dim">//</span> ls ./projekte</p>
+          <h2 class="section__title glitch" id="projects-title" data-text="Projekte">Projekte</h2>
+          <p class="section__lead">Ideen, die es aus meinem Kopf bis ins Internet geschafft haben.</p>
+        </header>
+
+        <div class="projects">
+
+          <!-- Highlight: Moki -->
+          <article class="project project--featured card tilt reveal" aria-labelledby="p-moki">
+            <div class="project__bar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="mono">~/projekte/moki</span><span class="project__badge mono">★ Highlight</span></div>
+            <div class="project__grid">
+              <div class="project__info">
+                <h3 class="project__name" id="p-moki">Moki</h3>
+                <p class="project__pitch accent mono">Zocken ohne Werbe-Terror.</p>
+                <p>
+                  Eine Spiele-Seite wie Poki, nur <strong>ohne Werbung</strong>. Kein 30-Sekunden-Spot vor dem Spiel,
+                  kein Banner, das plötzlich über dem Spielfeld klebt. Klicken, spielen, fertig.
+                </p>
+                <ul class="tags" aria-label="Technik">
+                  <li class="tag mono">HTML5-Spiele</li>
+                  <li class="tag mono">0 Werbebanner</li>
+                </ul>
+                <!-- TODO: echte URL für Moki eintragen (und dann target="_blank" rel="noopener noreferrer" ergänzen) -->
+                <a href="#" class="btn btn--primary" data-placeholder>Zu Moki <span aria-hidden="true">→</span></a>
+              </div>
+
+              <!-- Generische CSS-Vorschau: Spielekacheln + durchgestrichener Werbeplatz -->
+              <div class="mock mock--moki" aria-hidden="true">
+                <div class="mock__url mono"><span class="dim">https://</span>moki<span class="dim">/spiele</span></div>
+                <div class="mock__ad mono"><span>werbung.js</span><span class="mock__ok">404 ✔</span></div>
+                <div class="mock__tiles">
+                  <span class="tile t1"></span><span class="tile t2"></span><span class="tile t3"></span>
+                  <span class="tile t4"></span><span class="tile t5"></span><span class="tile t6"></span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Flexspacepro -->
+          <article class="project card tilt reveal" aria-labelledby="p-flex">
+            <div class="project__bar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="mono">~/projekte/flexspacepro</span></div>
+            <div class="project__info">
+              <h3 class="project__name" id="p-flex">Flexspacepro</h3>
+              <p class="project__pitch accent mono">Raum frei? Jetzt weißt du es.</p>
+              <p>Ein Raumbuchungssystem: Räume finden, Zeit wählen, buchen. Schluss mit „Ist da gerade wer drin?“.</p>
+
+              <!-- Generische CSS-Vorschau: Buchungsraster -->
+              <div class="mock mock--flex" aria-hidden="true">
+                <div class="cal">
+                  <span class="cal__h">Mo</span><span class="cal__h">Di</span><span class="cal__h">Mi</span><span class="cal__h">Do</span><span class="cal__h">Fr</span>
+                  <span></span><span class="on"></span><span></span><span></span><span class="on"></span>
+                  <span class="on"></span><span class="on"></span><span></span><span class="me"></span><span></span>
+                  <span></span><span></span><span class="on"></span><span></span><span></span>
+                </div>
+              </div>
+
+              <ul class="tags" aria-label="Technik">
+                <li class="tag mono">HTML5</li>
+                <li class="tag mono">Supabase</li>
+              </ul>
+              <!-- TODO: echte URL für Flexspacepro eintragen (und dann target="_blank" rel="noopener noreferrer" ergänzen) -->
+              <a href="#" class="btn" data-placeholder>Zu Flexspacepro <span aria-hidden="true">→</span></a>
+            </div>
+          </article>
+
+          <!-- Geheimes Labor -->
+          <article class="project project--lab card tilt reveal" aria-labelledby="p-lab">
+            <div class="project__bar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="mono">~/projekte/.geheim</span></div>
+            <div class="project__info">
+              <h3 class="project__name" id="p-lab">Geheimes Labor</h3>
+              <p class="project__pitch accent mono">Zutritt nur mit Idee.</p>
+              <p>
+                Weitere private Projekte: Web-Apps und Windows-Apps, die (noch) nicht öffentlich sind.
+                Hier entsteht ständig etwas Neues. Der Ladebalken unten ist ehrlich gesagt nie fertig.
+              </p>
+
+              <div class="loader" role="img" aria-label="Ladebalken, der nie fertig wird">
+                <div class="loader__top mono"><span id="lab-status">lade nächste Idee …</span><span id="lab-pct">0%</span></div>
+                <div class="loader__track"><div class="loader__fill" id="lab-fill"></div></div>
+              </div>
+
+              <ul class="tags" aria-label="Technik">
+                <li class="tag mono">Web-Apps</li>
+                <li class="tag mono">Windows-Apps</li>
+                <li class="tag mono">streng geheim</li>
+              </ul>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         7. INTERAKTIVES MINI-TERMINAL (Easter Egg)
+         ========================================================= -->
+    <section class="section" id="terminal" aria-labelledby="term-title">
+      <div class="container container--narrow">
+        <header class="section__head reveal">
+          <p class="section__kicker mono">04 <span class="dim">//</span> ./spielwiese.sh</p>
+          <h2 class="section__title glitch" id="term-title" data-text="Mini-Terminal">Mini-Terminal</h2>
+          <p class="section__lead">Tipp was ein. <code class="mono accent">help</code> ist ein guter Anfang. <code class="mono accent">sudo</code> ist ein schlechter.</p>
+        </header>
+
+        <div class="term card reveal" id="term">
+          <div class="codewin__bar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="codewin__file">gast@anton: ~</span></div>
+          <div class="term__out mono" id="term-out" role="log" aria-live="polite" aria-label="Terminal-Ausgabe">
+            <p>Willkommen im Anton-Terminal v1.0. Tipp <span class="accent">help</span> für alle Befehle.</p>
+          </div>
+          <form class="term__form mono" id="term-form" autocomplete="off">
+            <label for="term-input" class="term__prompt"><span class="accent">gast@anton</span>:<span class="dim">~</span>$</label>
+            <input id="term-input" class="term__input" type="text" spellcheck="false" autocapitalize="off" enterkeyhint="send" aria-describedby="term-hint">
+          </form>
+          <p class="sr-only" id="term-hint">Befehl eingeben und Enter drücken. Pfeil hoch für Verlauf, Tab für Autovervollständigung.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         8. DISCORD-PROFIL
+         ========================================================= -->
+    <section class="section" id="discord" aria-labelledby="dc-title">
+      <div class="container">
+        <header class="section__head reveal">
+          <p class="section__kicker mono">05 <span class="dim">//</span> ping anton</p>
+          <h2 class="section__title glitch" id="dc-title" data-text="Discord">Discord</h2>
+          <p class="section__lead">Der einzige Knopf auf dieser Seite, den du drücken sollst. Schreib mir einfach.</p>
+        </header>
+
+        <div class="dc-wrap reveal">
+          <article class="dc card tilt" aria-label="Discord-Profil von Anton">
+            <div class="dc__banner" aria-hidden="true">
+              <span class="dc__banner-code mono">&lt;A/&gt; ideen.push(neu) // jeden Tag</span>
+            </div>
+
+            <div class="dc__head">
+              <div class="dc__avatar">
+                <!-- Eigener Platzhalter-Avatar (kein externer Dienst) -->
+                <svg viewBox="0 0 64 64" role="img" aria-label="Avatar von Anton: Logo-A">
+                  <rect width="64" height="64" fill="#0b0f0d"/>
+                  <path d="M15 46 L29 16 L43 46" class="logo__stroke"/>
+                  <path d="M21.5 35.5 H36.5" class="logo__stroke logo__bar"/>
+                  <rect x="44" y="41" width="9" height="5" rx="1.2" class="logo__cursor"/>
+                </svg>
+                <span class="dc__status" id="dc-status" data-status="online" title="Online"><span class="sr-only" id="dc-status-text">Status: online</span></span>
+              </div>
+
+              <ul class="dc__badges" aria-label="Badges">
+                <li class="dc__badge" tabindex="0" data-tip="Vibecoder" aria-label="Badge: Vibecoder">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17l6-6-6-6M12 19h8"/></svg>
+                </li>
+                <li class="dc__badge" tabindex="0" data-tip="Ideen: unendlich" aria-label="Badge: Ideen unendlich">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 15c-2.8 0-4-1.5-4-3s1.2-3 4-3c3.5 0 6.5 6 10 6 2.8 0 4-1.5 4-3s-1.2-3-4-3c-3.5 0-6.5 6-10 6z"/></svg>
+                </li>
+                <li class="dc__badge" tabindex="0" data-tip="Powered by Claude Code" aria-label="Badge: Powered by Claude Code">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>
+                </li>
+                <li class="dc__badge" tabindex="0" data-tip="0 Zeilen selbst getippt" aria-label="Badge: 0 Zeilen selbst getippt">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M6.5 17.5l11-11"/></svg>
+                </li>
+              </ul>
+            </div>
+
+            <div class="dc__body">
+              <div class="dc__names">
+                <h3 class="dc__name">Anton</h3>
+                <!-- TODO (optional): Discord-Username ergänzen, z. B. <span class="dc__handle">@deinname</span> -->
+                <p class="dc__tag mono">ID · <span id="dc-id">1496498092004868279</span></p>
+              </div>
+
+              <div class="dc__block">
+                <h4 class="dc__label">Über mich</h4>
+                <p>Vibecoder. Ideen von mir, Code von Claude. Baue Web-Apps und Windows-Apps und sage Sachen wie „mach das schöner“.</p>
+              </div>
+
+              <div class="dc__block">
+                <h4 class="dc__label">Aktivität</h4>
+                <p class="dc__activity mono" id="dc-activity"><span class="accent">▶</span> baut vermutlich gerade was mit Claude Code</p>
+              </div>
+
+              <div class="dc__block">
+                <h4 class="dc__label">Rollen</h4>
+                <ul class="dc__roles">
+                  <li><i aria-hidden="true"></i>Vibecoder</li>
+                  <li><i aria-hidden="true" class="r2"></i>Ideen-Abteilung</li>
+                  <li><i aria-hidden="true" class="r3"></i>Prompt-Flüsterer</li>
+                </ul>
+              </div>
+
+              <div class="dc__actions">
+                <a class="btn btn--primary btn--block" href="https://discord.com/users/1496498092004868279" target="_blank" rel="noopener noreferrer">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" class="btn__icon"><path d="M4 5h16v11H9l-5 4z"/></svg>
+                  Auf Discord adden / Profil ansehen
+                  <span class="sr-only">(öffnet in neuem Tab)</span>
+                </a>
+                <button type="button" class="btn btn--ghost" id="dc-copy">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" class="btn__icon"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>
+                  ID kopieren
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- =========================================================
+       9. FOOTER
+       ========================================================= -->
+  <footer class="footer">
+    <div class="container footer__inner mono">
+      <p class="footer__exit"><span class="dim">gast@anton:~$</span> exit 0<span class="cursor cursor--thin" aria-hidden="true"></span></p>
+      <p>Gebaut mit Claude Code. Ideen von Anton.</p>
+      <p class="dim">© <span id="year">2026</span> Anton · kein Tracking, keine Cookies, keine Werbung · <a href="#top">nach oben ↑</a></p>
+      <p class="footer__hint dim" aria-hidden="true">psst … ↑ ↑ ↓ ↓ ← → ← → B A</p>
+      <!-- TODO: Impressum/Datenschutz – falls nötig hier verlinken (z. B. impressum.html) -->
+    </div>
+  </footer>
+
+  <!-- Toast für kurze Rückmeldungen (ID kopiert, Easter Eggs …) -->
+  <div class="toast mono" id="toast" role="status" aria-live="polite"></div>
+<script>
+/* ==========================================================================
+   Anton – Vibecoder · main.js
+   Reines Vanilla JS, keine Abhängigkeiten.
+
+   Module (in dieser Reihenfolge):
+     0. Setup & Helfer
+     1. Toast
+     2. Boot-Sequenz
+     3. Hintergrund: Code-Regen (Canvas)
+     4. Navigation (Mobile-Menü, aktiver Link, CRT-Schalter)
+     5. Hero-Typewriter
+     6. Sich selbst tippende Code-Fenster (+ Mini-Syntax-Highlighter)
+     7. Scroll-Reveals
+     8. Karten-Tilt & Glow
+     9. Labor-Ladebalken (wird nie fertig)
+    10. Mini-Terminal
+    11. Discord-Karte (ID kopieren, optional Lanyard)
+    12. Easter Eggs (Konami-Code, Logo-Klicks, Konsole)
+   ========================================================================== */
+(() => {
+  "use strict";
+
+  /* 0. SETUP & HELFER ===================================================== */
+  const root = document.documentElement;
+  root.classList.add("js");
+
+  const $  = (sel, ctx = document) => ctx.querySelector(sel);
+  const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const rand  = (min, max) => Math.random() * (max - min) + min;
+
+  const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const reducedMotion = () => motionQuery.matches;
+
+  // Kleiner Speicher-Wrapper (nur für die CRT-Einstellung, kein Tracking)
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch { /* egal */ } },
+  };
+
+  const escapeHTML = (s) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  // Jahr im Footer
+  const yearEl = $("#year");
+  if (yearEl) yearEl.textContent = String(new Date().getFullYear());
+
+  // Bewusste "#"-Platzhalter-Links (Moki, Flexspacepro) sollen nicht nach oben springen
+  $$("a[data-placeholder]").forEach((a) =>
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      toast("Link kommt bald. Anton muss ihn nur noch reinkopieren.");
+    })
+  );
+
+  /* 1. TOAST ============================================================== */
+  const toastEl = $("#toast");
+  let toastTimer;
+  function toast(msg, ms = 2600) {
+    if (!toastEl) return;
+    toastEl.textContent = msg;
+    toastEl.classList.add("is-shown");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove("is-shown"), ms);
+  }
+
+  /* 2. BOOT-SEQUENZ ======================================================= */
+  const BOOT_LINES = [
+    ["> lade anton.exe ", "...", " ok"],
+    ["> verbinde mit KI-Assistent ", "...", ""],
+    ["> KI-Assistent: ", "", "online ✔"],
+    ["> Ideen: ", "", "unendlich"],
+    ["> Vibe-Check: ", "", "bestanden"],
+    ["> Code selbst geschrieben: ", "", "0 Zeilen (stolz drauf)"],
+    ["> starte Oberfläche", "", " _"],
+  ];
+
+  function runBoot() {
+    return new Promise((resolve) => {
+      const boot = $("#boot");
+      const log = $("#boot-log");
+      if (!boot || !log || reducedMotion()) {
+        boot && boot.remove();
+        return resolve();
+      }
+
+      document.body.classList.add("is-booting");
+      let finished = false;
+      const timers = [];
+
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        timers.forEach(clearTimeout);
+        document.removeEventListener("keydown", onKey);
+        boot.classList.add("is-done");
+        document.body.classList.remove("is-booting");
+        setTimeout(() => boot.remove(), 500);
+        resolve();
+      };
+      const onKey = (e) => { if (e.key === "Escape" || e.key === "Enter") finish(); };
+
+      $("#boot-skip").addEventListener("click", finish);
+      document.addEventListener("keydown", onKey);
+
+      // Zeilen nacheinander ausgeben (~2,5 s insgesamt)
+      let t = 120;
+      BOOT_LINES.forEach(([pre, dots, ok], i) => {
+        timers.push(setTimeout(() => {
+          const line = document.createElement("div");
+          line.innerHTML = `<span class="hl">${escapeHTML(pre)}</span>${escapeHTML(dots)}<span class="ok">${escapeHTML(ok)}</span>`;
+          log.appendChild(line);
+        }, t));
+        t += i === 1 ? 480 : 300;
+      });
+      timers.push(setTimeout(finish, t + 450));
+    });
+  }
+
+  /* 3. HINTERGRUND: CODE-REGEN ============================================ */
+  const rain = (() => {
+    const canvas = $("#bg-canvas");
+    if (!canvas || !canvas.getContext) return { intense() {} };
+    const ctx = canvas.getContext("2d");
+    const GLYPHS = "01<>/{}[]();=+*&|!?#$AIaiAntonvibe".split("");
+    const SIZE = 16;
+    let w = 0, h = 0, cols = 0, drops = [], raf = 0, last = 0, intense = false;
+
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      w = window.innerWidth; h = window.innerHeight;
+      canvas.width = Math.floor(w * dpr); canvas.height = Math.floor(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.font = `${SIZE - 2}px ui-monospace, Menlo, Consolas, monospace`;
+      cols = Math.ceil(w / (SIZE * 1.2));
+      drops = Array.from({ length: cols }, () => ({
+        y: rand(-h, 0) / SIZE,
+        speed: rand(0.25, 0.7),
+      }));
+      ctx.fillStyle = "#07090a";
+      ctx.fillRect(0, 0, w, h);
+      if (reducedMotion()) drawStatic();
+    }
+
+    // Reduced Motion: einmalig ein ruhiges Muster zeichnen, keine Animation
+    function drawStatic() {
+      ctx.fillStyle = "#07090a"; ctx.fillRect(0, 0, w, h);
+      for (let i = 0; i < cols; i++) {
+        const len = Math.floor(rand(3, 14));
+        const start = Math.floor(rand(0, h / SIZE));
+        for (let j = 0; j < len; j++) {
+          ctx.fillStyle = `rgba(61,255,154,${0.15 + (j / len) * 0.5})`;
+          ctx.fillText(GLYPHS[(Math.random() * GLYPHS.length) | 0], i * SIZE * 1.2, (start + j) * SIZE);
+        }
+      }
+    }
+
+    function frame(now) {
+      raf = requestAnimationFrame(frame);
+      const fps = intense ? 40 : 24;
+      if (now - last < 1000 / fps) return;
+      last = now;
+
+      // Spur verblassen lassen
+      ctx.fillStyle = "rgba(7, 9, 10, 0.12)";
+      ctx.fillRect(0, 0, w, h);
+
+      for (let i = 0; i < cols; i++) {
+        const d = drops[i];
+        const x = i * SIZE * 1.2;
+        const y = d.y * SIZE;
+        const ch = GLYPHS[(Math.random() * GLYPHS.length) | 0];
+        ctx.fillStyle = Math.random() > 0.96 ? "#d9ffe9" : "#3dff9a";
+        ctx.fillText(ch, x, y);
+        d.y += d.speed * (intense ? 2.2 : 1);
+        if (y > h && Math.random() > 0.975) { d.y = rand(-20, 0); d.speed = rand(0.25, 0.7); }
+      }
+    }
+
+    function start() { if (!raf && !reducedMotion()) raf = requestAnimationFrame(frame); }
+    function stop()  { cancelAnimationFrame(raf); raf = 0; }
+
+    resize();
+    let rt;
+    window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(resize, 150); });
+    document.addEventListener("visibilitychange", () => (document.hidden ? stop() : start()));
+    motionQuery.addEventListener?.("change", () => { stop(); resize(); start(); });
+    start();
+
+    return {
+      intense(on) {
+        intense = on;
+        canvas.classList.toggle("is-intense", on);
+      },
+      isIntense: () => intense,
+    };
+  })();
+
+  /* 4. NAVIGATION ========================================================= */
+  (() => {
+    const toggle = $("#nav-toggle");
+    const menu = $("#nav-menu");
+    const close = () => { menu.classList.remove("is-open"); toggle.setAttribute("aria-expanded", "false"); };
+
+    toggle.addEventListener("click", () => {
+      const open = toggle.getAttribute("aria-expanded") !== "true";
+      toggle.setAttribute("aria-expanded", String(open));
+      menu.classList.toggle("is-open", open);
+      if (open) $("a", menu)?.focus();
+    });
+    $$("a", menu).forEach((a) => a.addEventListener("click", close));
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && menu.classList.contains("is-open")) { close(); toggle.focus(); }
+    });
+
+    // Aktiver Link beim Scrollen
+    const links = $$("[data-nav]");
+    const byId = new Map(links.map((a) => [a.getAttribute("href").slice(1), a]));
+    const setActive = (id) => links.forEach((a) => {
+      if (byId.get(id) === a) a.setAttribute("aria-current", "true");
+      else a.removeAttribute("aria-current");
+    });
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((en) => { if (en.isIntersecting) setActive(en.target.id); });
+    }, { rootMargin: "-45% 0px -50% 0px" });
+    ["top", ...byId.keys()].forEach((id) => { const s = document.getElementById(id); s && io.observe(s); });
+
+    // CRT-Overlay an/aus (Einstellung wird lokal gemerkt)
+    const crtBtn = $("#crt-toggle");
+    const applyCrt = (on) => {
+      root.classList.toggle("crt-off", !on);
+      crtBtn.setAttribute("aria-pressed", String(on));
+    };
+    applyCrt(store.get("crt") !== "off");
+    crtBtn.addEventListener("click", () => {
+      const on = crtBtn.getAttribute("aria-pressed") !== "true";
+      applyCrt(on);
+      store.set("crt", on ? "on" : "off");
+    });
+    window.__setCrt = (on) => { applyCrt(on); store.set("crt", on ? "on" : "off"); };
+  })();
+
+  /* 5. HERO-TYPEWRITER ==================================================== */
+  const ROLES = [
+    "Vibecoder", "Web-App-Schmied", "Ideengeber", "Prompt-Flüsterer",
+    "Windows-App-Bastler", "KI-Dompteur", "Chef-Ausdenker",
+  ];
+
+  async function typeInto(el, text, speed = 70) {
+    for (let i = 1; i <= text.length; i++) {
+      el.textContent = text.slice(0, i);
+      await sleep(speed + rand(-20, 30));
+    }
+  }
+  async function eraseFrom(el, speed = 35) {
+    for (let i = el.textContent.length; i >= 0; i--) {
+      el.textContent = el.textContent.slice(0, i);
+      await sleep(speed);
+    }
+  }
+
+  async function runHero() {
+    const nameEl = $("#hero-name");
+    const roleEl = $("#hero-role");
+    if (!nameEl || !roleEl) return;
+    if (reducedMotion()) return; // statischer Text bleibt stehen
+
+    nameEl.textContent = "";
+    roleEl.textContent = "";
+    await sleep(200);
+    await typeInto(nameEl, "Anton", 120);
+    await sleep(350);
+
+    let i = 0;
+    for (;;) {
+      await typeInto(roleEl, ROLES[i], 65);
+      await sleep(1700);
+      await eraseFrom(roleEl, 30);
+      await sleep(250);
+      i = (i + 1) % ROLES.length;
+      if (document.hidden) await new Promise((r) => document.addEventListener("visibilitychange", r, { once: true }));
+    }
+  }
+
+  /* 6. CODE-FENSTER + MINI-HIGHLIGHTER ==================================== */
+  // Jede Sprache: ein kombiniertes RegExp + passende CSS-Klasse pro Gruppe.
+  const LANGS = {
+    json: {
+      re: /("(?:[^"\\\n]|\\.)*"(?=\s*:))|("(?:[^"\\\n]|\\.)*"?)|(-?\b\d+(?:\.\d+)?\b)|(\btrue\b|\bfalse\b|\bnull\b)|([{}[\],:])/g,
+      cls: ["key", "str", "num", "kw", "punc"],
+    },
+    js: {
+      re: /(\/\/[^\n]*|\/\*[\s\S]*?(?:\*\/|$))|("(?:[^"\\\n]|\\.)*"?|'(?:[^'\\\n]|\\.)*'?|`[^`]*`?)|\b(const|let|var|function|return|if|else|await|async|new|for|of|while|import|export|from|class|this|true|false|null|try|catch)\b|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][\w$]*(?=\s*\())/g,
+      cls: ["com", "str", "kw", "num", "fn"],
+    },
+    html: {
+      re: /(<!--[\s\S]*?(?:-->|$))|(<\/?[A-Za-z!][\w-]*|\/?>)|("[^"\n]*"?)|([A-Za-z-]+(?==))/g,
+      cls: ["com", "tag", "str", "attr"],
+    },
+    sql: {
+      re: /(--[^\n]*)|('[^'\n]*'?)|\b(create|table|select|from|where|insert|into|values|and|or|not|null|primary|key|references|default|in|between|on|order|by|limit|uuid|timestamptz|text|int)\b|(\b\d+\b)|([A-Za-z_]\w*(?=\s*\())/gi,
+      cls: ["com", "str", "kw", "num", "fn"],
+    },
+    sh: {
+      re: /(^\$[^\n]*)|(^✔[^\n]*)|(^●[^\n]*)|(^>[^\n]*)/gm,
+      cls: ["cmd", "ok", "ai", "kw"],
+    },
+  };
+
+  function highlight(text, lang) {
+    const L = LANGS[lang];
+    if (!L) return escapeHTML(text);
+    L.re.lastIndex = 0;
+    let out = "", last = 0, m;
+    while ((m = L.re.exec(text))) {
+      if (m[0] === "") { L.re.lastIndex++; continue; }
+      let g = 1; while (m[g] === undefined) g++;
+      out += escapeHTML(text.slice(last, m.index));
+      out += `<span class="tk-${L.cls[g - 1]}">${escapeHTML(m[0])}</span>`;
+      last = L.re.lastIndex;
+    }
+    return out + escapeHTML(text.slice(last));
+  }
+
+  function setupCodeWindows() {
+    const wins = $$(".codewin[data-lang]");
+    wins.forEach((win) => {
+      const code = $("code", win);
+      const lang = win.dataset.lang;
+      const full = code.textContent; // Quelltext steht im HTML (auch ohne JS sichtbar)
+      const loop = win.hasAttribute("data-loop");
+      const body = $(".codewin__body", win);
+
+      // Höhe vorab fixieren, damit beim Tippen nichts springt
+      code.innerHTML = highlight(full, lang);
+      if (reducedMotion()) return; // alles sofort fertig anzeigen
+      body.style.minHeight = body.offsetHeight + "px";
+      code.innerHTML = "";
+
+      let running = false, visible = false;
+
+      async function type() {
+        running = true;
+        win.classList.add("is-typing");
+        do {
+          let i = 0;
+          while (i < full.length) {
+            if (!visible) { await sleep(300); continue; } // pausieren, wenn außer Sicht
+            const step = full[i] === "\n" ? 1 : Math.random() > 0.85 ? 3 : 2;
+            i = Math.min(full.length, i + step);
+            code.innerHTML = highlight(full.slice(0, i), lang);
+            await sleep(full[i - 1] === "\n" ? rand(70, 160) : rand(14, 38));
+          }
+          if (loop) {
+            await sleep(4500);
+            code.innerHTML = "";
+            await sleep(600);
+          }
+        } while (loop);
+        win.classList.remove("is-typing");
+      }
+
+      const io = new IntersectionObserver(([en]) => {
+        visible = en.isIntersecting;
+        if (visible && !running) type();
+      }, { threshold: 0.25 });
+      io.observe(win);
+    });
+  }
+
+  /* 7. SCROLL-REVEALS ===================================================== */
+  function setupReveals() {
+    const els = $$(".reveal");
+    if (reducedMotion() || !("IntersectionObserver" in window)) {
+      els.forEach((el) => el.classList.add("is-visible"));
+      return;
+    }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((en) => {
+        if (!en.isIntersecting) return;
+        en.target.classList.add("is-visible");
+        io.unobserve(en.target);
+      });
+    }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
+    els.forEach((el) => io.observe(el));
+  }
+
+  /* 8. KARTEN-TILT & GLOW ================================================= */
+  function setupTilt() {
+    const fine = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    if (!fine) return;
+    $$(".card").forEach((card) => {
+      const canTilt = card.classList.contains("tilt");
+      card.addEventListener("pointermove", (e) => {
+        const r = card.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width;
+        const py = (e.clientY - r.top) / r.height;
+        card.style.setProperty("--mx", `${px * 100}%`);
+        card.style.setProperty("--my", `${py * 100}%`);
+        if (!canTilt || reducedMotion()) return;
+        // Große Karten kippen weniger
+        const max = r.width > 600 ? 2.5 : 6;
+        card.style.setProperty("--ry", `${(px - 0.5) * max}deg`);
+        card.style.setProperty("--rx", `${(0.5 - py) * max}deg`);
+        card.classList.add("is-tilting");
+      });
+      card.addEventListener("pointerleave", () => {
+        card.classList.remove("is-tilting");
+        card.style.setProperty("--rx", "0deg");
+        card.style.setProperty("--ry", "0deg");
+      });
+    });
+  }
+
+  /* 9. LABOR-LADEBALKEN =================================================== */
+  function setupLab() {
+    const fill = $("#lab-fill"), pct = $("#lab-pct"), status = $("#lab-status");
+    if (!fill) return;
+    const MSG = [
+      "lade nächste Idee …", "frage Claude …", "Claude fragt zurück …",
+      "noch eine Idee gehabt …", "baue um …", "fast fertig™ …",
+      "nur noch ein kleines Feature …", "Vibe wird kalibriert …",
+    ];
+    if (reducedMotion()) {
+      fill.style.width = "99%"; pct.textContent = "99%"; status.textContent = "fast fertig™ …";
+      return;
+    }
+    let p = 0, m = 0, visible = false;
+    new IntersectionObserver(([en]) => { visible = en.isIntersecting; }).observe(fill);
+
+    (async function tick() {
+      for (;;) {
+        await sleep(rand(350, 900));
+        if (!visible) continue;
+        if (p >= 99) {
+          // Natürlich wird es nie fertig: neue Idee, alles von vorn.
+          status.textContent = "Neue Idee! Starte neu …";
+          await sleep(1600);
+          p = 0; fill.style.width = "0%"; pct.textContent = "0%";
+          await sleep(500);
+          continue;
+        }
+        p = Math.min(99, p + (p > 85 ? rand(0.3, 1.5) : rand(3, 11)));
+        fill.style.width = p.toFixed(1) + "%";
+        pct.textContent = Math.floor(p) + "%";
+        if (Math.random() > 0.55) status.textContent = MSG[m++ % MSG.length];
+      }
+    })();
+  }
+
+  /* 10. MINI-TERMINAL ===================================================== */
+  function setupTerminal() {
+    const form = $("#term-form"), input = $("#term-input"), out = $("#term-out");
+    if (!form) return;
+    const history = [];
+    let hIdx = 0;
+
+    const print = (html, cls = "") => {
+      const p = document.createElement("p");
+      if (cls) p.className = cls;
+      p.innerHTML = html;
+      out.appendChild(p);
+      out.scrollTop = out.scrollHeight;
+    };
+    const link = (href, text) =>
+      `<a href="${href}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+    const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth" });
+
+    const COMMANDS = {
+      help: () => [
+        "Verfügbare Befehle:",
+        "  <span class='accent'>about</span>      wer ist dieser Anton?",
+        "  <span class='accent'>projekte</span>   was hat er gebaut?",
+        "  <span class='accent'>stack</span>      womit?",
+        "  <span class='accent'>discord</span>    wie erreiche ich ihn?",
+        "  <span class='accent'>claude</span>     der eigentliche Entwickler",
+        "  <span class='accent'>matrix</span>     Code-Regen aufdrehen",
+        "  <span class='accent'>crt</span>        Scanlines an/aus",
+        "  <span class='accent'>sudo</span>       lieber nicht",
+        "  <span class='accent'>clear</span>      aufräumen",
+        "Versteckt gibt's noch mehr. Probier rum.",
+      ].join("\n"),
+      about: () => "Anton. Vibecoder. Hat die Ideen, die KI schreibt den Code.\nCode selbst geschrieben: 0 Zeilen. Stolz drauf: ja.",
+      whoami: () => "gast. Aber schön, dass du da bist.\n(Falls du Anton meinst: tipp <span class='accent'>about</span>.)",
+      projekte: () => [
+        "drwxr-xr-x  <span class='accent'>moki/</span>           Spiele ohne Werbe-Terror  ★",
+        "drwxr-xr-x  <span class='accent'>flexspacepro/</span>   Raumbuchung mit Supabase",
+        "drwx------  <span class='accent'>.geheim/</span>        Zugriff verweigert. Nice try.",
+      ].join("\n"),
+      ls: () => COMMANDS.projekte(),
+      stack: () => "1. Claude Code  – macht die Arbeit\n2. HTML5        – läuft überall\n3. Supabase     – Daten ohne Server-Kuscheln",
+      discord: () => {
+        setTimeout(() => scrollTo("discord"), 400);
+        return `Discord-ID: 1496498092004868279\nProfil: ${link("https://discord.com/users/1496498092004868279", "discord.com/users/1496498092004868279")}\nIch scroll dich mal hin …`;
+      },
+      claude: () => "Claude ist gerade beschäftigt. Es ist nämlich diese Website.",
+      sudo: (args) => {
+        if (/rm\s+-rf/.test(args)) return "<span class='err'>Nein.</span> Einfach nein. Hier wird nichts gelöscht außer schlechte Ideen.";
+        return "<span class='err'>[sudo] Passwort für gast:</span> ********\nNetter Versuch. Dieser Vorfall wird gemeldet.\n(An niemanden. Hier gibt's kein Backend.)";
+      },
+      rm: () => "<span class='err'>rm:</span> Zugriff verweigert. Die Ideen bleiben.",
+      matrix: () => {
+        const on = !rain.isIntense();
+        rain.intense(on);
+        return on ? "<span class='ok'>Folge dem weißen Kaninchen.</span> (Nochmal <span class='accent'>matrix</span> zum Beruhigen.)" : "Code-Regen wieder auf Nieselregen gestellt.";
+      },
+      crt: () => {
+        const on = root.classList.contains("crt-off");
+        window.__setCrt(on);
+        return on ? "CRT an. Fühlt sich gleich 30 Jahre älter an." : "CRT aus. Willkommen in der Gegenwart.";
+      },
+      vibe: () => "Vibe-Check läuft …\n<span class='ok'>✔ bestanden.</span> Du darfst bleiben.",
+      kaffee: () => "☕ Fehler 418: Ich bin eine Teekanne.",
+      coffee: () => COMMANDS.kaffee(),
+      hack: () => "Hacke Mainframe …\n[██████████] 100%\n<span class='ok'>Zugriff erhalten</span> auf: nichts. Ist eine statische Seite.",
+      ping: () => "PING anton … 64 bytes: Idee empfangen, zeit=0.42ms",
+      date: () => new Date().toLocaleString("de-DE"),
+      echo: (args) => escapeHTML(args || ""),
+      history: () => history.map((h, i) => `  ${i + 1}  ${escapeHTML(h)}`).join("\n") || "Noch leer.",
+      hallo: () => "Hallo zurück! 👋",
+      hi: () => COMMANDS.hallo(),
+      exit: () => "Hier kommt man nicht raus. Scherz: einfach weiterscrollen.",
+      konami: () => "Den musst du schon selbst eingeben. Mit den Pfeiltasten. Außerhalb vom Terminal.",
+      cat: (args) => args.trim() === "anton.json"
+        ? '{ "rolle": "Vibecoder", "code_selbst_geschrieben": 0, "stolz_drauf": true }'
+        : "cat: Datei nicht gefunden. Versuch's mal mit <span class='accent'>cat anton.json</span>",
+      clear: () => { out.innerHTML = ""; return null; },
+    };
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const raw = input.value.trim();
+      input.value = "";
+      if (!raw) return;
+      history.push(raw); hIdx = history.length;
+      print(`<span class="accent">gast@anton</span>:~$ ${escapeHTML(raw)}`, "cmd");
+
+      const [cmd, ...rest] = raw.split(/\s+/);
+      const fn = COMMANDS[cmd.toLowerCase()];
+      if (!fn) {
+        print(`<span class="err">befehl nicht gefunden:</span> ${escapeHTML(cmd)}. Tipp: <span class="accent">help</span>`);
+        return;
+      }
+      const res = fn(rest.join(" "));
+      if (res) print(res);
+    });
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowUp" && history.length) {
+        e.preventDefault(); hIdx = Math.max(0, hIdx - 1); input.value = history[hIdx];
+      } else if (e.key === "ArrowDown" && history.length) {
+        e.preventDefault(); hIdx = Math.min(history.length, hIdx + 1); input.value = history[hIdx] || "";
+      } else if (e.key === "Tab" && input.value) {
+        const match = Object.keys(COMMANDS).find((c) => c.startsWith(input.value.toLowerCase()));
+        if (match) { e.preventDefault(); input.value = match; }
+      }
+    });
+
+    // Klick ins Terminal fokussiert die Eingabe (Text markieren bleibt möglich)
+    $("#term").addEventListener("click", (e) => {
+      if (e.target.closest("a") || window.getSelection().toString()) return;
+      input.focus({ preventScroll: true });
+    });
+  }
+
+  /* 11. DISCORD-KARTE ===================================================== */
+  const DISCORD_ID = "1496498092004868279";
+
+  function setupDiscord() {
+    $("#dc-copy")?.addEventListener("click", async () => {
+      let ok = false;
+      try {
+        await navigator.clipboard.writeText(DISCORD_ID);
+        ok = true;
+      } catch {
+        // Fallback (z. B. bei file:// oder alten Browsern)
+        const ta = document.createElement("textarea");
+        ta.value = DISCORD_ID; ta.setAttribute("readonly", "");
+        ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select();
+        try { ok = document.execCommand("copy"); } catch { ok = false; }
+        ta.remove();
+      }
+      toast(ok ? `ID kopiert: ${DISCORD_ID} ✔` : `Kopieren ging nicht. Hier zum Abtippen: ${DISCORD_ID}`);
+    });
+
+    if (LANYARD_ENABLED) loadLanyard();
+  }
+
+  /* ---------------------------------------------------------------------
+     OPTIONAL: Live-Status über die Lanyard-API
+     ---------------------------------------------------------------------
+     Standardmäßig AUS. Die Karte zeigt dann statisch "online".
+     Zum Aktivieren:
+       1. Dem Lanyard-Discord-Server beitreten (sonst kennt die API dich nicht):
+          https://discord.gg/lanyard
+       2. LANYARD_ENABLED unten auf true setzen.
+     Schlägt der Aufruf fehl (kein Netz, nicht beigetreten, Timeout),
+     bleibt einfach der statische Status stehen. Es wird nichts kaputt angezeigt.
+     (Single-File-Version: keine CSP-Header, der Aufruf ist also nicht blockiert.)
+  --------------------------------------------------------------------- */
+  const LANYARD_ENABLED = false;
+
+  async function loadLanyard() {
+    const dot = $("#dc-status"), txt = $("#dc-status-text"), act = $("#dc-activity");
+    const LABEL = { online: "Online", idle: "Abwesend", dnd: "Bitte nicht stören", offline: "Offline" };
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 4000);
+    try {
+      const res = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_ID}`, { signal: ctrl.signal });
+      if (!res.ok) throw new Error(String(res.status));
+      const json = await res.json();
+      if (!json.success || !json.data) throw new Error("no data");
+      const status = LABEL[json.data.discord_status] ? json.data.discord_status : "online";
+      dot.dataset.status = status;
+      dot.title = LABEL[status];
+      txt.textContent = `Status: ${LABEL[status]}`;
+      const game = (json.data.activities || []).find((a) => a.type !== 4 && a.name);
+      if (game && act) act.innerHTML = `<span class="accent">▶</span> ${escapeHTML(game.name)}`;
+    } catch {
+      /* still und leise beim statischen Fallback bleiben */
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  /* 12. EASTER EGGS ======================================================= */
+  function setupEasterEggs() {
+    // Konami-Code: ↑ ↑ ↓ ↓ ← → ← → B A
+    const KONAMI = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
+    let pos = 0;
+    document.addEventListener("keydown", (e) => {
+      if (e.target.matches?.("input, textarea")) return;
+      const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      pos = key === KONAMI[pos] ? pos + 1 : key === KONAMI[0] ? 1 : 0;
+      if (pos === KONAMI.length) {
+        pos = 0;
+        toast("Cheat aktiviert: Unendlich Ideen. (Hatte ich vorher schon.)", 4000);
+        if (reducedMotion()) return;
+        root.classList.add("konami");
+        rain.intense(true);
+        $(".logo")?.classList.add("is-glitch");
+        setTimeout(() => {
+          root.classList.remove("konami");
+          rain.intense(false);
+          $(".logo")?.classList.remove("is-glitch");
+        }, 8000);
+      }
+    });
+
+    // Logo 7× schnell klicken
+    let clicks = 0, clickTimer;
+    $("#brand")?.addEventListener("click", () => {
+      clicks++;
+      clearTimeout(clickTimer);
+      clickTimer = setTimeout(() => (clicks = 0), 1500);
+      if (clicks === 7) {
+        clicks = 0;
+        toast("7× aufs Logo geklickt. Es fühlt sich jetzt sehr geschätzt.");
+        const logo = $(".logo");
+        logo.classList.remove("is-glitch"); void logo.getBoundingClientRect(); logo.classList.add("is-glitch");
+      }
+    });
+
+    // Gruß an alle, die die Konsole öffnen
+    console.log(
+      "%c<A/> Hi, Neugierige:r! %c\nDiesen Code hat die KI geschrieben. Anton hatte nur die Idee.\nTipp: Probier im Mini-Terminal mal 'sudo' oder den Konami-Code.",
+      "color:#3dff9a;font:700 16px monospace;", "color:#9eaba5;font:12px monospace;"
+    );
+  }
+
+  /* START ================================================================= */
+  setupReveals();
+  setupCodeWindows();
+  setupTilt();
+  setupLab();
+  setupTerminal();
+  setupDiscord();
+  setupEasterEggs();
+  runBoot().then(runHero);
+})();
+
+</script>
+</body>
+</html>
