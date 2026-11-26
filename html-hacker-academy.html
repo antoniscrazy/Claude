@@ -1,0 +1,1968 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="HTML Hacker Academy – eine Website, die sich beim Start selbst programmiert.">
+<title>HTML // HACK THE WEB – Hacker Academy</title>
+
+<!-- =====================================================================
+     HTML HACKER ACADEMY – SELF-WRITING WEBSITE
+     Aufbau dieser Datei:
+       1. <style>        : CSS der "Host"-Seite (Intro, Editor, HUD, CRT)
+       2. <body>         : Intro-Ebenen (HUD, Boot, Editor, Preview, ...)
+       3. <script text/plain> : Quellcode der echten Website
+                           (index.html, style.css, script.js) – genau dieser
+                           Code wird im Intro getippt UND ausgeführt.
+       4. <script>       : Engine (Timeline, Typing, Syntax-Highlighting,
+                           Matrix-Regen, Sound, Live-Build in Shadow DOM)
+     ===================================================================== -->
+
+<style>
+/* ======================================================================
+   1. HOST-CSS (nur für Intro + Rahmen; die Website selbst wird live getippt)
+   ====================================================================== */
+:root {
+  --bg: #030504;
+  --g: #00ff9c;
+  --c: #00e5ff;
+  --m: #ff2bd6;
+  --dim: #4f8f75;
+  --hud: 52px;
+  --mono: "JetBrains Mono", "Fira Code", Consolas, "Liberation Mono", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); scrollbar-color: rgba(0,255,156,.35) var(--bg); }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--g);
+  font-family: var(--mono);
+  overflow-x: hidden;
+}
+body.intro { overflow: hidden; height: 100vh; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+@keyframes blink { 50% { opacity: 0; } }
+.blink { animation: blink 1s steps(1) infinite; }
+
+/* ---------- Matrix-Regen (ein einziges Canvas) ---------- */
+#matrix {
+  position: fixed; inset: 0; width: 100%; height: 100%;
+  z-index: 0; pointer-events: none;
+  opacity: .5; transition: opacity 1.2s;
+}
+body:not(.intro) #matrix { opacity: .3; }
+#matrix.storm { opacity: 1 !important; transition: opacity .2s; }
+
+/* ---------- Shadow-Host der echten Website ----------
+   Während des Intros: fixed, verkleinert (transform: scale) über dem
+   Preview-Fenster. Ohne CSS (--host-bg nicht gesetzt) = weißes, "nacktes"
+   Browser-Default-HTML. Danach (.live) normal im Dokumentfluss.          */
+#app {
+  display: block;
+  position: fixed; left: 0; top: 0;
+  z-index: 25;
+  transform-origin: 0 0;
+  overflow: auto;
+  visibility: hidden;
+  pointer-events: none;
+  scrollbar-width: none;
+  background: var(--host-bg, #fff);
+  color: #000;
+  font: 16px/1.4 "Times New Roman", Times, serif;
+}
+#app::-webkit-scrollbar { display: none; }
+#app.show { visibility: visible; }
+#app.live {
+  position: relative; z-index: 1;
+  overflow: visible; pointer-events: auto;
+}
+
+/* ---------- HUD (Fortschritt + Steuerung) ---------- */
+#hud {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 40;
+  display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem;
+  padding: .55rem 1rem;
+  background: linear-gradient(#030504, rgba(3,5,4,.88));
+  border-bottom: 1px solid rgba(0,255,156,.25);
+  font-size: .8rem;
+  transition: opacity .6s, transform .6s;
+}
+#hud.out { opacity: 0; transform: translateY(-100%); }
+.compile { flex: 1 1 260px; display: flex; align-items: center; gap: .7rem; min-width: 0; }
+.hud-title {
+  position: relative; font-weight: 700; letter-spacing: .15em;
+  text-shadow: 0 0 8px var(--g);
+}
+.meter {
+  flex: 1; height: 10px; min-width: 60px; position: relative;
+  border: 1px solid rgba(0,255,156,.4); background: rgba(0,255,156,.05);
+}
+.meter i {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 0;
+  background: repeating-linear-gradient(90deg, var(--g) 0 6px, rgba(0,229,255,.9) 6px 8px);
+  box-shadow: 0 0 12px var(--g);
+}
+#pct { min-width: 3.5em; text-align: right; color: var(--c); text-shadow: 0 0 6px var(--c); }
+.ctrls { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+.speed { display: flex; gap: .25rem; }
+.hbtn {
+  font: inherit; font-size: .78rem;
+  background: transparent; color: var(--g);
+  border: 1px solid rgba(0,255,156,.45);
+  padding: .35rem .65rem; cursor: pointer;
+  text-shadow: 0 0 6px rgba(0,255,156,.6);
+}
+.hbtn:hover { background: rgba(0,255,156,.12); }
+.hbtn[aria-pressed="true"] { background: var(--g); color: var(--bg); text-shadow: none; box-shadow: 0 0 12px var(--g); }
+.hbtn:focus-visible { outline: 2px solid var(--c); outline-offset: 2px; }
+.hbtn.skip { border-color: var(--m); color: var(--m); text-shadow: 0 0 6px var(--m); font-weight: 700; }
+.hbtn.skip:hover { background: rgba(255,43,214,.15); }
+.hbtn kbd { font: inherit; font-size: .65rem; opacity: .7; border: 1px solid currentColor; padding: 0 .25rem; margin-left: .3rem; }
+
+/* ---------- Boot-Screen ---------- */
+#boot {
+  position: fixed; inset: 0; z-index: 10;
+  padding: calc(var(--hud) + 16px) 20px 20px;
+  overflow: hidden;
+  font-size: 13px; line-height: 1.55;
+  color: var(--g); text-shadow: 0 0 6px rgba(0,255,156,.6);
+  transition: opacity .6s;
+}
+#boot.hide { opacity: 0; }
+.logo-art {
+  margin: 0 0 14px; color: var(--c);
+  font: 700 clamp(7px, 2.3vw, 15px)/1.1 var(--mono);
+  text-shadow: 0 0 10px var(--c);
+  white-space: pre;
+}
+.bl { white-space: pre-wrap; word-break: break-word; }
+.bl .ok { color: var(--g); font-weight: 700; }
+.bl .warn { color: var(--m); font-weight: 700; text-shadow: 0 0 8px var(--m); }
+.bl .dim { color: var(--dim); text-shadow: none; }
+.bl .c { color: var(--c); }
+
+/* ---------- Bühne: Editor + Live-Preview ---------- */
+#stage {
+  position: fixed; z-index: 20;
+  left: 14px; right: 14px; bottom: 14px; top: calc(var(--hud) + 12px);
+  display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 14px;
+  visibility: hidden;
+}
+#stage.show { visibility: visible; }
+.win {
+  display: flex; flex-direction: column; min-width: 0; min-height: 0;
+  border: 1px solid rgba(0,255,156,.35);
+  background: rgba(1,8,5,.95);
+  box-shadow: 0 0 30px rgba(0,255,156,.12), inset 0 0 40px rgba(0,255,156,.04);
+  opacity: 0;
+  transition: transform 1s cubic-bezier(.2,.9,.2,1), opacity .7s, background .6s, border-color .6s, box-shadow .6s;
+}
+.editor { transform: translateX(-45vw) skewX(8deg); }
+.preview { transform: translateX(45vw) skewX(-8deg); }
+.win.in { opacity: 1; transform: none; }
+#stage.out .editor { opacity: 0; transform: translateX(-60px) scale(.97); }
+#stage.out .preview { background: transparent; border-color: transparent; box-shadow: none; }
+#stage.out .preview .titlebar, #stage.out .preview .pills { opacity: 0; transition: opacity .4s; }
+
+.titlebar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 10px; font-size: 11px; color: var(--dim);
+  border-bottom: 1px solid rgba(0,255,156,.18);
+  white-space: nowrap; overflow: hidden;
+}
+.titlebar i { width: 10px; height: 10px; border-radius: 50%; flex: none; background: var(--m); box-shadow: 0 0 6px var(--m); }
+.titlebar i:nth-child(2) { background: #ffd000; box-shadow: 0 0 6px #ffd000; }
+.titlebar i:nth-child(3) { background: var(--g); box-shadow: 0 0 6px var(--g); }
+.titlebar span { margin-left: 8px; overflow: hidden; text-overflow: ellipsis; }
+
+.tabs { display: flex; border-bottom: 1px solid rgba(0,255,156,.18); overflow: hidden; }
+.tab {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 14px; font-size: 12px; color: #3a6f59;
+  border-right: 1px solid rgba(0,255,156,.12); white-space: nowrap;
+  transition: color .2s, background .2s;
+}
+.tab.active { color: var(--g); background: rgba(0,255,156,.08); box-shadow: inset 0 -2px 0 var(--g); text-shadow: 0 0 6px var(--g); }
+.dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+.dot.html { background: #ff7a45; } .dot.css { background: var(--c); } .dot.js { background: #ffd000; }
+
+/* Code-Ansicht (virtualisiert: nur sichtbare Zeilen werden gerendert) */
+.code {
+  flex: 1; min-height: 0; position: relative; overflow: hidden;
+  padding: 6px 0;
+  font-size: 13px; line-height: 20px;
+  color: #c8ffe6; text-shadow: 0 0 5px rgba(0,255,156,.22);
+}
+.ln { display: flex; width: max-content; min-width: 100%; white-space: pre; }
+.ln:last-child { background: rgba(0,255,156,.06); }
+.no {
+  position: sticky; left: 0; z-index: 1; flex: none;
+  width: 3.8em; padding-right: 1em; text-align: right;
+  color: #2c5a46; background: #020a06; text-shadow: none;
+}
+.ln:last-child .no { color: var(--g); }
+.tx { padding-right: 3em; }
+.cur {
+  display: inline-block; width: .6em; height: 1.15em; margin-bottom: -.25em;
+  background: var(--g); box-shadow: 0 0 10px var(--g);
+}
+.code.idle .cur { animation: blink 1s steps(1) infinite; }
+
+/* Syntax-Farben */
+.t-tag { color: #ff4fd8; }
+.t-pun { color: #4f8f75; }
+.t-attr { color: #00e5ff; }
+.t-str { color: #ffd866; }
+.t-com { color: #4d7563; font-style: italic; }
+.t-kw { color: #ff2bd6; font-weight: 700; }
+.t-fn { color: #00e5ff; }
+.t-num { color: #ff9e64; }
+.t-prop { color: #00e5ff; }
+.t-sel { color: #ff4fd8; }
+.t-pse { color: #c792ea; }
+.t-val { color: #c8ffe6; }
+.t-var { color: #c792ea; }
+.t-ent { color: #ff9e64; }
+.t-rx { color: #ff9e64; }
+.t-id { color: #dfffee; }
+.t-pp { color: #8cffd0; }
+
+.buildlog {
+  height: 78px; overflow: hidden; padding: 4px 10px;
+  border-top: 1px solid rgba(0,255,156,.18);
+  font-size: 11px; line-height: 17px; color: #4f8f75;
+}
+.buildlog .ok { color: var(--g); }
+.buildlog .info { color: var(--c); }
+.buildlog .err { color: var(--m); }
+.statusbar {
+  display: flex; gap: 14px; padding: 3px 10px;
+  font-size: 11px; white-space: nowrap; overflow: hidden;
+  background: var(--g); color: var(--bg); font-weight: 700;
+}
+.statusbar .grow, .pills .grow { flex: 1; }
+
+.pills {
+  display: flex; gap: 6px; align-items: center; padding: 5px 10px;
+  font-size: 10px; color: #3a6f59; border-bottom: 1px solid rgba(0,255,156,.18);
+}
+.pill { padding: 1px 8px; border: 1px solid #2c5a46; color: #2c5a46; transition: all .3s; }
+.pill.busy { color: var(--c); border-color: var(--c); animation: blink .6s steps(1) infinite; }
+.pill.on { color: var(--bg); background: var(--g); border-color: var(--g); box-shadow: 0 0 10px var(--g); animation: none; }
+.pv-body {
+  flex: 1; min-height: 0; position: relative;
+  display: grid; place-items: center;
+  background: #020805; color: #2c5a46; font-size: 12px;
+}
+
+/* ---------- "ACCESS GRANTED" ---------- */
+#granted {
+  position: fixed; inset: 0; z-index: 45;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: .2em; text-align: center; pointer-events: none; opacity: 0;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,.85), rgba(0,0,0,.35) 75%);
+  transition: opacity .2s;
+}
+#granted.on { opacity: 1; }
+.g-line {
+  position: relative; white-space: nowrap; font-weight: 800;
+  font-size: clamp(1rem, 4vw, 2.6rem); letter-spacing: .14em;
+  color: var(--c); text-shadow: 0 0 14px var(--c);
+}
+.g-line.big {
+  font-size: clamp(1.9rem, 10vw, 7.5rem); letter-spacing: .03em;
+  color: var(--g); text-shadow: 0 0 20px var(--g), 0 0 70px rgba(0,255,156,.6);
+}
+.g-line::before, .g-line::after {
+  content: attr(data-text); position: absolute; inset: 0; mix-blend-mode: screen;
+}
+.g-line::before { color: var(--m); animation: rgb1 .38s infinite steps(2); }
+.g-line::after { color: var(--c); animation: rgb2 .3s infinite steps(2); }
+#granted.on .g-line { animation: jitter .12s infinite; }
+@keyframes rgb1 {
+  0% { transform: translate(-5px, 1px); clip-path: inset(0 0 62% 0); }
+  50% { transform: translate(5px, -2px); clip-path: inset(40% 0 12% 0); }
+  100% { transform: translate(-2px, 0); clip-path: inset(72% 0 0 0); }
+}
+@keyframes rgb2 {
+  0% { transform: translate(4px, -1px); clip-path: inset(55% 0 20% 0); }
+  50% { transform: translate(-4px, 2px); clip-path: inset(5% 0 70% 0); }
+  100% { transform: translate(3px, 1px); clip-path: inset(30% 0 40% 0); }
+}
+@keyframes jitter {
+  0% { transform: translate(0, 0) skewX(0); }
+  33% { transform: translate(-2px, 1px) skewX(-4deg); }
+  66% { transform: translate(2px, -1px) skewX(3deg); }
+}
+
+/* ---------- Erdbeben + RGB-Split ---------- */
+body.quake #stage, body.quake #app, body.quake #hud { animation: quake .09s infinite; }
+body.quake #stage { filter: drop-shadow(4px 0 0 rgba(255,43,214,.75)) drop-shadow(-4px 0 0 rgba(0,229,255,.75)); }
+@keyframes quake {
+  0% { translate: 0 0; } 25% { translate: -7px 3px; } 50% { translate: 6px -4px; }
+  75% { translate: -3px -3px; } 100% { translate: 4px 3px; }
+}
+
+#flash { position: fixed; inset: 0; z-index: 50; background: #e6fff4; opacity: 0; pointer-events: none; }
+
+/* ---------- CRT: Scanlines, Vignette, Flackern ---------- */
+.crt {
+  position: fixed; inset: 0; z-index: 60; pointer-events: none;
+  background:
+    repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,.18) 3px, rgba(0,0,0,0) 4px),
+    radial-gradient(ellipse at center, rgba(0,0,0,0) 58%, rgba(0,0,0,.62) 100%);
+  animation: flicker 5s infinite steps(1);
+}
+@keyframes flicker {
+  0%, 100% { opacity: .92; } 41% { opacity: .84; } 42% { opacity: .96; }
+  70% { opacity: .88; } 71% { opacity: .78; } 72% { opacity: .93; }
+}
+.crt.glitch::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(transparent 0 22%, rgba(255,43,214,.22) 22% 24%, transparent 24% 58%,
+              rgba(0,229,255,.22) 58% 61%, transparent 61% 80%, rgba(0,255,156,.18) 80% 81%, transparent 81%);
+  background-size: 100% 220%;
+  animation: tear .18s steps(4) infinite;
+}
+@keyframes tear { to { background-position: 0 100%; } }
+
+/* ---------- Willkommens-Banner nach dem Intro ---------- */
+#banner {
+  position: fixed; left: 50%; bottom: 22px; z-index: 55;
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  padding: 10px 16px;
+  background: rgba(0,0,0,.9); border: 1px solid var(--g); color: var(--g);
+  font-size: 13px; box-shadow: 0 0 24px rgba(0,255,156,.35);
+  text-shadow: 0 0 6px rgba(0,255,156,.7);
+  transition: opacity .8s; pointer-events: none;
+}
+
+noscript div { position: fixed; inset: 0; z-index: 99; display: grid; place-items: center; background: var(--bg); color: var(--g); padding: 2rem; text-align: center; }
+
+/* ---------- Responsiv ---------- */
+@media (max-width: 860px) {
+  #stage {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.1fr) minmax(0, 1fr);
+    left: 8px; right: 8px; bottom: 8px; gap: 8px;
+  }
+  .editor { transform: translateY(-40vh); }
+  .preview { transform: translateY(50vh); }
+  .code { font-size: 11px; line-height: 16px; }
+  .no { width: 3.2em; padding-right: .7em; }
+  .buildlog { display: none; }
+  .tab { padding: 5px 9px; font-size: 11px; }
+  .statusbar .hide-sm { display: none; }
+  #boot { font-size: 11px; padding-left: 12px; padding-right: 12px; }
+}
+
+/* ---------- prefers-reduced-motion: kein Effekt-Gewitter ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .crt { animation: none; opacity: .85; }
+  .win { transition: none; }
+  .g-line::before, .g-line::after { display: none; }
+  body.quake *, #granted.on .g-line { animation: none !important; }
+  .blink, .code.idle .cur { animation: none; }
+}
+</style>
+</head>
+
+<body class="intro">
+<noscript><div>Diese Seite programmiert sich mit JavaScript selbst. Bitte aktiviere JavaScript.</div></noscript>
+
+<!-- ======================================================================
+     2. HOST-HTML: Hintergrund, Website-Container, Intro-Ebenen
+     ====================================================================== -->
+<canvas id="matrix" aria-hidden="true"></canvas>
+
+<!-- Hier hinein (Shadow DOM) wird die getippte Website live gebaut -->
+<div id="app" aria-label="HTML Hacker Academy" inert></div>
+
+<div id="hud" class="intro-layer">
+  <div class="compile" id="progress" role="progressbar" aria-label="Kompilier-Fortschritt"
+       aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+    <span class="hud-title" id="hudTitle">COMPILING</span>
+    <div class="meter" aria-hidden="true"><i id="meterFill"></i></div>
+    <span id="pct" aria-hidden="true">0%</span>
+  </div>
+  <div class="ctrls">
+    <div class="speed" role="group" aria-label="Intro-Geschwindigkeit">
+      <button type="button" class="hbtn" data-speed="1" aria-pressed="true" aria-label="Geschwindigkeit 1x">1x</button>
+      <button type="button" class="hbtn" data-speed="2" aria-pressed="false" aria-label="Geschwindigkeit 2x">2x</button>
+      <button type="button" class="hbtn" data-speed="5" aria-pressed="false" aria-label="Geschwindigkeit 5x">5x</button>
+    </div>
+    <button type="button" class="hbtn" id="snd" aria-pressed="false" aria-label="Tippgeräusche ein- oder ausschalten">♪ OFF</button>
+    <button type="button" class="hbtn skip" id="skip" aria-label="Intro überspringen (Escape oder Leertaste)">SKIP ⏭<kbd>ESC</kbd></button>
+  </div>
+</div>
+
+<div id="boot" class="intro-layer" aria-hidden="true"><div id="bootLog"></div></div>
+
+<div id="stage" class="intro-layer" aria-hidden="true">
+  <section class="win editor" id="editorWin">
+    <div class="titlebar"><i></i><i></i><i></i><span id="edTitle">~/academy/index.html — neural-vim</span></div>
+    <div class="tabs" role="tablist" aria-label="Dateien">
+      <span class="tab" role="tab" aria-selected="false"><b class="dot html"></b>index.html</span>
+      <span class="tab" role="tab" aria-selected="false"><b class="dot css"></b>style.css</span>
+      <span class="tab" role="tab" aria-selected="false"><b class="dot js"></b>script.js</span>
+    </div>
+    <div class="code idle" id="codeView"></div>
+    <div class="buildlog" id="buildLog"></div>
+    <div class="statusbar">
+      <span id="stMode">NORMAL</span><span id="stFile">index.html</span><span class="grow"></span>
+      <span id="stLang">HTML</span><span class="hide-sm">UTF-8</span><span id="stPos">Ln 1, Col 1</span>
+    </div>
+  </section>
+  <section class="win preview" id="previewWin">
+    <div class="titlebar"><i></i><i></i><i></i><span>LIVE PREVIEW — http://localhost:1337</span></div>
+    <div class="pills">
+      <span class="pill" id="pill0">HTML</span><span class="pill" id="pill1">CSS</span><span class="pill" id="pill2">JS</span>
+      <span class="grow"></span><span id="nodes">0 nodes</span>
+    </div>
+    <div class="pv-body" id="pvBody"><span>awaiting DOM<span class="blink">_</span></span></div>
+  </section>
+</div>
+
+<div id="granted" class="intro-layer" aria-hidden="true">
+  <div class="g-line" data-text="SYSTEM COMPILED.">SYSTEM COMPILED.</div>
+  <div class="g-line big" data-text="ACCESS GRANTED.">ACCESS GRANTED.</div>
+</div>
+<div id="flash" aria-hidden="true"></div>
+<div class="crt" id="crt" aria-hidden="true"></div>
+<div class="sr-only" id="srStatus" aria-live="polite"></div>
+
+
+<!-- ======================================================================
+     3. QUELLCODE DER ECHTEN WEBSITE
+     Diese drei Dateien werden im Intro Zeichen für Zeichen getippt und
+     genau so ausgeführt. (In den Blöcken steht "<\/" bzw. "<\!" statt
+     "</" bzw. "<!", damit der Browser die Blöcke nicht vorzeitig beendet;
+     die Engine dekodiert das wieder.)
+     ====================================================================== -->
+
+<!-- ---------------------------- index.html ---------------------------- -->
+<script type="text/plain" id="src-html">
+<\!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HTML // HACK THE WEB</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page">
+
+  <\!-- ========== NAVIGATION ========== -->
+  <nav class="nav" aria-label="Hauptnavigation">
+    <a class="logo" href="#top">&lt;h4ck/&gt;</a>
+    <ul>
+      <li><a href="#basics">basics</a></li>
+      <li><a href="#playground">playground</a></li>
+      <li><a href="#challenges">challenges</a></li>
+      <li><a href="#terminal">terminal</a></li>
+    </ul>
+  </nav>
+
+  <\!-- ========== HERO ========== -->
+  <header class="hero" id="top">
+    <p class="tag">// HTML HACKER ACADEMY v2.6</p>
+    <h1 class="glitch" data-text="HTML // HACK THE WEB">HTML // HACK THE WEB</h1>
+    <p class="sub"><span id="typer">Lerne HTML wie ein Hacker.</span><span class="caret">_</span></p>
+    <div class="cta">
+      <a class="btn" href="#basics">./start --lernen</a>
+      <a class="btn ghost" href="#terminal">&gt; terminal öffnen</a>
+    </div>
+  </header>
+
+  <main>
+    <\!-- ========== 01 BASICS ========== -->
+    <section id="basics">
+      <h2 class="glitch" data-text="01. Basics">01. Basics</h2>
+      <p class="lead">Jede Website besteht aus Tags. Das sind die sechs Werkzeuge, mit denen alles beginnt.</p>
+      <div class="grid">
+        <article class="card">
+          <span class="k">0x01</span>
+          <h3>&lt;tags&gt;</h3>
+          <p>Tags umschließen Inhalte und geben ihnen Bedeutung. Fast jeder Tag hat einen Start- und einen End-Tag.</p>
+          <pre><code>&lt;p&gt;Hallo Welt&lt;/p&gt;</code></pre>
+        </article>
+        <article class="card">
+          <span class="k">0x02</span>
+          <h3>attribute=""</h3>
+          <p>Attribute geben Tags Zusatzinfos. Sie stehen immer im Start-Tag: name="wert".</p>
+          <pre><code>&lt;p class="neon" id="intro"&gt;</code></pre>
+        </article>
+        <article class="card">
+          <span class="k">0x03</span>
+          <h3>&lt;a&gt; Links</h3>
+          <p>Links verbinden das Web. href ist das Ziel, der Text dazwischen ist klickbar.</p>
+          <pre><code>&lt;a href="https://example.com"&gt;Go&lt;/a&gt;</code></pre>
+        </article>
+        <article class="card">
+          <span class="k">0x04</span>
+          <h3>&lt;img&gt; Bilder</h3>
+          <p>Bilder brauchen eine Quelle (src) und einen Alternativtext (alt) für Screenreader.</p>
+          <pre><code>&lt;img src="hacker.png" alt="Ein Hacker"&gt;</code></pre>
+        </article>
+        <article class="card">
+          <span class="k">0x05</span>
+          <h3>&lt;ul&gt; Listen</h3>
+          <p>ul ist eine ungeordnete Liste, ol eine nummerierte. Jeder Eintrag ist ein li.</p>
+          <pre><code>&lt;ul&gt;&lt;li&gt;HTML&lt;/li&gt;&lt;li&gt;CSS&lt;/li&gt;&lt;/ul&gt;</code></pre>
+        </article>
+        <article class="card">
+          <span class="k">0x06</span>
+          <h3>&lt;form&gt; Formulare</h3>
+          <p>Formulare sammeln Eingaben. input, label und button sind deine Bausteine.</p>
+          <pre><code>&lt;input type="email" placeholder="du@mail.de"&gt;</code></pre>
+        </article>
+      </div>
+    </section>
+
+    <\!-- ========== 02 PLAYGROUND ========== -->
+    <section id="playground">
+      <h2 class="glitch" data-text="02. Live-Playground">02. Live-Playground</h2>
+      <p class="lead">Tippe links HTML. Rechts siehst du sofort, was der Browser daraus macht.</p>
+      <div class="play">
+        <div class="pane">
+          <div class="bar"><span>editor.html</span><button class="mini" id="reset" type="button">reset</button></div>
+          <textarea id="code" spellcheck="false" aria-label="HTML-Code für den Playground"></textarea>
+        </div>
+        <div class="pane">
+          <div class="bar"><span>preview</span><span class="live-dot">● live</span></div>
+          <iframe id="out" title="Live-Vorschau des Playgrounds" sandbox="allow-scripts"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <\!-- ========== 03 CHALLENGES ========== -->
+    <section id="challenges">
+      <h2 class="glitch" data-text="03. Challenges">03. Challenges</h2>
+      <p class="lead">Löse die Missionen. Das System prüft deinen Code automatisch.</p>
+      <div class="missions" id="missions"></div>
+      <p class="score">score: <b id="score">0</b> / <span id="total">5</span></p>
+    </section>
+
+    <\!-- ========== 04 TERMINAL ========== -->
+    <section id="terminal">
+      <h2 class="glitch" data-text="04. Terminal">04. Terminal</h2>
+      <p class="lead">Tippe <code>help</code> und drücke Enter.</p>
+      <div class="term" id="term">
+        <div class="term-bar"><i></i><i></i><i></i><span>guest@academy: ~</span></div>
+        <div class="term-out" id="termOut" role="log" aria-live="polite"></div>
+        <label class="term-in"><span>guest@academy:~$</span><input id="termIn" autocomplete="off" spellcheck="false" aria-label="Terminal-Befehl eingeben"></label>
+      </div>
+    </section>
+  </main>
+
+  <\!-- ========== FOOTER ========== -->
+  <footer class="foot">
+    <pre>[ OK ] 0 cookies · 0 tracker · 0 requests · 100% offline</pre>
+    <p>&copy; 2026 HTML Hacker Academy <span class="blink">█</span> made with &lt;3 &amp; &lt;html&gt;</p>
+    <p class="hint">psst… ↑ ↑ ↓ ↓ ← → ← → B A</p>
+  </footer>
+
+</div>
+<script src="script.js"><\/script>
+</body>
+</html>
+</script>
+
+<!-- ----------------------------- style.css ----------------------------- -->
+<script type="text/plain" id="src-css">
+/* ===== style.css — HTML HACKER ACADEMY ===== */
+:host {
+  --bg: #030504;
+  --g: #00ff9c;
+  --c: #00e5ff;
+  --m: #ff2bd6;
+  --fg: #c8ffe6;
+  --dim: #6a9a85;
+  --line: rgba(0, 255, 156, .18);
+  --host-bg: transparent;
+}
+* { box-sizing: border-box; }
+.page {
+  min-height: 100vh;
+  background: rgba(3, 5, 4, .86);
+  color: var(--fg);
+  font: 15px/1.6 "JetBrains Mono", "Fira Code", Consolas, monospace;
+}
+a { color: var(--c); }
+::selection { background: var(--g); color: var(--bg); }
+code { font-family: inherit; color: var(--g); }
+
+/* ---------- navigation ---------- */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: .8rem 5vw;
+  background: rgba(3, 5, 4, .92);
+  border-bottom: 1px solid var(--line);
+}
+.logo { color: var(--g); font-weight: 700; text-decoration: none; text-shadow: 0 0 8px var(--g); }
+.nav ul { display: flex; flex-wrap: wrap; gap: 1.2rem; margin: 0; padding: 0; list-style: none; }
+.nav ul a { color: var(--dim); text-decoration: none; transition: color .2s; }
+.nav ul a::before { content: "./"; color: var(--m); }
+.nav ul a:hover, .nav ul a:focus-visible { color: var(--g); }
+
+/* ---------- hero ---------- */
+.hero {
+  min-height: 88vh;
+  display: grid;
+  place-content: center;
+  padding: 4rem 5vw;
+  text-align: center;
+}
+.tag { color: var(--m); letter-spacing: .25em; font-size: .8rem; }
+h1, h2 {
+  position: relative;
+  margin: 0 0 1rem;
+  color: var(--g);
+  text-shadow: 0 0 10px rgba(0, 255, 156, .7), 0 0 30px rgba(0, 255, 156, .3);
+}
+h1 { font-size: clamp(2rem, 8vw, 5.5rem); line-height: 1.05; }
+h2 { font-size: clamp(1.5rem, 4vw, 2.4rem); }
+.sub { min-height: 1.6em; color: var(--c); font-size: clamp(1rem, 2.4vw, 1.3rem); }
+.caret { color: var(--g); animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.cta { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; margin-top: 2rem; }
+.btn {
+  display: inline-block;
+  padding: .8rem 1.4rem;
+  border: 1px solid var(--g);
+  background: var(--g);
+  color: var(--bg);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 0 18px rgba(0, 255, 156, .45);
+  transition: transform .15s, box-shadow .15s;
+}
+.btn:hover, .btn:focus-visible { transform: translateY(-2px); box-shadow: 0 0 32px rgba(0, 255, 156, .85); }
+.btn.ghost { background: transparent; color: var(--g); }
+
+/* ---------- glitch: RGB split ---------- */
+.glitch::before, .glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.glitch::before { color: var(--m); animation: glitch 3.2s infinite steps(1); }
+.glitch::after { color: var(--c); animation: glitch 2.7s infinite reverse steps(1); }
+@keyframes glitch {
+  0%, 88%, 100% { opacity: 0; transform: none; clip-path: inset(0 0 0 0); }
+  90% { opacity: .85; transform: translate(-3px, 1px); clip-path: inset(10% 0 55% 0); }
+  93% { opacity: .85; transform: translate(3px, -2px); clip-path: inset(60% 0 8% 0); }
+  96% { opacity: .85; transform: translate(-2px, 0); clip-path: inset(35% 0 35% 0); }
+}
+
+/* ---------- sections + basics ---------- */
+main section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 5rem 5vw;
+  border-top: 1px dashed var(--line);
+  scroll-margin-top: 3.5rem;
+}
+.lead { max-width: 62ch; color: var(--dim); }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.2rem; margin-top: 2rem; }
+.card {
+  position: relative;
+  padding: 1.2rem;
+  border: 1px solid var(--line);
+  background: rgba(0, 255, 156, .03);
+  transition: transform .2s, border-color .2s, box-shadow .2s;
+}
+.card:hover { transform: translateY(-4px); border-color: var(--g); box-shadow: 0 0 24px rgba(0, 255, 156, .2); }
+.card .k { position: absolute; top: .9rem; right: 1rem; color: var(--m); font-size: .7rem; }
+.card h3 { margin: 0 0 .5rem; color: var(--c); }
+.card p { margin: 0 0 1rem; font-size: .9rem; }
+pre {
+  margin: 0;
+  padding: .8rem;
+  overflow-x: auto;
+  background: #000;
+  border-left: 2px solid var(--m);
+  color: var(--g);
+  font-size: .85rem;
+}
+
+/* ---------- playground ---------- */
+.play { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 2rem; }
+.pane { display: flex; flex-direction: column; min-height: 340px; border: 1px solid var(--line); background: #000; }
+.bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .4rem .8rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--dim);
+  font-size: .8rem;
+}
+.live-dot { color: var(--g); animation: blink 1.6s steps(1) infinite; }
+textarea {
+  flex: 1;
+  width: 100%;
+  min-height: 300px;
+  padding: 1rem;
+  border: 0;
+  outline: 0;
+  resize: vertical;
+  background: transparent;
+  color: var(--g);
+  font: inherit;
+  font-size: 14px;
+  caret-color: var(--m);
+}
+textarea:focus { box-shadow: inset 0 0 0 1px var(--c); }
+iframe { flex: 1; width: 100%; min-height: 300px; border: 0; background: #fff; }
+.mini { padding: .1rem .5rem; border: 1px solid var(--dim); background: none; color: var(--dim); font: inherit; font-size: .75rem; cursor: pointer; }
+.mini:hover, .mini:focus-visible { color: var(--g); border-color: var(--g); }
+
+/* ---------- challenges ---------- */
+.missions { display: grid; gap: 1rem; margin-top: 2rem; }
+.mission { padding: 1rem; border: 1px solid var(--line); background: rgba(0, 229, 255, .03); transition: border-color .3s, box-shadow .3s; }
+.mission h3 { margin: 0 0 .3rem; color: var(--c); font-size: 1rem; }
+.mission p { margin: 0 0 .7rem; color: var(--dim); font-size: .9rem; }
+.mission .row { display: flex; flex-wrap: wrap; gap: .6rem; }
+.mission input {
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: .6rem .8rem;
+  border: 1px solid var(--line);
+  background: #000;
+  color: var(--g);
+  font: inherit;
+}
+.mission input:focus { outline: none; border-color: var(--c); box-shadow: 0 0 12px rgba(0, 229, 255, .3); }
+.msg { min-height: 1.4em; margin-top: .5rem; font-size: .85rem; }
+.msg.err { color: var(--m); }
+.mission.done { border-color: var(--g); box-shadow: 0 0 25px rgba(0, 255, 156, .25); animation: win .6s; }
+.mission.done h3::after { content: "  [ HACKED ]"; color: var(--g); }
+@keyframes win { 30% { transform: scale(1.03); background: rgba(0, 255, 156, .2); } }
+.shake { animation: shake .35s; }
+@keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.score { margin-top: 1.5rem; color: var(--dim); }
+.score b { color: var(--g); font-size: 1.4rem; }
+.bit {
+  position: fixed;
+  z-index: 50;
+  pointer-events: none;
+  color: var(--g);
+  font: 700 16px/1 "JetBrains Mono", Consolas, monospace;
+  text-shadow: 0 0 6px var(--g);
+  animation: fly .9s ease-out forwards;
+}
+@keyframes fly { to { transform: translate(var(--x), var(--y)) rotate(var(--r)); opacity: 0; } }
+
+/* ---------- terminal ---------- */
+.term { margin-top: 2rem; border: 1px solid var(--g); background: rgba(0, 0, 0, .92); box-shadow: 0 0 40px rgba(0, 255, 156, .15); }
+.term-bar { display: flex; align-items: center; gap: .4rem; padding: .5rem .8rem; border-bottom: 1px solid var(--line); color: var(--dim); font-size: .8rem; }
+.term-bar i { width: 11px; height: 11px; border-radius: 50%; background: var(--m); }
+.term-bar i:nth-child(2) { background: #ffd000; }
+.term-bar i:nth-child(3) { background: var(--g); }
+.term-bar span { margin-left: auto; }
+.term-out { height: 300px; overflow-y: auto; padding: 1rem; font-size: .9rem; white-space: pre-wrap; word-break: break-word; }
+.term-in { display: flex; gap: .6rem; padding: .6rem 1rem 1rem; color: var(--m); }
+.term-in input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; color: var(--g); font: inherit; caret-color: var(--g); }
+.ok { color: var(--g); }
+.info { color: var(--c); }
+.warn { color: var(--m); }
+.dim { color: var(--dim); }
+
+/* ---------- footer + easter egg ---------- */
+.foot { padding: 3rem 5vw; border-top: 1px solid var(--line); color: var(--dim); font-size: .8rem; text-align: center; }
+.foot pre { display: inline-block; padding: 0; border: 0; background: none; white-space: pre-wrap; }
+.blink { color: var(--g); animation: blink 1s steps(1) infinite; }
+.hint { opacity: .45; }
+.page.overdrive { animation: hue 1.6s linear infinite; }
+@keyframes hue { to { filter: hue-rotate(360deg); } }
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 2rem;
+  z-index: 99;
+  max-width: calc(100% - 2rem);
+  padding: 1rem 1.5rem;
+  transform: translateX(-50%);
+  border: 1px solid var(--m);
+  background: #000;
+  color: var(--m);
+  font: 700 14px/1.4 "JetBrains Mono", Consolas, monospace;
+  text-align: center;
+  box-shadow: 0 0 30px var(--m);
+  animation: pop .4s;
+}
+@keyframes pop { from { transform: translate(-50%, 30px); opacity: 0; } }
+
+/* ---------- responsive ---------- */
+@media (max-width: 760px) {
+  .nav { justify-content: center; }
+  .nav ul { justify-content: center; gap: .8rem; font-size: .85rem; }
+  .play { grid-template-columns: 1fr; }
+  main section { padding: 3.5rem 1rem; }
+  .term-out { height: 240px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</script>
+
+<!-- ----------------------------- script.js ----------------------------- -->
+<script type="text/plain" id="src-js">
+// ===== script.js — macht die Seite interaktiv =====
+// root = Shadow Root der Seite, sys = Brücke zum System (Matrix, Glitch, Sound)
+const $ = (s) => root.querySelector(s);
+const $$ = (s) => [...root.querySelectorAll(s)];
+
+// ---------- smooth navigation ----------
+$$('a[href^="#"]').forEach((a) => {
+  a.addEventListener('click', (e) => {
+    const target = root.getElementById(a.getAttribute('href').slice(1));
+    if (!target) return;
+    e.preventDefault();
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+
+// ---------- typewriter ----------
+const phrases = [
+  'Lerne HTML wie ein Hacker.',
+  'Tags sind deine Waffen.',
+  'Der Browser ist dein Terminal.',
+  'Baue. Breche. Verstehe.'
+];
+const typer = $('#typer');
+let pi = 0, ci = 0, del = false;
+(function typeLoop() {
+  const word = phrases[pi];
+  typer.textContent = word.slice(0, ci);
+  if (!del && ci === word.length) { del = true; return setTimeout(typeLoop, 1700); }
+  if (del && ci === 0) { del = false; pi = (pi + 1) % phrases.length; }
+  ci += del ? -1 : 1;
+  setTimeout(typeLoop, del ? 30 : 60 + Math.random() * 70);
+})();
+
+// ---------- live playground ----------
+const code = $('#code'), out = $('#out');
+const sample = [
+  '<style>',
+  '  body { font-family: monospace; background: #050505; color: #00ff9c; }',
+  '  h1 { text-shadow: 0 0 8px #00ff9c; }',
+  '  button { background: #00ff9c; border: 0; padding: 8px 14px; }',
+  '</style>',
+  '<h1>Hallo, Hacker!</h1>',
+  '<p>Ändere diesen Code und sieh zu, was passiert.</p>',
+  '<ul>\n  <li>Tags</li>\n  <li>Attribute</li>\n</ul>',
+  '<button onclick="this.textContent = \'ACCESS GRANTED\'">Klick mich</button>'
+].join('\n');
+let debounce;
+const render = () => { out.srcdoc = code.value; };
+code.addEventListener('input', () => {
+  clearTimeout(debounce);
+  debounce = setTimeout(render, 200);
+});
+$('#reset').addEventListener('click', () => { code.value = sample; render(); });
+code.value = sample;
+render();
+
+// ---------- challenges ----------
+const parse = (html) => new DOMParser().parseFromString(html, 'text/html');
+const missions = [
+  { t: 'Baue eine Überschrift', d: 'Erstelle eine h1-Überschrift mit beliebigem Text.', hint: '<h1>Text</h1>',
+    ok: (doc) => { const h = doc.querySelector('h1'); return !!h && h.textContent.trim() !== ''; } },
+  { t: 'Erstelle einen Link', d: 'Ein a-Tag mit href, der auf https://example.com zeigt.', hint: '<a href="https://example.com">Go</a>',
+    ok: (doc) => [...doc.querySelectorAll('a[href]')].some((a) => a.getAttribute('href').includes('example.com')) },
+  { t: 'Bild mit Alt-Text', d: 'Ein img mit src und einem alt-Attribut (Barrierefreiheit!).', hint: '<img src="x.png" alt="...">',
+    ok: (doc) => { const i = doc.querySelector('img[src]'); return !!i && (i.getAttribute('alt') || '').trim() !== ''; } },
+  { t: 'Liste mit 3 Punkten', d: 'Eine ul mit mindestens drei li-Elementen.', hint: '<ul><li>a</li><li>b</li><li>c</li></ul>',
+    ok: (doc) => doc.querySelectorAll('ul > li').length >= 3 },
+  { t: 'Login-Formular', d: 'Ein form mit einem input type="password" und einem button.', hint: '<form><input type="password"><button>Go</button></form>',
+    ok: (doc) => !!doc.querySelector('form input[type="password"]') && !!doc.querySelector('form button, form input[type="submit"]') }
+];
+const box = $('#missions');
+let score = 0;
+$('#total').textContent = missions.length;
+missions.forEach((m, i) => {
+  const el = document.createElement('div');
+  el.className = 'mission';
+  el.innerHTML = '<h3>#' + (i + 1) + ' ' + m.t + '</h3><p>' + m.d + '</p>' +
+    '<div class="row"><input spellcheck="false" aria-label="Code für Mission ' + (i + 1) + '">' +
+    '<button class="btn" type="button">check()</button></div><div class="msg" aria-live="polite"></div>';
+  const input = el.querySelector('input'), msg = el.querySelector('.msg');
+  input.placeholder = m.hint;
+  const check = () => {
+    if (el.classList.contains('done')) return;
+    if (m.ok(parse(input.value))) {
+      el.classList.add('done');
+      msg.className = 'msg ok';
+      msg.textContent = '> ACCESS GRANTED. Mission erfüllt.';
+      input.disabled = true;
+      $('#score').textContent = ++score;
+      burst(el);
+      sys.blip();
+      if (score === missions.length) toast('ALL MISSIONS COMPLETE // DU BIST JETZT EIN HTML-HACKER');
+    } else {
+      msg.className = 'msg err';
+      msg.textContent = '> ACCESS DENIED. Tipp: ' + m.hint;
+      el.classList.remove('shake');
+      void el.offsetWidth;
+      el.classList.add('shake');
+    }
+  };
+  el.querySelector('button').addEventListener('click', check);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') check(); });
+  box.appendChild(el);
+});
+
+function burst(el) {
+  const r = el.getBoundingClientRect();
+  for (let i = 0; i < 26; i++) {
+    const b = document.createElement('span');
+    b.className = 'bit';
+    b.textContent = Math.random() < 0.5 ? '1' : '0';
+    b.style.left = r.left + r.width / 2 + 'px';
+    b.style.top = r.top + r.height / 2 + 'px';
+    b.style.setProperty('--x', (Math.random() - 0.5) * 420 + 'px');
+    b.style.setProperty('--y', (Math.random() - 0.5) * 300 + 'px');
+    b.style.setProperty('--r', Math.random() * 720 + 'deg');
+    root.appendChild(b);
+    setTimeout(() => b.remove(), 1000);
+  }
+}
+
+function toast(text) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.setAttribute('role', 'status');
+  t.textContent = text;
+  root.appendChild(t);
+  setTimeout(() => t.remove(), 4200);
+}
+
+// ---------- terminal ----------
+const termOut = $('#termOut'), termIn = $('#termIn');
+const history = [];
+let hIdx = 0;
+function print(text, cls) {
+  const line = document.createElement('div');
+  if (cls) line.className = cls;
+  line.textContent = text;
+  termOut.appendChild(line);
+  while (termOut.children.length > 200) termOut.firstChild.remove();
+  termOut.scrollTop = termOut.scrollHeight;
+}
+const jokes = [
+  'Warum hat sich das <div> getrennt? Es fühlte sich nie zentriert.',
+  'Ein HTML-Tag kommt in eine Bar. Barkeeper: "Bitte schließen Sie sich selbst."',
+  '!important ist kein Plan. Es ist ein Hilferuf.',
+  'Es gibt 10 Arten von Menschen: die, die Binär verstehen, und die anderen.',
+  'Code läuft nicht – keine Ahnung warum. Code läuft – auch keine Ahnung warum.'
+];
+const commands = {
+  help: () => print('Befehle: help, about, skills, joke, matrix, hack, clear, date, whoami', 'info'),
+  about: () => print('HTML Hacker Academy // Wir zeigen dir, wie das Web wirklich funktioniert.\nKein Framework. Kein Bullshit. Nur Tags, Styles und Logik.'),
+  skills: () => {
+    [['HTML', 95], ['CSS', 82], ['JavaScript', 74], ['Barrierefreiheit', 68], ['Kaffee', 100]].forEach(([n, v]) => {
+      const bar = '#'.repeat(Math.round(v / 5)).padEnd(20, '-');
+      print(n.padEnd(17, ' ') + '[' + bar + '] ' + v + '%', 'ok');
+    });
+  },
+  joke: () => print(jokes[Math.floor(Math.random() * jokes.length)], 'warn'),
+  matrix: () => { sys.matrix(5000); print('Wake up, Neo... der Regen wird stärker.', 'ok'); },
+  hack: () => hack(),
+  clear: () => { termOut.textContent = ''; },
+  date: () => print(new Date().toLocaleString('de-DE'), 'info'),
+  whoami: () => print('guest — aber nicht mehr lange.', 'info'),
+  sudo: () => print('Netter Versuch. Dieser Vorfall wird gemeldet. ;)', 'warn')
+};
+
+function hack() {
+  const steps = ['Scanne Ports ...', 'Port 80 offen: <html>', 'Injiziere <div> ...', 'Umgehe CSS-Firewall ...', 'Entschlüssele DOM ...', 'Zugriff auf mainframe.html ...'];
+  termIn.disabled = true;
+  sys.glitch();
+  steps.forEach((s, i) => setTimeout(() => {
+    print('[' + '#'.repeat(i + 1).padEnd(steps.length, '.') + '] ' + s, 'ok');
+  }, i * 380));
+  setTimeout(() => {
+    print('>>> ACCESS GRANTED. (Keine Sorge: gehackt wurde nur dein Herz.)', 'warn');
+    termIn.disabled = false;
+    termIn.focus();
+  }, steps.length * 380 + 200);
+}
+
+termIn.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    const raw = termIn.value.trim();
+    termIn.value = '';
+    print('guest@academy:~$ ' + raw, 'dim');
+    if (!raw) return;
+    history.push(raw);
+    hIdx = history.length;
+    const cmd = commands[raw.toLowerCase().split(' ')[0]];
+    if (cmd) cmd();
+    else print('command not found: ' + raw + ' — tippe "help"', 'warn');
+  } else if (e.key === 'ArrowUp' && hIdx > 0) {
+    e.preventDefault();
+    termIn.value = history[--hIdx];
+  } else if (e.key === 'ArrowDown' && hIdx < history.length) {
+    e.preventDefault();
+    termIn.value = history[++hIdx] || '';
+  }
+});
+$('#term').addEventListener('click', () => termIn.focus());
+print('HTML Hacker Academy Terminal v2.6 — Verbindung steht.', 'ok');
+print('Tippe "help" für eine Liste der Befehle.', 'info');
+
+// ---------- konami code easter egg ----------
+const konami = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+let keys = [];
+window.addEventListener('keydown', (e) => {
+  const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  keys = keys.concat(k).slice(-konami.length);
+  if (keys.join() !== konami.join()) return;
+  keys = [];
+  const page = $('.page');
+  page.classList.add('overdrive');
+  setTimeout(() => page.classList.remove('overdrive'), 8000);
+  sys.matrix(8000);
+  sys.glitch();
+  toast('↑↑↓↓←→←→ B A — GOD MODE AKTIVIERT. +30 Leben.');
+});
+</script>
+
+
+<!-- ======================================================================
+     4. ENGINE
+     ====================================================================== -->
+<script>
+(() => {
+'use strict';
+
+/* ---------------------------------------------------------------------
+   Grundlagen & Helfer
+   --------------------------------------------------------------------- */
+const $ = (id) => document.getElementById(id);
+const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const MONO = '"JetBrains Mono", "Fira Code", Consolas, monospace';
+const rnd = (a, b) => a + Math.random() * (b - a);
+const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// Quelltext-Blöcke lesen und "<\/" / "<\!" wieder dekodieren
+const decode = (id) => $(id).textContent
+  .replace(/<\\\//g, '</').replace(/<\\!/g, '<!')
+  .replace(/^\s*\n/, '').replace(/\s+$/, '') + '\n';
+
+const FILES = [
+  { name: 'index.html', lang: 'html', label: 'HTML',       src: decode('src-html'), typed: '', lineStart: 0 },
+  { name: 'style.css',  lang: 'css',  label: 'CSS',        src: decode('src-css'),  typed: '', lineStart: 0 },
+  { name: 'script.js',  lang: 'js',   label: 'JavaScript', src: decode('src-js'),   typed: '', lineStart: 0 }
+];
+
+/* Globaler Zustand der Intro-Sequenz */
+const S = {
+  speed: 1,
+  running: true,      // Intro läuft
+  skipped: false,
+  live: false,        // Website ist final
+  zooming: false,     // Finale-Zoom läuft (positionApp pausiert)
+  jsRan: false,
+  timers: [],         // wartende sleep()-Aufrufe
+  frames: [],         // wartende frame()-Aufrufe
+  dirty: [false, false, false],
+  flushT: [0, 0],
+  progress: 0, pr: -1,
+  scrollMode: 'bottom', cssFrac: 0,
+  lastTransform: ''
+};
+
+/* ---------------------------------------------------------------------
+   Scheduler: sleep()/frame() laufen über EINE rAF-Schleife.
+   - Speed-Regler skaliert die verstrichene Zeit (auch mitten im sleep).
+   - Skip lässt alle wartenden Promises mit SKIP fehlschlagen.
+   --------------------------------------------------------------------- */
+const SKIP = new Error('SKIP');
+function sleep(ms, realTime) {
+  if (S.skipped) return Promise.reject(SKIP);
+  return new Promise((res, rej) => S.timers.push({ left: ms, real: !!realTime, res, rej }));
+}
+function frame() {
+  if (S.skipped) return Promise.reject(SKIP);
+  return new Promise((res, rej) => S.frames.push({ res, rej }));
+}
+function skip() {
+  if (!S.running || S.skipped) return;
+  S.skipped = true;
+  const pending = S.timers.concat(S.frames);
+  S.timers = []; S.frames = [];
+  pending.forEach((t) => t.rej(SKIP));
+  flash(.7);
+}
+
+/* ---------------------------------------------------------------------
+   Shadow DOM: hier entsteht die echte Website
+   --------------------------------------------------------------------- */
+const host = $('app');
+const shadow = host.attachShadow({ mode: 'open' });
+const styleEl = document.createElement('style');
+shadow.appendChild(styleEl);
+
+// HTML anwenden (auch unvollständig – der Parser des Browsers repariert)
+function applyHTML(text) {
+  const doc = new DOMParser().parseFromString(text, 'text/html');
+  // <link>/<script> werden nicht geladen, sondern von der Engine "gelinkt"
+  doc.querySelectorAll('script, link, style').forEach((n) => n.remove());
+  while (shadow.lastChild && shadow.lastChild !== styleEl) shadow.removeChild(shadow.lastChild);
+  shadow.append(...doc.body.childNodes);
+  $('nodes').textContent = (shadow.querySelectorAll('*').length - 1) + ' nodes';
+  host.classList.add('show');
+  $('pvBody').textContent = '';
+}
+function applyCSS(text) { styleEl.textContent = text; }
+
+// Brücke, die das getippte script.js nutzen darf
+const SYS = {
+  matrix: (ms) => Matrix.storm(ms || 3000),
+  glitch: () => {
+    const crt = $('crt');
+    crt.classList.add('glitch');
+    setTimeout(() => crt.classList.remove('glitch'), 650);
+    Sound.glitch();
+  },
+  blip: () => Sound.blip()
+};
+
+// script.js wirklich ausführen – mit Shadow Root als "root"
+function runJS() {
+  if (S.jsRan) return;
+  S.jsRan = true;
+  try {
+    new Function('root', 'sys', FILES[2].src)(shadow, SYS);
+    log('[exec] script.js ausgeführt → Seite ist interaktiv', 'ok');
+  } catch (err) {
+    log('[exec] FEHLER: ' + err.message, 'err');
+    console.error(err);
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Matrix-Regen (ein Canvas, performant, gedrosselt)
+   --------------------------------------------------------------------- */
+const Matrix = (() => {
+  const cv = $('matrix');
+  const ctx = cv.getContext('2d');
+  const CH = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0101010101<>/{}=;';
+  const WORDS = ['<div>', '</a>', '<html>', 'href=', '<h1>', '{ }', '</>', '<body>', 'src=', '<p>', '<ul>',
+                 '<li>', '<img>', '<form>', 'alt=', '::after', '#00ff9c', '<nav>', 'class='];
+  let w = 0, h = 0, fs = 16, cols = [], last = 0, stormUntil = 0;
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    w = window.innerWidth; h = window.innerHeight;
+    cv.width = Math.floor(w * dpr); cv.height = Math.floor(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    fs = w < 600 ? 13 : 16;
+    const rows = Math.ceil(h / fs);
+    cols = Array.from({ length: Math.ceil(w / fs) }, () => ({
+      y: -Math.floor(Math.random() * rows), sp: .35 + Math.random() * .65,
+      acc: 0, word: '', wi: 0, prev: '', tint: ''
+    }));
+    ctx.fillStyle = '#030504'; ctx.fillRect(0, 0, w, h);
+    ctx.font = fs + 'px ' + MONO; ctx.textBaseline = 'top';
+    if (REDUCED) drawStatic();
+  }
+  function nextChar(c) {
+    if (c.word) {
+      const ch = c.word[c.wi++];
+      if (c.wi >= c.word.length) c.word = '';
+      return ch;
+    }
+    return CH[(Math.random() * CH.length) | 0];
+  }
+  // Für prefers-reduced-motion: ein einziges, ruhiges Standbild
+  function drawStatic() {
+    ctx.fillStyle = 'rgba(0,255,156,.25)';
+    for (let x = 0; x < w; x += fs) for (let y = 0; y < h; y += fs) {
+      if (Math.random() < .04) ctx.fillText(CH[(Math.random() * CH.length) | 0], x, y);
+    }
+  }
+  function draw(now) {
+    if (REDUCED) return;
+    const storm = now < stormUntil;
+    if (now - last < (storm ? 26 : 55)) return;   // ~18 fps normal, ~38 fps im Sturm
+    last = now;
+    cv.classList.toggle('storm', storm);
+    ctx.fillStyle = storm ? 'rgba(3,5,4,.09)' : 'rgba(3,5,4,.13)';
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < cols.length; i++) {
+      const c = cols[i];
+      c.acc += storm ? c.sp * 1.9 : c.sp;
+      if (c.acc < 1) continue;
+      c.acc = Math.min(c.acc - 1, 1);
+      const x = i * fs, y = c.y * fs;
+      // vorheriges Kopf-Zeichen grün einfärben
+      if (c.prev && y - fs >= 0) {
+        ctx.fillStyle = '#030504'; ctx.fillRect(x, y - fs, fs, fs);
+        ctx.fillStyle = c.tint || '#00ff9c'; ctx.fillText(c.prev, x, y - fs);
+      }
+      const ch = nextChar(c);
+      if (y >= 0) { ctx.fillStyle = '#e4fff3'; ctx.fillText(ch, x, y); }
+      c.prev = ch; c.y++;
+      if (y > h && Math.random() > (storm ? .85 : .975)) {
+        c.y = 0; c.prev = '';
+        c.tint = Math.random() < .07 ? '#00e5ff' : (Math.random() < .04 ? '#ff2bd6' : '');
+        if (Math.random() < .3) { c.word = WORDS[(Math.random() * WORDS.length) | 0]; c.wi = 0; }
+      }
+    }
+  }
+  return { resize, draw, storm: (ms) => { if (!REDUCED) stormUntil = performance.now() + ms; } };
+})();
+
+/* ---------------------------------------------------------------------
+   Sound (WebAudio) – standardmäßig AUS, startet erst nach Klick
+   --------------------------------------------------------------------- */
+const Sound = {
+  on: false, ctx: null, noise: null, last: 0,
+  init() {
+    if (this.ctx) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    this.ctx = new AC();
+    const len = this.ctx.sampleRate;               // 1 s weißes Rauschen
+    this.noise = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+    const d = this.noise.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  },
+  toggle() {
+    this.on = !this.on;
+    if (this.on) { this.init(); if (this.ctx) this.ctx.resume(); }
+    return this.on;
+  },
+  burst(dur, freq, q, vol, type) {
+    const a = this.ctx, t = a.currentTime;
+    const src = a.createBufferSource(); src.buffer = this.noise;
+    const f = a.createBiquadFilter(); f.type = type || 'bandpass'; f.frequency.value = freq; f.Q.value = q;
+    const g = a.createGain();
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    src.connect(f); f.connect(g); g.connect(a.destination);
+    src.start(t, Math.random() * .5, dur + .02);
+    return f;
+  },
+  click() {
+    if (!this.on || !this.ctx) return;
+    const t = this.ctx.currentTime;
+    if (t - this.last < .028) return;
+    this.last = t;
+    this.burst(.035, 1600 + Math.random() * 2600, 2.5, .22);
+  },
+  glitch() {
+    if (!this.on || !this.ctx) return;
+    const f = this.burst(.6, 400, 1, .35, 'lowpass');
+    f.frequency.exponentialRampToValueAtTime(4000, this.ctx.currentTime + .5);
+  },
+  blip() {
+    if (!this.on || !this.ctx) return;
+    const a = this.ctx, t = a.currentTime;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = 'square';
+    o.frequency.setValueAtTime(440, t);
+    o.frequency.exponentialRampToValueAtTime(1760, t + .15);
+    g.gain.setValueAtTime(.08, t);
+    g.gain.exponentialRampToValueAtTime(.0001, t + .2);
+    o.connect(g); g.connect(a.destination);
+    o.start(t); o.stop(t + .22);
+  }
+};
+
+/* ---------------------------------------------------------------------
+   Syntax-Highlighter (HTML / CSS / JS) → Token-Listen [klasse, text]
+   Funktionieren auch mit halb getipptem Code.
+   --------------------------------------------------------------------- */
+function hlHTML(s) {
+  const T = [], n = s.length;
+  let i = 0;
+  const text = (t) => {
+    const re = /&[#\w]+;?/g; let last = 0, m;
+    while ((m = re.exec(t))) {
+      if (m.index > last) T.push(['', t.slice(last, m.index)]);
+      T.push(['ent', m[0]]); last = re.lastIndex;
+    }
+    if (last < t.length) T.push(['', t.slice(last)]);
+  };
+  const tag = (t) => {
+    if (/^<!/.test(t)) { T.push(['kw', t]); return; }
+    const open = /^<\/?/.exec(t)[0];
+    T.push(['pun', open]);
+    let k = open.length;
+    const nm = /^[\w-]+/.exec(t.slice(k));
+    if (nm) { T.push(['tag', nm[0]]); k += nm[0].length; }
+    const re = /(\s+)|("[^"]*"?|'[^']*'?)|(=)|(\/?>)|([^\s"'=>\/]+)|([\s\S])/g;
+    re.lastIndex = k;
+    let x;
+    while (k < t.length && (x = re.exec(t))) {
+      k = re.lastIndex;
+      T.push([x[1] ? '' : x[2] ? 'str' : x[5] ? 'attr' : 'pun', x[0]]);
+    }
+  };
+  while (i < n) {
+    if (s.startsWith('<!--', i)) {
+      let j = s.indexOf('-->', i + 4); j = j < 0 ? n : j + 3;
+      T.push(['com', s.slice(i, j)]); i = j; continue;
+    }
+    if (s[i] === '<' && /[!\/a-zA-Z]/.test(s[i + 1] || '')) {
+      let j = s.indexOf('>', i); j = j < 0 ? n : j + 1;
+      tag(s.slice(i, j)); i = j; continue;
+    }
+    let j = s.indexOf('<', s[i] === '<' ? i + 1 : i);
+    if (j < 0) j = n;
+    text(s.slice(i, j)); i = j;
+  }
+  return T;
+}
+
+function hlCSS(s) {
+  const T = [], stack = [], n = s.length;
+  let i = 0, pending = 'rule';
+  const VAL = /("[^"]*"?|'[^']*'?)|(#[0-9a-fA-F]{3,8})|(-?\d*\.?\d+[a-z%]*)|(!important)|(--[\w-]+)|([a-zA-Z-]+(?=\())|([a-zA-Z_-][\w-]*)|(\s+)|([\s\S])/g;
+  const SEL = /([.#][\w-]+)|(::?[\w-]+)|(\[[^\]]*\]?)|([\w-]+%?)|(\s+)|([\s\S])/g;
+  const value = (v) => {
+    VAL.lastIndex = 0; let m;
+    while ((m = VAL.exec(v))) {
+      T.push([m[1] ? 'str' : (m[2] || m[3]) ? 'num' : m[4] ? 'kw' : m[5] ? 'var' : m[6] ? 'fn' : m[7] ? 'val' : m[8] ? '' : 'pun', m[0]]);
+    }
+  };
+  const selector = (v) => {
+    SEL.lastIndex = 0; let m;
+    while ((m = SEL.exec(v))) {
+      T.push([m[1] ? 'sel' : m[2] ? 'pse' : m[3] ? 'attr' : m[4] ? 'tag' : m[5] ? '' : 'pun', m[0]]);
+    }
+  };
+  while (i < n) {
+    const ch = s[i];
+    if (ch === '/' && s[i + 1] === '*') {
+      let j = s.indexOf('*/', i + 2); j = j < 0 ? n : j + 2;
+      T.push(['com', s.slice(i, j)]); i = j; continue;
+    }
+    if (/\s/.test(ch)) {
+      let j = i + 1; while (j < n && /\s/.test(s[j])) j++;
+      T.push(['', s.slice(i, j)]); i = j; continue;
+    }
+    if (ch === '{') { T.push(['pun', '{']); stack.push(pending); i++; continue; }
+    if (ch === '}') { T.push(['pun', '}']); stack.pop(); i++; continue; }
+    if (ch === ';') { T.push(['pun', ';']); i++; continue; }
+    // Statement bis zum nächsten { } ; oder Kommentar lesen
+    let j = i;
+    while (j < n && s[j] !== '{' && s[j] !== '}' && s[j] !== ';' && !(s[j] === '/' && s[j + 1] === '*')) j++;
+    const st = s.slice(i, j), term = s[j];
+    const inRule = stack[stack.length - 1] === 'rule';
+    if (term === '{' || (!inRule && term !== ';')) {
+      if (st[0] === '@') {
+        const at = /^@[\w-]*/.exec(st)[0];
+        T.push(['kw', at]); value(st.slice(at.length));
+        pending = /^@(media|supports|container|layer|(-\w+-)?keyframes)/.test(at) ? 'group' : 'rule';
+      } else { selector(st); pending = 'rule'; }
+    } else {
+      const k = st.indexOf(':');
+      if (k < 0) T.push(['prop', st]);
+      else { T.push(['prop', st.slice(0, k)]); T.push(['pun', ':']); value(st.slice(k + 1)); }
+    }
+    i = j;
+  }
+  return T;
+}
+
+const JSKW = new Set(('const let var function return if else for while do break continue new typeof instanceof in of ' +
+  'class extends import export default try catch finally throw async await this null undefined true false void delete switch case').split(' '));
+function hlJS(s) {
+  const T = [], n = s.length;
+  let i = 0, prev = null;
+  const ID = /[\w$]+/y, NUM = /\d[\d.]*/y;
+  const push = (c, t) => { T.push([c, t]); prev = [c, t]; };
+  while (i < n) {
+    const ch = s[i];
+    if (ch === ' ' || ch === '\n' || ch === '\t') {
+      let j = i + 1; while (j < n && (s[j] === ' ' || s[j] === '\n' || s[j] === '\t')) j++;
+      T.push(['', s.slice(i, j)]); i = j; continue;
+    }
+    if (ch === '/' && s[i + 1] === '/') {
+      let j = s.indexOf('\n', i); if (j < 0) j = n;
+      T.push(['com', s.slice(i, j)]); i = j; continue;
+    }
+    if (ch === '/' && s[i + 1] === '*') {
+      let j = s.indexOf('*/', i + 2); j = j < 0 ? n : j + 2;
+      T.push(['com', s.slice(i, j)]); i = j; continue;
+    }
+    if (ch === '"' || ch === "'" || ch === '`') {
+      let j = i + 1;
+      while (j < n && s[j] !== ch && !(s[j] === '\n' && ch !== '`')) j += s[j] === '\\' ? 2 : 1;
+      if (j < n && s[j] === ch) j++;
+      j = Math.min(j, n);
+      push('str', s.slice(i, j)); i = j; continue;
+    }
+    if (ch >= '0' && ch <= '9') {
+      NUM.lastIndex = i; const m = NUM.exec(s)[0];
+      push('num', m); i += m.length; continue;
+    }
+    if (/[A-Za-z_$]/.test(ch)) {
+      ID.lastIndex = i; const w = ID.exec(s)[0];
+      let c = 'id';
+      if (JSKW.has(w)) c = 'kw';
+      else {
+        let k = i + w.length; while (s[k] === ' ') k++;
+        if (s[k] === '(') c = 'fn';
+        else if (prev && prev[1] === '.') c = 'pp';
+      }
+      push(c, w); i += w.length; continue;
+    }
+    if (ch === '/') {
+      const canRx = !prev || (prev[0] === 'pun' && /[(,=:[!&|?{};+\-*%<>~^]$/.test(prev[1])) ||
+                    (prev[0] === 'kw' && /^(return|typeof|case|in|of)$/.test(prev[1]));
+      if (canRx) {
+        let j = i + 1, cls = false;
+        while (j < n && s[j] !== '\n') {
+          const c = s[j];
+          if (c === '\\') { j += 2; continue; }
+          if (c === '[') cls = true; else if (c === ']') cls = false;
+          else if (c === '/' && !cls) break;
+          j++;
+        }
+        if (s[j] === '/') { j++; while (j < n && /[a-z]/.test(s[j])) j++; }
+        j = Math.min(j, n);
+        push('rx', s.slice(i, j)); i = j; continue;
+      }
+    }
+    push('pun', ch); i++;
+  }
+  return T;
+}
+const HL = { html: hlHTML, css: hlCSS, js: hlJS };
+
+/* ---------------------------------------------------------------------
+   Editor-Rendering (virtualisiert: nur die sichtbaren Zeilen)
+   --------------------------------------------------------------------- */
+const codeView = $('codeView'), buildLog = $('buildLog');
+const tabs = Array.from(document.querySelectorAll('.tab'));
+const E = { cur: 0, dirty: true, lh: 20 };
+
+function measure() {
+  E.lh = parseFloat(getComputedStyle(codeView).lineHeight) || 20;
+  const hud = $('hud');
+  if (hud) document.documentElement.style.setProperty('--hud', hud.offsetHeight + 'px');
+  E.dirty = true;
+}
+function switchTab(i) {
+  E.cur = i;
+  tabs.forEach((t, k) => { t.classList.toggle('active', k === i); t.setAttribute('aria-selected', String(k === i)); });
+  $('stFile').textContent = FILES[i].name;
+  $('stLang').textContent = FILES[i].label;
+  $('edTitle').textContent = '~/academy/' + FILES[i].name + ' — neural-vim';
+  E.dirty = true;
+}
+function log(msg, cls) {
+  const d = document.createElement('div');
+  d.textContent = msg;
+  if (cls) d.className = cls;
+  buildLog.appendChild(d);
+  while (buildLog.children.length > 4) buildLog.firstChild.remove();
+}
+function renderEditor() {
+  if (!E.dirty || !codeView.isConnected) return;
+  E.dirty = false;
+  const f = FILES[E.cur];
+  const toks = HL[f.lang](f.typed);
+  // Tokens in Zeilen aufteilen (Tokens können mehrere Zeilen umfassen)
+  const lines = [[]];
+  for (let t = 0; t < toks.length; t++) {
+    const c = toks[t][0], parts = toks[t][1].split('\n');
+    for (let k = 0; k < parts.length; k++) {
+      if (k > 0) lines.push([]);
+      if (parts[k]) lines[lines.length - 1].push(c, parts[k]);
+    }
+  }
+  const vis = Math.max(4, Math.floor((codeView.clientHeight - 12) / E.lh));
+  const start = Math.max(0, lines.length - vis);
+  let html = '';
+  for (let l = start; l < lines.length; l++) {
+    const L = lines[l];
+    let tx = '';
+    for (let k = 0; k < L.length; k += 2) {
+      tx += L[k] ? '<span class="t-' + L[k] + '">' + esc(L[k + 1]) + '</span>' : esc(L[k + 1]);
+    }
+    if (l === lines.length - 1) tx += '<span class="cur"></span>';
+    html += '<div class="ln"><span class="no">' + (l + 1) + '</span><span class="tx">' + tx + '</span></div>';
+  }
+  codeView.innerHTML = html;
+  // horizontal dem Cursor folgen
+  const cur = codeView.querySelector('.cur');
+  if (cur) codeView.scrollLeft = Math.max(0, cur.offsetLeft - codeView.clientWidth + 60);
+  const lastLine = f.typed.slice(f.typed.lastIndexOf('\n') + 1);
+  $('stPos').textContent = 'Ln ' + lines.length + ', Col ' + (lastLine.length + 1);
+}
+
+/* ---------------------------------------------------------------------
+   Fortschritt, Preview-Positionierung, Effekte
+   --------------------------------------------------------------------- */
+const meterFill = $('meterFill'), progressEl = $('progress');
+function setProgress(p) {
+  p = Math.max(S.progress, Math.min(100, p));
+  S.progress = p;
+  const r = Math.floor(p);
+  if (r !== S.pr) {
+    S.pr = r;
+    $('pct').textContent = r + '%';
+    progressEl.setAttribute('aria-valuenow', String(r));
+    if (r >= 100) $('hudTitle').textContent = 'COMPILED';
+  }
+  meterFill.style.width = p + '%';
+}
+
+// Website-Host exakt (verkleinert) über das Preview-Fenster legen
+function positionApp() {
+  if (S.live || S.zooming) return;
+  const r = $('pvBody').getBoundingClientRect();
+  if (r.width < 2 || r.height < 2) return;
+  const W = window.innerWidth, k = r.width / W;
+  const tf = 'translate(' + r.left.toFixed(1) + 'px,' + r.top.toFixed(1) + 'px) scale(' + k.toFixed(4) + ')';
+  const hh = (r.height / k).toFixed(1) + 'px';
+  if (tf !== S.lastTransform) { host.style.transform = tf; S.lastTransform = tf; }
+  if (host.style.width !== W + 'px') host.style.width = W + 'px';
+  if (host.style.height !== hh) host.style.height = hh;
+}
+
+function flash(strength) {
+  const f = $('flash');
+  if (!f) return;
+  f.style.transition = 'none';
+  f.style.opacity = String(REDUCED ? .15 : (strength || .9));
+  void f.offsetWidth;
+  f.style.transition = 'opacity .9s ease-out';
+  f.style.opacity = '0';
+}
+const sr = (msg) => { $('srStatus').textContent = msg; };
+
+/* ---------------------------------------------------------------------
+   Die eine rAF-Schleife: Matrix, Scheduler, Editor, Live-Build
+   --------------------------------------------------------------------- */
+let lastNow = performance.now();
+function tick(now) {
+  requestAnimationFrame(tick);
+  const dt = Math.min(100, now - lastNow);
+  lastNow = now;
+  Matrix.draw(now);
+  if (S.live) return;
+
+  positionApp();
+
+  // Live-Build: getippten Code gedrosselt in die Vorschau übernehmen
+  if (S.dirty[0] && !S.jsRan && now - S.flushT[0] > 90) {
+    S.dirty[0] = false; S.flushT[0] = now;
+    applyHTML(FILES[0].typed);
+  }
+  if (S.dirty[1] && now - S.flushT[1] > 70) {
+    S.dirty[1] = false; S.flushT[1] = now;
+    applyCSS(FILES[1].typed);
+  }
+
+  // Vorschau automatisch scrollen (folgt dem Bau)
+  if (host.classList.contains('show') && !S.zooming) {
+    const max = host.scrollHeight - host.clientHeight;
+    const target = S.scrollMode === 'bottom' ? max : S.scrollMode === 'css' ? max * S.cssFrac : 0;
+    host.scrollTop += (target - host.scrollTop) * .12;
+  }
+
+  try { renderEditor(); } catch (err) { console.error(err); }
+
+  // Scheduler
+  const sdt = dt * S.speed;
+  if (S.timers.length) {
+    const keep = [];
+    for (const t of S.timers) {
+      t.left -= t.real ? dt : sdt;
+      if (t.left <= 0) t.res(); else keep.push(t);
+    }
+    S.timers = keep;
+  }
+  if (S.frames.length) {
+    const f = S.frames; S.frames = [];
+    f.forEach((x) => x.res(sdt));
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Tipp-Engine: menschlich am Anfang (mit Tippfehlern), dann "Autopilot"
+   mit beschleunigender Geschwindigkeit. Jede vollendete Zeile → onLine.
+   --------------------------------------------------------------------- */
+function feed(fi, chunk, absStart, onLine) {
+  const f = FILES[fi];
+  f.typed += chunk;
+  let k = chunk.indexOf('\n');
+  while (k >= 0) {
+    const abs = absStart + k;
+    onLine(f.src.slice(f.lineStart, abs));
+    f.lineStart = abs + 1;
+    k = chunk.indexOf('\n', k + 1);
+  }
+  S.dirty[fi] = true;
+  if (fi === 1) S.cssFrac = f.typed.length / f.src.length;
+  E.dirty = true;
+}
+
+async function typeFile(fi, humanLines, turboMs, onLine, pBase, pSpan) {
+  const f = FILES[fi], src = f.src;
+  switchTab(fi);
+  $('pill' + fi).classList.add('busy');
+  await sleep(450);
+  codeView.classList.remove('idle');
+  $('stMode').textContent = '-- INSERT --';
+
+  let humanEnd = 0;
+  for (let l = 0; l < humanLines; l++) {
+    const k = src.indexOf('\n', humanEnd);
+    humanEnd = k < 0 ? src.length : k + 1;
+  }
+  let pos = 0;
+
+  // Phase A: menschliches Tippen mit Tippfehlern + Backspace
+  while (pos < humanEnd) {
+    const ch = src[pos];
+    if (/[a-z]/i.test(ch) && Math.random() < .06) {
+      f.typed += 'qwertzuiopasdfghjklyxcvbnm'[(Math.random() * 26) | 0];
+      E.dirty = true; Sound.click();
+      await sleep(rnd(150, 280));
+      f.typed = f.typed.slice(0, -1);
+      E.dirty = true; Sound.click();
+      await sleep(rnd(70, 140));
+    }
+    feed(fi, ch, pos, onLine);
+    pos++;
+    Sound.click();
+    setProgress(pBase + pSpan * pos / src.length);
+    await sleep(ch === '\n' ? rnd(200, 380) : ch === ' ' ? rnd(35, 90) : rnd(25, 80));
+  }
+
+  // Phase B: Autopilot – beschleunigt quadratisch, endet exakt nach turboMs
+  log('[ai] autopilot: ' + f.name + ' (' + (src.length - pos) + ' chars)', 'info');
+  const start = pos, N = src.length - pos;
+  let t = 0;
+  while (pos < src.length) {
+    t += await frame();
+    const u = Math.min(1, t / turboMs);
+    const target = start + Math.round(N * (.12 * u + .88 * u * u));
+    if (target > pos) {
+      feed(fi, src.slice(pos, target), pos, onLine);
+      pos = target;
+      Sound.click();
+      setProgress(pBase + pSpan * pos / src.length);
+    }
+  }
+  codeView.classList.add('idle');
+  $('stMode').textContent = 'NORMAL';
+  $('pill' + fi).classList.remove('busy');
+  $('pill' + fi).classList.add('on');
+}
+
+// Zeilen-Callbacks → Build-Log
+let lastId = '';
+function htmlLine(line) {
+  const open = /<(section|header|nav|footer)\b[^>]*?id="([\w-]+)"/.exec(line);
+  if (open) lastId = open[2];
+  const close = /<\/(section|header|nav|footer)>/.exec(line);
+  if (close) {
+    log('[dom] <' + close[1] + (close[1] === 'section' || close[1] === 'header' ? '#' + lastId : '') + '> gemountet ✓', 'ok');
+    S.scrollMode = 'bottom';
+  }
+}
+const cssSeen = new Set();
+function cssLine(line) {
+  const m = /^(:host|\.page|\.nav|\.hero|\.glitch|\.card|\.play|\.mission|\.term|\.foot|\.toast|@media)/.exec(line);
+  if (m && !cssSeen.has(m[1])) { cssSeen.add(m[1]); log('[css] styling ' + m[1] + ' …'); }
+}
+function jsLine(line) {
+  const m = /^\/\/ -+ (.+?) -+$/.exec(line);
+  if (m) log('[js] kompiliere Modul: ' + m[1], 'info');
+}
+
+/* ---------------------------------------------------------------------
+   DIE TIMELINE
+   --------------------------------------------------------------------- */
+const LOGO = String.raw`
+ _   _ _____ __  __ _          _   _    _    ____ _  __
+| | | |_   _|  \/  | |        | | | |  / \  / ___| |/ /
+| |_| | | | | |\/| | |        | |_| | / _ \| |   | ' /
+|  _  | | | | |  | | |___     |  _  |/ ___ \ |___| . \
+|_| |_| |_| |_|  |_|_____|    |_| |_/_/   \_\____|_|\_\
+`.replace(/^\n/, '').replace(/\n$/, '').split('\n');
+
+async function phaseBoot() {
+  const boot = $('boot'), bl = $('bootLog');
+  const line = (html) => {
+    const d = document.createElement('div');
+    d.className = 'bl'; d.innerHTML = html || '';
+    bl.appendChild(d);
+    boot.scrollTop = boot.scrollHeight;
+    Sound.click();
+    return d;
+  };
+  const art = document.createElement('pre');
+  art.className = 'logo-art';
+  bl.appendChild(art);
+  for (const l of LOGO) { art.textContent += l + '\n'; Sound.click(); await sleep(70); }
+  line('<span class="dim">NEURAL-BIOS v6.66 · (c) 2026 HTML Hacker Academy · build 0x1337</span>');
+  await sleep(300);
+  const items = [
+    ['CPU: QuantumCore x64 @ 13.37 GHz', 'OK'],
+    ['Memory test: 65536K', 'OK'],
+    ['Initializing neural compiler', 'OK'],
+    ['Mounting /dev/html', 'OK'],
+    ['Loading CSS engine', 'OK'],
+    ['Loading JS runtime', 'OK'],
+    ['Scanning for firewalls', '1 FOUND', 'warn'],
+    ['Bypassing firewall', 'OK'],
+    ['Opening tunnel 127.0.0.1:1337', 'OK']
+  ];
+  for (let i = 0; i < items.length; i++) {
+    const [label, st, cls] = items[i];
+    const d = line(esc(label) + ' ');
+    await sleep(rnd(60, 160));
+    d.innerHTML = esc(label.padEnd(36, '.')) + ' <span class="' + (cls || 'ok') + '">' + st + '</span>';
+    setProgress((i + 1) / items.length * 4);
+    await sleep(rnd(70, 140));
+  }
+  const bar = async (label) => {
+    const d = line();
+    for (let k = 0; k <= 20; k++) {
+      const n = Math.round(k / 2);
+      d.innerHTML = esc(label.padEnd(26, ' ')) + '[' + '#'.repeat(n) + '<span class="dim">' + '-'.repeat(10 - n) +
+        '</span>] ' + String(k * 5).padStart(3, ' ') + '%';
+      if (k % 3 === 0) Sound.click();
+      await sleep(34);
+    }
+  };
+  await bar('Decrypting payload');
+  await bar('Compiling kernel modules');
+  setProgress(6);
+  line('<span class="c">&gt; launching neural-vim --live-preview --autopilot ...</span>');
+  await sleep(650);
+}
+
+async function phaseEditor() {
+  $('boot').classList.add('hide');
+  $('stage').classList.add('show');
+  switchTab(0);
+  await sleep(120);
+  $('editorWin').classList.add('in');
+  Sound.glitch();
+  await sleep(380);
+  $('previewWin').classList.add('in');
+  log('[neural-vim] 3 Buffer geladen: index.html, style.css, script.js', 'info');
+  await sleep(900, true);
+  $('boot').style.visibility = 'hidden';
+  log('[preview] localhost:1337 wartet auf DOM …');
+  await sleep(800);
+  log('[ai] self-writing mode: ENGAGED', 'ok');
+  setProgress(8);
+  await sleep(700);
+}
+
+async function phaseCode() {
+  // 1) index.html – Struktur (nacktes HTML erscheint live)
+  S.scrollMode = 'bottom';
+  await typeFile(0, 2, 11000, htmlLine, 8, 30);
+  applyHTML(FILES[0].src);
+  log('[build] index.html ✓ ' + FILES[0].src.split('\n').length + ' Zeilen', 'ok');
+  await sleep(800);
+
+  // 2) style.css – die Seite wird schlagartig schön
+  log('[link] <link rel="stylesheet" href="style.css">', 'info');
+  S.scrollMode = 'css';
+  await typeFile(1, 1, 10500, cssLine, 38, 28);
+  applyCSS(FILES[1].src);
+  log('[build] style.css ✓ angewendet', 'ok');
+  await sleep(800);
+
+  // 3) script.js – wird am Ende wirklich ausgeführt
+  S.scrollMode = 'top';
+  await typeFile(2, 1, 9500, jsLine, 66, 26);
+  log('[exec] node --run script.js', 'info');
+  await sleep(400);
+  runJS();
+  flash(.25);
+  await sleep(1500);
+}
+
+async function phaseHack() {
+  setProgress(94);
+  log('[link] bundling 3 files → mainframe …', 'info');
+  await sleep(500);
+  document.body.classList.add('quake');
+  $('crt').classList.add('glitch');
+  Matrix.storm(5000);
+  Sound.glitch();
+  await sleep(700);
+  $('granted').classList.add('on');
+  setProgress(98);
+  sr('System kompiliert. Zugriff gewährt.');
+  await sleep(1100);
+  Sound.glitch();
+  await sleep(1300);
+  setProgress(100);
+  flash(.95);
+  $('granted').classList.remove('on');
+  document.body.classList.remove('quake');
+  $('crt').classList.remove('glitch');
+  await sleep(500);
+}
+
+async function phaseFinale() {
+  $('stage').classList.add('out');
+  $('hud').classList.add('out');
+  await sleep(450, true);
+  // Vorschau auf Vollbild zoomen
+  S.zooming = true;
+  host.scrollTop = 0;
+  const ease = '1.5s cubic-bezier(.75,0,.2,1)';
+  host.style.transition = 'transform ' + ease + ', height ' + ease;
+  void host.offsetWidth;
+  host.style.transform = 'translate(0px,0px) scale(1)';
+  host.style.height = window.innerHeight + 'px';
+  await sleep(1650, true);
+}
+
+async function reducedIntro() {
+  // prefers-reduced-motion: kurzes, ruhiges Intro
+  const bl = $('bootLog');
+  bl.innerHTML = '<div class="bl">Reduzierte Bewegung erkannt – Kurz-Intro.</div>' +
+                 '<div class="bl">Kompiliere index.html, style.css, script.js …</div>';
+  for (let p = 20; p <= 100; p += 20) { setProgress(p); await sleep(220); }
+  await sleep(300);
+}
+
+/* ---------------------------------------------------------------------
+   Finale / Skip: alles fertigstellen und zur echten Website wechseln
+   --------------------------------------------------------------------- */
+function goLive() {
+  if (S.live) return;
+  S.live = true; S.running = false;
+  S.timers = []; S.frames = [];
+  FILES.forEach((f) => { f.typed = f.src; });
+  if (!S.jsRan) applyHTML(FILES[0].src);
+  applyCSS(FILES[1].src);
+
+  host.removeAttribute('style');
+  host.inert = false;
+  host.removeAttribute('inert');
+  host.classList.add('show', 'live');
+  document.body.classList.remove('intro', 'quake');
+  $('crt').classList.remove('glitch');
+  ['hud', 'boot', 'stage', 'granted'].forEach((id) => { const el = $(id); if (el) el.remove(); });
+  setTimeout(() => { const f = $('flash'); if (f) f.remove(); }, 1200);
+
+  runJS();
+  window.scrollTo(0, 0);
+  sr('Intro beendet. Die Website ist bereit.');
+  banner();
+}
+
+function banner() {
+  const b = document.createElement('div');
+  b.id = 'banner';
+  b.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(b);
+  const txt = '> deploy complete. Willkommen in der Academy, Hacker. Scroll ↓';
+  let i = REDUCED ? txt.length - 1 : 0;
+  const iv = setInterval(() => {
+    i++;
+    b.textContent = txt.slice(0, i) + (i < txt.length ? '█' : '');
+    if (i >= txt.length) {
+      clearInterval(iv);
+      setTimeout(() => { b.style.opacity = '0'; setTimeout(() => b.remove(), 900); }, 2800);
+    }
+  }, 28);
+}
+
+async function runIntro() {
+  try {
+    if (REDUCED) {
+      await reducedIntro();
+    } else {
+      await phaseBoot();
+      await phaseEditor();
+      await phaseCode();
+      await phaseHack();
+      await phaseFinale();
+    }
+  } catch (err) {
+    if (err !== SKIP) console.error(err);
+  } finally {
+    goLive();
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Steuerung: Skip (Button / ESC / Leertaste), Speed, Sound
+   --------------------------------------------------------------------- */
+$('skip').addEventListener('click', skip);
+document.querySelectorAll('[data-speed]').forEach((b) => {
+  b.addEventListener('click', () => {
+    S.speed = Number(b.dataset.speed);
+    document.querySelectorAll('[data-speed]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  });
+});
+$('snd').addEventListener('click', (e) => {
+  const on = Sound.toggle();
+  e.currentTarget.setAttribute('aria-pressed', String(on));
+  e.currentTarget.textContent = on ? '♪ ON' : '♪ OFF';
+  if (on) Sound.blip();
+});
+window.addEventListener('keydown', (e) => {
+  if (!S.running) return;
+  const isSpace = e.key === ' ' || e.code === 'Space';
+  if (e.key !== 'Escape' && !isSpace) return;
+  // Leertaste auf anderen Buttons soll den Button bedienen
+  if (isSpace && e.target && e.target.tagName === 'BUTTON' && e.target.id !== 'skip') return;
+  e.preventDefault();
+  skip();
+});
+
+let resizeT;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeT);
+  resizeT = setTimeout(() => { Matrix.resize(); if (!S.live) measure(); }, 120);
+});
+
+/* ---------------------------------------------------------------------
+   Start
+   --------------------------------------------------------------------- */
+host.inert = true;
+Matrix.resize();
+measure();
+switchTab(0);
+sr('Intro läuft: Die Website programmiert sich selbst. Escape oder Leertaste zum Überspringen.');
+try { $('skip').focus({ preventScroll: true }); } catch (e) { /* egal */ }
+requestAnimationFrame((t) => { lastNow = t; tick(t); });
+runIntro();
+})();
+</script>
+</body>
+</html>
