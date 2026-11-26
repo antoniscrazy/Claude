@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Anton – Vibecoder | Ideen von mir, Code von der KI</title>
+  <meta name="description" content="Anton ist Vibecoder: Er baut Web-Apps und Windows-Apps. Die Ideen kommen von ihm, den Code schreibt die KI. Projekte: Moki, Flexspacepro und ein geheimes Labor.">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#07090a">
+  <meta name="color-scheme" content="dark">
+  <meta name="author" content="Anton">
+
+  <!-- Open Graph / Social Preview -->
+  <!-- TODO: og:url und og:image auf die echte, absolute Domain umstellen (z. B. https://anton.netlify.app/assets/og-image.png) -->
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="de_DE">
+  <meta property="og:title" content="Anton – Vibecoder">
+  <meta property="og:description" content="Ideen von mir, Code von der KI. Web-Apps, Windows-Apps und ein Labor, das nie fertig wird.">
+  <meta property="og:image" content="assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Logo von Anton: ein stilisiertes A mit Terminal-Cursor">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- Icons -->
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/main.js" defer></script>
+
+  <!-- Ohne JavaScript: Boot-Screen sofort ausblenden, alles bleibt lesbar -->
+  <noscript><style>#boot{display:none !important}</style></noscript>
+</head>
+<body>
+
+  <!-- =========================================================
+       1. BOOT-SEQUENZ (wird von js/main.js befüllt und entfernt)
+       Fallback: CSS blendet sie nach ein paar Sekunden selbst aus.
+       ========================================================= -->
+  <div id="boot" class="boot" aria-hidden="true">
+    <div class="boot__inner">
+      <pre class="boot__log" id="boot-log"></pre>
+      <button type="button" class="boot__skip" id="boot-skip">Überspringen <kbd>Esc</kbd></button>
+    </div>
+  </div>
+
+  <!-- Hintergrund: Code-Regen (Canvas) + Vignette + CRT-Overlay -->
+  <canvas id="bg-canvas" class="bg-canvas" aria-hidden="true"></canvas>
+  <div class="bg-vignette" aria-hidden="true"></div>
+  <div class="crt" aria-hidden="true"></div>
+
+  <a class="skip-link" href="#main">Zum Inhalt springen</a>
+
+  <!-- =========================================================
+       2. NAVIGATION
+       ========================================================= -->
+  <header class="nav" id="nav">
+    <div class="nav__inner">
+      <a href="#top" class="nav__brand" id="brand" aria-label="Anton – nach oben">
+        <svg class="logo" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+          <rect x="1.5" y="1.5" width="61" height="61" rx="14" class="logo__bg"/>
+          <path d="M13 47 L27 15 L41 47" class="logo__stroke"/>
+          <path d="M19.5 36 H34.5" class="logo__stroke logo__bar"/>
+          <rect x="44" y="42" width="10" height="5.5" rx="1.2" class="logo__cursor"/>
+        </svg>
+        <span class="nav__name">anton<span class="accent">.dev</span></span>
+      </a>
+
+      <button type="button" class="nav__toggle" id="nav-toggle" aria-expanded="false" aria-controls="nav-menu">
+        <span class="sr-only">Menü</span>
+        <span class="nav__burger" aria-hidden="true"></span>
+      </button>
+
+      <nav class="nav__menu" id="nav-menu" aria-label="Hauptnavigation">
+        <ul>
+          <li><a href="#ueber-mich" data-nav>Über mich</a></li>
+          <li><a href="#stack" data-nav>Stack</a></li>
+          <li><a href="#projekte" data-nav>Projekte</a></li>
+          <li><a href="#terminal" data-nav>Terminal</a></li>
+          <li><a href="#discord" data-nav>Discord</a></li>
+        </ul>
+        <button type="button" class="crt-toggle" id="crt-toggle" aria-pressed="true" title="Scanline-Overlay an/aus">
+          <span aria-hidden="true">▤</span> CRT
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- =========================================================
+         3. HERO
+         ========================================================= -->
+    <section class="hero" id="top" aria-labelledby="hero-title">
+
+      <!-- Dekorative Code-Fenster im Hintergrund (tippen sich selbst, in Schleife) -->
+      <div class="hero__bgwins" aria-hidden="true">
+        <div class="codewin codewin--bg codewin--a" data-lang="html" data-loop>
+          <div class="codewin__bar"><span class="dots"><i></i><i></i><i></i></span><span class="codewin__file">index.html</span></div>
+<pre class="codewin__body"><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="de"&gt;
+  &lt;head&gt;
+    &lt;title&gt;Neue Idee&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;main id="app"&gt;
+      &lt;h1&gt;Hallo Welt&lt;/h1&gt;
+      &lt;button class="btn"&gt;Los&lt;/button&gt;
+    &lt;/main&gt;
+    &lt;script src="app.js"&gt;&lt;/script&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+        </div>
+
+        <div class="codewin codewin--bg codewin--b" data-lang="js" data-loop>
+          <div class="codewin__bar"><span class="dots"><i></i><i></i><i></i></span><span class="codewin__file">app.js</span></div>
+<pre class="codewin__body"><code>// Anton: "Mach, dass der Button was Cooles macht."
+const btn = document.querySelector(".btn");
+
+btn.addEventListener("click", async () =&gt; {
+  const idee = await claude.frag("Was Cooles?");
+  render(idee);
+  konfetti(42);
+});
+
+function render(idee) {
+  app.innerHTML = `&lt;p&gt;${idee}&lt;/p&gt;`;
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="hero__content">
+        <p class="hero__prompt mono"><span class="accent">gast@anton</span>:<span class="dim">~</span>$ whoami</p>
+
+        <h1 class="hero__title mono" id="hero-title">
+          <span class="sr-only">Anton</span>
+          <span class="hero__name" id="hero-name" aria-hidden="true">Anton</span><span class="cursor" aria-hidden="true"></span>
+        </h1>
+
+        <p class="hero__role mono">
+          <span class="sr-only">Vibecoder, Web-App-Schmied, Ideengeber und Prompt-Flüsterer</span>
+          <span aria-hidden="true"><span class="dim">&gt;</span> <span id="hero-role" class="accent">Vibecoder</span><span class="cursor cursor--thin"></span></span>
+        </p>
+
+        <p class="hero__intro">
+          Ich baue Web-Apps und Windows-Apps. Die Ideen kommen von mir, den Code schreibt die KI.
+          Arbeitsteilung, wie sie im Buche steht. Nur dass das Buch auch die KI geschrieben hätte.
+        </p>
+
+        <a href="#ueber-mich" class="hero__scroll mono">
+          <span class="dim">$</span> cd ./ueber-mich
+          <span class="hero__arrow" aria-hidden="true">↓</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         4. ÜBER MICH
+         ========================================================= -->
+    <section class="section" id="ueber-mich" aria-labelledby="about-title">
+      <div class="container">
+        <header class="section__head reveal">
+          <p class="section__kicker mono">01 <span class="dim">//</span> cat ueber-mich.md</p>
+          <h2 class="section__title glitch" id="about-title" data-text="Über mich">Über mich</h2>
+        </header>
+
+        <div class="about">
+          <div class="about__text reveal">
+            <p>
+              Hi, ich bin <strong>Anton</strong>, und ich bin <strong class="accent">Vibecoder</strong>.
+              Das heißt: Ich habe die Ideen, und die KI (Claude) schreibt den Code. Den ganzen. Jede Zeile.
+              Auch die Semikolons.
+            </p>
+            <p>
+              Klassischer Entwickler? Nö. Ich habe nie gelernt, einen Bubble-Sort von Hand zu schreiben, und ich habe
+              auch nicht vor, damit anzufangen. Dafür kann ich sehr ausdauernd beschreiben, was ich will, bis es da ist.
+            </p>
+            <p>
+              Mein Job ist der spannende Teil: mir ausdenken, was es noch nicht gibt, entscheiden, wie es sich
+              anfühlen soll, und so lange nachhaken, bis es passt. Die KI übernimmt den Teil mit den geschweiften Klammern.
+            </p>
+            <p>
+              Manche nennen das Schummeln. Ich nenne es Delegieren. Und ganz ehrlich: Auch diese Website hat die KI geschrieben.
+              Ich habe nur gesagt, wie sie aussehen soll. Und dass da ein Easter Egg rein muss.
+            </p>
+          </div>
+
+          <div class="codewin codewin--about reveal" data-lang="json" aria-hidden="true">
+            <div class="codewin__bar"><span class="dots"><i></i><i></i><i></i></span><span class="codewin__file">anton.json</span></div>
+<pre class="codewin__body"><code>{
+  "name": "Anton",
+  "rolle": "Vibecoder",
+  "baut": ["Web-Apps", "Windows-Apps"],
+  "werkzeug": "Claude Code",
+  "skills": [
+    "Ideen haben",
+    "Prompts schreiben",
+    "Nachfragen, bis es passt"
+  ],
+  "code_selbst_geschrieben": 0,
+  "stolz_drauf": true,
+  "superkraft": "Beschreiben, bis es existiert",
+  "schwaeche": "Semikolons"
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         5. STACK / WERKZEUGE
+         ========================================================= -->
+    <section class="section" id="stack" aria-labelledby="stack-title">
+      <div class="container">
+        <header class="section__head reveal">
+          <p class="section__kicker mono">02 <span class="dim">//</span> ls ./werkzeuge</p>
+          <h2 class="section__title glitch" id="stack-title" data-text="Mein Stack">Mein Stack</h2>
+          <p class="section__lead">Kurz und ehrlich. Mehr brauche ich nicht. Na gut, eine Idee pro Tag schadet auch nicht.</p>
+        </header>
+
+        <div class="stack">
+          <!-- Nr. 1: Claude Code (Hauptwerkzeug) -->
+          <article class="tool tool--main card tilt reveal">
+            <span class="tool__rank mono" aria-label="Platz 1">#1</span>
+            <div class="tool__icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48"><rect x="4" y="8" width="40" height="32" rx="6"/><path d="M13 20l6 5-6 5M23 31h11"/></svg>
+            </div>
+            <div class="tool__body">
+              <p class="tool__label mono">main()</p>
+              <h3 class="tool__name">Claude Code</h3>
+              <p class="tool__quip">Macht die Arbeit, ich nehme das Lob.</p>
+              <p class="tool__desc">
+                Mein Hauptwerkzeug. Ich beschreibe, Claude Code baut. Es plant, schreibt, debuggt, räumt auf
+                und erklärt mir geduldig zum dritten Mal, was eine Race Condition ist.
+              </p>
+            </div>
+          </article>
+
+          <article class="tool card tilt reveal">
+            <span class="tool__rank mono" aria-label="Platz 2">#2</span>
+            <div class="tool__icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48"><path d="M8 6h32l-3 34-13 4-13-4z"/><path d="M17 16h15l-1 12-7 2-7-2-.5-4"/></svg>
+            </div>
+            <div class="tool__body">
+              <p class="tool__label mono">am meisten genutzt</p>
+              <h3 class="tool__name">HTML5</h3>
+              <p class="tool__quip">Läuft überall, braucht nix, beschwert sich nie.</p>
+            </div>
+          </article>
+
+          <article class="tool card tilt reveal">
+            <span class="tool__rank mono" aria-label="Platz 3">#3</span>
+            <div class="tool__icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48"><path d="M27 4L9 28h15l-3 16 18-24H24z"/></svg>
+            </div>
+            <div class="tool__body">
+              <p class="tool__label mono">backend &amp; daten</p>
+              <h3 class="tool__name">Supabase</h3>
+              <p class="tool__quip">Datenbank und Login, ohne dass ich je einen Server streicheln muss.</p>
+            </div>
+          </article>
+        </div>
+
+        <ul class="chips reveal" aria-label="Weitere Eigenschaften">
+          <li class="chip mono">Programmiersprache Nr. 1: <span class="accent">Deutsch</span></li>
+          <li class="chip mono">IDE: <span class="accent">ein Chatfenster</span></li>
+          <li class="chip mono">Debugger: <span class="accent">„geht nicht, fix das“</span></li>
+        </ul>
+
+        <!-- Zwei sich selbst tippende Fenster: Terminal-Session + SQL -->
+        <div class="stack__wins">
+          <div class="codewin reveal" data-lang="sh" aria-hidden="true">
+            <div class="codewin__bar"><span class="dots"><i></i><i></i><i></i></span><span class="codewin__file">terminal — so ungefähr läuft das</span></div>
+<pre class="codewin__body"><code>$ claude
+&gt; Bau mir eine Spieleseite. Ohne Werbung.
+● Gute Idee. Ich lege einen Plan an.
+✔ index.html erstellt
+✔ spiele.js erstellt
+✔ werbung.js nicht erstellt (absichtlich)
+&gt; Und mach es schöner.
+● Klar. Was genau?
+&gt; Weiß ich noch nicht. Ich seh es, wenn es da ist.
+● Verstanden. Ich probier mal was.</code></pre>
+          </div>
+
+          <div class="codewin reveal" data-lang="sql" aria-hidden="true">
+            <div class="codewin__bar"><span class="dots"><i></i><i></i><i></i></span><span class="codewin__file">supabase/raeume.sql</span></div>
+<pre class="codewin__body"><code>-- Geschrieben von: der KI. Abgenickt von: Anton.
+create table buchungen (
+  id uuid primary key default gen_random_uuid(),
+  raum_id uuid references raeume(id),
+  von timestamptz not null,
+  bis timestamptz not null
+);
+
+select name from raeume
+where id not in (
+  select raum_id from buchungen
+  where now() between von and bis
+);</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         6. PROJEKTE
+         ========================================================= -->
+    <section class="section" id="projekte" aria-labelledby="projects-title">
+      <div class="container">
+        <header class="section__head reveal">
+          <p class="section__kicker mono">03 <span class="dim">//</span> ls ./projekte</p>
+          <h2 class="section__title glitch" id="projects-title" data-text="Projekte">Projekte</h2>
+          <p class="section__lead">Ideen, die es aus meinem Kopf bis ins Internet geschafft haben.</p>
+        </header>
+
+        <div class="projects">
+
+          <!-- Highlight: Moki -->
+          <article class="project project--featured card tilt reveal" aria-labelledby="p-moki">
+            <div class="project__bar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="mono">~/projekte/moki</span><span class="project__badge mono">★ Highlight</span></div>
+            <div class="project__grid">
+              <div class="project__info">
+                <h3 class="project__name" id="p-moki">Moki</h3>
+                <p class="project__pitch accent mono">Zocken ohne Werbe-Terror.</p>
+                <p>
+                  Eine Spiele-Seite wie Poki, nur <strong>ohne Werbung</strong>. Kein 30-Sekunden-Spot vor dem Spiel,
+                  kein Banner, das plötzlich über dem Spielfeld klebt. Klicken, spielen, fertig.
+                </p>
+                <ul class="tags" aria-label="Technik">
+                  <li class="tag mono">HTML5-Spiele</li>
+                  <li class="tag mono">0 Werbebanner</li>
+                </ul>
+                <!-- TODO: echte URL für Moki eintragen (und dann target="_blank" rel="noopener noreferrer" ergänzen) -->
+                <a href="#" class="btn btn--primary" data-placeholder>Zu Moki <span aria-hidden="true">→</span></a>
+              </div>
+
+              <!-- Generische CSS-Vorschau: Spielekacheln + durchgestrichener Werbeplatz -->
+              <div class="mock mock--moki" aria-hidden="true">
+                <div class="mock__url mono"><span class="dim">https://</span>moki<span class="dim">/spiele</span></div>
+                <div class="mock__ad mono"><span>werbung.js</span><span class="mock__ok">404 ✔</span></div>
+                <div class="mock__tiles">
+                  <span class="tile t1"></span><span class="tile t2"></span><span class="tile t3"></span>
+                  <span class="tile t4"></span><span class="tile t5"></span><span class="tile t6"></span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Flexspacepro -->
+          <article class="project card tilt reveal" aria-labelledby="p-flex">
+            <div class="project__bar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="mono">~/projekte/flexspacepro</span></div>
+            <div class="project__info">
+              <h3 class="project__name" id="p-flex">Flexspacepro</h3>
+              <p class="project__pitch accent mono">Raum frei? Jetzt weißt du es.</p>
+              <p>Ein Raumbuchungssystem: Räume finden, Zeit wählen, buchen. Schluss mit „Ist da gerade wer drin?“.</p>
+
+              <!-- Generische CSS-Vorschau: Buchungsraster -->
+              <div class="mock mock--flex" aria-hidden="true">
+                <div class="cal">
+                  <span class="cal__h">Mo</span><span class="cal__h">Di</span><span class="cal__h">Mi</span><span class="cal__h">Do</span><span class="cal__h">Fr</span>
+                  <span></span><span class="on"></span><span></span><span></span><span class="on"></span>
+                  <span class="on"></span><span class="on"></span><span></span><span class="me"></span><span></span>
+                  <span></span><span></span><span class="on"></span><span></span><span></span>
+                </div>
+              </div>
+
+              <ul class="tags" aria-label="Technik">
+                <li class="tag mono">HTML5</li>
+                <li class="tag mono">Supabase</li>
+              </ul>
+              <!-- TODO: echte URL für Flexspacepro eintragen (und dann target="_blank" rel="noopener noreferrer" ergänzen) -->
+              <a href="#" class="btn" data-placeholder>Zu Flexspacepro <span aria-hidden="true">→</span></a>
+            </div>
+          </article>
+
+          <!-- Geheimes Labor -->
+          <article class="project project--lab card tilt reveal" aria-labelledby="p-lab">
+            <div class="project__bar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="mono">~/projekte/.geheim</span></div>
+            <div class="project__info">
+              <h3 class="project__name" id="p-lab">Geheimes Labor</h3>
+              <p class="project__pitch accent mono">Zutritt nur mit Idee.</p>
+              <p>
+                Weitere private Projekte: Web-Apps und Windows-Apps, die (noch) nicht öffentlich sind.
+                Hier entsteht ständig etwas Neues. Der Ladebalken unten ist ehrlich gesagt nie fertig.
+              </p>
+
+              <div class="loader" role="img" aria-label="Ladebalken, der nie fertig wird">
+                <div class="loader__top mono"><span id="lab-status">lade nächste Idee …</span><span id="lab-pct">0%</span></div>
+                <div class="loader__track"><div class="loader__fill" id="lab-fill"></div></div>
+              </div>
+
+              <ul class="tags" aria-label="Technik">
+                <li class="tag mono">Web-Apps</li>
+                <li class="tag mono">Windows-Apps</li>
+                <li class="tag mono">streng geheim</li>
+              </ul>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         7. INTERAKTIVES MINI-TERMINAL (Easter Egg)
+         ========================================================= -->
+    <section class="section" id="terminal" aria-labelledby="term-title">
+      <div class="container container--narrow">
+        <header class="section__head reveal">
+          <p class="section__kicker mono">04 <span class="dim">//</span> ./spielwiese.sh</p>
+          <h2 class="section__title glitch" id="term-title" data-text="Mini-Terminal">Mini-Terminal</h2>
+          <p class="section__lead">Tipp was ein. <code class="mono accent">help</code> ist ein guter Anfang. <code class="mono accent">sudo</code> ist ein schlechter.</p>
+        </header>
+
+        <div class="term card reveal" id="term">
+          <div class="codewin__bar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="codewin__file">gast@anton: ~</span></div>
+          <div class="term__out mono" id="term-out" role="log" aria-live="polite" aria-label="Terminal-Ausgabe">
+            <p>Willkommen im Anton-Terminal v1.0. Tipp <span class="accent">help</span> für alle Befehle.</p>
+          </div>
+          <form class="term__form mono" id="term-form" autocomplete="off">
+            <label for="term-input" class="term__prompt"><span class="accent">gast@anton</span>:<span class="dim">~</span>$</label>
+            <input id="term-input" class="term__input" type="text" spellcheck="false" autocapitalize="off" enterkeyhint="send" aria-describedby="term-hint">
+          </form>
+          <p class="sr-only" id="term-hint">Befehl eingeben und Enter drücken. Pfeil hoch für Verlauf, Tab für Autovervollständigung.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         8. DISCORD-PROFIL
+         ========================================================= -->
+    <section class="section" id="discord" aria-labelledby="dc-title">
+      <div class="container">
+        <header class="section__head reveal">
+          <p class="section__kicker mono">05 <span class="dim">//</span> ping anton</p>
+          <h2 class="section__title glitch" id="dc-title" data-text="Discord">Discord</h2>
+          <p class="section__lead">Der einzige Knopf auf dieser Seite, den du drücken sollst. Schreib mir einfach.</p>
+        </header>
+
+        <div class="dc-wrap reveal">
+          <article class="dc card tilt" aria-label="Discord-Profil von Anton">
+            <div class="dc__banner" aria-hidden="true">
+              <span class="dc__banner-code mono">&lt;A/&gt; ideen.push(neu) // jeden Tag</span>
+            </div>
+
+            <div class="dc__head">
+              <div class="dc__avatar">
+                <!-- Eigener Platzhalter-Avatar (kein externer Dienst) -->
+                <svg viewBox="0 0 64 64" role="img" aria-label="Avatar von Anton: Logo-A">
+                  <rect width="64" height="64" fill="#0b0f0d"/>
+                  <path d="M15 46 L29 16 L43 46" class="logo__stroke"/>
+                  <path d="M21.5 35.5 H36.5" class="logo__stroke logo__bar"/>
+                  <rect x="44" y="41" width="9" height="5" rx="1.2" class="logo__cursor"/>
+                </svg>
+                <span class="dc__status" id="dc-status" data-status="online" title="Online"><span class="sr-only" id="dc-status-text">Status: online</span></span>
+              </div>
+
+              <ul class="dc__badges" aria-label="Badges">
+                <li class="dc__badge" tabindex="0" data-tip="Vibecoder" aria-label="Badge: Vibecoder">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17l6-6-6-6M12 19h8"/></svg>
+                </li>
+                <li class="dc__badge" tabindex="0" data-tip="Ideen: unendlich" aria-label="Badge: Ideen unendlich">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 15c-2.8 0-4-1.5-4-3s1.2-3 4-3c3.5 0 6.5 6 10 6 2.8 0 4-1.5 4-3s-1.2-3-4-3c-3.5 0-6.5 6-10 6z"/></svg>
+                </li>
+                <li class="dc__badge" tabindex="0" data-tip="Powered by Claude Code" aria-label="Badge: Powered by Claude Code">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>
+                </li>
+                <li class="dc__badge" tabindex="0" data-tip="0 Zeilen selbst getippt" aria-label="Badge: 0 Zeilen selbst getippt">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M6.5 17.5l11-11"/></svg>
+                </li>
+              </ul>
+            </div>
+
+            <div class="dc__body">
+              <div class="dc__names">
+                <h3 class="dc__name">Anton</h3>
+                <!-- TODO (optional): Discord-Username ergänzen, z. B. <span class="dc__handle">@deinname</span> -->
+                <p class="dc__tag mono">ID · <span id="dc-id">1496498092004868279</span></p>
+              </div>
+
+              <div class="dc__block">
+                <h4 class="dc__label">Über mich</h4>
+                <p>Vibecoder. Ideen von mir, Code von Claude. Baue Web-Apps und Windows-Apps und sage Sachen wie „mach das schöner“.</p>
+              </div>
+
+              <div class="dc__block">
+                <h4 class="dc__label">Aktivität</h4>
+                <p class="dc__activity mono" id="dc-activity"><span class="accent">▶</span> baut vermutlich gerade was mit Claude Code</p>
+              </div>
+
+              <div class="dc__block">
+                <h4 class="dc__label">Rollen</h4>
+                <ul class="dc__roles">
+                  <li><i aria-hidden="true"></i>Vibecoder</li>
+                  <li><i aria-hidden="true" class="r2"></i>Ideen-Abteilung</li>
+                  <li><i aria-hidden="true" class="r3"></i>Prompt-Flüsterer</li>
+                </ul>
+              </div>
+
+              <div class="dc__actions">
+                <a class="btn btn--primary btn--block" href="https://discord.com/users/1496498092004868279" target="_blank" rel="noopener noreferrer">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" class="btn__icon"><path d="M4 5h16v11H9l-5 4z"/></svg>
+                  Auf Discord adden / Profil ansehen
+                  <span class="sr-only">(öffnet in neuem Tab)</span>
+                </a>
+                <button type="button" class="btn btn--ghost" id="dc-copy">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" class="btn__icon"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>
+                  ID kopieren
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- =========================================================
+       9. FOOTER
+       ========================================================= -->
+  <footer class="footer">
+    <div class="container footer__inner mono">
+      <p class="footer__exit"><span class="dim">gast@anton:~$</span> exit 0<span class="cursor cursor--thin" aria-hidden="true"></span></p>
+      <p>Gebaut mit Claude Code. Ideen von Anton.</p>
+      <p class="dim">© <span id="year">2026</span> Anton · kein Tracking, keine Cookies, keine Werbung · <a href="#top">nach oben ↑</a></p>
+      <p class="footer__hint dim" aria-hidden="true">psst … ↑ ↑ ↓ ↓ ← → ← → B A</p>
+      <!-- TODO: Impressum/Datenschutz – falls nötig hier verlinken (z. B. impressum.html) -->
+    </div>
+  </footer>
+
+  <!-- Toast für kurze Rückmeldungen (ID kopiert, Easter Eggs …) -->
+  <div class="toast mono" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

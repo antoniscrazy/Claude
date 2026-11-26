@@ -1,0 +1,8 @@
+# Netlify-Konfiguration für Antons Onepager.
+# Rein statisch: kein Build-Schritt, veröffentlicht wird dieser Ordner.
+# Sicherheits- und Cache-Header stehen in der Datei "_headers"
+# (die funktioniert auch beim Drag-and-drop-Deploy).
+
+[build]
+  publish = "."
+  command = ""

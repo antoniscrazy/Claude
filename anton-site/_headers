@@ -1,0 +1,9 @@
+# Netlify-Header (gilt auch für Drag-and-drop-Deploys).
+# Caching regelt Netlify selbst (ETag + Revalidierung), damit Updates sofort sichtbar sind.
+# connect-src erlaubt api.lanyard.rest nur für den optionalen Live-Status (siehe js/main.js).
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://api.lanyard.rest; frame-ancestors 'none'; base-uri 'self'; form-action 'none'
