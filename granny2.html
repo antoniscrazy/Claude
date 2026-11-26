@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Granny 2</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #111; color: #fff; font-family: sans-serif; overflow: hidden; }
+  body { display: flex; flex-direction: column; }
+  #bar { flex: 0 0 auto; display: flex; justify-content: flex-end; padding: 6px 12px; background: #111; }
+  #wrap { flex: 1 1 auto; position: relative; min-height: 0; }
+  #c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; background: #000; outline: none; touch-action: none; }
+  #ld { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); text-align: center; width: 70%; max-width: 360px; }
+  #pb { height: 10px; border-radius: 5px; background: rgba(255,255,255,.15); overflow: hidden; margin-top: 8px; }
+  #pf { height: 100%; width: 0; background: #00e5a8; }
+  #moki-back {
+    padding: 9px 16px; border-radius: 999px;
+    background: linear-gradient(90deg, #00e5a8, #ffd23f);
+    color: #04201a; font: 800 14px "Segoe UI", system-ui, sans-serif;
+    text-decoration: none; box-shadow: 0 3px 12px rgba(0, 0, 0, .5); opacity: .92;
+  }
+  #moki-back:hover { opacity: 1; transform: scale(1.05); }
+</style>
+</head>
+<body>
+<div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
+<div id="wrap"><canvas id="c" tabindex="-1"></canvas><div id="ld"><div id="tx">Lade Spiel …</div><div id="pb"><div id="pf"></div></div></div></div>
+<script>
+// Laedt das Spiel aus dem GitHub-Repo (raw.githubusercontent.com, fester Commit). Keine Werbung, keine Tracker.
+const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/e6ee1adcd1adadec3297b93fc2e42c29ff4c6955/granny2/";
+const ORIGIN = new URL(BASE).origin;
+
+// --- Netz-Sperre: nur Repo-Ursprung, blob: und data: erlaubt.
+(function () {
+  function ok(u) { try { var x = new URL(String(u), location.href); return x.protocol === "blob:" || x.protocol === "data:" || x.origin === ORIGIN || x.protocol === "about:"; } catch (e) { return true; } }
+  var open = XMLHttpRequest.prototype.open, send = XMLHttpRequest.prototype.send;
+  XMLHttpRequest.prototype.open = function (m, u) { this._blocked = !ok(u); return open.apply(this, arguments); };
+  XMLHttpRequest.prototype.send = function () {
+    if (!this._blocked) return send.apply(this, arguments);
+    var x = this; setTimeout(function () { x.dispatchEvent(new ProgressEvent("error")); x.dispatchEvent(new ProgressEvent("loadend")); }, 0);
+  };
+  var f = window.fetch;
+  window.fetch = function (r) { return ok(r && r.url || r) ? f.apply(this, arguments) : Promise.reject(new TypeError("Failed to fetch")); };
+  if (navigator.sendBeacon) navigator.sendBeacon = function () { return false; };
+  window.open = function () { return null; };
+})();
+
+// --- Yandex-SDK-Ersatz: Werbung wird sofort als gesehen gemeldet, keine Anzeige.
+window.YaGames = { init: function () { var ys = {
+  deviceInfo: { type: "desktop" },
+  environment: { i18n: { lang: "en", tld: "com" }, app: { id: "local" } },
+  features: {
+    GamesAPI: { getAllGames: function () { return Promise.resolve({ items: [], games: [] }); }, getGameByID: function () { return Promise.resolve({ isAvailable: false, game: {} }); } },
+    LoadingAPI: { ready: function () {} },
+    GameplayAPI: { start: function () {}, stop: function () {} }
+  },
+  adv: {
+    showRewardedVideo: function (o) { var c = (o && o.callbacks) || {}; c.onOpen && c.onOpen(); c.onRewarded && c.onRewarded(); c.onClose && c.onClose(true); return Promise.resolve(); },
+    showFullscreenAdv: function (o) { var c = (o && o.callbacks) || {}; c.onOpen && c.onOpen(); c.onClose && c.onClose(false); return Promise.resolve(); }
+  },
+  getPlayer: function () { return Promise.reject(new Error("no player")); },
+  getPayments: function () { return Promise.reject(new Error("no payments")); },
+  getLeaderboards: function () { return Promise.reject(new Error("no lb")); }
+}; window.ysdk = ys; return Promise.resolve(ys); } };
+
+const tx = document.getElementById("tx"), pf = document.getElementById("pf");
+(async () => {
+  try {
+    const get = (f, kind) => fetch(BASE + f).then(r => { if (!r.ok) throw new Error(f + ": " + r.status); return r[kind](); });
+    let done = 0; const bump = () => { done++; pf.style.width = (done / 4 * 50) + "%"; };
+    const [loaderTxt, fw, dataBlob, wasmBlob] = await Promise.all([
+      get("Build/Granny2.loader.js", "text").then(x => { bump(); return x; }),
+      get("Build/Granny2.framework.js", "blob").then(x => { bump(); return x; }),
+      get("Build/Granny2.data", "blob").then(x => { bump(); return x; }),
+      get("Build/Granny2.wasm", "blob").then(x => { bump(); return x; })
+    ]);
+    const s = document.createElement("script"); s.textContent = loaderTxt; document.body.appendChild(s);
+    tx.textContent = "Starte …";
+    const canvas = document.getElementById("c");
+    const inst = await createUnityInstance(canvas, {
+      dataUrl: URL.createObjectURL(new Blob([dataBlob], { type: "application/octet-stream" })),
+      codeUrl: URL.createObjectURL(new Blob([wasmBlob], { type: "application/wasm" })),
+      frameworkUrl: URL.createObjectURL(new Blob([fw], { type: "text/javascript" })),
+      companyName: "Awesome", productName: "Granny 2", productVersion: "1.0"
+    }, p => { pf.style.width = (50 + p * 50) + "%"; });
+    window.unityGame = inst; window.myGameInstance = inst;
+    document.getElementById("ld").remove();
+  } catch (e) { tx.textContent = "Fehler beim Laden: " + (e.message || e); }
+})();
+</script>
+</body>
+</html>
