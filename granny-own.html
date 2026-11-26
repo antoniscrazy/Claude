@@ -207,7 +207,7 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
   // Konsolen-Meldungen und Fehler direkt im Bild anzeigen (ohne Mac)
   ["log","warn","error"].forEach(function(k){
     const orig=console[k].bind(console);
-    console[k]=function(){ try{ dbg("["+k+"] "+Array.prototype.map.call(arguments,function(a){return String(a).slice(0,140);}).join(" ")); }catch(e){} orig.apply(null,arguments); };
+    console[k]=function(){ try{ const t=Array.prototype.map.call(arguments,function(a){return String(a).slice(0,140);}).join(" "); if(!/!!!!|DXT|BoxColliders|UnloadTime|Total:|Unloading|Physics::Module|Creating WebGL|Renderer:|Vendor:|Version:|GLES:|EXT_|norm16|OPENGL LOG|memorysetup|UnityMemory|Input Manager|Loading player data|Initialize engine|effective box size/.test(t)){ dbg("["+k+"] "+t); } }catch(e){} orig.apply(null,arguments); };
   });
   window.addEventListener("error",function(e){ dbg("[fehler] "+String(e.message).slice(0,140)); });
   window.addEventListener("unhandledrejection",function(e){ dbg("[promise] "+String(e.reason).slice(0,140)); });
