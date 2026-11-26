@@ -115,7 +115,10 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
     }, p => { pf.style.width = (50 + p * 50) + "%"; });
     window.unityGame = inst; window.myGameInstance = inst;
     document.getElementById("ld").remove();
-    setTimeout(function () { pickEnglish(canvas); }, 4000);
+    // Automatisch Englisch, aber nur wenn der Spieler noch nichts getippt hat (sonst wird der echte Tipp durch einen Fake-Klick ueberschrieben).
+    let userTouched = false;
+    document.addEventListener("pointerdown", function () { userTouched = true; }, { capture: true, once: true });
+    setTimeout(function () { if (!userTouched) pickEnglish(canvas); }, 1500);
   } catch (e) { tx.textContent = "Fehler beim Laden: " + (e.message || e); }
 })();
 </script>
