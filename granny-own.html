@@ -22,16 +22,13 @@
   #moki-back:hover { opacity: 1; transform: scale(1.05); }
 </style>
 <style>
-#ctl{display:none;position:fixed;inset:0;z-index:9;pointer-events:none;touch-action:none;user-select:none;-webkit-user-select:none}
-#ctl.show{display:block}
-#stick{position:absolute;left:20px;bottom:20px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.28);pointer-events:auto;touch-action:none}
-#knob{position:absolute;left:50%;top:50%;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;background:rgba(0,229,168,.5);pointer-events:none}
-#fire{position:absolute;right:20px;bottom:20px;width:112px;height:112px;border-radius:50%;border:0;background:rgba(192,23,58,.7);color:#fff;font:800 16px system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.5);pointer-events:auto;touch-action:none}
-#fire.on{background:rgba(0,229,168,.6)}
-#acts{position:absolute;right:20px;bottom:150px;display:grid;grid-template-columns:repeat(3,62px);grid-template-rows:repeat(2,50px);gap:8px;pointer-events:auto}
-#acts button{border:0;border-radius:12px;background:rgba(255,255,255,.22);color:#fff;font:800 15px system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.5);touch-action:none}
-#acts button.on{background:rgba(0,229,168,.6)}
-#look{display:none;position:fixed;top:46px;right:0;width:50%;bottom:270px;z-index:8;touch-action:none}
+#pad{display:none;position:fixed;left:0;right:0;bottom:12px;justify-content:space-between;padding:0 12px;z-index:9;pointer-events:none;touch-action:none;user-select:none;-webkit-user-select:none}
+#pad.show{display:flex}
+#pad .grp{display:grid;gap:8px;pointer-events:auto;grid-template-columns:repeat(3,58px);grid-template-rows:repeat(2,58px)}
+#pad button{font:800 18px system-ui,sans-serif;border:0;border-radius:14px;background:rgba(255,255,255,.22);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.5);touch-action:none}
+#pad button:active,#pad button.on{background:rgba(0,229,168,.6)}
+#pad .e{visibility:hidden}
+#look{display:none;position:fixed;top:46px;right:0;width:45%;bottom:120px;z-index:8;touch-action:none}
 #look.show{display:block}
 </style>
 </head>
@@ -121,76 +118,56 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
 })();
 </script>
 <div id="look"></div>
-<div id="ctl">
-  <div id="stick"><div id="knob"></div></div>
-  <button id="fire">Schlagen</button>
-  <div id="acts"><button data-k="e">E</button><button data-k="sp">Werfen</button><button data-k="c">C</button><button data-k="r">R</button><button data-k="f">F</button><button data-k="sh">Rennen</button></div>
-</div>
+<div id="pad"><div class="grp"><span class="e"></span><button data-k="w">W</button><span class="e"></span><button data-k="a">A</button><button data-k="s">S</button><button data-k="d">D</button></div><div class="grp"><button data-k="e">E</button><button data-k="sp">Space</button><button data-k="c">C</button><button data-k="r">R</button><button data-k="f">F</button><span class="e"></span></div></div>
 <script>
 (function(){
   const $=id=>document.getElementById(id);
-  const ctl=$("ctl"), look=$("look"), stick=$("stick"), knob=$("knob"), fire=$("fire");
+  const pad=$("pad"), look=$("look");
   const KEYS={w:{key:"w",code:"KeyW",keyCode:87},a:{key:"a",code:"KeyA",keyCode:65},s:{key:"s",code:"KeyS",keyCode:83},d:{key:"d",code:"KeyD",keyCode:68},
-    e:{key:"e",code:"KeyE",keyCode:69},sp:{key:" ",code:"Space",keyCode:32},c:{key:"c",code:"KeyC",keyCode:67},r:{key:"r",code:"KeyR",keyCode:82},f:{key:"f",code:"KeyF",keyCode:70},sh:{key:"Shift",code:"ShiftLeft",keyCode:16}};
+    e:{key:"e",code:"KeyE",keyCode:69},sp:{key:" ",code:"Space",keyCode:32},c:{key:"c",code:"KeyC",keyCode:67},r:{key:"r",code:"KeyR",keyCode:82},f:{key:"f",code:"KeyF",keyCode:70}};
   const canvas=()=>$("c")||document.body;
   function key(type,k){ canvas().dispatchEvent(new KeyboardEvent(type,{key:k.key,code:k.code,keyCode:k.keyCode,which:k.keyCode,bubbles:true,cancelable:true})); }
-  function mouse(type,btn){ const c=canvas(); const r=c.getBoundingClientRect(); c.dispatchEvent(new MouseEvent(type,{button:btn,buttons:type==="mouseup"?0:1,clientX:r.left+r.width/2,clientY:r.top+r.height/2,bubbles:true,cancelable:true})); }
-  const held=new Set();
-  function setKeys(want){
-    for(const k of [...held]) if(!want.has(k)){ held.delete(k); key("keyup",KEYS[k]); }
-    for(const k of want) if(!held.has(k)){ held.add(k); key("keydown",KEYS[k]); }
-  }
-  let sid=null;
-  function stickMove(e){
-    const r=stick.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2, R=r.width/2;
-    let dx=(e.clientX-cx)/R, dy=(e.clientY-cy)/R; const len=Math.hypot(dx,dy); if(len>1){dx/=len;dy/=len;}
-    knob.style.transform=`translate(${dx*(R-40)}px,${dy*(R-40)}px)`;
-    const want=new Set(); const t=0.3;
-    if(dy<-t) want.add("w"); if(dy>t) want.add("s"); if(dx<-t) want.add("a"); if(dx>t) want.add("d");
-    setKeys(want);
-  }
-  function stickEnd(){ sid=null; knob.style.transform=""; setKeys(new Set()); }
-  stick.addEventListener("pointerdown",e=>{ e.preventDefault(); sid=e.pointerId; stick.setPointerCapture(e.pointerId); stickMove(e); });
-  stick.addEventListener("pointermove",e=>{ if(e.pointerId===sid) stickMove(e); });
-  stick.addEventListener("pointerup",e=>{ if(e.pointerId===sid) stickEnd(); });
-  stick.addEventListener("pointercancel",stickEnd);
-  // Schlagen (Maus 1) halten
-  fire.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); fire.setPointerCapture(e.pointerId); fire.classList.add("on"); mouse("mousedown",0); });
-  fire.addEventListener("pointerup",e=>{ e.preventDefault(); fire.classList.remove("on"); mouse("mouseup",0); });
-  fire.addEventListener("pointercancel",()=>{ fire.classList.remove("on"); mouse("mouseup",0); });
-  // Spieltasten
-  document.querySelectorAll("#acts button").forEach(b=>{
+  const btns=[...document.querySelectorAll("#pad button")];
+  btns.forEach(b=>{
     const k=KEYS[b.dataset.k]; let isDown=false;
-    const down=()=>{ if(isDown) return; isDown=true; b.classList.add("on"); key("keydown",k); };
+    const down=()=>{ if(isDown) return; isDown=true; b.classList.add("on"); const c=canvas(); if(c.focus) c.focus(); key("keydown",k); };
     const up=()=>{ if(!isDown) return; isDown=false; b.classList.remove("on"); key("keyup",k); };
     b.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); down(); });
     b.addEventListener("pointerup",e=>{ e.preventDefault(); up(); });
     b.addEventListener("pointercancel",up); b.addEventListener("pointerleave",up);
   });
-  // Umsehen: Ziehen rechts dreht nur, kein Schlag.
-  let lx=null, ly=null, lid=null;
+  // Umsehen: sanft. Ziehen sammelt Bewegung, die pro Bild begrenzt und abgebaut wird, damit nichts durchdreht.
+  let lid=null, lx=0, ly=0, accX=0, accY=0, raf=0;
+  const MAX=18;
+  function step(){
+    let mx=Math.max(-MAX,Math.min(MAX,accX*0.3)), my=Math.max(-MAX,Math.min(MAX,accY*0.3));
+    accX-=mx; accY-=my;
+    if(Math.abs(mx)>0.01||Math.abs(my)>0.01){
+      canvas().dispatchEvent(new MouseEvent("mousemove",{clientX:innerWidth/2,clientY:innerHeight/2,movementX:mx,movementY:my,bubbles:true}));
+    }
+    if(lid!==null||Math.abs(accX)>0.5||Math.abs(accY)>0.5){ raf=requestAnimationFrame(step); } else { raf=0; accX=0; accY=0; }
+  }
   ["touchstart","touchmove"].forEach(t=>look.addEventListener(t,e=>e.preventDefault(),{passive:false}));
-  look.addEventListener("pointerdown",e=>{ e.preventDefault(); lid=e.pointerId; lx=e.clientX; ly=e.clientY; look.setPointerCapture(e.pointerId); });
+  look.addEventListener("pointerdown",e=>{ e.preventDefault(); lid=e.pointerId; lx=e.clientX; ly=e.clientY; look.setPointerCapture(e.pointerId); if(!raf) raf=requestAnimationFrame(step); });
   look.addEventListener("pointermove",e=>{
     if(e.pointerId!==lid) return;
-    const dx=e.clientX-lx, dy=e.clientY-ly; lx=e.clientX; ly=e.clientY;
-    canvas().dispatchEvent(new MouseEvent("mousemove",{clientX:e.clientX,clientY:e.clientY,movementX:dx*2,movementY:dy*2,bubbles:true}));
+    accX+=(e.clientX-lx)*1.0; accY+=(e.clientY-ly)*1.0; lx=e.clientX; ly=e.clientY;
   });
-  const endLook=e=>{ if(e.pointerId===lid) lid=null; };
+  const endLook=e=>{ if(e.pointerId===lid){ lid=null; } };
   look.addEventListener("pointerup",endLook); look.addEventListener("pointercancel",endLook);
-  function hide(){ ctl.classList.remove("show"); look.classList.remove("show"); stickEnd(); fire.classList.remove("on"); }
+  function hide(){ pad.classList.remove("show"); look.classList.remove("show"); btns.forEach(b=>{ if(b.classList.contains("on")) b.dispatchEvent(new PointerEvent("pointerup")); }); }
   window.addEventListener("blur",hide);
   document.addEventListener("keydown",e=>{ if(e.key==="Escape") hide(); });
-  // Erscheint nur in der Runde: Menue-Schritte merken (Play unten, dann Play Mitte), danach Tippen auf Start unten Mitte.
-  let stage = 0;
+  // Erscheint in der Runde: Menue-Schritte merken, dann Start unten bzw. PLAY.
+  let stage=0;
+  function show(){ pad.classList.add("show"); look.classList.add("show"); }
   document.addEventListener("pointerdown",e=>{
-    if(e.target.closest && e.target.closest("#ctl, #look")) return;
+    if(e.target.closest && e.target.closest("#pad, #look")) return;
     const x=e.clientX, y=e.clientY, W=innerWidth, H=innerHeight;
-    if(stage===0 && y>H*0.88 && Math.abs(x-W/2)<W*0.1){ stage=0; return; }
     if(stage===0 && y>H*0.62 && y<H*0.72 && Math.abs(x-W/2)<W*0.12){ stage=1; return; }
     if(stage===1 && y>H*0.88 && Math.abs(x-W/2)<W*0.14){ stage=2; return; }
-    if(stage>=2 && y>H*0.88 && Math.abs(x-W/2)<W*0.14){ stage=3; ctl.classList.add("show"); look.classList.add("show"); return; }
-    if(stage>=2 && y>H*0.62 && y<H*0.72 && Math.abs(x-W/2)<W*0.12){ stage=3; ctl.classList.add("show"); look.classList.add("show"); return; }
+    if(stage>=2 && y>H*0.88 && Math.abs(x-W/2)<W*0.14){ stage=3; show(); return; }
+    if(stage>=2 && y>H*0.62 && y<H*0.72 && Math.abs(x-W/2)<W*0.12){ stage=3; show(); return; }
   },true);
 })();
 </script>
