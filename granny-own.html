@@ -72,9 +72,16 @@ window.YaGames = { init: function () { var ys = {
     showFullscreenAdv: function (o) { var c = (o && o.callbacks) || {}; c.onOpen && c.onOpen(); c.onClose && c.onClose(false); return Promise.resolve(); }
   },
   getPlayer: function () { return Promise.reject(new Error("no player")); },
-  getPayments: function () { return Promise.reject(new Error("no payments")); },
+  getPayments: function () { return Promise.resolve(window.payments); },
   getLeaderboards: function () { return Promise.reject(new Error("no lb")); }
 }; window.ysdk = ys; return Promise.resolve(ys); } };
+// Kauf-Ersatz: Kaeufe gelten sofort als erfolgreich (Skin wird freigeschaltet).
+window.payments = {
+  purchase: function (o) { var id = (o && (o.id || o.productID)) || ""; return Promise.resolve({ productID: id, purchaseToken: "local", signature: "local", id: id }); },
+  getPurchases: function () { return Promise.resolve([]); },
+  getCatalog: function () { return Promise.resolve([]); },
+  getPurchaseByID: function () { return Promise.resolve(null); }
+};
 
 // Englisch automatisch: nach dem Laden einmal auf die britische Flagge tippen (Anteil der Canvas-Groesse).
 function pickEnglish(canvas) {
@@ -181,7 +188,8 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
     const x=e.clientX, y=e.clientY, W=innerWidth, H=innerHeight;
     if(stage===0 && y>H*0.88 && Math.abs(x-W/2)<W*0.1){ stage=0; return; }
     if(stage===0 && y>H*0.62 && y<H*0.72 && Math.abs(x-W/2)<W*0.12){ stage=1; return; }
-    if(stage===1 && y>H*0.88 && Math.abs(x-W/2)<W*0.14){ stage=2; ctl.classList.add("show"); look.classList.add("show"); return; }
+    if(stage===1 && y>H*0.88 && Math.abs(x-W/2)<W*0.14){ stage=2; return; }
+    if(stage===2 && y>H*0.88 && Math.abs(x-W/2)<W*0.14){ stage=3; ctl.classList.add("show"); look.classList.add("show"); return; }
   },true);
 })();
 </script>
