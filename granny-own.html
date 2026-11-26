@@ -32,10 +32,17 @@
 #look.show{display:block}
 #tog{position:fixed;top:56px;right:12px;z-index:10;padding:7px 12px;border:0;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font:700 13px system-ui,sans-serif;touch-action:manipulation}
 #tog.on{background:rgba(0,229,168,.7);color:#04201a}
+#pick{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:16px;text-align:center}
+#pick h1{font:800 22px system-ui,sans-serif;color:#fff;margin:0}
+#pick .row{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+#pick button{min-width:130px;padding:14px 16px;border:0;border-radius:14px;font:800 16px system-ui,sans-serif;color:#04201a;background:linear-gradient(90deg,#00e5a8,#ffd23f)}
+#pick button:active{opacity:.8}
+#pick p{color:#bbb;font:14px system-ui,sans-serif;margin:0}
 </style>
 </head>
 <body>
 <div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
+<div id="pick"><h1>Skin wählen</h1><div class="row"><button data-skin="0" type="button">Original</button><button data-skin="1" type="button">Baldi</button><button data-skin="2" type="button">Barbi</button><button data-skin="3" type="button">Granny-Ghost</button></div><p>Die Auswahl gilt beim Start.</p></div>
 <div id="wrap"><canvas id="c" tabindex="-1"></canvas><div id="ld"><div id="tx">Lade Spiel …</div><div id="pb"><div id="pf"></div></div></div></div>
 <script>
 // Laedt das Spiel aus dem GitHub-Repo (raw.githubusercontent.com, fester Commit). Keine Werbung, keine Tracker.
@@ -94,6 +101,42 @@ function pickEnglish(canvas) {
 }
 
 const tx = document.getElementById("tx"), pf = document.getElementById("pf");
+// --- Skin-Auswahl: schreibt den Wert in den Unity-Speicher (PlayerPrefs, IndexedDB /idbfs), bevor das Spiel startet.
+const PREF_DIR = "/idbfs/2ce9d373cc900b3f1ed5544235e847c0";
+function prefBytes(skin, old) {
+  const enc = new TextEncoder();
+  const parts = [];
+  const head = old ? old.slice(0, 16) : Uint8Array.from([0x55,0x6e,0x69,0x74,0x79,0x50,0x72,0x66,0,0,1,0,0,0,0x10,0]);
+  parts.push(head);
+  const entry = (k, v) => { const kb = enc.encode(k); const e = new Uint8Array(1 + kb.length + 1 + 4); e[0] = kb.length; e.set(kb, 1); e[1+kb.length] = 0xfe; new DataView(e.buffer).setInt32(2+kb.length, v, true); return e; };
+  parts.push(entry("GrannySkin", skin));
+  parts.push(entry("button_play_v3_Complete", 1));
+  parts.push(entry("launch_v3_Complete", 1));
+  let len = 0; parts.forEach(x => len += x.length);
+  const out = new Uint8Array(len); let o = 0; parts.forEach(x => { out.set(x, o); o += x.length; });
+  return out;
+}
+function writeSkin(skin) {
+  return new Promise((resolve) => {
+    const req = indexedDB.open("/idbfs", 21);
+    req.onupgradeneeded = () => { if (!req.result.objectStoreNames.contains("FILE_DATA")) req.result.createObjectStore("FILE_DATA"); };
+    req.onerror = () => resolve(false);
+    req.onsuccess = () => {
+      const db = req.result;
+      const tx2 = db.transaction("FILE_DATA", "readwrite"); const st = tx2.objectStore("FILE_DATA");
+      const now = new Date().toISOString();
+      const get = st.get(PREF_DIR + "/PlayerPrefs");
+      get.onsuccess = () => {
+        const cur = get.result && get.result.contents ? get.result.contents : null;
+        st.put({ timestamp: now, mode: 16877 }, PREF_DIR);
+        st.put({ timestamp: now, mode: 33206, contents: prefBytes(skin, cur) }, PREF_DIR + "/PlayerPrefs");
+      };
+      tx2.oncomplete = () => { db.close(); resolve(true); };
+      tx2.onerror = () => { db.close(); resolve(false); };
+    };
+  });
+}
+function bootGame() {
 (async () => {
   try {
     const get = (f, kind) => fetch(BASE + f).then(r => { if (!r.ok) throw new Error(f + ": " + r.status); return r[kind](); });
@@ -119,6 +162,9 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
     // Automatisches Englisch ist entfernt: der Fake-Klick hat im Safari das Menue veraendert (Skin-Menue uebersprungen).
   } catch (e) { tx.textContent = "Fehler beim Laden: " + (e.message || e); }
 })();
+}
+// Auswahl klicken -> speichern -> Spiel laden
+document.querySelectorAll("#pick button").forEach(function(b){ b.addEventListener("click", function(){ writeSkin(parseInt(b.dataset.skin,10)).then(function(){ document.getElementById("pick").remove(); bootGame(); }); }); });
 </script>
 <button id="tog" type="button">Steuerung</button>
 <div id="look"></div>
