@@ -116,10 +116,7 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
     }, p => { pf.style.width = (50 + p * 50) + "%"; });
     window.unityGame = inst; window.myGameInstance = inst;
     document.getElementById("ld").remove();
-    // Automatisch Englisch, aber nur wenn der Spieler noch nichts getippt hat (sonst wird der echte Tipp durch einen Fake-Klick ueberschrieben).
-    let userTouched = false;
-    document.addEventListener("pointerdown", function () { userTouched = true; }, { capture: true, once: true });
-    setTimeout(function () { if (!userTouched) { window.dbg && window.dbg("auto-englisch"); pickEnglish(canvas); } else { window.dbg && window.dbg("auto-englisch uebersprungen"); } }, 1500);
+    // Automatisches Englisch ist entfernt: der Fake-Klick hat im Safari das Menue veraendert (Skin-Menue uebersprungen).
   } catch (e) { tx.textContent = "Fehler beim Laden: " + (e.message || e); }
 })();
 </script>
