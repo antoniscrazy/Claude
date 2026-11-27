@@ -1092,18 +1092,6 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
-    id: "flucht",
-    title: "Flucht!",
-    url: "#/play/flucht",
-    category: "Fahren",
-    image: "flucht.jpg",
-    colors: ["#f5a623", "#c0392b"],
-    description: "Verfolgungsjagd von oben: Entkomme der Polizei, sammle Münzen und schalte neue Autos frei.",
-    added: "2026-11-27",
-    splash: { tag: "Moki Original", by: "Von Tim" },
-    featured: false
-  },
-  {
     id: "granny2",
     title: "Granny 2",
     url: "#/play/granny2",
@@ -1242,6 +1230,23 @@ window.MOKI_GONE = [
   { id: "geometry-dash", title: "Geometry Dash", image: "geometry-dash.jpg" },
   { id: "voxelcraft", title: "VoxelCraft", image: "voxelcraft.jpg" },
   { id: "monkey-mart", title: "Monkey Mart", image: "monkey-mart.jpg" }
+];
+
+
+// Spiele, die nicht in der Liste stehen: nur fuer Admins (Tim, Anton) oder ueber den Adventskalender freigeschaltet
+window.MOKI_PRIVATE_GAMES = [
+  {
+    id: "flucht",
+    title: "Flucht!",
+    url: "#/play/flucht",
+    category: "Fahren",
+    image: "flucht.jpg",
+    colors: ["#f5a623", "#c0392b"],
+    description: "Verfolgungsjagd von oben: Entkomme der Polizei, sammle Münzen und schalte neue Autos frei.",
+    added: "2026-11-27",
+    splash: { tag: "Moki Original", by: "Von Tim" },
+    featured: false
+  }
 ];
 
 // Weitere Seiten (erscheinen als eigener Bereich unter den Spielen)

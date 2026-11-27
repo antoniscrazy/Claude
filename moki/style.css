@@ -492,3 +492,6 @@ html::-webkit-scrollbar,body::-webkit-scrollbar,*::-webkit-scrollbar{display:non
 .boom.on .btag.otag{animation:rise .7s ease 1.4s forwards}
 .splash.orig .by{font-size:clamp(16px,3vw,22px);color:#cfd6ff;letter-spacing:.06em}
 .boom.on .btag.by{animation:rise .7s ease 2.1s forwards}
+
+.tile .xbadge{position:absolute;right:10px;top:10px;z-index:4;padding:3px 9px;border-radius:99px;background:linear-gradient(135deg,#c0334a,#8a1c2e);border:1px solid #f6c667;color:#ffe3a0;font:800 11px/1.3 system-ui;letter-spacing:.3px;box-shadow:0 2px 8px #0009;pointer-events:none}
+.tile .xbadge.adm{background:linear-gradient(135deg,#2c4ea8,#15275e);border-color:#8fb0ff;color:#dbe6ff}

@@ -38,7 +38,7 @@
     { g: "rooftop-snipers", o: "🕯️", t: "Längste Nacht", s: "Um den 21. Dezember ist die längste Nacht des Jahres. Perfekt für eine ruhige Hand und die Dächer im Mondlicht." },
     { g: "supercold", o: "🧣", t: "Vorfreude", s: "Nur noch zwei Nächte. Heute heißt es: ruhig bleiben, denn die Zeit läuft nur, wenn du dich bewegst." },
     { g: "blastar", o: "🍬", t: "Letzte Besorgungen", s: "Alles eingepackt? Dann ab ins All: Heute gibt es einen Retro-Klassiker zum Abschalten." },
-    { g: null, o: "🎄", t: "Bescherung!", s: "Frohe Weihnachten! Dein Geschenk: ein Überraschungsspiel, ausgewählt vom Moki-Zufall. Viel Spaß beim Auspacken." }
+    { g: "flucht", o: "🎄", t: "Bescherung!", s: "Frohe Weihnachten! Dein Geschenk: Flucht!, ein Moki Original von Tim. Viel Spaß beim Auspacken." }
   ];
   // Spiele, die nur ueber den Kalender kommen, erscheinen in Liste und Kategorien, sobald das Tuerchen offen ist
   function unlockGames() {
@@ -57,7 +57,9 @@
     "#moki-gt{color:#ffe3a0!important;text-shadow:0 0 10px #f6c66777;opacity:1!important}#moki-gt::before{content:'\\2744\\FE0F  ';font-size:.9em}" +
     "#moki-back{background:linear-gradient(90deg,#d6263b,#f6c667)!important;color:#fff!important;text-shadow:0 1px 2px #0007;border:1px solid #ffe3a099}" +
     "@media(prefers-reduced-motion:reduce){#bar::before,#bar::after{animation:none}}";
-  const findGame = id => games.find(g => g.id === id) || (window.MOKI_XMAS_GAMES || []).find(g => g.id === id);
+  const findGame = id => games.find(g => g.id === id) || (window.MOKI_XMAS_GAMES || []).find(g => g.id === id) || (window.MOKI_PRIVATE_GAMES || []).find(g => g.id === id);
+  // Private Spiele (Flucht!) gelten als freigeschaltet, wenn ihr Tuerchen offen ist und der Tag erreicht wurde
+  window.MOKI_XMAS_PRIVATE_OK = id => { const d = DAYS.findIndex(x => x.g === id) + 1; return d > 0 && opened.has(d) && d <= today(); };
 
   // ---------- Quiz: pro Tuerchen eine Frage (erste Antwort ist die richtige, die Reihenfolge wird pro Tag fest gemischt) ----------
   const QZ = [
@@ -216,7 +218,7 @@
   function openDoor(day, btn) {
     if (day > today()) { toast(`Türchen ${day} öffnet sich am ${day}. Dezember.`); if (btn) btn.animate([{ transform: "translateX(0)" }, { transform: "translateX(-6px)" }, { transform: "translateX(6px)" }, { transform: "translateX(0)" }], { duration: 300 }); return; }
     const first = !opened.has(day);
-    if (first) { opened.add(day); saveOpen(opened); unlockGames(); try { renderSide(); } catch (e) {} try { if (window.mokiStat) window.mokiStat("advent", String(day)); } catch (e) {} }
+    if (first) { opened.add(day); saveOpen(opened); unlockGames(); try { applyPrivate(); } catch (e) {} try { renderSide(); } catch (e) {} try { if (window.mokiStat) window.mokiStat("advent", String(day)); } catch (e) {} }
     if (btn && first) { btn.classList.remove("today"); btn.classList.add("open"); const b = btn.querySelector(".dback"); if (b) { b.style.visibility = "visible"; } }
     setTimeout(() => modal(day, first), first && btn ? 650 : 0);
   }
@@ -248,7 +250,7 @@
         setTimeout(() => { el.querySelector(".greveal").hidden = false; el.querySelector(".gp").hidden = true; el.querySelector(".gh").textContent = "Frohe Weihnachten!"; const p = el.querySelector("[data-a=play]"); if (p) p.focus({ preventScroll: true }); }, 750); return;
       }
       const b = e.target.closest("[data-a]"); if (!b) return;
-      if (b.dataset.a === "play") { el.remove(); clear(); openGame(g); }
+      if (b.dataset.a === "play") { el.remove(); clear(); window.MOKI_GIFT_OK = g.id; openGame(g); }
       if (b.dataset.a === "home") { el.remove(); clear(); category = "Alle"; home(); }
     });
     document.body.appendChild(el); el.querySelector(".gbox").focus({ preventScroll: true });
@@ -408,5 +410,5 @@
 
   garland(); snow(); hat();
   document.title = document.title.replace(/^Moki/, "Moki Weihnachten");
-  try { unlockGames(); renderSide(); home(); } catch (e) {}
+  try { unlockGames(); applyPrivate(); renderSide(); home(); } catch (e) {}
 })();

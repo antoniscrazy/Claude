@@ -65,7 +65,7 @@ const shareBtn = g => `<span class="shr" role="button" tabindex="0" data-share="
 let category = "Alle";
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const tile = g => `<a class="tile${g.wide ? " wide" : ""}" href="${g.url}" data-id="${g.id}" aria-label="${esc(g.title)}" title="${esc(g.title)}" style="background:linear-gradient(135deg,${g.colors[0]},${g.colors[1]})">${g.image ? `<img src="${g.image}" alt="" loading="lazy">` : `<span class="em">${g.emoji}</span>`}<span class="name">${esc(g.title)}</span>${isNew(g) ? `<span class="new">NEU</span>` : ""}${g.xmas ? `<span class="xbadge" title="Aus dem Adventskalender">🎄 Advent</span>` : ""}${g.category ? favBtn(g) + shareBtn(g) : ""}</a>`;
+const tile = g => `<a class="tile${g.wide ? " wide" : ""}" href="${g.url}" data-id="${g.id}" aria-label="${esc(g.title)}" title="${esc(g.title)}" style="background:linear-gradient(135deg,${g.colors[0]},${g.colors[1]})">${g.image ? `<img src="${g.image}" alt="" loading="lazy">` : `<span class="em">${g.emoji}</span>`}<span class="name">${esc(g.title)}</span>${isNew(g) ? `<span class="new">NEU</span>` : ""}${g.admin ? `<span class="xbadge adm" title="Nur für Admins sichtbar">🔒 Admin</span>` : g.xmas ? `<span class="xbadge" title="Aus dem Adventskalender">🎄 Advent</span>` : ""}${g.category ? favBtn(g) + shareBtn(g) : ""}</a>`;
 
 // ---- Spiel des Tages: wechselt jeden Tag um Mitternacht (deutsche Zeit), für alle gleich ----
 function berlinDay() {
@@ -355,7 +355,25 @@ setInterval(() => { const el = document.getElementById("chal-left"); if (el) el.
 home();   // erster Aufbau erst hier, damit alle Funktionen oben bereit sind
 
 // ---- Eingebaute Spiele (Launcher-Huellen): Hash "#/play/<id>" oeffnet das Spiel im Vollbild-Player ----
+// ---- Private Spiele (nur Admins oder per Adventskalender freigeschaltet) ----
+function privateOk(id) {
+  try { if (window.MOKI_ACC && window.MOKI_ACC.admin) return "admin"; } catch (e) {}
+  try { if (window.MOKI_GIFT_OK === id) return "gift"; if (window.MOKI_XMAS_PRIVATE_OK && window.MOKI_XMAS_PRIVATE_OK(id)) return "xmas"; } catch (e) {}
+  return "";
+}
+function applyPrivate() {
+  let changed = false;
+  (window.MOKI_PRIVATE_GAMES || []).forEach(pg => {
+    const ok = privateOk(pg.id), i = games.findIndex(x => x.id === pg.id);
+    if (ok && i < 0) { games.push(Object.assign({ colors: ["#2b2b2b", "#8b0000"] }, pg, ok === "admin" ? { admin: true } : { xmas: true })); known.add(pg.id); changed = true; }
+    else if (ok && i >= 0) { const g = games[i], want = ok === "admin"; if (!!g.admin !== want) { g.admin = want; g.xmas = !want; changed = true; } }
+    else if (!ok && i >= 0) { games.splice(i, 1); changed = true; }
+  });
+  if (changed) { try { renderSide(); } catch (e) {} try { home(); } catch (e) {} }
+}
+addEventListener("moki-priv", () => { applyPrivate(); if (location.hash.startsWith("#/play/")) playerFromHash(); });
 function openPlayer(id) {
+  if ((window.MOKI_PRIVATE_GAMES || []).some(p => p.id === id) && !privateOk(id)) return;   // gesperrt (bleibt gesperrt, bis ein Admin angemeldet ist)
   let html = (window.MOKI_LAUNCH || {})[id], gm = null;
   if (html) {   // Spielname ganz links in der Leiste neben "Back to Moki"
     gm = games.find(g => g.id === id) || (window.MOKI_XMAS_GAMES || []).find(g => g.id === id);
