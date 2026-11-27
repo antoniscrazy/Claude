@@ -2,10 +2,10 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Granny</title>
 <style>
-  html, body { margin: 0; height: 100%; background: #111; color: #fff; font-family: sans-serif; overflow: hidden; }
+  html, body { touch-action: manipulation; margin: 0; height: 100%; background: #111; color: #fff; font-family: sans-serif; overflow: hidden; }
   body { display: flex; flex-direction: column; }
   #bar { flex: 0 0 auto; display: flex; justify-content: flex-end; padding: 6px 12px; background: #111; }
   #wrap { flex: 1 1 auto; position: relative; min-height: 0; }
@@ -22,17 +22,37 @@
   #moki-back:hover { opacity: 1; transform: scale(1.05); }
 </style>
 <style>
-#pad{display:none;position:fixed;left:0;right:0;bottom:110px;justify-content:space-between;padding:0 12px;z-index:9;pointer-events:none;touch-action:none;user-select:none;-webkit-user-select:none}
-#pad.show{display:flex}
-#pad .grp{display:grid;gap:8px;pointer-events:auto;grid-template-columns:repeat(3,58px);grid-template-rows:repeat(2,58px)}
-#pad button{font:800 18px system-ui,sans-serif;border:0;border-radius:14px;background:rgba(255,255,255,.22);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.5);touch-action:none}
-#pad button:active,#pad button.on{background:rgba(0,229,168,.6)}
-#pad .e{visibility:hidden}
-#look{display:none;position:fixed;top:46px;right:0;width:45%;bottom:120px;z-index:8;touch-action:none}
+#jz{display:none;position:fixed;left:0;bottom:0;width:50%;height:60%;z-index:9;touch-action:none}
+#jz.show{display:block}
+#jb{position:fixed;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;background:rgba(255,255,255,.10);border:2px solid rgba(255,255,255,.3);display:none;pointer-events:none;z-index:9}
+#jk{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:rgba(255,255,255,.35)}
+#rb{position:fixed;left:0;top:0;width:100%;height:100%;display:none;z-index:9;pointer-events:none}
+#rb.show{display:block}
+#rb button{position:absolute;transform:translate(-50%,-50%);width:clamp(66px,11vh,104px);height:clamp(66px,11vh,104px);border-radius:50%;border:2px solid rgba(255,255,255,.7);background:rgba(0,0,0,.35);padding:0;touch-action:none;user-select:none;-webkit-user-select:none;pointer-events:auto;display:flex;align-items:center;justify-content:center}
+#rb button svg{width:clamp(34px,5.5vh,54px);height:clamp(34px,5.5vh,54px);stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+#rb button.on{filter:brightness(1.4)}
+#rb #fire{left:68.6%;top:60%;background:rgba(0,200,120,.45);border-color:#2ee6a0}
+#rb #b_take{left:79.4%;top:60%;background:rgba(255,200,40,.5);border-color:#ffd23f}
+#rb #b_drop{left:74%;top:76%;background:rgba(0,0,0,.6);border-color:#111}
+#rb #b_sneak{left:91.5%;top:50%;background:rgba(40,110,255,.45);border-color:#3b82f6}
+#pz{position:fixed;left:14px;top:56px;transform:none}
+#pz{display:none;position:fixed;left:12px;top:56px;width:46px;height:46px;border-radius:50%;border:2px solid rgba(255,255,255,.4);background:rgba(0,0,0,.4);color:#fff;font:800 15px system-ui,sans-serif;z-index:10;touch-action:none}
+#pz.show{display:block}
+#look{display:none;position:fixed;top:0;right:0;width:55%;bottom:0;z-index:8;touch-action:none}
 #look.show{display:block}
-#tog{position:fixed;top:56px;right:12px;z-index:10;padding:7px 12px;border:0;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font:700 13px system-ui,sans-serif;touch-action:manipulation}
+#tog{display:none;position:fixed;top:56px;right:12px;z-index:10;padding:7px 12px;border:0;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font:700 13px system-ui,sans-serif;touch-action:manipulation}
 #tog.on{background:rgba(0,229,168,.7);color:#04201a}
+#tog.ready{display:block}
 </style>
+<script>
+document.addEventListener('gesturestart',function(e){e.preventDefault();},{passive:false});
+document.addEventListener('gesturechange',function(e){e.preventDefault();},{passive:false});
+document.addEventListener('gestureend',function(e){e.preventDefault();},{passive:false});
+document.addEventListener('touchmove',function(e){ if(e.touches.length>1) e.preventDefault(); },{passive:false});
+var __lastTouchEnd=0;
+document.addEventListener('touchend',function(e){ var n=Date.now(); if(n-__lastTouchEnd<350) e.preventDefault(); __lastTouchEnd=n; },{passive:false});
+document.addEventListener('dblclick',function(e){ e.preventDefault(); },{passive:false});
+</script>
 <style>html,body,body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}img,canvas{-webkit-user-drag:none}::selection{background:transparent}</style>
 <script>["selectstart","contextmenu","dragstart","copy","cut"].forEach(function(t){document.addEventListener(t,function(e){e.preventDefault();},true);});</script>
 </head>
@@ -69,8 +89,8 @@ window.YaGames = { init: function () { var ys = {
     GameplayAPI: { start: function () {}, stop: function () {} }
   },
   adv: {
-    showRewardedVideo: function (o) { var c = (o && o.callbacks) || {}; c.onOpen && c.onOpen(); c.onRewarded && c.onRewarded(); c.onClose && c.onClose(true); return Promise.resolve(); },
-    showFullscreenAdv: function (o) { var c = (o && o.callbacks) || {}; c.onOpen && c.onOpen(); c.onClose && c.onClose(false); return Promise.resolve(); }
+    showRewardedVideo: function (o) { var c = (o && o.callbacks) || {}; setTimeout(function(){ c.onOpen && c.onOpen(); }, 50); setTimeout(function(){ c.onRewarded && c.onRewarded(); }, 400); setTimeout(function(){ c.onClose && c.onClose(true); }, 800); return Promise.resolve(); },
+    showFullscreenAdv: function (o) { var c = (o && o.callbacks) || {}; setTimeout(function(){ c.onOpen && c.onOpen(); }, 50); setTimeout(function(){ c.onClose && c.onClose(false); }, 600); return Promise.resolve(); }
   },
   getPlayer: function () { return Promise.reject(new Error("no player")); },
   getPayments: function () { return Promise.resolve(window.payments); },
@@ -116,70 +136,95 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
       companyName: "Anastasia Kazantseva", productName: "Granny", productVersion: "1.0"
     }, p => { pf.style.width = (50 + p * 50) + "%"; });
     window.unityGame = inst; window.myGameInstance = inst;
-    document.getElementById("ld").remove();
+    document.getElementById("ld").remove(); window.__ready = true;
     setTimeout(function () { pickEnglish(canvas); }, 4000);
   } catch (e) { tx.textContent = "Fehler beim Laden: " + (e.message || e); }
 })();
 </script>
 <button id="tog" type="button">Steuerung</button>
 <div id="look"></div>
-<div id="pad"><div class="grp"><span class="e"></span><button data-k="w">W</button><span class="e"></span><button data-k="a">A</button><button data-k="s">S</button><button data-k="d">D</button></div><div class="grp"><button data-k="e">E</button><button data-k="sp">Space</button><button data-k="c">C</button><button data-k="r">R</button><button data-k="f">F</button><button id="fire" type="button">Feuer</button></div></div>
+<div id="jz"><div id="jb"><div id="jk"></div></div></div>
+<button id="pz" type="button"><svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2.6;stroke-linecap:round"><path d="M9 5v14M15 5v14"/></svg></button>
+<div id="rb"><button id="fire" type="button" aria-label="Schießen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg></button><button id="b_take" data-k="e" type="button" aria-label="Nehmen"><svg viewBox="0 0 24 24"><path d="M7 13V6a1.5 1.5 0 0 1 3 0v5M10 11V4a1.5 1.5 0 0 1 3 0v7M13 11V5a1.5 1.5 0 0 1 3 0v7l1-1a1.5 1.5 0 0 1 2 2l-3 5a6 6 0 0 1-5 3H10a6 6 0 0 1-5-3L3 14a1.5 1.5 0 0 1 2-2l2 2"/></svg></button><button id="b_drop" data-k="sp" type="button" aria-label="Fallen lassen"><svg viewBox="0 0 24 24"><path d="M3 9h18v11H3z"/><path d="M12 4v9M8 9l4 4 4-4"/></svg></button><button id="b_sneak" data-k="c" type="button" aria-label="Sneaken"><svg viewBox="0 0 24 24"><circle cx="14" cy="6" r="2"/><path d="M11 22l2-6 3 1 2-3M6 14l3-2 3 4M9 9l3 1 2 4"/></svg></button></div>
 <script>
 (function(){
   const $=id=>document.getElementById(id);
-  const pad=$("pad"), look=$("look");
+  const jz=$("jz"), jb=$("jb"), jk=$("jk"), look=$("look"), pz=$("pz"), rb=$("rb"), fire=$("fire");
   const KEYS={w:{key:"w",code:"KeyW",keyCode:87},a:{key:"a",code:"KeyA",keyCode:65},s:{key:"s",code:"KeyS",keyCode:83},d:{key:"d",code:"KeyD",keyCode:68},
-    e:{key:"e",code:"KeyE",keyCode:69},sp:{key:" ",code:"Space",keyCode:32},c:{key:"c",code:"KeyC",keyCode:67},r:{key:"r",code:"KeyR",keyCode:82},f:{key:"f",code:"KeyF",keyCode:70}};
+    e:{key:"e",code:"KeyE",keyCode:69},sp:{key:" ",code:"Space",keyCode:32},c:{key:"c",code:"KeyC",keyCode:67},r:{key:"r",code:"KeyR",keyCode:82},f:{key:"f",code:"KeyF",keyCode:70},tab:{key:"Tab",code:"Tab",keyCode:9}};
   const canvas=()=>$("c")||document.body;
   function key(type,k){ canvas().dispatchEvent(new KeyboardEvent(type,{key:k.key,code:k.code,keyCode:k.keyCode,which:k.keyCode,bubbles:true,cancelable:true})); }
-  const btns=[...document.querySelectorAll("#pad button")];
-  btns.forEach(b=>{
+  const held=new Set();
+  function setKeys(want){
+    for(const k of [...held]) if(!want.has(k)){ held.delete(k); key("keyup",KEYS[k]); }
+    for(const k of want) if(!held.has(k)){ held.add(k); key("keydown",KEYS[k]); }
+  }
+  // Schwebender Stick: Basis erscheint dort, wo der Finger links unten aufsetzt.
+  let jid=null, ox=0, oy=0;
+  function jMove(e){
+    let dx=e.clientX-ox, dy=e.clientY-oy; const R=60; const len=Math.hypot(dx,dy); if(len>R){dx=dx/len*R; dy=dy/len*R;}
+    jk.style.transform=`translate(${dx}px,${dy}px)`;
+    const want=new Set(); const t=0.35*R;
+    if(dy<-t) want.add("w"); if(dy>t) want.add("s"); if(dx<-t) want.add("a"); if(dx>t) want.add("d");
+    setKeys(want);
+  }
+  function jEnd(){ jid=null; jb.style.display="none"; jk.style.transform=""; setKeys(new Set()); }
+  jz.addEventListener("touchstart",e=>{ e.preventDefault(); if(jid!==null) return; const t=e.changedTouches[0]; jid=t.identifier; ox=t.clientX; oy=t.clientY; jb.style.left=ox+"px"; jb.style.top=oy+"px"; jb.style.display="block"; },{passive:false});
+  jz.addEventListener("touchmove",e=>{ e.preventDefault(); for(const t of e.changedTouches){ if(t.identifier===jid) jMove(t); } },{passive:false});
+  jz.addEventListener("touchend",e=>{ for(const t of e.changedTouches){ if(t.identifier===jid) jEnd(); } });
+  jz.addEventListener("touchcancel",jEnd);
+  // Knoepfe rechts: halten = gedrueckt
+  function mouse(type){ const c=canvas(); const r=c.getBoundingClientRect(); c.dispatchEvent(new MouseEvent(type,{button:0,buttons:type==="mouseup"?0:1,clientX:vx(),clientY:vy(),bubbles:true,cancelable:true})); }
+  function vx(){ const r=canvas().getBoundingClientRect(); return r.left+r.width/2; }
+  function vy(){ const r=canvas().getBoundingClientRect(); return r.top+r.height/2; }
+  rb.querySelectorAll("button").forEach(b=>{
+    if(b.id==="fire"){
+      b.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); b.setPointerCapture(e.pointerId); b.classList.add("on"); mouse("mousedown"); });
+      b.addEventListener("pointerup",e=>{ e.preventDefault(); b.classList.remove("on"); mouse("mouseup"); });
+      b.addEventListener("pointercancel",()=>{ b.classList.remove("on"); mouse("mouseup"); });
+      return;
+    }
     const k=KEYS[b.dataset.k]; let isDown=false;
-    const down=()=>{ if(isDown) return; isDown=true; b.classList.add("on"); const c=canvas(); if(c.focus) c.focus(); key("keydown",k); };
+    const down=()=>{ if(isDown) return; isDown=true; b.classList.add("on"); key("keydown",k); };
     const up=()=>{ if(!isDown) return; isDown=false; b.classList.remove("on"); key("keyup",k); };
     b.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); down(); });
     b.addEventListener("pointerup",e=>{ e.preventDefault(); up(); });
     b.addEventListener("pointercancel",up); b.addEventListener("pointerleave",up);
   });
-  // Schiessen: halten = Maus-Taste 1 im Spiel
-  const fireBtn=$("fire");
-  function mouseBtn(type){ const r=vcur(); canvas().dispatchEvent(new MouseEvent(type,{button:0,buttons:type==="mouseup"?0:1,clientX:r.x,clientY:r.y,bubbles:true,cancelable:true})); }
-  fireBtn.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); fireBtn.setPointerCapture(e.pointerId); fireBtn.classList.add("on"); mouseBtn("mousedown"); });
-  fireBtn.addEventListener("pointerup",e=>{ e.preventDefault(); fireBtn.classList.remove("on"); mouseBtn("mouseup"); });
-  fireBtn.addEventListener("pointercancel",()=>{ fireBtn.classList.remove("on"); mouseBtn("mouseup"); });
-  // Umsehen: sanft. Ziehen sammelt Bewegung, die pro Bild begrenzt und abgebaut wird, damit nichts durchdreht.
-  let lid=null, lx=0, ly=0, accX=0, accY=0, raf=0, vx=0, vy=0;
+  // Pause (oben links)
+  pz.addEventListener("click",()=>{ key("keydown",KEYS.tab); setTimeout(()=>key("keyup",KEYS.tab),80); });
+  // Umsehen: Ziehen rechts oben, mit virtuellem Cursor, sanft gedaempft.
+  let lid=null, lx=0, ly=0, accX=0, accY=0, raf=0, vX=0, vY=0;
   const MAX=18;
-  function vcur(){ const c=canvas().getBoundingClientRect(); return {x:c.left+c.width/2, y:c.top+c.height/2, w:c.width, h:c.height, l:c.left, t:c.top}; }
   function step(){
     let mx=Math.max(-MAX,Math.min(MAX,accX*0.3)), my=Math.max(-MAX,Math.min(MAX,accY*0.3));
     accX-=mx; accY-=my;
     if(Math.abs(mx)>0.01||Math.abs(my)>0.01){
-      const r=vcur();
-      vx=Math.max(r.l+2,Math.min(r.l+r.w-2,vx+mx)); vy=Math.max(r.t+2,Math.min(r.t+r.h-2,vy+my));
-      canvas().dispatchEvent(new MouseEvent("mousemove",{clientX:vx,clientY:vy,movementX:mx,movementY:my,bubbles:true}));
+      const r=canvas().getBoundingClientRect();
+      vX=Math.max(r.left+2,Math.min(r.left+r.width-2,vX+mx)); vY=Math.max(r.top+2,Math.min(r.top+r.height-2,vY+my));
+      canvas().dispatchEvent(new MouseEvent("mousemove",{clientX:vX,clientY:vY,movementX:mx,movementY:my,bubbles:true}));
     }
     if(lid!==null||Math.abs(accX)>0.5||Math.abs(accY)>0.5){ raf=requestAnimationFrame(step); } else { raf=0; accX=0; accY=0; }
   }
   ["touchstart","touchmove"].forEach(t=>look.addEventListener(t,e=>e.preventDefault(),{passive:false}));
-  look.addEventListener("pointerdown",e=>{ e.preventDefault(); lid=e.pointerId; lx=e.clientX; ly=e.clientY; const r=vcur(); vx=r.x; vy=r.y; look.setPointerCapture(e.pointerId); if(!raf) raf=requestAnimationFrame(step); });
-  look.addEventListener("pointermove",e=>{
-    if(e.pointerId!==lid) return;
-    accX+=(e.clientX-lx)*1.0; accY+=(e.clientY-ly)*1.0; lx=e.clientX; ly=e.clientY;
-  });
-  const endLook=e=>{ if(e.pointerId===lid){ lid=null; } };
-  look.addEventListener("pointerup",endLook); look.addEventListener("pointercancel",endLook);
-  function hide(){ pad.classList.remove("show"); look.classList.remove("show"); btns.forEach(b=>{ if(b.classList.contains("on")) b.dispatchEvent(new PointerEvent("pointerup")); }); }
+  look.addEventListener("touchstart",e=>{ e.preventDefault(); if(lid!==null) return; const t=e.changedTouches[0]; lid=t.identifier; lx=t.clientX; ly=t.clientY; vX=vx(); vY=vy(); if(!raf) raf=requestAnimationFrame(step); },{passive:false});
+  look.addEventListener("touchmove",e=>{ e.preventDefault(); for(const t of e.changedTouches){ if(t.identifier===lid){ accX+=t.clientX-lx; accY+=t.clientY-ly; lx=t.clientX; ly=t.clientY; } } },{passive:false});
+  const endLook=e=>{ for(const t of e.changedTouches){ if(t.identifier===lid) lid=null; } };
+  look.addEventListener("touchend",endLook); look.addEventListener("touchcancel",endLook);
+  function vx2(){ return vx(); } function vy2(){ return vy(); }
+  function show(){ jz.classList.add("show"); rb.classList.add("show"); pz.classList.add("show"); look.classList.add("show"); }
+  function hide(){ jz.classList.remove("show"); rb.classList.remove("show"); pz.classList.remove("show"); look.classList.remove("show"); jEnd(); }
+  // Manuell ein- und ausschalten (erscheint erst, wenn das Spiel geladen ist)
+  const tog=$("tog");
+  tog.addEventListener("click",function(){ if(rb.classList.contains("show")){ hide(); tog.classList.remove("on"); } else { show(); tog.classList.add("on"); } });
+  const __iv=setInterval(function(){ if(window.__ready){ tog.classList.add("ready"); clearInterval(__iv); } },300);
   window.addEventListener("blur",hide);
   document.addEventListener("keydown",e=>{ if(e.key==="Escape") hide(); });
-  // Erscheint in der Runde: Menue-Schritte merken, dann Start unten bzw. PLAY.
+  // Erscheint in der Runde (Ausloeser je Spiel):
   let stage=0;
-  function show(){ pad.classList.add("show"); look.classList.add("show"); tog.classList.add("on"); }
-  // Fallback: Steuerung per Knopf ein- und ausschalten, falls der Auto-Start nicht greift.
-  const tog=$("tog");
-  tog.addEventListener("click",()=>{ if(pad.classList.contains("show")){ pad.classList.remove("show"); look.classList.remove("show"); tog.classList.remove("on"); } else { show(); } });
   document.addEventListener("pointerdown",e=>{
-    if(e.target.closest && e.target.closest("#pad, #look")) return;
+    if(!window.__ready) return; if(!(e.target.closest && e.target.closest("#wrap"))) return;
+    if(e.target.closest && e.target.closest("#jz, #look, #rb, #pz")) return;
     const x=e.clientX, y=e.clientY, W=innerWidth, H=innerHeight;
     if(stage===0 && y>H*0.62 && y<H*0.72 && Math.abs(x-W/2)<W*0.12){ stage=1; return; }
     if(stage===1 && y>H*0.88 && Math.abs(x-W/2)<W*0.14){ stage=2; return; }

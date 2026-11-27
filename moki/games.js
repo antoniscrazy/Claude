@@ -1092,6 +1092,17 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "granny2",
+    title: "Granny 2",
+    url: "#/play/granny2",
+    category: "Abenteuer",
+    image: "granny2.jpg",
+    colors: ["#2b2b2b", "#8b0000"],
+    description: "Granny 2: Entkomme aus dem Haus, bevor Granny und Grandpa dich erwischen. Achtung, nichts für schwache Nerven.",
+    added: "2026-11-27",
+    featured: false
+  },
+  {
     id: "granny3",
     title: "Granny 3",
     url: "#/play/granny3",
