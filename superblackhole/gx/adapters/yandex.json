@@ -1,0 +1,373 @@
+{
+  "id": "yandex",
+  "name": "Yandex Games / Playhop",
+  "version": "1.0.0",
+  "platform": "yandex",
+  "builtin": true,
+  "docs": "https://yandex.com/dev/games/doc/en/sdk/sdk-about",
+  "scriptPatterns": [
+    "(^|//)yandex\\.[a-z.]+/games/sdk/v2",
+    "sdk\\.games\\.s3\\.yandex\\.net/sdk\\.js",
+    "^/sdk\\.js$",
+    "playhop\\.com/games/sdk/v2",
+    "/sdk/_/v2(\\.[\\w-]+)?\\.js$"
+  ],
+  "globals": [
+    "YaGames"
+  ],
+  "entry": {
+    "global": "YaGames",
+    "factory": "init"
+  },
+  "properties": {
+    "environment.i18n.lang": "$lang",
+    "environment.i18n.tld": "com",
+    "environment.app.id": "local",
+    "environment.payload": null
+  },
+  "methods": [
+    {
+      "path": "getPlayer",
+      "kind": "async",
+      "behavior": "object",
+      "object": "player"
+    },
+    {
+      "path": "getStorage",
+      "kind": "async",
+      "behavior": "object",
+      "object": "storage"
+    },
+    {
+      "path": "getLeaderboards",
+      "kind": "async",
+      "behavior": "object",
+      "object": "leaderboards"
+    },
+    {
+      "path": "leaderboards.setScore",
+      "kind": "async",
+      "behavior": "leaderboard.set"
+    },
+    {
+      "path": "leaderboards.getEntries",
+      "kind": "async",
+      "behavior": "leaderboard.get"
+    },
+    {
+      "path": "leaderboards.getPlayerEntry",
+      "kind": "async",
+      "behavior": "leaderboard.entry"
+    },
+    {
+      "path": "features.LoadingAPI.ready",
+      "kind": "sync",
+      "behavior": "noop"
+    },
+    {
+      "path": "features.GameplayAPI.start",
+      "kind": "sync",
+      "behavior": "noop"
+    },
+    {
+      "path": "features.GameplayAPI.stop",
+      "kind": "sync",
+      "behavior": "noop"
+    },
+    {
+      "path": "dispatchEvent",
+      "kind": "sync",
+      "behavior": "noop"
+    },
+    {
+      "path": "on",
+      "kind": "sync",
+      "behavior": "event.on"
+    },
+    {
+      "path": "off",
+      "kind": "sync",
+      "behavior": "event.off"
+    },
+    {
+      "path": "serverTime",
+      "kind": "sync",
+      "behavior": "time"
+    },
+    {
+      "path": "isAvailableMethod",
+      "kind": "async",
+      "behavior": "resolve",
+      "value": false
+    },
+    {
+      "path": "adv.showFullscreenAdv",
+      "kind": "sync",
+      "behavior": "ad.skipped",
+      "value": {
+        "callback": "onClose",
+        "args": [
+          false
+        ]
+      },
+      "note": "Es wird keine Werbung angezeigt"
+    },
+    {
+      "path": "adv.showRewardedVideo",
+      "kind": "sync",
+      "behavior": "ad.skipped",
+      "value": {
+        "callback": "onError",
+        "args": [
+          "Lokale Testumgebung: keine Belohnungswerbung"
+        ]
+      },
+      "note": "Keine Belohnung"
+    },
+    {
+      "path": "adv.getBannerAdvStatus",
+      "kind": "async",
+      "behavior": "resolve",
+      "value": {
+        "stickyAdvIsShowing": false,
+        "reason": "UNKNOWN"
+      }
+    },
+    {
+      "path": "adv.showBannerAdv",
+      "kind": "async",
+      "behavior": "resolve",
+      "value": {
+        "stickyAdvIsShowing": false,
+        "reason": "UNKNOWN"
+      }
+    },
+    {
+      "path": "adv.hideBannerAdv",
+      "kind": "async",
+      "behavior": "resolve",
+      "value": {
+        "stickyAdvIsShowing": false
+      }
+    },
+    {
+      "path": "deviceInfo.isMobile",
+      "kind": "sync",
+      "behavior": "return",
+      "value": false
+    },
+    {
+      "path": "deviceInfo.isDesktop",
+      "kind": "sync",
+      "behavior": "return",
+      "value": true
+    },
+    {
+      "path": "deviceInfo.isTablet",
+      "kind": "sync",
+      "behavior": "return",
+      "value": false
+    },
+    {
+      "path": "deviceInfo.isTV",
+      "kind": "sync",
+      "behavior": "return",
+      "value": false
+    },
+    {
+      "path": "screen.fullscreen.request",
+      "kind": "async",
+      "behavior": "resolve"
+    },
+    {
+      "path": "screen.fullscreen.exit",
+      "kind": "async",
+      "behavior": "resolve"
+    },
+    {
+      "path": "clipboard.writeText",
+      "kind": "async",
+      "behavior": "log"
+    },
+    {
+      "path": "shortcut.canShowPrompt",
+      "kind": "async",
+      "behavior": "resolve",
+      "value": {
+        "canShow": false,
+        "reason": "local"
+      }
+    },
+    {
+      "path": "feedback.canReview",
+      "kind": "async",
+      "behavior": "resolve",
+      "value": {
+        "value": false,
+        "reason": "UNKNOWN"
+      }
+    },
+    {
+      "path": "auth.openAuthDialog",
+      "kind": "async",
+      "behavior": "unsupported",
+      "note": "Anmeldung und Konten können lokal nicht nachgebildet werden"
+    },
+    {
+      "path": "getPayments",
+      "kind": "async",
+      "behavior": "unsupported",
+      "note": "Käufe können lokal nicht nachgebildet werden"
+    },
+    {
+      "path": "getFlags",
+      "kind": "async",
+      "behavior": "unsupported",
+      "note": "Benötigt den Plattform-Server"
+    },
+    {
+      "path": "feedback.requestReview",
+      "kind": "async",
+      "behavior": "unsupported",
+      "note": "Benötigt den Plattform-Server"
+    },
+    {
+      "path": "shortcut.showPrompt",
+      "kind": "async",
+      "behavior": "unsupported",
+      "note": "Benötigt den Plattform-Server"
+    },
+    {
+      "path": "multiplayer.sessions.init",
+      "kind": "async",
+      "behavior": "unsupported",
+      "note": "Benötigt den Plattform-Server"
+    }
+  ],
+  "objects": {
+    "player": [
+      {
+        "path": "getData",
+        "kind": "async",
+        "behavior": "player.getData"
+      },
+      {
+        "path": "setData",
+        "kind": "async",
+        "behavior": "player.setData"
+      },
+      {
+        "path": "getStats",
+        "kind": "async",
+        "behavior": "player.getStats"
+      },
+      {
+        "path": "setStats",
+        "kind": "async",
+        "behavior": "player.setStats"
+      },
+      {
+        "path": "incrementStats",
+        "kind": "async",
+        "behavior": "player.incrementStats"
+      },
+      {
+        "path": "isAuthorized",
+        "kind": "sync",
+        "behavior": "return",
+        "value": false
+      },
+      {
+        "path": "getMode",
+        "kind": "sync",
+        "behavior": "return",
+        "value": "lite"
+      },
+      {
+        "path": "getName",
+        "kind": "sync",
+        "behavior": "return",
+        "value": ""
+      },
+      {
+        "path": "getUniqueID",
+        "kind": "sync",
+        "behavior": "return",
+        "value": "local-test-player"
+      },
+      {
+        "path": "getPhoto",
+        "kind": "sync",
+        "behavior": "return",
+        "value": ""
+      },
+      {
+        "path": "getPayingStatus",
+        "kind": "sync",
+        "behavior": "return",
+        "value": "unknown"
+      },
+      {
+        "path": "getIDsPerGame",
+        "kind": "async",
+        "behavior": "unsupported",
+        "note": "Benötigt den Plattform-Server"
+      },
+      {
+        "path": "signature",
+        "kind": "async",
+        "behavior": "unsupported",
+        "note": "Benötigt den Plattform-Server"
+      }
+    ],
+    "storage": [
+      {
+        "path": "getItem",
+        "kind": "sync",
+        "behavior": "storage.get"
+      },
+      {
+        "path": "setItem",
+        "kind": "sync",
+        "behavior": "storage.set"
+      },
+      {
+        "path": "removeItem",
+        "kind": "sync",
+        "behavior": "storage.remove"
+      },
+      {
+        "path": "clear",
+        "kind": "sync",
+        "behavior": "storage.clear"
+      }
+    ],
+    "leaderboards": [
+      {
+        "path": "setLeaderboardScore",
+        "kind": "async",
+        "behavior": "leaderboard.set"
+      },
+      {
+        "path": "getLeaderboardEntries",
+        "kind": "async",
+        "behavior": "leaderboard.get"
+      },
+      {
+        "path": "getLeaderboardPlayerEntry",
+        "kind": "async",
+        "behavior": "leaderboard.entry"
+      },
+      {
+        "path": "getLeaderboardDescription",
+        "kind": "async",
+        "behavior": "resolve",
+        "value": {
+          "name": "local",
+          "title": {},
+          "dashboard": false
+        }
+      }
+    ]
+  }
+}

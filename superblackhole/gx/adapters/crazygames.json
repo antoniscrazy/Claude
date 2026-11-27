@@ -1,0 +1,217 @@
+{
+  "id": "crazygames",
+  "name": "CrazyGames SDK v3",
+  "version": "1.0.0",
+  "platform": "crazygames",
+  "builtin": true,
+  "docs": "https://docs.crazygames.com/sdk/intro/",
+  "scriptPatterns": [
+    "sdk\\.crazygames\\.com/crazygames-sdk-v\\d\\.js"
+  ],
+  "globals": [
+    "CrazyGames"
+  ],
+  "entry": {
+    "global": "CrazyGames",
+    "path": "SDK"
+  },
+  "properties": {
+    "environment": "local",
+    "user.isUserAccountAvailable": false,
+    "user.systemInfo": {
+      "countryCode": "XX",
+      "locale": "$lang",
+      "browser": {
+        "name": "Chromium"
+      },
+      "os": {
+        "name": "local"
+      },
+      "device": {
+        "type": "desktop"
+      }
+    },
+    "game.settings": {
+      "disableChat": true,
+      "muteAudio": false
+    }
+  },
+  "methods": [
+    {
+      "path": "init",
+      "kind": "async",
+      "behavior": "resolve"
+    },
+    {
+      "path": "game.loadingStart",
+      "kind": "sync",
+      "behavior": "noop"
+    },
+    {
+      "path": "game.loadingStop",
+      "kind": "sync",
+      "behavior": "noop"
+    },
+    {
+      "path": "game.gameplayStart",
+      "kind": "sync",
+      "behavior": "noop"
+    },
+    {
+      "path": "game.gameplayStop",
+      "kind": "sync",
+      "behavior": "noop"
+    },
+    {
+      "path": "game.sdkGameLoadingStart",
+      "kind": "sync",
+      "behavior": "noop"
+    },
+    {
+      "path": "game.sdkGameLoadingStop",
+      "kind": "sync",
+      "behavior": "noop"
+    },
+    {
+      "path": "game.happytime",
+      "kind": "sync",
+      "behavior": "noop"
+    },
+    {
+      "path": "game.addSettingsChangeListener",
+      "kind": "sync",
+      "behavior": "noop"
+    },
+    {
+      "path": "game.removeSettingsChangeListener",
+      "kind": "sync",
+      "behavior": "noop"
+    },
+    {
+      "path": "user.addAuthListener",
+      "kind": "sync",
+      "behavior": "noop"
+    },
+    {
+      "path": "user.removeAuthListener",
+      "kind": "sync",
+      "behavior": "noop"
+    },
+    {
+      "path": "banner.clearBanner",
+      "kind": "sync",
+      "behavior": "noop"
+    },
+    {
+      "path": "banner.clearAllBanners",
+      "kind": "sync",
+      "behavior": "noop"
+    },
+    {
+      "path": "data.getItem",
+      "kind": "sync",
+      "behavior": "storage.get"
+    },
+    {
+      "path": "data.setItem",
+      "kind": "sync",
+      "behavior": "storage.set"
+    },
+    {
+      "path": "data.removeItem",
+      "kind": "sync",
+      "behavior": "storage.remove"
+    },
+    {
+      "path": "data.clear",
+      "kind": "sync",
+      "behavior": "storage.clear"
+    },
+    {
+      "path": "ad.requestAd",
+      "kind": "sync",
+      "behavior": "ad.skipped",
+      "value": {
+        "callback": "adError",
+        "args": [
+          {
+            "code": "unfilled",
+            "message": "Lokale Testumgebung ohne Werbung"
+          }
+        ]
+      }
+    },
+    {
+      "path": "ad.hasAdblock",
+      "kind": "async",
+      "behavior": "resolve",
+      "value": false
+    },
+    {
+      "path": "ad.prefetchAd",
+      "kind": "sync",
+      "behavior": "noop"
+    },
+    {
+      "path": "banner.requestBanner",
+      "kind": "async",
+      "behavior": "unsupported",
+      "note": "Keine Werbebanner lokal"
+    },
+    {
+      "path": "banner.requestResponsiveBanner",
+      "kind": "async",
+      "behavior": "unsupported",
+      "note": "Keine Werbebanner lokal"
+    },
+    {
+      "path": "user.getUser",
+      "kind": "async",
+      "behavior": "resolve",
+      "value": null
+    },
+    {
+      "path": "user.showAuthPrompt",
+      "kind": "async",
+      "behavior": "unsupported",
+      "note": "Anmeldung und Konten können lokal nicht nachgebildet werden"
+    },
+    {
+      "path": "user.getUserToken",
+      "kind": "async",
+      "behavior": "unsupported",
+      "note": "Anmeldung und Konten können lokal nicht nachgebildet werden"
+    },
+    {
+      "path": "user.showAccountLinkPrompt",
+      "kind": "async",
+      "behavior": "unsupported",
+      "note": "Anmeldung und Konten können lokal nicht nachgebildet werden"
+    },
+    {
+      "path": "user.getXsollaUserToken",
+      "kind": "async",
+      "behavior": "unsupported",
+      "note": "Anmeldung und Konten können lokal nicht nachgebildet werden"
+    },
+    {
+      "path": "user.submitScore",
+      "kind": "async",
+      "behavior": "unsupported",
+      "note": "Benötigt den Plattform-Server"
+    },
+    {
+      "path": "game.inviteLink",
+      "kind": "async",
+      "behavior": "unsupported",
+      "note": "Benötigt den Plattform-Server"
+    },
+    {
+      "path": "game.showInviteButton",
+      "kind": "async",
+      "behavior": "unsupported",
+      "note": "Benötigt den Plattform-Server"
+    }
+  ],
+  "objects": {}
+}
