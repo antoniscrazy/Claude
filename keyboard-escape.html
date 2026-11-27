@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Keyboard Escape</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #111; color: #fff; font-family: sans-serif; overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  body { display: flex; flex-direction: column; }
+  #bar { flex: 0 0 auto; display: flex; justify-content: flex-end; padding: 6px 12px; background: #111; }
+  #game { flex: 1 1 auto; width: 100%; border: 0; display: block; min-height: 0; }
+  #moki-back { padding: 9px 16px; border-radius: 999px; background: linear-gradient(90deg, #00e5a8, #ffd23f); color: #04201a; font: 800 14px "Segoe UI", system-ui, sans-serif; text-decoration: none; box-shadow: 0 3px 12px rgba(0,0,0,.4); }
+  #ld { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); color: #fff; font: 700 16px system-ui,sans-serif; }
+</style>
+</head>
+<body>
+<div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
+<iframe id="game" allow="autoplay *; fullscreen *; gamepad *; clipboard-write *" allowfullscreen></iframe>
+<div id="ld">Lade Spiel …</div>
+<script>
+// Startet das eigene Spiel aus dem GitHub-Repo (fester Commit). Keine Werbung, keine Tracker.
+// Die grossen Build-Dateien kommen von raw.githubusercontent.com, weil jsDelivr Dateien ueber 20 MB nicht ausliefert.
+const COMMIT = "da225e1b6fd6fce5c5d1383ff0a9d47d1b6bfdab";
+const BASEDIR = "https://raw.githubusercontent.com/antoniscrazy/Claude/" + COMMIT + "/keyboard-escape/";
+const GXBASE = "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@" + COMMIT + "/superblackhole/gx/";
+const ENTRY = BASEDIR + "index.html";
+const INJECT = [GXBASE + "gx-runtime.js", GXBASE + "mock-sdk/yandex.js"];
+
+// Netz-Sperre: nur Repo-Adressen und Mock-Antworten. Alles andere bekommt sofort eine leere, gueltige Antwort.
+const ALLOW = [BASEDIR, "https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@" + COMMIT + "/"];
+const BLOCK = '<script>(' + (function (ALLOW) {
+  var ok = function (u) { u = String(u || ""); return /^(blob:|data:|about:)/.test(u) || ALLOW.some(function (a) { return u.indexOf(a) === 0; }) || !/^(https?:)?[/][/]/.test(u); };
+  var nativeOpen = XMLHttpRequest.prototype.open, nativeSend = XMLHttpRequest.prototype.send;
+  XMLHttpRequest.prototype.open = function (m, u) { this.__bl = !ok(u); return nativeOpen.apply(this, arguments); };
+  XMLHttpRequest.prototype.send = function () {
+    var x = this;
+    if (!this.__bl) return nativeSend.apply(this, arguments);
+    setTimeout(function () {
+      Object.defineProperty(x, "readyState", { value: 4, configurable: true });
+      Object.defineProperty(x, "status", { value: 200, configurable: true });
+      Object.defineProperty(x, "responseText", { value: "{}", configurable: true });
+      Object.defineProperty(x, "response", { value: "{}", configurable: true });
+      if (x.onreadystatechange) x.onreadystatechange();
+      x.dispatchEvent(new ProgressEvent("load")); x.dispatchEvent(new ProgressEvent("loadend"));
+    }, 0);
+  };
+  var srcDesc = Object.getOwnPropertyDescriptor(HTMLScriptElement.prototype, "src");
+  Object.defineProperty(HTMLScriptElement.prototype, "src", {
+    configurable: true, get: srcDesc.get,
+    set: function (v) { var t = String(v); if (!ok(t) && !/^data:/.test(t)) v = "data:text/javascript,"; srcDesc.set.call(this, v); }
+  });
+  var f = window.fetch;
+  window.fetch = function (u) { var s2 = String(u && u.url || u); if (!ok(s2)) return Promise.resolve(new Response("{}", { status: 200, headers: { "Content-Type": "application/json" } })); return f.apply(this, arguments); };
+  navigator.sendBeacon = function () { return false; };
+  window.open = function () { return null; };
+}).toString() + ')(' + JSON.stringify(ALLOW) + ')<\/script>';
+
+fetch(ENTRY)
+  .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
+  .then(html => {
+    // Die eingebaute Content-Security-Policy erlaubt nur Yandex-Hosts; sie wird ersetzt (die Netz-Sperre oben schuetzt).
+    html = html.replace(/<meta http-equiv="Content-Security-Policy"[^>]*>/i, "");
+    // Der Build-Pfad wird absolut gemacht, sonst rechnet das Spiel im srcdoc-Frame gegen about: und scheitert (Invalid URL).
+    html = html.replace('buildUrl = "Build"', 'buildUrl = "' + BASEDIR + 'Build"');
+    html = html.replace('streamingAssetsUrl: "StreamingAssets"', 'streamingAssetsUrl: "' + BASEDIR + 'StreamingAssets"');
+    // Das Yandex-SDK wird durch das lokale Mock-SDK ersetzt.
+    html = html.replace(/<script src="\/sdk\.js"><\/script>/, "");
+    // Fehlende Plattform-APIs des Mock-SDKs: Spielliste und Flags liefern leere Antworten, damit das Spiel weiterlaeuft.
+    const PATCH = '<script>(function(){var i=window.YaGames&&window.YaGames.init;if(!i)return;window.YaGames.init=function(){return i.apply(this,arguments).then(function(y){'
+      + 'function def(o,k,v){try{Object.defineProperty(o,k,{value:v,configurable:true,writable:true});}catch(e){try{o[k]=v;}catch(e2){}}}'
+      + 'var feat=y.features||{};def(y,"features",feat);'
+      + 'def(feat,"GamesAPI",{getAllGames:function(){return Promise.resolve({games:[],developerURL:""});}});'
+      + 'def(y,"getFlags",function(){return Promise.resolve({});});'
+      + 'var lb=y.leaderboards||{};def(y,"leaderboards",lb);'
+      + 'if(typeof lb.getDescription!=="function")def(lb,"getDescription",function(){return Promise.resolve({description:{invert_sort_order:false,score_format:{type:"numeric",options:{decimal_offset:0}}},name:""});});'
+      + 'var env=y.environment||{};def(y,"environment",env);if(!env.browser)def(env,"browser",{lang:"en"});if(!env.app)def(env,"app",{id:"local"});'
+      + 'if(!y.deviceInfo)def(y,"deviceInfo",{type:"desktop",isMobile:function(){return false;},isDesktop:function(){return true;},isTablet:function(){return false;},isTV:function(){return false;}});'
+      + 'return y;});};})();<\/script>';
+    const tags = '<script>window.__GX_CONFIG__={disableServiceWorker:true};<\/script>'
+      + INJECT.map(s => '<script src="' + s + '"><\/script>').join('') + PATCH;
+    html = html.replace(/<head[^>]*>/i, m => m + '<base href="' + BASEDIR + '">' + BLOCK + tags);
+    document.getElementById("game").srcdoc = html;
+    document.getElementById("ld").remove();
+  })
+  .catch(e => { document.getElementById("ld").textContent = "Fehler beim Laden: " + e.message; });
+</script>
+</body>
+</html>
