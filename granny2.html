@@ -27,7 +27,7 @@
 <div id="wrap"><canvas id="c" tabindex="-1"></canvas><div id="ld"><div id="tx">Lade Spiel …</div><div id="pb"><div id="pf"></div></div></div></div>
 <script>
 // Laedt das Spiel aus dem GitHub-Repo (raw.githubusercontent.com, fester Commit). Keine Werbung, keine Tracker.
-const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/e6ee1adcd1adadec3297b93fc2e42c29ff4c6955/granny2/";
+const BASE = "https://raw.githubusercontent.com/antoniscrazy/Claude/849f1989fbee3f0fc74eabcffa7f71ba5e6437e6/granny2/";
 const ORIGIN = new URL(BASE).origin;
 
 // --- Netz-Sperre: nur Repo-Ursprung, blob: und data: erlaubt.
@@ -81,6 +81,7 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
       dataUrl: URL.createObjectURL(new Blob([dataBlob], { type: "application/octet-stream" })),
       codeUrl: URL.createObjectURL(new Blob([wasmBlob], { type: "application/wasm" })),
       frameworkUrl: URL.createObjectURL(new Blob([fw], { type: "text/javascript" })),
+      streamingAssetsUrl: BASE + "StreamingAssets",
       companyName: "Awesome", productName: "Granny 2", productVersion: "1.0"
     }, p => { pf.style.width = (50 + p * 50) + "%"; });
     window.unityGame = inst; window.myGameInstance = inst;
