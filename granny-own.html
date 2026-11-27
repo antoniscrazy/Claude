@@ -22,7 +22,8 @@
   #moki-back:hover { opacity: 1; transform: scale(1.05); }
 </style>
 <style>
-#jz{position:fixed;left:0;bottom:0;width:50%;height:60%;z-index:9;touch-action:none}
+#jz{display:none;position:fixed;left:0;bottom:0;width:50%;height:60%;z-index:9;touch-action:none}
+#jz.show{display:block}
 #jb{position:fixed;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;background:rgba(255,255,255,.10);border:2px solid rgba(255,255,255,.3);display:none;pointer-events:none;z-index:9}
 #jk{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:rgba(255,255,255,.35)}
 #rb{position:fixed;left:0;top:0;width:100%;height:100%;display:none;z-index:9;pointer-events:none}
@@ -130,7 +131,7 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
       companyName: "Anastasia Kazantseva", productName: "Granny", productVersion: "1.0"
     }, p => { pf.style.width = (50 + p * 50) + "%"; });
     window.unityGame = inst; window.myGameInstance = inst;
-    document.getElementById("ld").remove();
+    document.getElementById("ld").remove(); window.__ready = true;
     setTimeout(function () { pickEnglish(canvas); }, 4000);
   } catch (e) { tx.textContent = "Fehler beim Laden: " + (e.message || e); }
 })();
@@ -205,13 +206,14 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
   const endLook=e=>{ if(e.pointerId===lid) lid=null; };
   look.addEventListener("pointerup",endLook); look.addEventListener("pointercancel",endLook);
   function vx2(){ return vx(); } function vy2(){ return vy(); }
-  function show(){ rb.classList.add("show"); pz.classList.add("show"); look.classList.add("show"); }
-  function hide(){ rb.classList.remove("show"); pz.classList.remove("show"); look.classList.remove("show"); jEnd(); }
+  function show(){ jz.classList.add("show"); rb.classList.add("show"); pz.classList.add("show"); look.classList.add("show"); }
+  function hide(){ jz.classList.remove("show"); rb.classList.remove("show"); pz.classList.remove("show"); look.classList.remove("show"); jEnd(); }
   window.addEventListener("blur",hide);
   document.addEventListener("keydown",e=>{ if(e.key==="Escape") hide(); });
   // Erscheint in der Runde (Ausloeser je Spiel):
   let stage=0;
   document.addEventListener("pointerdown",e=>{
+    if(!window.__ready) return; if(!(e.target.closest && e.target.closest("#wrap"))) return;
     if(e.target.closest && e.target.closest("#jz, #look, #rb, #pz")) return;
     const x=e.clientX, y=e.clientY, W=innerWidth, H=innerHeight;
     if(stage===0 && y>H*0.62 && y<H*0.72 && Math.abs(x-W/2)<W*0.12){ stage=1; return; }
