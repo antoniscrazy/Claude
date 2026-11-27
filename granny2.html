@@ -10,13 +10,13 @@
 #jk{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:rgba(255,255,255,.35)}
 #rb{position:fixed;left:0;top:0;width:100%;height:100%;display:none;z-index:9;pointer-events:none}
 #rb.show{display:block}
-#rb button{position:absolute;transform:translate(-50%,-50%);width:66px;height:66px;border-radius:50%;border:2px solid rgba(255,255,255,.7);background:rgba(0,0,0,.35);padding:0;touch-action:none;user-select:none;-webkit-user-select:none;pointer-events:auto;display:flex;align-items:center;justify-content:center}
-#rb button svg{width:34px;height:34px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+#rb button{position:absolute;transform:translate(-50%,-50%);width:clamp(66px,11vh,104px);height:clamp(66px,11vh,104px);border-radius:50%;border:2px solid rgba(255,255,255,.7);background:rgba(0,0,0,.35);padding:0;touch-action:none;user-select:none;-webkit-user-select:none;pointer-events:auto;display:flex;align-items:center;justify-content:center}
+#rb button svg{width:clamp(34px,5.5vh,54px);height:clamp(34px,5.5vh,54px);stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
 #rb button.on{filter:brightness(1.4)}
-#rb #fire{left:68.6%;top:47.4%;background:rgba(0,200,120,.45);border-color:#2ee6a0}
-#rb #b_take{left:79.4%;top:47.4%;background:rgba(255,200,40,.5);border-color:#ffd23f}
-#rb #b_drop{left:51%;top:80.4%;background:rgba(0,0,0,.6);border-color:#111}
-#rb #b_sneak{left:91.5%;top:34%;background:rgba(40,110,255,.45);border-color:#3b82f6}
+#rb #fire{left:68.6%;top:60%;background:rgba(0,200,120,.45);border-color:#2ee6a0}
+#rb #b_take{left:79.4%;top:60%;background:rgba(255,200,40,.5);border-color:#ffd23f}
+#rb #b_drop{left:51%;top:87%;background:rgba(0,0,0,.6);border-color:#111}
+#rb #b_sneak{left:91.5%;top:50%;background:rgba(40,110,255,.45);border-color:#3b82f6}
 #pz{position:fixed;left:14px;top:56px;transform:none}
 #pz{display:none;position:fixed;left:12px;top:56px;width:46px;height:46px;border-radius:50%;border:2px solid rgba(255,255,255,.4);background:rgba(0,0,0,.4);color:#fff;font:800 15px system-ui,sans-serif;z-index:10;touch-action:none}
 #pz.show{display:block}
@@ -94,7 +94,7 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
 <div id="look"></div>
 <div id="jz"><div id="jb"><div id="jk"></div></div></div>
 <button id="pz" type="button"><svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2.6;stroke-linecap:round"><path d="M9 5v14M15 5v14"/></svg></button>
-<div id="rb"><button id="fire" type="button" aria-label="Schießen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg></button><button id="b_take" data-k="e" type="button" aria-label="Nehmen"><svg viewBox="0 0 24 24"><path d="M7 13V6a1.5 1.5 0 0 1 3 0v5M10 11V4a1.5 1.5 0 0 1 3 0v7M13 11V5a1.5 1.5 0 0 1 3 0v7l1-1a1.5 1.5 0 0 1 2 2l-3 5a6 6 0 0 1-5 3H10a6 6 0 0 1-5-3L3 14a1.5 1.5 0 0 1 2-2l2 2"/></svg></button><button id="b_drop" data-k="sp" type="button" aria-label="Fallen lassen"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg></button><button id="b_sneak" data-k="c" type="button" aria-label="Sneaken"><svg viewBox="0 0 24 24"><circle cx="14" cy="6" r="2"/><path d="M11 22l2-6 3 1 2-3M6 14l3-2 3 4M9 9l3 1 2 4"/></svg></button></div>
+<div id="rb"><button id="fire" type="button" aria-label="Schießen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg></button><button id="b_take" data-k="e" type="button" aria-label="Nehmen"><svg viewBox="0 0 24 24"><path d="M7 13V6a1.5 1.5 0 0 1 3 0v5M10 11V4a1.5 1.5 0 0 1 3 0v7M13 11V5a1.5 1.5 0 0 1 3 0v7l1-1a1.5 1.5 0 0 1 2 2l-3 5a6 6 0 0 1-5 3H10a6 6 0 0 1-5-3L3 14a1.5 1.5 0 0 1 2-2l2 2"/></svg></button><button id="b_drop" data-k="sp" type="button" aria-label="Fallen lassen"><svg viewBox="0 0 24 24"><path d="M3 9h18v11H3z"/><path d="M12 4v9M8 9l4 4 4-4"/></svg></button><button id="b_sneak" data-k="c" type="button" aria-label="Sneaken"><svg viewBox="0 0 24 24"><circle cx="14" cy="6" r="2"/><path d="M11 22l2-6 3 1 2-3M6 14l3-2 3 4M9 9l3 1 2 4"/></svg></button></div>
 <script>
 (function(){
   const $=id=>document.getElementById(id);
