@@ -1,0 +1,69 @@
+<div id="bios" class="screen" hidden></div>
+<div id="bootlogo" class="screen" hidden>
+  <div class="boot-brand">
+    <div class="bb-small">ZeroDay</div>
+    <div class="bb-big">Doors<span>XP</span></div>
+    <div class="bb-sub">Professional · Black Hat Edition</div>
+  </div>
+  <div class="boot-bar"><i></i></div>
+  <div class="boot-foot"><span>Copyright © 2001–2026 Doorsoft (fiktiv)</span><span>Klicken zum Überspringen</span></div>
+</div>
+<div id="login" class="screen" hidden>
+  <div class="lg-top"></div>
+  <div class="lg-mid">
+    <div class="lg-left">
+      <div class="bb-big">Doors<span>XP</span></div>
+      <p>Klicken Sie auf Ihren Benutzernamen,<br>um sich anzumelden.</p>
+    </div>
+    <div class="lg-right">
+      <button class="lg-user" id="lg-user" type="button">
+        <span class="avatar" id="lg-avatar"></span>
+        <span><b id="lg-name">Ghost</b><small id="lg-sub">Neues Spiel</small></span>
+      </button>
+      <div class="lg-pass" id="lg-pass" hidden>
+        <input id="lg-alias" class="xinput" maxlength="14" placeholder="Hacker-Alias" autocomplete="off">
+        <button class="lg-go" id="lg-go" type="button" aria-label="Anmelden">→</button>
+      </div>
+    </div>
+  </div>
+  <div class="lg-bot">
+    <button class="lg-off" id="lg-off" type="button"><i>⏻</i> Computer ausschalten</button>
+    <span style="font-size:11px;max-width:320px;text-align:right">Nach der Anmeldung können Sie die Hack-Konsole starten.<br>Ton an für die volle Erfahrung.</span>
+  </div>
+</div>
+<div id="welcome" class="screen" hidden>Willkommen</div>
+<div id="busted" class="screen" hidden></div>
+<div id="bsod" class="screen" hidden></div>
+<div id="ending" class="screen" hidden></div>
+<div id="shutdown" class="screen" hidden>Sie können den Computer jetzt ausschalten.<small>Klicken zum Neustarten</small></div>
+
+<div id="os" hidden>
+  <div id="desk" class="wp-bliss">
+    <canvas id="wpcanvas"></canvas>
+    <div id="icons"></div>
+    <div id="gadget">
+      <h4><span>Status</span><span id="g-rank">Script-Kiddie</span></h4>
+      <div class="g-row g-money"><span>Konto</span><b id="g-money">0 Cr</b></div>
+      <div class="g-row"><span>Ruf</span><span id="g-reptxt">0</span></div>
+      <div class="g-meter" id="g-rep"><i></i></div>
+      <div class="g-row"><span>Fahndung (Heat)</span><span id="g-heattxt">0%</span></div>
+      <div class="g-meter" id="g-heat"><i></i></div>
+      <div class="g-obj" id="g-obj"><small>Aktuelles Ziel</small><span>Lies deine E-Mails.</span></div>
+    </div>
+  </div>
+  <div id="tracevig"></div>
+  <div id="tracehud"><span>⚠ TRACE</span><span class="th-bar"><i></i></span><b>0%</b></div>
+  <div id="balloons"></div>
+  <div id="startmenu"></div>
+  <div id="taskbar">
+    <button id="startbtn" type="button"></button>
+    <div id="tasks"></div>
+    <div id="tray">
+      <span id="tray-trace">TRACE 0%</span>
+      <button class="tray-ic" id="tray-net" type="button" title="Netzwerk"></button>
+      <button class="tray-ic" id="tray-vol" type="button" title="Lautstärke"></button>
+      <button class="tray-ic" id="tray-sec" type="button" title="Sicherheitscenter"></button>
+      <span id="clock">00:00</span>
+    </div>
+  </div>
+</div>
