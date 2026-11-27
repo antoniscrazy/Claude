@@ -1297,7 +1297,7 @@ function startRun(){
   let cost=0;S.boosts.forEach((b,i)=>{if(b)cost+=BOOSTS[i].price;});
   let boosts=S.boosts.slice();
   if(cost>S.money){boosts=boosts.map(()=>false);cost=0;toast('Zu wenig Geld für Boosts','#ff5252','coin','Boosts wurden deaktiviert');S.boosts=S.boosts.map(()=>false);}
-  S.money-=cost;save();
+  S.money-=cost;S.boosts=S.boosts.map(()=>false);save();
   const spec=playerSpec(S.sel),b=randi(0,3);
   const tank=st.tank+(boosts[1]?2:0);
   G={
@@ -1843,7 +1843,7 @@ function doEmp(g){
   ring(g,g.x,PY,420,'64,196,255',0.8,10);ring(g,g.x,PY,260,'180,230,255',0.5,5);
   g.flash=0.25;g.flashCol='120,200,255';
   pop(g,g.x,PY-60,'EMP!','#40c4ff',true);
-  for(const c of g.cops){if(c.dead)continue;if(Math.abs(c.y-PY)<520){c.hp-=Math.max(30,c.maxHp*0.75);c.stun=2.2;sparks(g,c.x,c.y,10,'#80d8ff');if(c.hp<=0)killCop(g,c);}}
+  for(const c of g.cops){if(c.dead)continue;if(Math.abs(c.y-PY)<520){c.hp-=Math.max(50,c.maxHp*0.8);c.stun=2.2;sparks(g,c.x,c.y,10,'#80d8ff');if(c.hp<=0)killCop(g,c);}}
   if(g.heli&&!g.heli.dead){
     g.heli.dead=true;g.heli.fall=1.4;
     S.st.helis++;const b=Math.round(500*DIFFS[g.diff].mult);g.bonus+=b;
@@ -3131,7 +3131,7 @@ function drawShowcase(i,cy){
   // Neon & Auto
   const carY=ly+12+spec.h*sc/2;
   const neon=pv.neon;
-  gIn=Math.min(1,gIn+1/60*1.35);
+  gIn=Math.min(1,gIn+FDT*1.35);
   const din=easeOut(gIn),dY=carY+(1-din)*150;
   if(neon){ctx.save();ctx.globalCompositeOperation='lighter';ctx.translate(cx,dY);ctx.scale(1,1.9);glowAt(neon,0,0,30*sc,0.95);ctx.restore();}
   ctx.save();ctx.translate(cx,dY);ctx.scale(sc,sc);
@@ -3147,10 +3147,10 @@ function drawShowcase(i,cy){
   for(let k=0;k<3;k++){const x0=bx+40+k*80;ctx.beginPath();ctx.moveTo(x0,by+bh);ctx.lineTo(x0+30,by+20);ctx.lineTo(x0+46,by+20);ctx.lineTo(x0+16,by+bh);ctx.fill();}
   ctx.restore();
   // Funken / Konfetti
-  for(const f of gFx){f.x+=f.vx/60;f.y+=f.vy/60;f.vy+=140/60;f.vx*=0.98;f.r+=f.vr/60;f.life-=1/60;
+  for(const f of gFx){f.x+=f.vx*FDT;f.y+=f.vy*FDT;f.vy+=140*FDT;f.vx*=Math.pow(0.98,FDT*60);f.r+=f.vr*FDT;f.life-=FDT;
     ctx.globalAlpha=clamp(f.life/f.max,0,1);ctx.save();ctx.translate(f.x,f.y);ctx.rotate(f.r);ctx.fillStyle=f.c;ctx.fillRect(-f.s,-f.s/2,f.s*2,f.s);ctx.restore();}
   ctx.globalAlpha=1;gFx=gFx.filter(f=>f.life>0);
-  if(gFlash>0){ctx.fillStyle='rgba(255,255,255,'+(gFlash*0.5)+')';ctx.fillRect(bx,by,bw,bh);gFlash=Math.max(0,gFlash-1/60*2);}
+  if(gFlash>0){ctx.fillStyle='rgba(255,255,255,'+(gFlash*0.5)+')';ctx.fillRect(bx,by,bw,bh);gFlash=Math.max(0,gFlash-FDT*2);}
   // Deckenlicht
   ctx.save();ctx.globalCompositeOperation='lighter';
   const lg=ctx.createRadialGradient(cx,carY-10,10,cx,carY,120);
@@ -3454,7 +3454,7 @@ function drawPause(){
 }
 let confetti=[];
 function drawOver(){
-  const e=endInfo;e.t+=1/60;
+  const e=endInfo;e.t+=FDT;
   bgDim(0.8);
   const T={wreck:['GESTELLT!','#ff5252','Dein Wagen ist Schrott.'],busted:['VERHAFTET!','#448aff','Die Polizei hat dich festgesetzt.'],
     time:['ZEIT ABGELAUFEN','#ffab40','Die Uhr hat dich eingeholt.'],win:['ENTKOMMEN!','#69f0ae','Beute erfolgreich abgeliefert!']}[e.reason];
@@ -3506,13 +3506,13 @@ function drawOver(){
   }
   if(e.reason==='win'){
     if(confetti.length<120)for(let i=0;i<3;i++)confetti.push({x:rand(0,W),y:-10,vx:rand(-30,30),vy:rand(80,180),r:rand(0,TAU),vr:rand(-8,8),c:pick(['#ffd600','#69f0ae','#40c4ff','#ff4081','#ea80fc'])});
-    for(const c of confetti){c.x+=c.vx/60;c.y+=c.vy/60;c.r+=c.vr/60;ctx.save();ctx.translate(c.x,c.y);ctx.rotate(c.r);ctx.fillStyle=c.c;ctx.fillRect(-3,-1.5,6,3);ctx.restore();}
+    for(const c of confetti){c.x+=c.vx*FDT;c.y+=c.vy*FDT;c.r+=c.vr*FDT;ctx.save();ctx.translate(c.x,c.y);ctx.rotate(c.r);ctx.fillStyle=c.c;ctx.fillRect(-3,-1.5,6,3);ctx.restore();}
     confetti=confetti.filter(c=>c.y<H+10);
   }
 }
 function drawModal(){
   ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(0,0,W,H);
-  const a=easeBack(clamp(modal.t*3,0,1));modal.t+=1/60;
+  const a=easeBack(clamp(modal.t*3,0,1));modal.t+=FDT;
   ctx.save();ctx.translate(W/2,H/2);ctx.scale(a,a);ctx.translate(-W/2,-H/2);
   if(modal.kind==='daily'){
     panel(24,150,312,330,{k:14,accent:'#ffd600',edge:'rgba(255,214,0,0.6)',glow:'#ffd600'});
@@ -3546,22 +3546,35 @@ function drawModal(){
 function dailyReward(day){return 200+day*150+(day===7?1000:0);}
 function drawToasts(){
   if(screen==='over')return;
-  let y=screen==='game'?84:60;
-  for(const t of toasts){
-    const inA=easeOut(clamp((t.max-t.t)*4,0,1)),outA=clamp(t.t*2.5,0,1);
-    ctx.save();ctx.globalAlpha=Math.min(inA,outA);ctx.translate(0,(1-inA)*-30);
-    panel(30,y,300,t.sub?52:40,{k:9,accent:t.col,edge:rgba(t.col,0.6),glow:S.set.gfx?t.col:null});
-    if(t.icon)drawIcon(t.icon,52,y+(t.sub?26:20),20,t.col);
-    txt(t.text,t.icon?70:W/2,y+(t.sub?22:26),15,'#fff',t.icon?'left':'center','h');
-    if(t.sub)txt(t.sub,t.icon?70:W/2,y+41,12,'#cfd8dc',t.icon?'left':'center');
+  const inGame=screen==='game'||screen==='pause';
+  const list=inGame?toasts:toasts.slice(-2);
+  let y=inGame?84:H-12;
+  for(const t of (inGame?list:list.slice().reverse())){
+    const inA=easeOut(clamp((t.max-t.t)*4,0,1)),outA=clamp(t.t*2.5,0,1),a=Math.min(inA,outA);
+    const h=t.sub?50:38;
+    const ty=inGame?y:y-h;
+    ctx.save();ctx.globalAlpha=a;ctx.translate(0,(1-inA)*(inGame?-30:30));
+    panel(30,ty,300,h,{k:9,accent:t.col,edge:rgba(t.col,0.6),glow:S.set.gfx?t.col:null,top:'rgba(20,28,44,0.97)',bot:'rgba(8,12,20,0.97)'});
+    if(t.icon)drawIcon(t.icon,52,ty+h/2,20,t.col);
+    txt(t.text,t.icon?70:W/2,ty+(t.sub?21:24),15,'#fff',t.icon?'left':'center','h');
+    if(t.sub)txt(t.sub,t.icon?70:W/2,ty+39,12,'#cfd8dc',t.icon?'left':'center');
     ctx.restore();
-    y+=(t.sub?58:46)*Math.min(inA,outA);
+    y+=(inGame?1:-1)*(h+6)*a;
   }
 }
 
 /* =====================================================================
    AKTIONEN
    ===================================================================== */
+function pauseGame(){
+  if(screen!=='game')return;
+  screen='pause';press=null;steer=null;nitroHeld=false;nitroPtr=null;touchL=touchR=null;
+  keys.left=keys.right=keys.nitro=false;stopSiren();stopEngine();
+}
+function resumeGame(){
+  if(screen!=='pause'||!G)return;
+  screen='game';press=null;initAudio();startEngine();
+}
 function onBtn(id){
   SFX.click();
   const [k,arg]=id.split(':');const n=parseInt(arg,10);
@@ -3576,8 +3589,8 @@ function onBtn(id){
     case'stats':setScreen('stats');break;
     case'settings':setScreen('settings');break;
     case'menu':case'quit':stopEngine();stopSiren();G=null;steer=null;nitroHeld=false;setScreen('menu');break;
-    case'pause':if(screen==='game'){screen='pause';press=null;stopSiren();}break;
-    case'resume':screen='game';press=null;break;
+    case'pause':pauseGame();break;
+    case'resume':resumeGame();break;
     case'mode':S.mode=n;save();break;
     case'diff':S.diff=n;save();break;
     case'boost':S.boosts[n]=!S.boosts[n];save();break;
@@ -3715,11 +3728,11 @@ addEventListener('keydown',e=>{
   if(k===' '||k==='Shift'||k==='ArrowUp'||k==='w'){keys.nitro=true;e.preventDefault();}
   if(k==='Escape'||k==='p'||k==='P'){
     if(modal)modal=null;
-    else if(screen==='game'){screen='pause';stopSiren();}
-    else if(screen==='pause')screen='game';
+    else if(screen==='game')pauseGame();
+    else if(screen==='pause')resumeGame();
     else if(screen!=='menu'&&screen!=='over')setScreen('menu');
   }
-  if(k==='Enter'){
+  if(k==='Enter'&&!modal){
     if(screen==='menu')setScreen('prep');
     else if(screen==='prep')startRun();
     else if(screen==='over'&&endInfo&&endInfo.t>1)startRun();
@@ -3732,7 +3745,7 @@ addEventListener('keyup',e=>{
   if(k===' '||k==='Shift'||k==='ArrowUp'||k==='w')keys.nitro=false;
 });
 document.addEventListener('visibilitychange',()=>{
-  if(document.hidden){if(screen==='game'){screen='pause';}stopSiren();if(AU.ctx&&AU.ctx.state==='running')AU.ctx.suspend();}
+  if(document.hidden){pauseGame();stopSiren();if(AU.ctx&&AU.ctx.state==='running')AU.ctx.suspend();}
   else if(AU.ctx)AU.ctx.resume();
 });
 addEventListener('blur',()=>{keys.left=keys.right=keys.nitro=false;});
@@ -3761,9 +3774,9 @@ function draw(){
   drawToasts();
   if(fade>0){ctx.fillStyle='rgba(4,8,16,'+fade+')';ctx.fillRect(0,0,W,H);}
 }
-let last=performance.now();
+let last=performance.now(),FDT=1/60;
 function loop(now){
-  const dt=Math.min(0.05,Math.max(0,(now-last)/1000));last=now;
+  const dt=Math.min(0.05,Math.max(0,(now-last)/1000));last=now;FDT=dt;
   time+=dt;
   if(fade>0)fade=Math.max(0,fade-dt*3.2);
   for(const t of toasts)t.t-=dt;
