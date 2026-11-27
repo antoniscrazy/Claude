@@ -27,19 +27,40 @@ const INJECT = ["https://cdn.jsdelivr.net/gh/antoniscrazy/Claude@06f168023bb3db3
 const GXCFG = { urlMap: URLMAP, disableServiceWorker: true };
 
 // Netz-Sperre fuer das Spiel: nur Repo, blob, data. Gesperrte Anfragen liefern sofort einen Fehler.
-const BLOCK = '<script>(' + (function () {
+const MOCK_HOST = "https://api.fzhdnet.com";
+// Netz-Sperre + lokale Antworten: Anfragen an den Spiele-Server werden nicht verschickt; sie bekommen eine leere, gueltige Antwort.
+const BLOCK = '<script>(' + (function (MOCK_HOST) {
+  var nativeOpen = XMLHttpRequest.prototype.open, nativeSend = XMLHttpRequest.prototype.send;
   var ok = function (u) { u = String(u || ""); return /^(blob:|data:|about:)/.test(u) || u.indexOf("https://cdn.jsdelivr.net/") === 0 || !/^(https?:)?[/][/]/.test(u); };
-  var xo = XMLHttpRequest.prototype.open, xs = XMLHttpRequest.prototype.send;
-  XMLHttpRequest.prototype.open = function (m, u) { this.__bl = !ok(u); return xo.apply(this, arguments); };
+  XMLHttpRequest.prototype.open = function (m, u) {
+    this.__url = String(u); this.__mock = this.__url.indexOf(MOCK_HOST) === 0;
+    this.__bl = !this.__mock && !ok(u);
+    return nativeOpen.apply(this, arguments);
+  };
   XMLHttpRequest.prototype.send = function () {
-    if (!this.__bl) return xs.apply(this, arguments);
-    var x = this; setTimeout(function () { x.dispatchEvent(new ProgressEvent("error")); x.dispatchEvent(new ProgressEvent("loadend")); }, 0);
+    var x = this;
+    if (this.__mock) {
+      setTimeout(function () {
+        var body = JSON.stringify({ code: 0, msg: "ok", data: {} });
+        Object.defineProperty(x, "readyState", { value: 4, configurable: true });
+        Object.defineProperty(x, "status", { value: 200, configurable: true });
+        Object.defineProperty(x, "responseText", { value: body, configurable: true });
+        Object.defineProperty(x, "response", { value: body, configurable: true });
+        if (x.onreadystatechange) x.onreadystatechange();
+        x.dispatchEvent(new Event("readystatechange"));
+        x.dispatchEvent(new ProgressEvent("load"));
+        x.dispatchEvent(new ProgressEvent("loadend"));
+      }, 0);
+      return;
+    }
+    if (!this.__bl) return nativeSend.apply(this, arguments);
+    setTimeout(function () { x.dispatchEvent(new ProgressEvent("error")); x.dispatchEvent(new ProgressEvent("loadend")); }, 0);
   };
   var f = window.fetch;
-  window.fetch = function (u) { return ok(u && u.url || u) ? f.apply(this, arguments) : Promise.reject(new TypeError("blocked")); };
+  window.fetch = function (u) { var s2 = String(u && u.url || u); if (s2.indexOf(MOCK_HOST) === 0) return Promise.resolve(new Response(JSON.stringify({ code: 0, msg: "ok", data: {} }), { status: 200, headers: { "Content-Type": "application/json" } })); return ok(s2) ? f.apply(this, arguments) : Promise.reject(new TypeError("blocked")); };
   navigator.sendBeacon = function () { return false; };
   window.open = function () { return null; };
-}).toString() + ')()<\/script>';
+}).toString() + ')(' + JSON.stringify(MOCK_HOST) + ')<\/script>';
 
 // Zuordnung wie beim lokalen Server: externe Adressen werden auf den Repo-Ordner umgebogen.
 function applyUrlMap(text) {
