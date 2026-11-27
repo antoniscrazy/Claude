@@ -1243,7 +1243,8 @@ window.MOKI_PRIVATE_GAMES = [
     image: "flucht.jpg",
     colors: ["#f5a623", "#c0392b"],
     description: "Verfolgungsjagd von oben: Entkomme der Polizei, sammle Münzen und schalte neue Autos frei.",
-    added: "2026-11-27",
+    added: "2026-12-24",
+    release: "2026-12-24",   // ab diesem Tag steht das Spiel in jeder Liste (vorher nur Admins und Adventskalender)
     splash: { tag: "Moki Original", by: "Von Tim" },
     featured: false
   }

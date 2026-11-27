@@ -59,7 +59,7 @@
     "@media(prefers-reduced-motion:reduce){#bar::before,#bar::after{animation:none}}";
   const findGame = id => games.find(g => g.id === id) || (window.MOKI_XMAS_GAMES || []).find(g => g.id === id) || (window.MOKI_PRIVATE_GAMES || []).find(g => g.id === id);
   // Private Spiele (Flucht!) gelten als freigeschaltet, wenn ihr Tuerchen offen ist und der Tag erreicht wurde
-  window.MOKI_XMAS_PRIVATE_OK = id => { const d = DAYS.findIndex(x => x.g === id) + 1; return d > 0 && opened.has(d) && d <= today(); };
+  window.MOKI_XMAS_PRIVATE_OK = id => { const d = DAYS.findIndex(x => x.g === id) + 1; return d > 0 && ((forced === 24 && d === 24) || (opened.has(d) && d <= today())); };
 
   // ---------- Quiz: pro Tuerchen eine Frage (erste Antwort ist die richtige, die Reihenfolge wird pro Tag fest gemischt) ----------
   const QZ = [

@@ -356,7 +356,12 @@ home();   // erster Aufbau erst hier, damit alle Funktionen oben bereit sind
 
 // ---- Eingebaute Spiele (Launcher-Huellen): Hash "#/play/<id>" oeffnet das Spiel im Vollbild-Player ----
 // ---- Private Spiele (nur Admins oder per Adventskalender freigeschaltet) ----
+function releasedPrivate(pg) {   // ab dem Veroeffentlichungstag (deutsche Zeit) fuer alle
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(pg.release || ""); if (!m) return false;
+  return berlinDay() >= Math.floor(Date.UTC(+m[1], +m[2] - 1, +m[3]) / 86400000);
+}
 function privateOk(id) {
+  try { const pg = (window.MOKI_PRIVATE_GAMES || []).find(p => p.id === id); if (pg && releasedPrivate(pg)) return "public"; } catch (e) {}
   try { if (window.MOKI_ACC && window.MOKI_ACC.admin) return "admin"; } catch (e) {}
   try { if (window.MOKI_GIFT_OK === id) return "gift"; if (window.MOKI_XMAS_PRIVATE_OK && window.MOKI_XMAS_PRIVATE_OK(id)) return "xmas"; } catch (e) {}
   return "";
@@ -364,9 +369,10 @@ function privateOk(id) {
 function applyPrivate() {
   let changed = false;
   (window.MOKI_PRIVATE_GAMES || []).forEach(pg => {
-    const ok = privateOk(pg.id), i = games.findIndex(x => x.id === pg.id);
-    if (ok && i < 0) { games.push(Object.assign({ colors: ["#2b2b2b", "#8b0000"] }, pg, ok === "admin" ? { admin: true } : { xmas: true })); known.add(pg.id); changed = true; }
-    else if (ok && i >= 0) { const g = games[i], want = ok === "admin"; if (!!g.admin !== want) { g.admin = want; g.xmas = !want; changed = true; } }
+    let ok = privateOk(pg.id); if (ok === "gift") ok = "";   // ein Geschenk erlaubt nur das Spielen, es kommt nicht in die Liste
+    const i = games.findIndex(x => x.id === pg.id), flags = { admin: ok === "admin", xmas: ok === "xmas" };
+    if (ok && i < 0) { games.push(Object.assign({ colors: ["#2b2b2b", "#8b0000"] }, pg, flags)); known.add(pg.id); changed = true; }
+    else if (ok && i >= 0) { const g = games[i]; if (!!g.admin !== flags.admin || !!g.xmas !== flags.xmas) { g.admin = flags.admin; g.xmas = flags.xmas; changed = true; } }
     else if (!ok && i >= 0) { games.splice(i, 1); changed = true; }
   });
   if (changed) { try { renderSide(); } catch (e) {} try { home(); } catch (e) {} }
@@ -431,3 +437,6 @@ playerFromHash();
   side.addEventListener("touchstart", e => { ty = e.touches[0].clientY; }, { passive: true });
   side.addEventListener("touchmove", e => { if (!wide() || ty == null) return; e.preventDefault(); const y = e.touches[0].clientY; side.scrollTop -= y - ty; ty = y; }, { passive: false });
 })();
+
+// Private Spiele, die schon veroeffentlicht sind, gleich beim Start in die Liste
+try { applyPrivate(); } catch (e) {}
