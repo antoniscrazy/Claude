@@ -1279,6 +1279,7 @@ const keys={left:false,right:false,nitro:false};
 let steer=null,nitroPtr=null,nitroHeld=false,touchL=null,touchR=null;
 const NB={x:306,y:566,r:40};
 const SENS=[1.15,1.55,2.1];
+const NITRO_MIN=0.6,NITRO_IGNITE=0.3,NITRO_CD=0.45;
 let achTimer=0;
 
 function toast(text,col,icon,sub){
@@ -1318,7 +1319,7 @@ function startRun(){
     biome:b,prevBiome:b,bBlend:1,nextBiome:BIOME_LEN,weather:'clear',wx:[],wAmt:0,lightning:0,thunderT:rand(6,14),
     timeLeft:S.mode===1?45:0,nextCP:1000,heistTarget:4000+S.diff*1500,gateSpawned:{},
     missionsDone:[],achNew:[],banner:{t:0,text:'',sub:''},boosts:boosts,nitroOn:false,
-    dark:0,rot:0,achT:1,levelStart:S.level,xpStart:S.xp,startMoney:S.money,checkT:0.5
+    dark:0,rot:0,achT:1,nitroLock:false,nitroCd:0,levelStart:S.level,xpStart:S.xp,startMoney:S.money,checkT:0.5
   };
   setWeather(G,true);
   for(let y=-80;y<H+80;y+=26)spawnScenery(G,y);
@@ -1607,9 +1608,15 @@ function updateGame(dt){
   g.rot=g.spin>0?Math.sin(g.t*14)*0.5:clamp(g.vx/g.st.lat*0.22,-0.28,0.28);
 
   // Tempo & Nitro
-  const boost=(nitroHeld||keys.nitro)&&g.tank>0.02;
-  if(boost&&!g.nitroOn){SFX.nitroOn();}
-  g.nitroOn=boost;
+  // Nitro: Zünden kostet Tank, kurze Sperre nach Loslassen, leerer Tank sperrt bis 40 %
+  const want=nitroHeld||keys.nitro;
+  if(g.nitroCd>0)g.nitroCd-=dt;
+  if(g.nitroLock&&g.tank>=Math.min(1.2,g.tankMax*0.4))g.nitroLock=false;
+  if(want&&!g.nitroOn){
+    if(g.tank>=NITRO_MIN&&!g.nitroLock&&g.nitroCd<=0){g.nitroOn=true;g.tank-=NITRO_IGNITE;SFX.nitroOn();}
+  }else if(!want&&g.nitroOn){g.nitroOn=false;g.nitroCd=NITRO_CD;}
+  if(g.nitroOn&&g.tank<=0){g.tank=0;g.nitroOn=false;g.nitroLock=true;g.nitroCd=NITRO_CD;}
+  const boost=g.nitroOn;
   const tgt=g.st.max*(boost?1.38:1)*(g.tireT>0?0.7:1)*(g.spin>0?0.6:1);
   g.S+=(tgt-g.S)*Math.min(1,dt*(boost?2.5:1.0));
   if(boost){
@@ -2569,10 +2576,11 @@ function drawHUD(g){
   ctx.fillStyle='rgba(255,255,255,0.3)';ctx.beginPath();ctx.ellipse(NB.x,NB.y+pd-NB.r*0.45,NB.r*0.65,NB.r*0.32,0,0,TAU);ctx.fill();
   ctx.strokeStyle=C.ink;ctx.lineWidth=3;ctx.beginPath();ctx.arc(NB.x,NB.y+pd,NB.r,0,TAU);ctx.stroke();
   ctx.strokeStyle='rgba(14,70,143,0.7)';ctx.lineWidth=6;ctx.beginPath();ctx.arc(NB.x,NB.y+pd,NB.r-8,0,TAU);ctx.stroke();
-  ctx.strokeStyle='#ffe066';ctx.lineCap='round';ctx.beginPath();ctx.arc(NB.x,NB.y+pd,NB.r-8,-Math.PI/2,-Math.PI/2+TAU*nf);ctx.stroke();ctx.lineCap='butt';
+  const nReady=!g.nitroLock&&g.tank>=NITRO_MIN&&g.nitroCd<=0;
+  ctx.strokeStyle=g.nitroOn||nReady?'#ffe066':'#ff4b3e';ctx.lineCap='round';ctx.beginPath();ctx.arc(NB.x,NB.y+pd,NB.r-8,-Math.PI/2,-Math.PI/2+TAU*nf);ctx.stroke();ctx.lineCap='butt';
   drawIcon('bolt',NB.x,NB.y-6+pd,22,'#0e468f');drawIcon('bolt',NB.x,NB.y-8+pd,22,'#ffffff');
-  ctx.font='14px '+FT;ctx.textAlign='center';ctx.lineJoin='round';ctx.lineWidth=4;ctx.strokeStyle='#0e468f';ctx.strokeText('NITRO',NB.x,NB.y+17+pd);
-  txt('NITRO',NB.x,NB.y+17+pd,14,'#fff','center','h');
+  ctx.font='14px '+FT;ctx.textAlign='center';ctx.lineJoin='round';ctx.lineWidth=4;ctx.strokeStyle='#0e468f';const nl=g.nitroLock?'LEER':'NITRO';ctx.strokeText(nl,NB.x,NB.y+17+pd);
+  txt(nl,NB.x,NB.y+17+pd,14,g.nitroLock?'#ffb3ab':'#fff','center','h');
   // Tasten-Steuerung
   if(S.set.ctrl===1){
     for(const s of[0,1]){
