@@ -3034,37 +3034,94 @@ function drawPrep(){
   button({id:'start',x:30,y:540,w:300,h:64,style:ok?'green':'red',icon:'play',label:"LOS GEHT'S!",fs:26,shine:ok,pulse:ok,
     sub:cost?('Boosts: $ '+fmt(cost)+(ok?'':' – zu wenig Geld!')):CARS[S.sel].name});
 }
+function drawGarageBg(){
+  patFill('sidewalk',0,0,W,H,0);
+  ctx.fillStyle='rgba(8,12,20,0.82)';ctx.fillRect(0,0,W,H);
+  if(VIGN)ctx.drawImage(VIGN,0,0);
+}
 function drawShowcase(i,cy){
   const spec=playerSpec(i),owned=S.owned[i];
-  const sc=Math.min(1.8,100/spec.h);
+  const bx=52,by=98,bw=256,bh=142,cx=W/2;
+  const sc=Math.min(1.8,92/spec.h);
   ctx.save();
-  // Lichtkegel von oben
-  const sp=ctx.createLinearGradient(W/2,cy-80,W/2,cy+40);sp.addColorStop(0,'rgba(0,229,255,0)');sp.addColorStop(1,'rgba(0,229,255,0.16)');
-  ctx.fillStyle=sp;ctx.beginPath();ctx.moveTo(W/2-24,cy-80);ctx.lineTo(W/2+24,cy-80);ctx.lineTo(W/2+118,cy+40);ctx.lineTo(W/2-118,cy+40);ctx.closePath();ctx.fill();
-  // Drehscheibe
-  const py=cy+22;
-  ctx.fillStyle='rgba(0,0,0,0.5)';ctx.beginPath();ctx.ellipse(W/2,py+8,120,34,0,0,TAU);ctx.fill();
-  const pg=ctx.createRadialGradient(W/2,py,10,W/2,py,120);pg.addColorStop(0,'rgba(70,90,120,0.95)');pg.addColorStop(0.8,'rgba(18,26,40,0.95)');pg.addColorStop(1,'rgba(0,229,255,0.5)');
-  ctx.fillStyle=pg;ctx.beginPath();ctx.ellipse(W/2,py,118,32,0,0,TAU);ctx.fill();
-  ctx.strokeStyle='rgba(0,229,255,0.75)';ctx.lineWidth=2;ctx.stroke();
-  ctx.strokeStyle='rgba(0,229,255,0.22)';ctx.lineWidth=1;
-  for(let k=0;k<16;k++){const a=k/16*TAU+time*0.5;ctx.beginPath();ctx.moveTo(W/2+Math.cos(a)*36,py+Math.sin(a)*10);ctx.lineTo(W/2+Math.cos(a)*112,py+Math.sin(a)*30);ctx.stroke();}
-  ctx.beginPath();ctx.ellipse(W/2,py,70,19,0,0,TAU);ctx.stroke();
-  // Neon unter dem Auto
+  ctx.beginPath();rr(ctx,bx,by,bw,bh,10);ctx.clip();
+  // Betonboden
+  patFill('sidewalk',bx,by,bw,bh,0);
+  ctx.fillStyle='rgba(30,36,44,0.35)';ctx.fillRect(bx,by,bw,bh);
+  const sr=seeded(7);
+  for(let k=0;k<5;k++){
+    const ox=bx+20+sr()*(bw-40),oy=by+20+sr()*(bh-40),r=6+sr()*12;
+    const g=ctx.createRadialGradient(ox,oy,0,ox,oy,r);g.addColorStop(0,'rgba(10,10,12,0.35)');g.addColorStop(1,'rgba(10,10,12,0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(ox,oy,r,0,TAU);ctx.fill();
+  }
+  // Rückwand mit Regal
+  const wg=ctx.createLinearGradient(0,by,0,by+16);wg.addColorStop(0,'#2b3440');wg.addColorStop(1,'#1a2028');
+  ctx.fillStyle=wg;ctx.fillRect(bx,by,bw,16);
+  ctx.fillStyle='rgba(0,0,0,0.35)';ctx.fillRect(bx,by+16,bw,5);
+  ctx.fillStyle='#5d4037';ctx.fillRect(bx+8,by+3,64,9);
+  ctx.fillStyle='#ef5350';ctx.fillRect(bx+12,by+4,10,7);ctx.fillStyle='#42a5f5';ctx.fillRect(bx+26,by+4,8,7);ctx.fillStyle='#ffca28';ctx.fillRect(bx+38,by+5,14,6);
+  ctx.fillStyle='#5d4037';ctx.fillRect(bx+bw-72,by+3,64,9);
+  ctx.fillStyle='#90a4ae';for(let k=0;k<5;k++)ctx.fillRect(bx+bw-68+k*12,by+4,7,7);
+  // Parkbox
+  const lw=spec.w*sc+34,lx=cx-lw/2,ly=by+26;
+  ctx.fillStyle='rgba(255,214,0,0.85)';
+  ctx.fillRect(lx,ly,4,bh-26);ctx.fillRect(lx+lw-4,ly,4,bh-26);ctx.fillRect(lx,ly,lw,4);
+  ctx.fillStyle='rgba(60,60,60,0.35)';
+  for(let k=0;k<14;k++)ctx.fillRect(lx+sr()*lw,ly+sr()*(bh-30),2,2);
+  // Radstopper
+  for(const s of[-1,1]){
+    const x=cx+s*spec.w*sc*0.28-9;
+    ctx.fillStyle='rgba(0,0,0,0.4)';ctx.fillRect(x+1,ly+10,18,6);
+    ctx.fillStyle='#ffd600';ctx.fillRect(x,ly+8,18,6);
+    ctx.fillStyle='#212121';for(let k=0;k<3;k++)ctx.fillRect(x+2+k*6,ly+8,3,6);
+  }
+  // Reifenstapel links
+  for(let k=0;k<2;k++){
+    const tx=bx+26,ty=by+56+k*42;
+    ctx.fillStyle='rgba(0,0,0,0.4)';ctx.beginPath();ctx.arc(tx+3,ty+4,15,0,TAU);ctx.fill();
+    const tg=ctx.createRadialGradient(tx-4,ty-4,2,tx,ty,15);tg.addColorStop(0,'#3a3a3a');tg.addColorStop(1,'#0b0b0b');
+    ctx.fillStyle=tg;ctx.beginPath();ctx.arc(tx,ty,15,0,TAU);ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.08)';ctx.lineWidth=1;for(let r=11;r<15;r+=1.5){ctx.beginPath();ctx.arc(tx,ty,r,0,TAU);ctx.stroke();}
+    ctx.fillStyle='#9e9e9e';ctx.beginPath();ctx.arc(tx,ty,7,0,TAU);ctx.fill();
+    ctx.fillStyle='#616161';ctx.beginPath();ctx.arc(tx,ty,3,0,TAU);ctx.fill();
+  }
+  // Werkzeugschrank rechts
+  const kx=bx+bw-46,ky=by+30;
+  ctx.fillStyle='rgba(0,0,0,0.4)';ctx.fillRect(kx+3,ky+4,38,54);
+  const kg=ctx.createLinearGradient(kx,0,kx+38,0);kg.addColorStop(0,'#b71c1c');kg.addColorStop(0.5,'#ef5350');kg.addColorStop(1,'#8e0000');
+  ctx.fillStyle=kg;ctx.fillRect(kx,ky,38,54);
+  ctx.fillStyle='rgba(0,0,0,0.3)';for(let k=1;k<5;k++)ctx.fillRect(kx+2,ky+k*10.8,34,1.2);
+  ctx.fillStyle='#cfd8dc';for(let k=0;k<5;k++)ctx.fillRect(kx+13,ky+4+k*10.8,12,2);
+  // Ölfass
+  const ox=bx+bw-28,oy=by+bh-30;
+  ctx.fillStyle='rgba(0,0,0,0.4)';ctx.beginPath();ctx.arc(ox+3,oy+3,12,0,TAU);ctx.fill();
+  const og=ctx.createRadialGradient(ox-4,oy-4,1,ox,oy,12);og.addColorStop(0,'#4fc3f7');og.addColorStop(1,'#01579b');
+  ctx.fillStyle=og;ctx.beginPath();ctx.arc(ox,oy,12,0,TAU);ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,0.35)';ctx.beginPath();ctx.arc(ox,oy,8,0,TAU);ctx.stroke();
+  // Tor-Schiene unten
+  ctx.fillStyle='#212121';ctx.fillRect(bx,by+bh-7,bw,7);
+  ctx.fillStyle='#ffd600';for(let x=bx-10;x<bx+bw;x+=16){ctx.beginPath();ctx.moveTo(x,by+bh);ctx.lineTo(x+8,by+bh-7);ctx.lineTo(x+14,by+bh-7);ctx.lineTo(x+6,by+bh);ctx.fill();}
+  // Neon & Auto
+  const carY=ly+12+spec.h*sc/2;
   const neon=NEONS[S.cust[i].n].c;
-  const rot=Math.sin(time*0.9)*0.22;
-  if(neon){ctx.save();ctx.globalCompositeOperation='lighter';ctx.translate(W/2,cy);ctx.rotate(rot);ctx.scale(1,1.8);glowAt(neon,0,0,24*sc,0.85);ctx.restore();}
-  // Auto
-  ctx.save();ctx.translate(W/2,cy+Math.sin(time*2)*1.5);ctx.scale(sc,sc);
-  drawVehicle(spec,0,0,rot,1,{ghost:false});
+  if(neon){ctx.save();ctx.globalCompositeOperation='lighter';ctx.translate(cx,carY);ctx.scale(1,1.9);glowAt(neon,0,0,30*sc,0.95);ctx.restore();}
+  ctx.save();ctx.translate(cx,carY);ctx.scale(sc,sc);
+  drawVehicle(spec,0,0,0);
   ctx.restore();
+  // Deckenlicht
+  ctx.save();ctx.globalCompositeOperation='lighter';
+  const lg=ctx.createRadialGradient(cx,carY-10,10,cx,carY,120);
+  lg.addColorStop(0,'rgba(255,250,230,0.16)');lg.addColorStop(1,'rgba(255,250,230,0)');
+  ctx.fillStyle=lg;ctx.fillRect(bx,by,bw,bh);
   ctx.restore();
   if(!owned){
-    ctx.fillStyle='rgba(5,9,18,0.45)';ctx.beginPath();ctx.ellipse(W/2,cy,64,60,0,0,TAU);ctx.fill();
-    ctx.fillStyle='rgba(0,0,0,0.6)';ctx.beginPath();ctx.arc(W/2,cy,22,0,TAU);ctx.fill();
+    ctx.fillStyle='rgba(5,9,18,0.45)';ctx.fillRect(bx,by,bw,bh);
+    ctx.fillStyle='rgba(0,0,0,0.65)';ctx.beginPath();ctx.arc(cx,carY,22,0,TAU);ctx.fill();
     ctx.strokeStyle='#ffd54f';ctx.lineWidth=2;ctx.stroke();
-    drawIcon('lock',W/2,cy,24,'#ffd54f');
+    drawIcon('lock',cx,carY,24,'#ffd54f');
   }
+  ctx.restore();
+  ctx.strokeStyle='rgba(0,229,255,0.6)';ctx.lineWidth=1.5;ctx.beginPath();rr(ctx,bx,by,bw,bh,10);ctx.stroke();
 }
 function statRow(label,y,val,maxv,col,next){
   txt(label,22,y+9,13,'#b0bec5','left');
@@ -3073,20 +3130,20 @@ function statRow(label,y,val,maxv,col,next){
   txt(String(Math.round(val)),340,y+10,13,'#fff','right','h');
 }
 function drawGarage(){
-  drawWorld(demo);bgDim(0.86);
+  drawGarageBg();
   header('GARAGE');
   const tabs=['FAHRZEUGE','TUNING','STYLING'];
   for(let t=0;t<3;t++)button({id:'gtab:'+t,x:14+t*112,y:60,w:106,h:30,style:gtab===t?'cyan':'dark',label:tabs[t],fs:12,noGlow:gtab!==t});
   const c=CARS[gi],owned=S.owned[gi];
-  drawShowcase(gi,170);
-  button({id:'car<',x:8,y:150,w:38,h:50,style:'glass',icon:'left',iconSize:20});
-  button({id:'car>',x:W-46,y:150,w:38,h:50,style:'glass',icon:'right',iconSize:20});
-  txtShadow(c.name,W/2,256,20,'#fff','center','h');
+  drawShowcase(gi,0);
+  button({id:'car<',x:8,y:144,w:38,h:50,style:'glass',icon:'left',iconSize:20});
+  button({id:'car>',x:W-46,y:144,w:38,h:50,style:'glass',icon:'right',iconSize:20});
+  txtShadow(c.name,W/2,262,20,'#fff','center','h');
   const clsCol={C:'#90a4ae',B:'#42a5f5',A:'#ab47bc',S:'#ffd600'}[c.cls];
-  pill(W/2-110,266,52,18,clsCol,'KL. '+c.cls,'#0b1220');
-  if(owned)pill(W/2-50,266,160,18,S.sel===gi?'rgba(0,229,255,0.3)':'rgba(105,240,174,0.25)',S.sel===gi?'IM EINSATZ':'IN DEINER GARAGE',S.sel===gi?'#18ffff':'#69f0ae');
-  else pill(W/2-50,266,160,18,'rgba(255,214,0,0.22)','GESPERRT · $ '+fmt(c.price),'#ffd54f');
-  txt((gi+1)+' / '+CARS.length,W-14,282,11,'#90a4ae','right');
+  pill(W/2-110,269,52,18,clsCol,'KL. '+c.cls,'#0b1220');
+  if(owned)pill(W/2-50,269,160,18,S.sel===gi?'rgba(0,229,255,0.3)':'rgba(105,240,174,0.25)',S.sel===gi?'IM EINSATZ':'IN DEINER GARAGE',S.sel===gi?'#18ffff':'#69f0ae');
+  else pill(W/2-50,269,160,18,'rgba(255,214,0,0.22)','GESPERRT · $ '+fmt(c.price),'#ffd54f');
+  txt((gi+1)+' / '+CARS.length,W-14,284,11,'#90a4ae','right');
   if(gtab===0)garageCars(c,owned);
   else if(gtab===1)garageTuning(owned);
   else garageStyle(owned);
