@@ -20,6 +20,16 @@
     text-decoration: none; box-shadow: 0 3px 12px rgba(0, 0, 0, .5); opacity: .92;
   }
   #moki-back:hover { opacity: 1; transform: scale(1.05); }
+#pad{display:none;position:fixed;left:0;right:0;bottom:110px;justify-content:space-between;padding:0 12px;z-index:9;pointer-events:none;touch-action:none;user-select:none;-webkit-user-select:none}
+#pad.show{display:flex}
+#pad .grp{display:grid;gap:8px;pointer-events:auto;grid-template-columns:repeat(3,58px);grid-template-rows:repeat(2,58px)}
+#pad button{font:800 18px system-ui,sans-serif;border:0;border-radius:14px;background:rgba(255,255,255,.22);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.5);touch-action:none}
+#pad button:active,#pad button.on{background:rgba(0,229,168,.6)}
+#pad .e{visibility:hidden}
+#look{display:none;position:fixed;top:46px;right:0;width:45%;bottom:120px;z-index:8;touch-action:none}
+#look.show{display:block}
+#tog{position:fixed;top:56px;right:12px;z-index:10;padding:7px 12px;border:0;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font:700 13px system-ui,sans-serif;touch-action:manipulation}
+#tog.on{background:rgba(0,229,168,.7);color:#04201a}
 </style>
 </head>
 <body>
@@ -87,6 +97,68 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
     window.unityGame = inst; window.myGameInstance = inst;
     document.getElementById("ld").remove();
   } catch (e) { tx.textContent = "Fehler beim Laden: " + (e.message || e); }
+})();
+</script>
+<div id="look"></div>
+<div id="pad"><div class="grp"><span class="e"></span><button data-k="w">W</button><span class="e"></span><button data-k="a">A</button><button data-k="s">S</button><button data-k="d">D</button></div><div class="grp"><button data-k="e">E</button><button data-k="sp">Space</button><button data-k="c">C</button><button data-k="r">R</button><button data-k="f">F</button><button id="fire" type="button">Feuer</button></div></div>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const pad=$("pad"), look=$("look");
+  const KEYS={w:{key:"w",code:"KeyW",keyCode:87},a:{key:"a",code:"KeyA",keyCode:65},s:{key:"s",code:"KeyS",keyCode:83},d:{key:"d",code:"KeyD",keyCode:68},
+    e:{key:"e",code:"KeyE",keyCode:69},sp:{key:" ",code:"Space",keyCode:32},c:{key:"c",code:"KeyC",keyCode:67},r:{key:"r",code:"KeyR",keyCode:82},f:{key:"f",code:"KeyF",keyCode:70}};
+  const canvas=()=>$("c")||document.body;
+  function key(type,k){ canvas().dispatchEvent(new KeyboardEvent(type,{key:k.key,code:k.code,keyCode:k.keyCode,which:k.keyCode,bubbles:true,cancelable:true})); }
+  const btns=[...document.querySelectorAll("#pad button")];
+  btns.forEach(b=>{
+    const k=KEYS[b.dataset.k]; let isDown=false;
+    const down=()=>{ if(isDown) return; isDown=true; b.classList.add("on"); const c=canvas(); if(c.focus) c.focus(); key("keydown",k); };
+    const up=()=>{ if(!isDown) return; isDown=false; b.classList.remove("on"); key("keyup",k); };
+    b.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); down(); });
+    b.addEventListener("pointerup",e=>{ e.preventDefault(); up(); });
+    b.addEventListener("pointercancel",up); b.addEventListener("pointerleave",up);
+  });
+  // Schiessen: halten = Maus-Taste 1 im Spiel
+  const fireBtn=$("fire");
+  function mouseBtn(type){ const r=vcur(); canvas().dispatchEvent(new MouseEvent(type,{button:0,buttons:type==="mouseup"?0:1,clientX:r.x,clientY:r.y,bubbles:true,cancelable:true})); }
+  fireBtn.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); fireBtn.setPointerCapture(e.pointerId); fireBtn.classList.add("on"); mouseBtn("mousedown"); });
+  fireBtn.addEventListener("pointerup",e=>{ e.preventDefault(); fireBtn.classList.remove("on"); mouseBtn("mouseup"); });
+  fireBtn.addEventListener("pointercancel",()=>{ fireBtn.classList.remove("on"); mouseBtn("mouseup"); });
+  // Umsehen: sanft. Ziehen sammelt Bewegung, die pro Bild begrenzt und abgebaut wird, damit nichts durchdreht.
+  let lid=null, lx=0, ly=0, accX=0, accY=0, raf=0, vx=0, vy=0;
+  const MAX=18;
+  function vcur(){ const c=canvas().getBoundingClientRect(); return {x:c.left+c.width/2, y:c.top+c.height/2, w:c.width, h:c.height, l:c.left, t:c.top}; }
+  function step(){
+    let mx=Math.max(-MAX,Math.min(MAX,accX*0.3)), my=Math.max(-MAX,Math.min(MAX,accY*0.3));
+    accX-=mx; accY-=my;
+    if(Math.abs(mx)>0.01||Math.abs(my)>0.01){
+      const r=vcur();
+      vx=Math.max(r.l+2,Math.min(r.l+r.w-2,vx+mx)); vy=Math.max(r.t+2,Math.min(r.t+r.h-2,vy+my));
+      canvas().dispatchEvent(new MouseEvent("mousemove",{clientX:vx,clientY:vy,movementX:mx,movementY:my,bubbles:true}));
+    }
+    if(lid!==null||Math.abs(accX)>0.5||Math.abs(accY)>0.5){ raf=requestAnimationFrame(step); } else { raf=0; accX=0; accY=0; }
+  }
+  ["touchstart","touchmove"].forEach(t=>look.addEventListener(t,e=>e.preventDefault(),{passive:false}));
+  look.addEventListener("pointerdown",e=>{ e.preventDefault(); lid=e.pointerId; lx=e.clientX; ly=e.clientY; const r=vcur(); vx=r.x; vy=r.y; look.setPointerCapture(e.pointerId); if(!raf) raf=requestAnimationFrame(step); });
+  look.addEventListener("pointermove",e=>{
+    if(e.pointerId!==lid) return;
+    accX+=(e.clientX-lx)*1.0; accY+=(e.clientY-ly)*1.0; lx=e.clientX; ly=e.clientY;
+  });
+  const endLook=e=>{ if(e.pointerId===lid){ lid=null; } };
+  look.addEventListener("pointerup",endLook); look.addEventListener("pointercancel",endLook);
+  function hide(){ pad.classList.remove("show"); look.classList.remove("show"); btns.forEach(b=>{ if(b.classList.contains("on")) b.dispatchEvent(new PointerEvent("pointerup")); }); }
+  window.addEventListener("blur",hide);
+  document.addEventListener("keydown",e=>{ if(e.key==="Escape") hide(); });
+  // Erscheint in der Runde: erst PLAY (rechts unten), dann CONTINUE (rechts unten) -> Level.
+  let stage=0;
+  function show(){ pad.classList.add("show"); look.classList.add("show"); }
+  document.addEventListener("pointerdown",e=>{
+    if(e.target.closest && e.target.closest("#pad, #look")) return;
+    const x=e.clientX, y=e.clientY, W=innerWidth, H=innerHeight;
+    const br = y>H*0.80 && x>W*0.70;
+    if(stage===0 && br){ stage=1; return; }
+    if(stage===1 && br){ stage=2; show(); return; }
+  },true);
 })();
 </script>
 </body>
