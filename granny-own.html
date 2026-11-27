@@ -22,7 +22,7 @@
   #moki-back:hover { opacity: 1; transform: scale(1.05); }
 </style>
 <style>
-#pad{display:none;position:fixed;left:0;right:0;bottom:12px;justify-content:space-between;padding:0 12px;z-index:9;pointer-events:none;touch-action:none;user-select:none;-webkit-user-select:none}
+#pad{display:none;position:fixed;left:0;right:0;bottom:110px;justify-content:space-between;padding:0 12px;z-index:9;pointer-events:none;touch-action:none;user-select:none;-webkit-user-select:none}
 #pad.show{display:flex}
 #pad .grp{display:grid;gap:8px;pointer-events:auto;grid-template-columns:repeat(3,58px);grid-template-rows:repeat(2,58px)}
 #pad button{font:800 18px system-ui,sans-serif;border:0;border-radius:14px;background:rgba(255,255,255,.22);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.5);touch-action:none}
@@ -121,7 +121,7 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
 </script>
 <button id="tog" type="button">Steuerung</button>
 <div id="look"></div>
-<div id="pad"><div class="grp"><span class="e"></span><button data-k="w">W</button><span class="e"></span><button data-k="a">A</button><button data-k="s">S</button><button data-k="d">D</button></div><div class="grp"><button data-k="e">E</button><button data-k="sp">Space</button><button data-k="c">C</button><button data-k="r">R</button><button data-k="f">F</button><button id="fire" type="button">Schießen</button></div></div>
+<div id="pad"><div class="grp"><span class="e"></span><button data-k="w">W</button><span class="e"></span><button data-k="a">A</button><button data-k="s">S</button><button data-k="d">D</button></div><div class="grp"><button data-k="e">E</button><button data-k="sp">Space</button><button data-k="c">C</button><button data-k="r">R</button><button data-k="f">F</button><button id="fire" type="button">Feuer</button></div></div>
 <script>
 (function(){
   const $=id=>document.getElementById(id);
