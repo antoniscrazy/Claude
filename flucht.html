@@ -113,22 +113,22 @@ resize();
    ===================================================================== */
 const CARS=[
   {name:'Kompaktflitzer',price:0,spd:430,lat:240,hp:100,color:'#29b6f6',shape:'hatch',w:28,h:50,cls:'C',desc:'Klein, wendig und günstig. Der perfekte Fluchtwagen für Anfänger.'},
-  {name:'Sportcoupé',price:2500,spd:510,lat:280,hp:100,color:'#ffca28',shape:'coupe',w:29,h:54,cls:'C',desc:'Leichtes Coupé mit spritzigem Motor und Heckflügel.'},
-  {name:'Muscle Car',price:7000,spd:570,lat:255,hp:150,color:'#8e24aa',shape:'muscle',w:31,h:58,cls:'B',desc:'V8-Brutalität. Schwer, laut und ideal zum Rammen.'},
-  {name:'Pick-up Monster',price:10000,spd:540,lat:230,hp:220,color:'#8d6e63',shape:'pickup',w:32,h:60,cls:'B',desc:'Robust wie ein Panzer – Polizeiautos prallen einfach ab.'},
-  {name:'Rallye-Raser',price:14000,spd:610,lat:350,hp:125,color:'#43a047',shape:'rally',w:29,h:53,cls:'B',desc:'Allrad und Zusatzscheinwerfer. Lenkt wie auf Schienen.'},
-  {name:'GT Bolide',price:21000,spd:650,lat:330,hp:140,color:'#1e88e5',shape:'gt',w:30,h:57,cls:'A',desc:'Langstrecken-Gran-Turismo mit perfekter Balance.'},
-  {name:'Supersportwagen',price:28000,spd:700,lat:340,hp:135,color:'#ff7043',shape:'super',w:31,h:56,cls:'A',desc:'Mittelmotor, Seitenkästen, purer Speed.'},
-  {name:'Panzerlimousine',price:38000,spd:620,lat:270,hp:300,color:'#37474f',shape:'limo',w:32,h:62,cls:'A',desc:'Gepanzerte Staatskarosse. Fast unzerstörbar.'},
-  {name:'Hypercar',price:55000,spd:800,lat:410,hp:155,color:'#eceff1',shape:'hyper',w:31,h:57,cls:'S',desc:'Über 1.500 PS, Haifischflosse und aktive Aerodynamik.'},
-  {name:'Prototyp X',price:90000,spd:880,lat:450,hp:170,color:'#00e5ff',shape:'proto',w:30,h:58,cls:'S',desc:'Geheimer Le-Mans-Prototyp mit Glaskanzel. Unerreicht.'},
+  {name:'Sportcoupé',price:3000,spd:510,lat:280,hp:100,color:'#ffca28',shape:'coupe',w:29,h:54,cls:'C',desc:'Leichtes Coupé mit spritzigem Motor und Heckflügel.'},
+  {name:'Muscle Car',price:9000,spd:570,lat:255,hp:150,color:'#8e24aa',shape:'muscle',w:31,h:58,cls:'B',desc:'V8-Brutalität. Schwer, laut und ideal zum Rammen.'},
+  {name:'Pick-up Monster',price:13000,spd:540,lat:230,hp:220,color:'#8d6e63',shape:'pickup',w:32,h:60,cls:'B',desc:'Robust wie ein Panzer – Polizeiautos prallen einfach ab.'},
+  {name:'Rallye-Raser',price:18000,spd:610,lat:350,hp:125,color:'#43a047',shape:'rally',w:29,h:53,cls:'B',desc:'Allrad und Zusatzscheinwerfer. Lenkt wie auf Schienen.'},
+  {name:'GT Bolide',price:28000,spd:650,lat:330,hp:140,color:'#1e88e5',shape:'gt',w:30,h:57,cls:'A',desc:'Langstrecken-Gran-Turismo mit perfekter Balance.'},
+  {name:'Supersportwagen',price:40000,spd:700,lat:340,hp:135,color:'#ff7043',shape:'super',w:31,h:56,cls:'A',desc:'Mittelmotor, Seitenkästen, purer Speed.'},
+  {name:'Panzerlimousine',price:55000,spd:620,lat:270,hp:300,color:'#37474f',shape:'limo',w:32,h:62,cls:'A',desc:'Gepanzerte Staatskarosse. Fast unzerstörbar.'},
+  {name:'Hypercar',price:80000,req:1,spd:800,lat:410,hp:155,color:'#eceff1',shape:'hyper',w:31,h:57,cls:'S',desc:'Über 1.500 PS, Haifischflosse und aktive Aerodynamik.'},
+  {name:'Prototyp X',price:130000,req:2,spd:880,lat:450,hp:170,color:'#00e5ff',shape:'proto',w:30,h:58,cls:'S',desc:'Geheimer Le-Mans-Prototyp mit Glaskanzel. Unerreicht.'},
   {name:'Familienkombi',price:1500,spd:470,lat:250,hp:130,color:'#8d9aa6',shape:'wagon',w:29,h:58,cls:'C',desc:'Viel Platz, Dachreling und mehr Leben als erwartet. Unauffällig – perfekt.'},
-  {name:'Retro-Käfer',price:4000,spd:490,lat:300,hp:90,color:'#7fd3c3',shape:'beetle',w:27,h:46,cls:'C',desc:'Klein, rund und überraschend flink. Passt durch jede Lücke.'},
-  {name:'Offroad-SUV',price:12000,spd:560,lat:240,hp:240,color:'#5a6b3a',shape:'suv',w:33,h:60,cls:'B',desc:'Kastenform, Ersatzrad, Dachträger. Steckt Rammstöße locker weg.'},
-  {name:'Drift-Coupé',price:17000,spd:620,lat:380,hp:120,color:'#e8e8e8',shape:'drift',w:31,h:54,cls:'B',desc:'Breitbau, riesiger Flügel, Frontsplitter. Für Kurvenkünstler.'},
-  {name:'Elektro-Limousine',price:24000,spd:690,lat:330,hp:150,color:'#c62828',shape:'ev',w:30,h:58,cls:'A',desc:'Lautlos, Glasdach, Lichtleisten. Brutaler Antritt.'},
-  {name:'Ex-Streifenwagen',price:32000,spd:650,lat:320,hp:200,color:'#26324a',shape:'excop',w:30,h:56,cls:'A',desc:'Ausgemusterter Polizeiwagen mit Rammschutz. Die Kollegen sind nicht begeistert.'},
-  {name:'Formel-Renner',price:120000,spd:950,lat:520,hp:120,color:'#d50000',shape:'f1',w:30,h:64,cls:'S',desc:'Ein echter Formelwagen auf der Landstraße. Schneller geht es nicht.'}
+  {name:'Retro-Käfer',price:4500,spd:490,lat:300,hp:90,color:'#7fd3c3',shape:'beetle',w:27,h:46,cls:'C',desc:'Klein, rund und überraschend flink. Passt durch jede Lücke.'},
+  {name:'Offroad-SUV',price:15000,spd:560,lat:240,hp:240,color:'#5a6b3a',shape:'suv',w:33,h:60,cls:'B',desc:'Kastenform, Ersatzrad, Dachträger. Steckt Rammstöße locker weg.'},
+  {name:'Drift-Coupé',price:22000,spd:620,lat:380,hp:120,color:'#e8e8e8',shape:'drift',w:31,h:54,cls:'B',desc:'Breitbau, riesiger Flügel, Frontsplitter. Für Kurvenkünstler.'},
+  {name:'Elektro-Limousine',price:32000,spd:690,lat:330,hp:150,color:'#c62828',shape:'ev',w:30,h:58,cls:'A',desc:'Lautlos, Glasdach, Lichtleisten. Brutaler Antritt.'},
+  {name:'Ex-Streifenwagen',price:45000,spd:650,lat:320,hp:200,color:'#26324a',shape:'excop',w:30,h:56,cls:'A',desc:'Ausgemusterter Polizeiwagen mit Rammschutz. Die Kollegen sind nicht begeistert.'},
+  {name:'Formel-Renner',price:200000,req:3,spd:950,lat:520,hp:120,color:'#d50000',shape:'f1',w:30,h:64,cls:'S',desc:'Ein echter Formelwagen auf der Landstraße. Schneller geht es nicht.'}
 ];
 const OLDMAP=[0,1,2,4,6,8];
 /* Anzeige-Reihenfolge in der Garage: nach Preis */
@@ -140,7 +140,8 @@ const UPG=[
   {name:'Nitro',desc:'Größerer Tank, lädt schneller',base:300,icon:'bolt'},
   {name:'Magnet',desc:'Größerer Sammelradius',base:250,icon:'magnet'}
 ];
-const UMULT=[1,3,6,10,15];
+const UMULT=[1,1.8,2.8,4,5.5,7.5,10,13,17,22];
+const UMAX=10;
 const PAINTS=[
   {n:'Polarweiß',c:'#f2f5f8'},{n:'Tiefschwarz',c:'#1b1d22'},{n:'Rennrot',c:'#e3202e'},
   {n:'Signalorange',c:'#ff6d00'},{n:'Sonnengelb',c:'#ffd000'},{n:'Giftgrün',c:'#76ff03'},
@@ -180,6 +181,7 @@ const COPS={
   patrol:{name:'Streife',w:29,h:54,hp:1,spd:1,steer:1,dmg:1,shape:'sedan',livery:'cop'},
   inter:{name:'Abfangjäger',w:30,h:56,hp:0.85,spd:1.07,steer:1.2,dmg:0.9,shape:'super',livery:'inter'},
   swat:{name:'SEK-Truck',w:35,h:66,hp:2.6,spd:0.93,steer:0.75,dmg:1.8,shape:'van',livery:'swat'},
+  boss:{name:'Panzerwagen',w:42,h:88,hp:7,spd:1.02,steer:0.55,dmg:2.2,shape:'van',livery:'swat'},
   bike:{name:'Motorrad',w:15,h:34,hp:0.45,spd:1.1,steer:1.45,dmg:0.5,shape:'bike',livery:'cop'}
 };
 const TRAFFIC=[
@@ -225,7 +227,7 @@ const ACH=[
   {id:'extreme',n:'Wahnsinn',d:'Fahre 3 km auf Extrem',r:3000,c:()=>S.best[3]>=3000},
   {id:'heli',n:'Vom Himmel geholt',d:'Schalte einen Helikopter aus',r:1500,c:s=>s.helis>=1},
   {id:'jump',n:'Abheben!',d:'Springe 20× über Rampen',r:800,c:s=>s.jumps>=20},
-  {id:'maxup',n:'Voll getunt',d:'Bringe ein Upgrade auf Maximum',r:1000,c:()=>S.up.some(u=>u.some(v=>v>=5))},
+  {id:'maxup',n:'Voll getunt',d:'Bringe ein Upgrade auf Maximum',r:1000,c:()=>S.up.some(u=>u.some(v=>v>=UMAX))},
   {id:'lvl10',n:'Profi-Fahrer',d:'Erreiche Level 10',r:2500,c:()=>S.level>=10},
   {id:'style',n:'Show-Car',d:'Kaufe eine Chrom-Lackierung',r:600,c:()=>S.cust.some(c=>c.fo&8)},
   {id:'bust',n:'Wieder frei',d:'Werde zum ersten Mal verhaftet',r:150,c:s=>s.busts>=1}
@@ -243,7 +245,7 @@ function newSave(){
     best:[0,0,0,0],bestTime:[0,0,0,0],diff:1,mode:0,
     set:{sfx:true,music:true,vib:true,gfx:1,ctrl:0,sens:1},
     st:{runs:0,dist:0,kills:0,coins:0,near:0,maxCombo:0,maxStars:0,heists:0,helis:0,jumps:0,time:0,nitro:0,items:0,busts:0,earned:0},
-    xp:0,level:1,missions:[],mDone:0,ach:{},daily:{last:'',streak:0},boosts:[false,false,false,false],tut:false
+    xp:0,level:1,missions:[],mDone:0,ach:{},daily:{last:'',streak:0},boosts:[false,false,false,false],tut:false,career:{},crates:0,dailyCh:{date:''}
   };
 }
 let S=newSave();
@@ -270,7 +272,7 @@ function loadSave(){
   d.money=Math.floor(num(s.money,500,0,1e9));
   if(Array.isArray(s.owned))d.owned=CARS.map((c,i)=>i===0||!!s.owned[i]);
   d.sel=d.owned[s.sel|0]?(s.sel|0):0;
-  if(Array.isArray(s.up))d.up=CARS.map((c,i)=>UPG.map((u,k)=>Math.floor(num(s.up[i]&&s.up[i][k],0,0,5))));
+  if(Array.isArray(s.up))d.up=CARS.map((c,i)=>UPG.map((u,k)=>Math.floor(num(s.up[i]&&s.up[i][k],0,0,UMAX))));
   if(Array.isArray(s.cust))d.cust=CARS.map((c,i)=>{
     const o=s.cust[i]||{},r=defCust();
     r.po=num(o.po,0,0,1e9)|0;r.fo=(num(o.fo,1,0,1e9)|0)|1;r.no=(num(o.no,1,0,1e9)|0)|1;r.do=(num(o.do,1,0,1e9)|0)|1;
@@ -298,6 +300,9 @@ function loadSave(){
   if(s.daily&&typeof s.daily==='object'){d.daily.last=String(s.daily.last||'');d.daily.streak=num(s.daily.streak,0,0,9999)|0;}
   if(Array.isArray(s.boosts))d.boosts=BOOSTS.map((b,i)=>!!s.boosts[i]);
   d.tut=!!s.tut;
+  if(s.career&&typeof s.career==='object')for(const k in s.career){if(/^[0-3]-[0-9]$/.test(k))d.career[k]=Math.floor(num(s.career[k],0,0,3));}
+  d.crates=Math.floor(num(s.crates,0,0,9999));
+  if(s.dailyCh&&typeof s.dailyCh==='object')d.dailyCh.date=String(s.dailyCh.date||'');
   S=d;
 }
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
@@ -306,10 +311,10 @@ loadSave();
 function carStats(i){
   const c=CARS[i],u=S.up[i];
   return{
-    max:c.spd*(1+0.07*u[0]),lat:c.lat*(1+0.08*u[1]),grip:1+0.05*u[1],
-    hp:c.hp+20*u[2],ram:1+0.12*u[2],
-    tank:3+0.8*u[3],regen:0.3+0.06*u[3],
-    pick:28+u[4]*8,magT:8+u[4]*2,magR:120+u[4]*25
+    max:c.spd*(1+0.045*u[0]),lat:c.lat*(1+0.05*u[1]),grip:1+0.03*u[1],
+    hp:c.hp+14*u[2],ram:1+0.08*u[2],
+    tank:3+0.5*u[3],regen:0.3+0.04*u[3],
+    pick:28+u[4]*5,magT:8+u[4]*1.2,magR:120+u[4]*15
   };
 }
 function carColor(i){const cu=S.cust[i];return cu.p>=0?PAINTS[cu.p].c:CARS[i].color;}
@@ -1404,16 +1409,18 @@ function setScreen(s){
 /* =====================================================================
    LAUF STARTEN
    ===================================================================== */
-function startRun(){
+function startRun(L){
+  L=L||null;curLevel=L;
   const st=carStats(S.sel);
   let cost=0;S.boosts.forEach((b,i)=>{if(b)cost+=BOOSTS[i].price;});
   let boosts=S.boosts.slice();
   if(cost>S.money){boosts=boosts.map(()=>false);cost=0;toast('Zu wenig Geld für Boosts','#ff5252','coin','Boosts wurden deaktiviert');S.boosts=S.boosts.map(()=>false);}
   S.money-=cost;S.boosts=S.boosts.map(()=>false);save();
-  const spec=playerSpec(S.sel),b=randi(0,3);
+  const spec=playerSpec(S.sel),b=L?L.biome:randi(0,3);
   const tank=st.tank+(boosts[1]?2:0);
   G={
-    mode:S.mode,diff:S.diff,st:st,spec:spec,neon:NEONS[S.cust[S.sel].n].c,
+    mode:L?0:S.mode,diff:L?L.diff:S.diff,cr:L?{L:L,p:0}:null,dmgTaken:0,evT:rand(22,32),goldT:0,goldAcc:0,bossDown:false,
+    nightFix:!!(L&&L.night),noNitro:!!(L&&L.mod==='nonitro'),extraCops:L&&L.mod==='cops2'?2:0,trafMul:L&&L.mod==='traffic2'?1.6:1,st:st,spec:spec,neon:NEONS[S.cust[S.sel].n].c,
     pw:spec.w-4,ph:spec.h-6,
     x:180,vx:0,S:window.__fluchtFast?st.max*0.55:0,hp:st.hp,cd:window.__fluchtFast?0:3.3,cdLast:9,hs:0,mBump:0,fly:[],t:0,heat:0,stars:1,lastStars:1,
     tank:tank,tankMax:tank,dist:0,
@@ -1425,17 +1432,20 @@ function startRun(){
     tTimer:0.8,cTimer:1.5,copTimer:1.6,blkTimer:rand(10,16),rbTimer:rand(22,30),spTimer:rand(12,18),
     obTimer:rand(5,8),pwTimer:rand(7,11),rampTimer:rand(10,16),
     rOff:0,sceneAcc:0,decAcc:0,warn:0,warnText:'',warnCol:'#ffeb3b',smokeT:0,
-    biome:b,prevBiome:b,bBlend:1,nextBiome:BIOME_LEN,weather:'clear',wx:[],wAmt:0,lightning:0,thunderT:rand(6,14),
+    biome:b,prevBiome:b,bBlend:1,nextBiome:L?Infinity:BIOME_LEN,weather:'clear',wx:[],wAmt:0,lightning:0,thunderT:rand(6,14),
     timeLeft:S.mode===1?45:0,nextCP:1000,heistTarget:4000+S.diff*1500,gateSpawned:{},
     missionsDone:[],achNew:[],banner:{t:0,text:'',sub:''},boosts:boosts,nitroOn:false,
     dark:0,rot:0,achT:1,nitroLock:false,nitroCd:0,levelStart:S.level,xpStart:S.xp,startMoney:S.money,checkT:0.5
   };
-  setWeather(G,true);
+  if(L){G.weather=L.weather;G.wAmt=1;}else setWeather(G,true);
+  const hs0=L?L.startStars:ADM.startStars;
+  if(hs0>1){G.heat=(hs0-1)*18;G.stars=G.lastStars=hs0;}
   for(let y=-80;y<H+80;y+=26)spawnScenery(G,y);
   for(let y=-40;y<H;y+=140)spawnDecal(G,y);
-  banner(BIOMES[b].name,MODES[S.mode].name+' · '+DIFFS[S.diff].name);
+  if(L)banner(levelTitle(L),objText(L)+(L.modName?' · '+L.modName:''));
+  else banner(BIOMES[b].name,MODES[S.mode].name+' · '+DIFFS[S.diff].name);
   for(const m of S.missions){const d=MDEF.find(x=>x.k===m.k);if(d&&d.run)m.p=0;}
-  steer=null;nitroHeld=false;nitroPtr=null;touchL=touchR=null;
+  steer=null;nitroHeld=false;nitroPtr=null;touchL=touchR=null;toasts=[];
   setScreen('game');
   initAudio();startEngine();AU.intensity=1;
 }
@@ -1587,8 +1597,9 @@ function explode(g,x,y,big){
   SFX.boom();vib(big?120:60);
 }
 function hurt(g,dmg){
+  if(ADM.god)return;
   if(g.shield>0){g.shield=Math.max(0,g.shield-0.5);ring(g,g.x,PY,50,'64,196,255',0.3,4);return;}
-  g.hp-=dmg;g.flash=0.35;g.flashCol='255,0,0';if(dmg>=10)g.hs=Math.max(g.hs,0.06);g.shake=Math.max(g.shake,Math.min(12,4+dmg*0.25));
+  g.hp-=dmg;g.dmgTaken+=dmg;g.flash=0.35;g.flashCol='255,0,0';if(dmg>=10)g.hs=Math.max(g.hs,0.06);g.shake=Math.max(g.shake,Math.min(12,4+dmg*0.25));
   SFX.hit(Math.min(1,dmg/20));vib(Math.min(90,20+dmg*3));
   g.combo=0;g.comboT=0;
 }
@@ -1603,10 +1614,11 @@ function wreckFrom(g,spec,x,y,vx,burnt){
 function killCop(g,c){
   const d=DIFFS[g.diff];
   g.hs=Math.max(g.hs,0.09);
-  explode(g,c.x,c.y,c.kind==='swat');
+  explode(g,c.x,c.y,c.kind==='swat'||c.kind==='boss');
   debris(g,c.x,c.y,'#e0e0e0',8);debris(g,c.x,c.y,'#1748a8',6);
   g.kills++;S.st.kills++;mAdd('kills',1);
-  const base=c.kind==='swat'?220:c.kind==='bike'?45:c.kind==='inter'?110:75;
+  const base=c.kind==='boss'?1500:c.kind==='swat'?220:c.kind==='bike'?45:c.kind==='inter'?110:75;
+  if(c.kind==='boss'){g.bossDown=true;S.crates++;banner('PANZERWAGEN ZERSTÖRT!','+1 Beutekiste');}
   const b=Math.round(base*d.mult*(1+g.combo*0.1));
   g.bonus+=b;g.heat+=5;
   addCombo(g);
@@ -1656,7 +1668,7 @@ function checkAch(){
 }
 function addXp(v){
   S.xp+=v;let ups=0;
-  while(S.xp>=xpNeed(S.level)){S.xp-=xpNeed(S.level);S.level++;ups++;const rw=250*S.level;S.money+=rw;toast('Level '+S.level+'!','#e040fb','star','Belohnung +$'+fmt(rw));}
+  while(S.xp>=xpNeed(S.level)){S.xp-=xpNeed(S.level);S.level++;ups++;const rw=250*S.level;S.money+=rw;S.crates++;toast('Level '+S.level+'!','#e040fb','star','+$'+fmt(rw)+' und eine Beutekiste');}
   if(ups)SFX.levelup();
   return ups;
 }
@@ -1697,7 +1709,7 @@ function updateGame(dt){
   if(g.x2>0)g.x2-=dt;
   if(g.spin>0)g.spin-=dt;
   if(g.comboT>0){g.comboT-=dt;if(g.comboT<=0)g.combo=0;}
-  g.dark=smooth(0.3,0.75,0.5-0.5*Math.cos(g.t/170*TAU))*0.64+(g.weather==='fog'||g.weather==='rain'?0.08:0);
+  g.dark=g.nightFix?0.62:smooth(0.3,0.75,0.5-0.5*Math.cos(g.t/170*TAU))*0.64+(g.weather==='fog'||g.weather==='rain'?0.08:0);
 
   // Biom-Wechsel
   if(g.dist>=g.nextBiome){
@@ -1731,7 +1743,7 @@ function updateGame(dt){
 
   // Tempo & Nitro
   // Nitro: Zünden kostet Tank, kurze Sperre nach Loslassen, leerer Tank sperrt bis 40 %
-  const want=nitroHeld||keys.nitro;
+  const want=(nitroHeld||keys.nitro)&&!g.noNitro;
   if(g.nitroCd>0)g.nitroCd-=dt;
   if(g.nitroLock&&g.tank>=Math.min(1.2,g.tankMax*0.4))g.nitroLock=false;
   if(want&&!g.nitroOn){
@@ -1772,12 +1784,12 @@ function updateGame(dt){
 
   // Spawns
   g.tTimer-=dt*(g.S/450);
-  if(g.tTimer<=0){spawnTraffic(g);g.tTimer=rand(0.6,1.2)/d.traffic;}
+  if(g.tTimer<=0){spawnTraffic(g);g.tTimer=rand(0.6,1.2)/(d.traffic*g.trafMul);}
   g.cTimer-=dt;
   if(g.cTimer<=0){spawnCoins(g);g.cTimer=rand(2.6,4.2);}
   g.pwTimer-=dt;
   if(g.pwTimer<=0){spawnPower(g);g.pwTimer=rand(7,12);}
-  const maxCops=1+Math.floor((g.stars-1)*0.75)+d.extra;
+  const maxCops=1+Math.floor((g.stars-1)*0.75)+d.extra+g.extraCops;
   g.copTimer-=dt;
   if(g.copTimer<=0){
     let n=0;for(const c of g.cops)if(c.role==='chase')n++;
@@ -1788,7 +1800,18 @@ function updateGame(dt){
   if(d.rb>0&&g.t>20){g.rbTimer-=dt;if(g.rbTimer<=0){spawnRoadblock(g);g.rbTimer=rand(22,36)/d.rb;}}
   if(d.spike>0&&g.t>12){g.spTimer-=dt;if(g.spTimer<=0){spawnSpike(g);g.spTimer=rand(9,15)/d.spike;}}
   g.obTimer-=dt;
-  if(g.obTimer<=0){spawnObstacle(g);g.obTimer=rand(4,8);}
+  if(g.obTimer<=0){
+    if(g.cr&&g.cr.L.type==='jumps'&&Math.random()<0.6)g.obst.push({kind:'ramp',x:pick(LANES),y:-60,hit:false,w:50,h:36});
+    else if(g.cr&&g.cr.L.type==='boss'&&Math.random()<0.5)g.obst.push({kind:'barrel',red:true,x:pick(LANES),y:-40,hit:false,w:14,h:14});
+    else spawnObstacle(g);
+    g.obTimer=rand(4,8)*(g.cr&&(g.cr.L.type==='jumps'||g.cr.L.type==='boss')?0.5:1);
+  }
+  // Zufalls-Events
+  g.evT-=dt;
+  if(ADM.forceEvent&&g.evT>6)g.evT=6;
+  if(g.evT<=0&&g.t>18){g.evT=rand(28,45);startEvent(g,pickEvent(g));}
+  if(g.goldT>0){g.goldT-=dt;g.goldAcc+=dt;while(g.goldAcc>0.11){g.goldAcc-=0.11;g.items.push({kind:'coin',x:rand(RL+20,RR-20),y:-20,ph:rand(0,6)});}}
+  if(g.cr&&g.cr.L.type==='boss'&&!g.bossSpawned&&g.t>4){g.bossSpawned=true;spawnBoss(g);}
   // Hubschrauber
   if(g.stars>=4&&!g.heli){g.heliT-=dt;if(g.heliT<=0){g.heli={x:180,y:-90,t:0,dropT:5,rot:0,life:30,dead:false,fall:0};warn(g,'HELIKOPTER!','#40c4ff');SFX.warn();}}
 
@@ -1807,6 +1830,16 @@ function updateGame(dt){
     if(g.dist>=g.heistTarget){g.heistMoney=Math.round(1500*d.mult);endRun('win');return;}
   }
 
+  // Karriere-Ziel
+  if(g.cr){
+    const L=g.cr.L;let pr=0;
+    switch(L.type){case'dist':case'time':case'nodmg':pr=g.dist;break;case'coins':pr=g.coins;break;case'kills':pr=g.kills;break;
+      case'near':pr=g.near;break;case'survive':pr=g.t;break;case'jumps':pr=g.jumps;break;case'boss':pr=g.bossDown?1:0;break;}
+    g.cr.p=pr;
+    if(L.type==='time'&&g.t>L.lim){endRun('fail');return;}
+    if(L.type==='nodmg'&&g.dmgTaken>L.lim){endRun('fail');return;}
+    if(pr>=(L.type==='boss'?1:L.goal)){endRun('win');return;}
+  }
   // Items
   const pickR=g.st.pick,magR=g.magnet>0?g.st.magR:0;
   for(const it of g.items){
@@ -1814,7 +1847,7 @@ function updateGame(dt){
     if(it.got)continue;
     const dx=g.x-it.x,dy=PY-it.y,dd=Math.hypot(dx,dy);
     if(magR&&(it.kind==='coin'||it.kind==='bag')&&dd<magR){it.x+=dx/dd*Math.min(dd,520*dt);it.y+=dy/dd*Math.min(dd,520*dt);}
-    if(dd<pickR+(it.kind==='coin'?0:6)&&g.air<0.5){
+    if(dd<pickR+(it.kind==='coin'?0:6)&&(g.air<0.5||it.kind==='coin')){
       it.got=true;
       const mm=g.x2>0?2:1;
       if(it.kind==='coin'){g.coins++;S.st.coins++;mAdd('coins',1);g.coinMoney+=Math.round(25*d.mult*mm);SFX.coin(g.coins);if(g.fly.length<24)g.fly.push({sx:it.x,sy:it.y,t:0});
@@ -1864,6 +1897,12 @@ function updateGame(dt){
         if(o.red){barrelBoom(g,o);hurt(g,14*d.dmg);}
         else{hurt(g,7*d.dmg);sparks(g,o.x,o.y,10,'#ffd54f');debris(g,o.x,o.y,'#fbc02d',6);g.S*=0.9;}
       }
+    }else if(o.kind==='blitz'){
+      if(o.y>=PY){
+        o.hit=true;o.ft=0.4;
+        if(g.S>=g.st.max*1.05){const b=Math.round(300*d.mult);g.stuntMoney+=b;addCombo(g);g.flash=0.25;g.flashCol='255,255,255';pop(g,g.x,PY-50,'GEBLITZT! +$'+fmt(b*g.cashMul),'#ffffff',true);SFX.cash();}
+        else pop(g,g.x,PY-50,'ZU LANGSAM!','#ff8a80');
+      }
     }else if(o.kind==='ramp'){
       if(!pAir&&ov(g.x,PY,g.pw*0.7,g.ph*0.5,o.x,o.y,o.w,o.h*0.6)){
         o.hit=true;g.airMax=0.85+g.S/1600;g.air=g.airMax;g.jumps++;S.st.jumps++;mAdd('jumps',1);SFX.jump();
@@ -1898,6 +1937,22 @@ function updateGame(dt){
     }
     if(Math.abs(t.tx-t.x)>0.5)t.x+=Math.sign(t.tx-t.x)*Math.min(Math.abs(t.tx-t.x),55*dt);
     if(t.dead)continue;
+    if(t.armored){
+      if(t.hitT>0)t.hitT-=dt;
+      if(!pAir&&ov(g.x,PY,g.pw,g.ph,t.x,t.y,t.w-2,t.h-2)){
+        if(t.hitT<=0){
+          t.hitT=0.45;t.hp--;hurt(g,3*d.dmg);g.S*=0.88;sparks(g,(t.x+g.x)/2,(t.y+PY)/2,18,C.tape);SFX.hit(0.5);
+          for(let k=0;k<3;k++)g.items.push({kind:'coin',x:t.x+rand(-30,30),y:t.y+rand(-30,10),ph:0});
+          if(t.hp<=0){
+            t.dead=true;explode(g,t.x,t.y,true);
+            for(let k=0;k<8;k++)g.items.push({kind:k%3?'coin':'bag',x:clamp(t.x+rand(-60,60),RL+15,RR-15),y:t.y+rand(-80,40),ph:k});
+            wreckFrom(g,t.spec,t.x,t.y,0,true);pop(g,t.x,t.y-30,'GELDREGEN!',C.cash,true);
+          }
+        }
+        if(Math.abs(t.y-PY)>=30)g.S=Math.min(g.S,t.cs);else g.vx+=(g.x>=t.x?1:-1)*60;
+      }
+      continue;
+    }
     if(!pAir&&ov(g.x,PY,g.pw,g.ph,t.x,t.y,t.w-2,t.h-2)){
       t.dead=true;
       const hv=t.heavy?1.6:1;
@@ -1974,7 +2029,7 @@ function doEmp(g){
   ring(g,g.x,PY,420,'64,196,255',0.8,10);ring(g,g.x,PY,260,'180,230,255',0.5,5);
   g.flash=0.25;g.flashCol='120,200,255';
   pop(g,g.x,PY-60,'EMP!','#40c4ff',true);
-  for(const c of g.cops){if(c.dead)continue;if(Math.abs(c.y-PY)<520){c.hp-=Math.max(50,c.maxHp*0.8);c.stun=2.2;sparks(g,c.x,c.y,10,'#80d8ff');if(c.hp<=0)killCop(g,c);}}
+  for(const c of g.cops){if(c.dead)continue;if(Math.abs(c.y-PY)<520){c.hp-=c.kind==='boss'?c.maxHp*0.25:Math.max(50,c.maxHp*0.8);c.stun=c.kind==='boss'?1:2.2;sparks(g,c.x,c.y,10,'#80d8ff');if(c.hp<=0)killCop(g,c);}}
   if(g.heli&&!g.heli.dead){
     g.heli.dead=true;g.heli.fall=1.4;
     S.st.helis++;const b=Math.round(500*DIFFS[g.diff].mult);g.bonus+=b;
@@ -1987,6 +2042,7 @@ function updateCops(g,dt,d){
     if(c.dead)continue;
     if(c.role==='block'&&c.y>PY+40){c.role='chase';c.cs=g.st.max*f*c.K.spd;}
     let target=c.cs;
+    if(c.kind==='boss'&&c.y>PY+140)target=g.S*1.3;
     if(c.role==='chase'&&c.y<PY-70)target=g.S*0.6;
     if(c.stun>0){c.stun-=dt;target=Math.min(target,g.S*0.7);}
     if(c.spin>0){c.spin-=dt;target=Math.min(target,g.S*0.6);}
@@ -2022,7 +2078,7 @@ function updateCops(g,dt,d){
     }
     // Kontakt mit Verkehr
     for(const t of g.traffic){
-      if(!t.dead&&ov(c.x,c.y,c.w,c.h,t.x,t.y,t.w,t.h)){
+      if(!t.dead&&!t.armored&&ov(c.x,c.y,c.w,c.h,t.x,t.y,t.w,t.h)){
         t.dead=true;c.hp-=t.heavy?40:18;c.stun=0.6;sparks(g,t.x,t.y,12);SFX.hit(0.4);
         wreckFrom(g,t.spec,t.x,t.y,(t.x>=c.x?1:-1)*rand(60,110),false);
       }
@@ -2039,7 +2095,7 @@ function updateCops(g,dt,d){
       if(!w.cHit&&ov(c.x,c.y,c.w,c.h,w.x,w.y,w.spec.w,w.spec.h)&&Math.abs(c.y-w.y)>4){w.cHit=true;c.hp-=15;c.stun=0.8;sparks(g,c.x,c.y,8);w.vx+=(w.x>=c.x?1:-1)*80;}
     }
     if(c.hp<=0)killCop(g,c);
-    else if(c.y>H+420||c.y<-800)c.dead=true;
+    else if((c.y>H+420||c.y<-800)&&c.kind!=='boss')c.dead=true;
   }
   g.cops=g.cops.filter(c=>!c.dead);
 }
@@ -2102,14 +2158,30 @@ function endRun(reason){
   let gross=runMoney(g);
   let penalty=0;
   if(reason==='busted'){penalty=Math.floor(gross*0.25);S.st.busts++;}
-  const total=gross-penalty;
+  let total=gross-penalty,crInfo=null;
+  if(g.cr){
+    const L=g.cr.L,won=reason==='win';
+    const hf=clamp(g.hp/g.st.hp,0,1),stars=won?1+(hf>=0.4?1:0)+(hf>=0.75?1:0):0;
+    let bonus=0,crates=0;
+    if(L.daily){
+      if(won&&!dailyChDone()){bonus=L.reward;crates=2;S.dailyCh={date:todayStr()};}
+    }else{
+      const prev=S.career[L.id]||0;
+      if(won&&!prev)bonus=L.reward;else if(won)bonus=Math.round(L.reward*0.25);
+      if(won&&!prev&&L.crate)crates++;
+      if(stars===3&&prev<3)crates++;
+      if(stars>prev)S.career[L.id]=stars;
+    }
+    S.crates+=crates;total+=bonus;
+    crInfo={L:L,won:won,stars:stars,bonus:bonus,crates:crates};
+  }
   const nb=Math.floor(g.dist)>S.best[g.diff];
   S.money+=total;
   if(nb)S.best[g.diff]=Math.floor(g.dist);
   S.st.runs++;S.st.dist+=g.dist;S.st.time+=g.t;S.st.earned+=total;
   mAdd('dist',Math.floor(g.dist));
   mSet('rdist',Math.floor(g.dist));mSet('rkills',g.kills);mSet('combo',g.maxCombo);
-  if(reason==='win')S.st.heists++;
+  if(reason==='win'&&!g.cr)S.st.heists++;
   const xp=Math.floor(g.dist/5+g.kills*50+g.near*10+g.jumps*20+(reason==='win'?400:0));
   const lvl0=S.level,xp0=S.xp;
   const ups=addXp(xp);
@@ -2119,7 +2191,8 @@ function endRun(reason){
   if(g.mode===2)rating=reason==='win'?3:g.dist>=g.heistTarget*0.66?2:g.dist>=g.heistTarget*0.33?1:0;
   else if(g.mode===1)rating=g.cps>=6?3:g.cps>=3?2:g.cps>=1?1:0;
   else rating=g.dist>=3500?3:g.dist>=1800?2:g.dist>=700?1:0;
-  endInfo={rating:rating,starSnd:0,reason:reason,dist:g.dist,coins:g.coins,coinMoney:Math.floor(g.coinMoney*g.cashMul),distBonus:Math.floor(distBonus*g.cashMul),
+  if(crInfo)rating=crInfo.stars;
+  endInfo={cr:crInfo,rating:rating,starSnd:0,reason:reason,dist:g.dist,coins:g.coins,coinMoney:Math.floor(g.coinMoney*g.cashMul),distBonus:Math.floor(distBonus*g.cashMul),
     bonus:Math.floor(g.bonus*g.cashMul),near:g.near,nearMoney:Math.floor((g.nearMoney+g.stuntMoney)*g.cashMul),cpMoney:Math.floor(g.cpMoney*g.cashMul),
     heistMoney:Math.floor(g.heistMoney*g.cashMul),kills:g.kills,total:total,penalty:penalty,newBest:nb,stars:g.stars,
     xp:xp,lvl0:lvl0,xp0:xp0,ups:ups,missions:g.missionsDone.slice(),ach:g.achNew.slice(),cps:g.cps,t:0,maxCombo:g.maxCombo,time:g.t,mode:g.mode};
@@ -2129,6 +2202,7 @@ function endRun(reason){
   stopEngine();stopSiren();
   AU.intensity=0;
   if(reason==='win')SFX.win();else SFX.lose();
+  if(crInfo&&crInfo.crates)setTimeout(()=>toast('+'+crInfo.crates+' Beutekiste'+(crInfo.crates>1?'n':''),C.tape,'gift'),1200);
 }
 
 /* =====================================================================
@@ -2255,7 +2329,7 @@ function drawDecals(g){
 const COPSPEC={shape:'sedan',w:29,h:54,color:'#fff',livery:'cop'};
 function drawObstacles(g,flatOnly){
   for(const o of g.obst){
-    const flat=o.kind==='spike'||o.kind==='oil'||o.kind==='ramp'||o.kind==='cp'||o.kind==='finish';
+    const flat=o.kind==='spike'||o.kind==='oil'||o.kind==='ramp'||o.kind==='cp'||o.kind==='finish'||o.kind==='blitz';
     if(flatOnly!==flat)continue;
     if(o.kind==='rb'){
       const segs=[[RL,o.gx],[o.gx+o.gw,RR]];
@@ -2311,6 +2385,15 @@ function drawObstacles(g,flatOnly){
       ctx.restore();
       ctx.fillStyle='rgba(255,255,255,'+(0.6+0.3*Math.sin(time*8))+')';
       for(let k=0;k<2;k++){const ay=o.y+6-k*12;ctx.beginPath();ctx.moveTo(o.x-9,ay+4);ctx.lineTo(o.x,ay-4);ctx.lineTo(o.x+9,ay+4);ctx.lineTo(o.x+9,ay+8);ctx.lineTo(o.x,ay);ctx.lineTo(o.x-9,ay+8);ctx.fill();}
+    }else if(o.kind==='blitz'){
+      ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.lineWidth=2;ctx.setLineDash([8,8]);ctx.beginPath();ctx.moveTo(RL,o.y);ctx.lineTo(RR,o.y);ctx.stroke();ctx.setLineDash([]);
+      const px=RR+14;
+      ctx.fillStyle='rgba(0,0,0,0.35)';ctx.fillRect(px-2,o.y-2,8,8);
+      ctx.fillStyle='#455a64';ctx.fillRect(px-4,o.y-4,8,8);
+      ctx.fillStyle='#cfd8dc';ctx.beginPath();rr(ctx,px-14,o.y-10,18,12,2);ctx.fill();ctx.strokeStyle=C.ink;ctx.lineWidth=1.5;ctx.stroke();
+      ctx.fillStyle='#111';ctx.beginPath();ctx.arc(px-9,o.y-4,3,0,TAU);ctx.fill();
+      if(o.ft>0){o.ft-=FDT;ctx.save();ctx.globalCompositeOperation='lighter';glowAt('#ffffff',px-9,o.y-4,60,o.ft*2);ctx.restore();}
+      else if(!o.hit&&Math.sin(time*6)>0)glowAt('#ff1744',px+2,o.y-8,6,0.9);
     }else if(o.kind==='cp'||o.kind==='finish'){
       const y=o.y;
       ctx.save();ctx.beginPath();ctx.rect(RL,y-8,RR-RL,16);ctx.clip();
@@ -2579,7 +2662,10 @@ function drawWorld(g){
   drawObstacles(g,true);
   drawItems(g);
   for(const w of g.wrecks)drawVehicle(w.spec,w.x,w.y,w.rot);
-  for(const t of g.traffic)drawVehicle(t.spec,t.x,t.y,0);
+  for(const t of g.traffic){
+    drawVehicle(t.spec,t.x,t.y,0);
+    if(t.armored){coinIcon(t.x,t.y-6,8);for(let k=0;k<5;k++){ctx.fillStyle=k<t.hp?C.cash:'#333';ctx.fillRect(t.x-14+k*6,t.y+t.h/2+4,5,4);}}
+  }
   for(const c of g.cops){
     drawVehicle(c.spec,c.x,c.y,c.rot);
     if(c.hp<c.maxHp)hpBar(c.x-15,c.y-c.h/2-9,30,4,c.hp/c.maxHp);
@@ -2652,7 +2738,23 @@ function drawHUD(g){
     drawIcon('star',x,y,15*pulse,on?'#ffd600':'rgba(255,255,255,0.22)');
   }
   // Modus-Infos
-  if(g.mode===1){
+  const boss=g.cops.find(c=>c.kind==='boss');
+  if(boss){
+    panel(40,82,280,34,{accent:C.red});
+    drawIcon('skull',60,99,18,'#ff8a7a');txt('PANZERWAGEN',78,96,12,'#fff','left','h');
+    progress(78,101,232,9,boss.hp/boss.maxHp,C.red);
+  }else if(g.cr){
+    const L=g.cr.L,goal=L.type==='boss'?1:L.goal;
+    panel(30,82,300,44,{accent:CHAPTERS[L.ch]?CHAPTERS[L.ch].col:C.tape});
+    drawIcon(OBJ[L.type].icon,52,104,20,C.tape);
+    let lab=objText(L);
+    if(L.type==='time')lab+='  ·  '+Math.max(0,Math.ceil(L.lim-g.t))+' s';
+    if(L.type==='nodmg')lab+='  ·  '+Math.round(g.dmgTaken)+'/'+L.lim;
+    txt(lab,70,99,12,'#fff','left');
+    const pv=L.type==='dist'||L.type==='time'||L.type==='nodmg'?km(Math.min(g.cr.p,goal)):Math.floor(Math.min(g.cr.p,goal))+' / '+goal;
+    progress(70,106,190,8,g.cr.p/goal,C.tape);
+    txt(pv,322,114,11,C.muted,'right');
+  }else if(g.mode===1){
     const tl=g.timeLeft,lo=tl<10;
     panel(W/2-50,84,100,34,{accent:lo?C.red:C.tape});
     const m=Math.floor(tl/60),s=Math.floor(tl%60),cs=Math.floor((tl%1)*10);
@@ -2738,12 +2840,14 @@ function drawHUD(g){
     return;
   }
   // Einstieg-Hinweis
-  if(g.t<4.5){
-    ctx.globalAlpha=clamp(2.2-g.t/2,0,1);
-    panel(40,300,280,62,{k:10});
-    txt(S.set.ctrl===0?'Finger ziehen = lenken':'Tasten links/rechts = lenken',W/2,326,17,'#fff','center','h');
-    txt('Weiche aus · sammle Geld · rammen zerstört Polizei',W/2,348,13,C.muted,'center');
-    ctx.globalAlpha=1;
+  // erscheint erst nach dem Start-Banner und nur in den ersten Läufen
+  if(S.st.runs<5&&g.t>2.8&&g.t<7.5){
+    ctx.save();
+    ctx.globalAlpha=Math.min(clamp((g.t-2.8)*4,0,1),clamp((7.5-g.t)*2,0,1));
+    panel(24,292,312,64,{});
+    fitTxt(S.set.ctrl===0?'Finger ziehen = lenken':'Tasten links/rechts = lenken',W/2,319,18,292,'#fff','h');
+    fitTxt('Ausweichen · Geld sammeln · Polizei rammen',W/2,342,13,292,C.muted);
+    ctx.restore();
   }
   // Banner
   if(g.banner.t>0){
@@ -2762,6 +2866,11 @@ function drawHUD(g){
     ctx.lineWidth=7;ctx.strokeStyle='rgba(0,0,0,0.75)';ctx.strokeText(g.warnText,W/2,250);
     ctx.fillStyle=g.warnCol;ctx.fillText(g.warnText,W/2,250);ctx.restore();
   }
+}
+function fitTxt(s,x,y,size,maxW,col,f){
+  ctx.font=(f==='h'?size+'px '+FT:'800 '+size+'px '+FB);
+  const w=ctx.measureText(s).width;
+  txt(s,x,y,w>maxW?size*maxW/w:size,col,'center',f);
 }
 function coinIcon(x,y,r){
   ctx.fillStyle=C.ink;ctx.beginPath();ctx.arc(x,y+1.5,r+1.5,0,TAU);ctx.fill();
@@ -3161,7 +3270,7 @@ function drawSplash(){
 function endSplash(){
   if(!splash)return;
   splash=false;fade=1;screenT=time;initAudio();SFX.click();
-  if(dailyAvailable())setTimeout(()=>{if(screen==='menu'&&!modal)modal={kind:'daily',t:0};},700);
+  if(dailyAvailable())setTimeout(()=>{if(screen==='menu'&&!modal&&dailyAvailable())modal={kind:'daily',t:0};},700);
 }
 function drawMenu(){
   drawWorld(demo);
@@ -3174,21 +3283,21 @@ function drawMenu(){
   levelBadge(30,29,30);
   txt('LEVEL '+S.level,50,26,13,'#fff','left','h');
   progress(50,32,82,8,S.xp/xpNeed(S.level),C.tape,C.tape);
-  moneyPill(W-54,14);
-  button({id:'settings',x:W-48,y:9,w:40,h:34,style:'dark',icon:'gear',iconSize:20});
+  moneyPill(W-10,14);
   if(dailyAvailable())button({id:'daily',x:8,y:58,w:46,h:42,style:'gold',icon:'gift',iconSize:24,pulse:true,badge:'!'});
-  drawLogo(W/2+6,150);
-  button({id:'play',x:40,y:318,w:280,h:68,style:'green',icon:'play',label:'FAHREN',fs:34,pulse:true});
+  drawLogo(W/2+6,140);
+  button({id:'career',x:30,y:236,w:300,h:70,style:'green',icon:'flag',label:'KARRIERE',fs:32,pulse:true,sub:'★ '+totalStars()+' / 120'});
+  button({id:'play',x:30,y:322,w:146,h:52,style:'blue',icon:'play',label:'SCHNELL',fs:17,sub:'Freies Spiel',subFs:10});
+  button({id:'dailych',x:184,y:322,w:146,h:52,style:'orange',icon:'target',label:'CHALLENGE',fs:15,sub:dailyChDone()?'Erledigt ✔':'Heute neu!',subFs:10,badge:dailyChDone()?null:'!'});
   const mc=S.missions.filter(m=>m.p>=m.g*0.8).length;
-  button({id:'garage',x:40,y:402,w:136,h:54,style:'blue',icon:'wrench',label:'GARAGE',fs:16});
-  button({id:'missions',x:184,y:402,w:136,h:54,style:'purple',icon:'target',label:'MISSIONEN',fs:15,badge:mc||null});
-  button({id:'ach',x:40,y:468,w:136,h:54,style:'orange',icon:'trophy',label:'ERFOLGE',fs:16});
-  button({id:'stats',x:184,y:468,w:136,h:54,style:'cyan',icon:'chart',label:'STATISTIK',fs:15});
-  panel(20,542,320,50,{k:9});
-  drawIcon('car',44,567,22,carColor(S.sel));
-  txt(CARS[S.sel].name,62,563,15,'#fff','left','h');
-  txt(MODES[S.mode].name+' · '+DIFFS[S.diff].name+' · Rekord '+km(S.best[S.diff]),62,581,12,C.muted,'left');
-  txt('Ziehen = lenken · Nitro halten · Polizei rammen',W/2,618,12,'rgba(255,255,255,0.5)','center','n');
+  const sq=[['garage','blue','wrench','GARAGE',null],['missions','purple','target','MISSIONEN',mc||null],['crates','gold','gift','KISTEN',S.crates||null],
+            ['ach','orange','trophy','ERFOLGE',null],['stats','cyan','chart','STATISTIK',null],['settings','dark','gear','OPTIONEN',null]];
+  sq.forEach((b,k)=>{const x=30+(k%3)*102,y=390+Math.floor(k/3)*80;button({id:b[0],x:x,y:y,w:94,h:58,style:b[1],icon:b[2],iconSize:22,fs:11,label:'',badge:b[4]});
+    txtShadow(b[3],x+47,y+75,11,'#fff','center','h');});
+  panel(20,568,320,50,{});
+  drawIcon('car',44,593,22,carColor(S.sel));
+  txt(CARS[S.sel].name,62,589,15,'#fff','left','h');
+  txt('Level '+S.level+' · '+S.crates+' Kisten · Rekord '+km(Math.max(...S.best)),62,607,12,C.muted,'left');
 }
 function drawPrep(){
   drawWorld(demo);bgDim(0.82);
@@ -3396,7 +3505,7 @@ function drawGarage(){
   const clsCol={C:'#8a857c',B:'#42a5f5',A:'#ab47bc',S:'#ffd600'}[c.cls];
   pill(W/2-110,269,52,18,clsCol,'KL. '+c.cls,'#0b1220');
   if(owned)pill(W/2-50,269,160,18,S.sel===gi?C.tape:C.green,S.sel===gi?'IM EINSATZ':'IN DEINER GARAGE',C.ink);
-  else pill(W/2-50,269,160,18,'rgba(255,214,0,0.22)','GESPERRT · $ '+fmt(c.price),'#ffd54f');
+  else pill(W/2-50,269,160,18,'rgba(255,214,0,0.22)',carLocked(gi)?'KARRIERE KAPITEL '+(c.req+1):'GESPERRT · $ '+fmt(c.price),'#ffd54f');
   txt((GORDER.indexOf(gi)+1)+' / '+CARS.length,W-14,284,11,'#8a857c','right');
   }
   if(gtab===0)garageCars(c,owned);
@@ -3412,7 +3521,9 @@ function garageCars(c,owned){
   statRow('Nitro',374,st.tank,nmax,'#5cc8d6',cs&&cs.tank);
   if(cs)txt('│ = dein aktuelles Auto ('+CARS[S.sel].name+')',W/2,394,10,'rgba(255,255,255,0.5)','center','n');
   wrapText(c.desc,W/2,414,310,16,13,'#d6d0c4','center','n');
-  if(!owned){
+  if(!owned&&carLocked(gi)){
+    button({id:'noop',x:40,y:450,w:280,h:56,style:'off',icon:'lock',label:'KAPITEL '+(c.req+1)+' ABSCHLIESSEN',fs:16,dim:true});
+  }else if(!owned){
     const can=S.money>=c.price;
     button({id:'buy',x:40,y:450,w:280,h:56,style:can?'gold':'off',icon:'coin',label:'KAUFEN  $ '+fmt(c.price),fs:20,shine:can,dim:!can});
   }else if(S.sel===gi){
@@ -3434,11 +3545,11 @@ function garageCars(c,owned){
 function garageTuning(owned){
   for(let k=0;k<UPG.length;k++){
     const y=296+k*64,lvl=S.up[gi][k],u=UPG[k];
-    panel(10,y,W-20,58,{accent:lvl>=5?C.tape:'#4a5678'});
+    panel(10,y,W-20,58,{accent:lvl>=UMAX?C.tape:'#4a5678'});
     ctx.fillStyle='rgba(255,255,255,0.08)';ctx.beginPath();rr(ctx,18,y+9,40,40,8);ctx.fill();
     drawIcon(u.icon,38,y+29,24,owned?C.tape:'#6b665e');
     txt(u.name,68,y+24,16,owned?'#fff':'#7d786f','left','h');
-    if(lvl<5){
+    if(lvl<UMAX){
       const a=carStats(gi);S.up[gi][k]++;const b=carStats(gi);S.up[gi][k]--;
       const f=[x=>x.max*0.3,x=>x.lat,x=>x.hp,x=>x.tank,x=>x.pick][k],un=[' km/h','',' HP',' s',''][k],lb=['Tempo','Lenkung','Leben','Tank','Radius'][k];
       const dec=k===3?1:0,fv=v=>v.toFixed(dec).replace('.',',');
@@ -3446,14 +3557,13 @@ function garageTuning(owned){
       ctx.font='700 11px '+FB;const tw=ctx.measureText(lb+' '+fv(f(a))+' → ').width;
       txt(fv(f(b))+un,68+tw,y+43,11,'#69f0ae','left','h');
     }else txt('Maximum erreicht',68,y+43,11,'#ffd600','left','h');
-    for(let p=0;p<5;p++){
-      const on=p<lvl;
-      const gx=180+p*14;
-      ctx.fillStyle=on?'#ffd600':'rgba(255,255,255,0.15)';
-      ctx.beginPath();ctx.moveTo(gx,y+12);ctx.lineTo(gx+10,y+12);ctx.lineTo(gx+8,y+22);ctx.lineTo(gx-2,y+22);ctx.closePath();ctx.fill();
-      if(on){ctx.fillStyle='rgba(255,255,255,0.5)';ctx.fillRect(gx,y+12,10,2);}
+    for(let p=0;p<UMAX;p++){
+      const on=p<lvl,gx=166+p*8.4;
+      ctx.fillStyle=on?(p>=5?'#ff9f0a':'#ffd600'):'rgba(255,255,255,0.15)';
+      ctx.beginPath();rr(ctx,gx,y+12,6.4,10,2);ctx.fill();
+      if(on){ctx.fillStyle='rgba(255,255,255,0.5)';ctx.fillRect(gx+1,y+13,4.4,2);}
     }
-    if(lvl>=5)button({id:'noop',x:256,y:y+12,w:92,h:34,style:'dark',label:'MAX',fs:14,noGlow:true});
+    if(lvl>=UMAX)button({id:'noop',x:256,y:y+12,w:92,h:34,style:'dark',label:'MAX',fs:14,noGlow:true});
     else{
       const cost=u.base*UMULT[lvl],can=owned&&S.money>=cost;
       button({id:'up:'+k,x:256,y:y+12,w:92,h:34,style:can?'green':'off',label:'$'+fmt(cost),fs:14,dim:!can});
@@ -3634,9 +3744,10 @@ function drawSettings(){
     else button({id:'set:'+r[0],x:228,y:y+11,w:110,h:30,style:'cyan',label:r[3],fs:13,noGlow:true});
   });
   button({id:'reset',x:40,y:458,w:280,h:46,style:'red',icon:'close',label:'SPIELSTAND LÖSCHEN',fs:15});
-  txt('FLUCHT!',W/2,548,18,C.muted,'center','h');
-  txt('Tastatur: ← → lenken · Leertaste Nitro · P Pause',W/2,572,12,'rgba(255,255,255,0.55)','center','n');
-  txt('Der Spielstand wird automatisch im Browser gespeichert.',W/2,592,12,'rgba(255,255,255,0.55)','center','n');
+  if(adminFreigeschaltet())button({id:'admin',x:40,y:516,w:280,h:40,style:'purple',icon:'gear',label:'ADMIN',fs:16});
+  txt('FLUCHT!',W/2,584,18,C.muted,'center','h');
+  txt('Tastatur: ← → lenken · Leertaste Nitro · P Pause',W/2,604,12,'rgba(255,255,255,0.55)','center','n');
+  txt('Der Spielstand wird automatisch im Browser gespeichert.',W/2,622,12,'rgba(255,255,255,0.55)','center','n');
 }
 function drawPause(){
   bgDim(0.72);
@@ -3654,14 +3765,16 @@ function drawOver(){
   const e=endInfo;e.t+=FDT;
   bgDim(0.8);
   const T={wreck:['GESTELLT!','#ff5252','Dein Wagen ist Schrott.'],busted:['VERHAFTET!','#448aff','Die Polizei hat dich festgesetzt.'],
-    time:['ZEIT ABGELAUFEN','#ffab40','Die Uhr hat dich eingeholt.'],win:['ENTKOMMEN!','#69f0ae','Beute erfolgreich abgeliefert!']}[e.reason];
+    time:['ZEIT ABGELAUFEN','#ffab40','Die Uhr hat dich eingeholt.'],win:['ENTKOMMEN!','#69f0ae','Beute erfolgreich abgeliefert!'],
+    fail:['GESCHEITERT','#ff8a7a','Ziel verfehlt.']}[e.reason];
+  if(e.cr){T[0]=e.cr.won?'GESCHAFFT!':'GESCHEITERT';T[1]=e.cr.won?'#8cf05a':'#ff6b5a';T[2]=levelTitle(e.cr.L)+' · '+objText(e.cr.L);}
   const sc=easeBack(clamp(e.t*2.2,0,1));
   ctx.save();ctx.translate(W/2,74);ctx.scale(sc,sc);
   ctx.font=(e.reason==='time'?30:42)+'px '+FT;ctx.textAlign='center';ctx.lineJoin='round';
   ctx.lineWidth=8;ctx.strokeStyle='rgba(0,0,0,0.8)';ctx.strokeText(T[0],0,0);
   ctx.fillStyle=T[1];ctx.fillText(T[0],0,0);
   ctx.restore();
-  if(!e.newBest)txt(T[2]+'  ·  Stufe '+e.stars+'  ·  '+DIFFS[G.diff].name,W/2,102,13,'#d6d0c4','center');
+  if(e.cr||!e.newBest)txt(e.cr?T[2]:T[2]+'  ·  Stufe '+e.stars+'  ·  '+DIFFS[G.diff].name,W/2,102,13,'#d6d0c4','center');
   for(let i=0;i<3;i++){
     const st=0.7+i*0.28,a=clamp((e.t-st)*3.5,0,1),on=i<e.rating,big=i===1;
     const sx=W/2+(i-1)*54,sy=big?142:150,sz=(big?46:38);
@@ -3672,11 +3785,13 @@ function drawOver(){
       const sc=easeBack(a);drawIcon('star',sx,sy,sz*sc,'#ffc531');drawIcon('star',sx-sz*0.12,sy-sz*0.12,sz*0.35*sc,'#fff27a');
     }
   }
-  if(e.newBest){const p=1+0.06*Math.sin(time*6);ctx.save();ctx.translate(W/2,102);ctx.scale(p,p);pill(-80,-12,160,24,'rgba(255,214,0,0.25)','NEUER REKORD!','#ffd600','star');ctx.restore();}
+  if(e.newBest&&!e.cr){const p=1+0.06*Math.sin(time*6);ctx.save();ctx.translate(W/2,102);ctx.scale(p,p);pill(-80,-12,160,24,'rgba(255,214,0,0.25)','NEUER REKORD!','#ffd600','star');ctx.restore();}
   const rows=[['Strecke',km(e.dist),false],['Münzen ('+e.coins+')',e.coinMoney],['Streckenbonus',e.distBonus],['Polizei zerstört ('+e.kills+')',e.bonus],['Stunts & Beinahe ('+e.near+')',e.nearMoney]];
   if(e.mode===1)rows.push(['Checkpoints ('+e.cps+')',e.cpMoney]);
   if(e.mode===2)rows.push(['Beute abgeliefert',e.heistMoney]);
   if(e.penalty)rows.push(['Kaution (−25%)',-e.penalty]);
+  if(e.cr&&e.cr.bonus)rows.push([e.cr.L.daily?'Challenge-Belohnung':'Level-Belohnung',e.cr.bonus]);
+  if(e.cr&&e.cr.crates)rows.push(['Beutekisten','+'+e.cr.crates]);
   const ph=rows.length*25+70;
   panel(16,176,328,ph,{k:12});
   rows.forEach((r,i)=>{
@@ -3705,12 +3820,18 @@ function drawOver(){
   let ly=xy+66;
   const notes=e.missions.map(m=>['target','#69f0ae',m.t]).concat(e.ach.map(a=>['trophy','#ffd600',a.n]));
   notes.slice(0,ph>200?1:2).forEach(nn=>{drawIcon(nn[0],28,ly-4,13,nn[1]);txt(nn[2],40,ly,12,nn[1],'left');ly+=17;});
-  if(e.t>1)button({id:'again',x:20,y:H-146,w:320,h:56,style:'green',icon:'retry',label:'NOCHMAL',fs:24,shine:true,pulse:true});
+  const nextL=e.cr&&e.cr.won&&!e.cr.L.daily&&e.cr.L.i<9?careerLevel(e.cr.L.ch,e.cr.L.i+1):null;
+  if(e.t>1){
+    if(nextL)button({id:'next',x:20,y:H-146,w:200,h:56,style:'green',icon:'play',label:'WEITER',fs:24,pulse:true});
+    if(nextL)button({id:'again',x:232,y:H-146,w:108,h:56,style:'blue',icon:'retry',iconSize:24});
+    else button({id:'again',x:20,y:H-146,w:320,h:56,style:'green',icon:'retry',label:'NOCHMAL',fs:24,pulse:true});
+  }
   if(e.t>1.2){
-    button({id:'garage',x:20,y:H-78,w:154,h:46,style:'blue',icon:'wrench',label:'GARAGE',fs:15});
+    if(e.cr&&!e.cr.L.daily)button({id:'map',x:20,y:H-78,w:154,h:46,style:'purple',icon:'flag',label:'KARTE',fs:15});
+    else button({id:'garage',x:20,y:H-78,w:154,h:46,style:'blue',icon:'wrench',label:'GARAGE',fs:15});
     button({id:'menu',x:186,y:H-78,w:154,h:46,style:'dark',icon:'home',label:'MENÜ',fs:15});
   }
-  if(e.reason==='win'){
+  if(e.reason==='win'||(e.cr&&e.cr.won)){
     if(confetti.length<120)for(let i=0;i<3;i++)confetti.push({x:rand(0,W),y:-10,vx:rand(-30,30),vy:rand(80,180),r:rand(0,TAU),vr:rand(-8,8),c:pick(['#ffd600','#69f0ae','#40c4ff','#ff4081',C.tape])});
     for(const c of confetti){c.x+=c.vx*FDT;c.y+=c.vy*FDT;c.r+=c.vr*FDT;ctx.save();ctx.translate(c.x,c.y);ctx.rotate(c.r);ctx.fillStyle=c.c;ctx.fillRect(-3,-1.5,6,3);ctx.restore();}
     confetti=confetti.filter(c=>c.y<H+10);
@@ -3737,6 +3858,23 @@ function drawModal(){
     }
     button({id:'claim',x:60,y:380,w:240,h:54,style:'gold',icon:'gift',label:'$ '+fmt(dailyReward(((streak-1)%7)+1))+' ABHOLEN',fs:17,shine:true,pulse:true});
     txt('Komm jeden Tag wieder für mehr Geld!',W/2,462,12,'rgba(255,255,255,0.6)','center','n');
+  }else if(modal.kind==='level'){
+    const L=modal.L,Ch=CHAPTERS[L.ch],best=L.daily?0:(S.career[L.id]||0);
+    panel(24,120,312,400,{accent:L.daily?'#ff9f0a':Ch.col});
+    txtShadow(levelTitle(L),W/2,162,26,'#fff','center','h');
+    txt(L.daily?'Heute: '+Ch.name+' · '+L.modName:Ch.name+(L.type==='boss'?' · BOSS-LEVEL':''),W/2,184,13,C.muted,'center');
+    for(let k=0;k<3;k++){drawIcon('star',W/2+(k-1)*34,214,30,C.ink);drawIcon('star',W/2+(k-1)*34,212,26,k<best?C.tape:'#3a4562');}
+    panel(44,240,272,70,{fill:'rgba(20,28,52,0.9)'});
+    drawIcon(OBJ[L.type].icon,72,275,28,C.tape);
+    wrapText(objText(L),96,270,206,18,16,'#fff','left');
+    const info=['Fahndung ab Stufe '+L.startStars,DIFFS[L.diff].name,L.night?'Nachts':BIOMES[L.biome].name,{clear:'Klar',rain:'Regen',snow:'Schnee',fog:'Nebel',sand:'Sandsturm'}[L.weather]];
+    txt(info.join(' · '),W/2,330,12,C.muted,'center');
+    txt('3 ★ = Ziel mit mind. 75 % Leben',W/2,348,12,C.muted,'center','n');
+    const doneD=L.daily&&dailyChDone();
+    coinIcon(W/2-60,378,10);
+    txt(doneD?'Heute schon erledigt':(best&&!L.daily?'$ '+fmt(Math.round(L.reward*0.25)):'$ '+fmt(L.reward))+(L.crate&&!best&&!doneD?(L.daily?'  + 2 Kisten':'  + Kiste'):''),W/2-44,384,15,'#fff','left','h');
+    button({id:'lvlStart',x:60,y:404,w:240,h:58,style:'green',icon:'play',label:'START',fs:26,pulse:true,noAnim:true});
+    button({id:'modalClose',x:136,y:474,w:88,h:32,style:'dark',label:'ZURÜCK',fs:13,noAnim:true});
   }else if(modal.kind==='reset'){
     panel(30,200,300,220,{accent:C.red});
     drawIcon('skull',W/2,244,40,'#ff5252');
@@ -3753,7 +3891,7 @@ function drawToasts(){
   if(screen==='over')return;
   const inGame=screen==='game'||screen==='pause';
   const list=inGame?toasts:toasts.slice(-2);
-  let y=inGame?84:H-12;
+  let y=inGame?232:H-12;
   for(const t of (inGame?list:list.slice().reverse())){
     const inA=easeOut(clamp((t.max-t.t)*4,0,1)),outA=clamp(t.t*2.5,0,1),a=Math.min(inA,outA);
     const h=t.sub?50:38;
@@ -3766,6 +3904,330 @@ function drawToasts(){
     ctx.restore();
     y+=(inGame?1:-1)*(h+6)*a;
   }
+}
+
+
+/* =====================================================================
+   ADMIN-MENÜ
+   ---------------------------------------------------------------------
+   Das Admin-Menü ist vollständig eingebaut. WIE man es erreicht,
+   entscheidest du hier selbst: Gib in adminFreigeschaltet() true zurück,
+   dann erscheint in den Einstellungen der Button "ADMIN".
+   Ideen: Passwort-Abfrage, geheime Tastenkombination, Login, URL-Parameter …
+   ===================================================================== */
+function adminFreigeschaltet(){
+  // TODO: Eigene Freischalt-Logik hier einfügen.
+  return false;
+}
+const ADM={god:false,startStars:0,timeScale:1,forceEvent:null,unlock:false};
+const EVENT_NAMES={money:'Geldtransporter',blitz:'Blitzer',works:'Baustelle',gold:'Goldrausch',ramps:'Rampenpark',convoy:'Polizei-Konvoi',boss:'Panzerwagen'};
+const EVENT_KEYS=Object.keys(EVENT_NAMES);
+
+/* =====================================================================
+   KARRIERE – 4 Kapitel × 10 Level
+   ===================================================================== */
+const CHAPTERS=[
+  {name:'Vorstadt',biome:0,diff:0,col:'#5fd13b',req:0,desc:'Ruhige Landstraßen zum Warmwerden.'},
+  {name:'Innenstadt',biome:1,diff:1,col:'#2f8fff',req:15,desc:'Enge Straßen, Sperren und viel Verkehr.'},
+  {name:'Wüste',biome:2,diff:2,col:'#ff9f0a',req:35,desc:'Endlose Highways und Nagelbretter.'},
+  {name:'Bergpass',biome:3,diff:3,col:'#b07cff',req:60,desc:'Glatte Straßen und die härteste Polizei.'}
+];
+const OBJ={
+  dist:{t:(g)=>'Fahre '+km(g),icon:'speed'},
+  coins:{t:(g)=>'Sammle '+g+' Münzen',icon:'coin'},
+  kills:{t:(g)=>'Zerstöre '+g+' Polizeiautos',icon:'police'},
+  near:{t:(g)=>'Schaffe '+g+' Beinahe-Unfälle',icon:'sparkle'},
+  survive:{t:(g)=>'Überlebe '+g+' Sekunden',icon:'clock'},
+  time:{t:(g,l)=>'Fahre '+km(g)+' in '+l+' Sekunden',icon:'clock'},
+  jumps:{t:(g)=>'Springe '+g+'× über Rampen',icon:'jump'},
+  nodmg:{t:(g,l)=>km(g)+' mit max. '+l+' Schaden',icon:'shield'},
+  boss:{t:()=>'Zerstöre den Panzerwagen',icon:'skull'}
+};
+const OBJORDER=['dist','coins','kills','near','survive','time','jumps','nodmg'];
+function objGoal(type,ch,i){
+  let goal=1,lim=0;
+  switch(type){
+    case'dist':goal=Math.round((1500+ch*700+i*150)/100)*100;break;
+    case'coins':goal=20+ch*10+i*3;break;
+    case'kills':goal=2+ch+Math.floor(i/3);break;
+    case'near':goal=5+ch*3+Math.floor(i/2);break;
+    case'survive':goal=40+ch*15+i*3;break;
+    case'time':goal=Math.round((1000+ch*500+i*80)/100)*100;lim=Math.round(goal/40+12-ch);break;
+    case'jumps':goal=3+ch+Math.floor(i/4);break;
+    case'nodmg':goal=Math.round((900+ch*400+i*60)/100)*100;lim=Math.max(15,45-ch*8);break;
+  }
+  return{goal:goal,lim:lim};
+}
+function careerLevel(ch,i){
+  const C0=CHAPTERS[ch],rnd=seeded(ch*101+i*17+5);
+  const type=i===9?'boss':OBJORDER[(i+ch*3)%8];
+  const o=objGoal(type,ch,i),ws=BIOMES[C0.biome].weather;
+  return{id:ch+'-'+i,ch:ch,i:i,type:type,goal:o.goal,lim:o.lim,night:i%4===3,
+    startStars:clamp(1+ch+(i>=6?1:0),1,4),diff:C0.diff,biome:C0.biome,weather:ws[Math.floor(rnd()*ws.length)],
+    reward:Math.round((250*(ch+1)+i*60)*(type==='boss'?4:1)),crate:type==='boss'||i===4,mod:null};
+}
+const DAILY_MODS=[
+  {id:'cops2',n:'Doppelte Polizei'},{id:'nonitro',n:'Kein Nitro'},
+  {id:'traffic2',n:'Berufsverkehr'},{id:'night',n:'Nachtfahrt'}
+];
+function dailyChallenge(){
+  const d=new Date(),r=seeded(d.getFullYear()*1000+d.getMonth()*40+d.getDate()+7);
+  const ch=Math.floor(r()*4),type=OBJORDER[Math.floor(r()*8)],i=4+Math.floor(r()*5);
+  const L=careerLevel(ch,i),o=objGoal(type,ch,i),m=DAILY_MODS[Math.floor(r()*DAILY_MODS.length)];
+  L.id='daily';L.type=type;L.goal=o.goal;L.lim=o.lim;L.daily=true;L.mod=m.id;L.modName=m.n;
+  L.night=m.id==='night';L.reward=1500;L.crate=true;
+  return L;
+}
+function dailyChDone(){return S.dailyCh.date===todayStr();}
+function chapterStars(ch){let n=0;for(let i=0;i<10;i++)n+=S.career[ch+'-'+i]||0;return n;}
+function totalStars(){let n=0;for(const k in S.career)n+=S.career[k]|0;return n;}
+function chapterDone(ch){for(let i=0;i<10;i++)if(!S.career[ch+'-'+i])return false;return true;}
+function chapterOpen(ch){return ADM.unlock||totalStars()>=CHAPTERS[ch].req;}
+function levelOpen(ch,i){return chapterOpen(ch)&&(ADM.unlock||i===0||!!S.career[ch+'-'+(i-1)]);}
+function carLocked(i){const r=CARS[i].req;return r!=null&&!ADM.unlock&&!chapterDone(r);}
+function levelTitle(L){return L.daily?'TAGES-CHALLENGE':'LEVEL '+(L.ch+1)+'-'+(L.i+1);}
+function objText(L){return OBJ[L.type].t(L.goal,L.lim);}
+let ccur=0,curLevel=null;
+
+/* =====================================================================
+   ZUFALLS-EVENTS während der Fahrt
+   ===================================================================== */
+function pickEvent(g){
+  if(ADM.forceEvent)return ADM.forceEvent;
+  const bossAlive=g.cops.some(c=>c.kind==='boss');
+  const list=['money','money','blitz','works','gold','ramps','convoy'];
+  if(g.stars>=4&&!bossAlive&&g.t>70&&!(g.cr&&g.cr.L.type==='boss'))list.push('boss');
+  return pick(list);
+}
+function startEvent(g,ev){
+  const d=DIFFS[g.diff];
+  if(ev==='money'){
+    const lane=pick(LANES);
+    g.traffic.push({spec:{shape:'van',w:33,h:66,color:'#3e5c4a'},x:lane,tx:lane,y:-80,w:33,h:66,cs:rand(150,190),blink:0,blinkDir:0,lcT:99,close:false,heavy:true,armored:true,hp:5,hitT:0});
+    warn(g,'GELDTRANSPORTER!',C.cash);
+    banner('GELDTRANSPORTER','Ramm ihn 5× für einen Geldregen!');
+  }else if(ev==='blitz'){
+    g.obst.push({kind:'blitz',y:-90,hit:false,ft:0});
+    warn(g,'BLITZER!','#ffffff');banner('BLITZER','Mit Nitro durchrasen = Bonus!');
+  }else if(ev==='works'){
+    const side=Math.random()<0.5?0:3;
+    for(let k=0;k<16;k++)g.obst.push({kind:'cone',x:LANES[side]+(k%2?8:-8),y:-60-k*30,hit:false,w:10,h:10,vx:0,vy:0,rot:0,vr:0});
+    g.obst.push({kind:'barrel',red:false,x:LANES[side===0?1:2],y:-260,hit:false,w:14,h:14});
+    warn(g,'BAUSTELLE!','#ff9f0a');
+  }else if(ev==='gold'){
+    g.goldT=7;g.goldAcc=0;warn(g,'GOLDRAUSCH!',C.tape);banner('GOLDRAUSCH','Sammle so viele Münzen wie möglich!');
+  }else if(ev==='ramps'){
+    for(const l of LANES)g.obst.push({kind:'ramp',x:l,y:-70,hit:false,w:50,h:36});
+    for(let k=0;k<8;k++)g.items.push({kind:'coin',x:LANES[1+(k%2)]+(k%2?-35:35),y:-150-k*30,ph:k*0.5});
+    warn(g,'RAMPENPARK!','#c99bff');
+  }else if(ev==='convoy'){
+    const skip=randi(0,3);
+    LANES.forEach((l,i)=>{if(i===skip)return;spawnCop(g,'block','patrol');const c=g.cops[g.cops.length-1];c.x=l;c.y=-90-i*30;});
+    warn(g,'POLIZEI-KONVOI!','#2f8fff');
+  }else if(ev==='boss'){
+    spawnBoss(g);
+  }
+  SFX.warn();
+}
+function spawnBoss(g){
+  spawnCop(g,'chase','boss');
+  const c=g.cops[g.cops.length-1];c.y=H+160;c.x=180;
+  warn(g,'PANZERWAGEN!',C.red);banner('BOSS: PANZERWAGEN','Rammen, Fässer und EMP schaden ihm');
+  SFX.warn();vib(120);
+}
+
+/* =====================================================================
+   BEUTEKISTEN
+   ===================================================================== */
+let crateAnim=null;
+function rollCrate(){
+  const r=Math.random(),lvlF=1+S.level*0.06;
+  if(r<0.06){const v=Math.round(5000*lvlF);S.money+=v;return{icon:'coin',col:C.tape,title:'JACKPOT!',sub:'$ '+fmt(v),big:true};}
+  if(r<0.3){
+    const cu=S.cust[S.sel],opts=[];
+    PAINTS.forEach((p,i)=>{if(!(cu.po&(1<<i)))opts.push(['po',i,'Lack: '+p.n,'paint']);});
+    NEONS.forEach((n,i)=>{if(i&&!(cu.no&(1<<i)))opts.push(['no',i,'Neon: '+n.n,'neon']);});
+    DECALS.forEach((n,i)=>{if(i&&!(cu.do&(1<<i)))opts.push(['do',i,'Dekor: '+n.n,'sticker']);});
+    [1,2].forEach(i=>{if(!(cu.fo&(1<<i)))opts.push(['fo',i,'Finish: '+FINISHES[i].n,'sparkle']);});
+    if(opts.length){const o=pick(opts);cu[o[0]]|=(1<<o[1]);return{icon:o[3],col:'#c99bff',title:o[2],sub:'für '+CARS[S.sel].name};}
+  }
+  if(r<0.45){const v=Math.round(rand(300,700)*lvlF);const ups=addXp(v);return{icon:'star',col:'#6fc4ff',title:'+'+fmt(v)+' XP',sub:ups?'Level-Aufstieg!':'Erfahrung'};}
+  const v=Math.round(rand(400,1400)*lvlF/50)*50;S.money+=v;
+  return{icon:'coin',col:C.cash,title:'$ '+fmt(v),sub:'Bargeld'};
+}
+function drawCrate(cx,cy,sc,shake,open){
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(shake);ctx.scale(sc,sc);
+  ctx.fillStyle='rgba(0,0,0,0.35)';ctx.beginPath();ctx.ellipse(0,52,62,12,0,0,TAU);ctx.fill();
+  // Kiste
+  const g=ctx.createLinearGradient(0,-20,0,50);g.addColorStop(0,'#b5793d');g.addColorStop(1,'#7a4a1f');
+  ctx.fillStyle=g;ctx.beginPath();rr(ctx,-58,-14,116,64,8);ctx.fill();
+  ctx.strokeStyle='rgba(60,30,10,0.6)';ctx.lineWidth=2;
+  for(let k=1;k<4;k++){ctx.beginPath();ctx.moveTo(-58,-14+k*16);ctx.lineTo(58,-14+k*16);ctx.stroke();}
+  ctx.strokeStyle=C.ink;ctx.lineWidth=3.5;ctx.beginPath();rr(ctx,-58,-14,116,64,8);ctx.stroke();
+  ctx.fillStyle='#b0bcd4';for(const sx of[-58,48])for(const sy of[-14,40]){ctx.fillRect(sx,sy,10,10);ctx.strokeStyle=C.ink;ctx.lineWidth=2;ctx.strokeRect(sx,sy,10,10);}
+  // Deckel
+  const lid=open?Math.min(1,open):0;
+  ctx.save();ctx.translate(0,-14-lid*70);ctx.rotate(-lid*0.5);
+  const lg=ctx.createLinearGradient(0,-30,0,0);lg.addColorStop(0,'#d08e4c');lg.addColorStop(1,'#93582a');
+  ctx.fillStyle=lg;ctx.beginPath();rr(ctx,-64,-28,128,30,8);ctx.fill();
+  ctx.strokeStyle=C.ink;ctx.lineWidth=3.5;ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,0.2)';ctx.fillRect(-58,-24,116,6);
+  if(!open){
+    const kg=ctx.createLinearGradient(0,-6,0,22);kg.addColorStop(0,'#fff27a');kg.addColorStop(1,'#ff9f0a');
+    ctx.fillStyle=kg;ctx.beginPath();rr(ctx,-13,-6,26,26,5);ctx.fill();ctx.strokeStyle=C.ink;ctx.lineWidth=3;ctx.stroke();
+    ctx.fillStyle=C.ink;ctx.beginPath();ctx.arc(0,5,3.5,0,TAU);ctx.fill();ctx.fillRect(-1.5,5,3,8);
+  }
+  ctx.restore();
+  ctx.restore();
+}
+function drawCrates(){
+  drawGarageBg();
+  header('BEUTEKISTEN');
+  const cx=W/2,cy=300;
+  // Lichtstrahlen
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(time*0.3);
+  for(let k=0;k<12;k++){ctx.rotate(TAU/12);ctx.fillStyle=k%2?'rgba(255,197,49,0.08)':'rgba(255,255,255,0.04)';ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-30,-260);ctx.lineTo(30,-260);ctx.closePath();ctx.fill();}
+  ctx.restore();
+  if(crateAnim){
+    crateAnim.t+=FDT;
+    const t=crateAnim.t;
+    if(t<0.9){drawCrate(cx,cy,1.25+0.05*Math.sin(t*40),Math.sin(t*45)*0.08*(t/0.9),0);}
+    else{
+      if(!crateAnim.boom){crateAnim.boom=true;SFX.levelup();vib(80);for(let k=0;k<60;k++){const a=rand(0,TAU),v=rand(60,320);gFx.push({x:cx,y:cy-20,vx:Math.cos(a)*v,vy:Math.sin(a)*v-80,life:rand(0.6,1.4),max:1.4,c:pick([C.tape,'#fff','#ff9f0a',crateAnim.r.col]),s:rand(2,4),r:rand(0,TAU),vr:rand(-10,10)});}}
+      drawCrate(cx,cy+40,1.1,0,clamp((t-0.9)*4,0,1));
+      const a=easeBack(clamp((t-1.0)*2.5,0,1));
+      ctx.save();ctx.translate(cx,cy-60);ctx.scale(a,a);
+      panel(-120,-70,240,140,{});
+      ctx.fillStyle=rgba(crateAnim.r.col,0.25);ctx.beginPath();ctx.arc(0,-22,30,0,TAU);ctx.fill();
+      drawIcon(crateAnim.r.icon,0,-20,36,crateAnim.r.col);
+      txtShadow(crateAnim.r.title,0,30,crateAnim.r.big?26:19,'#fff','center','h');
+      txt(crateAnim.r.sub,0,52,13,C.muted,'center');
+      ctx.restore();
+    }
+    for(const f of gFx){f.x+=f.vx*FDT;f.y+=f.vy*FDT;f.vy+=260*FDT;f.r+=f.vr*FDT;f.life-=FDT;ctx.globalAlpha=clamp(f.life/f.max,0,1);ctx.save();ctx.translate(f.x,f.y);ctx.rotate(f.r);ctx.fillStyle=f.c;ctx.fillRect(-f.s,-f.s/2,f.s*2,f.s);ctx.restore();}
+    ctx.globalAlpha=1;gFx=gFx.filter(f=>f.life>0);
+    if(t>1.5)button({id:'crateOk',x:70,y:470,w:220,h:54,style:'green',icon:'check',label:'SUPER!',fs:22,noAnim:true});
+  }else{
+    drawCrate(cx,cy+Math.sin(time*2.5)*4,1.25,Math.sin(time*1.7)*0.03,0);
+    txtShadow(S.crates>0?'Du hast '+S.crates+' Kiste'+(S.crates===1?'':'n'):'Keine Kisten',W/2,420,22,'#fff','center','h');
+    if(S.crates>0)button({id:'openCrate',x:70,y:446,w:220,h:60,style:'gold',icon:'gift',label:'ÖFFNEN',fs:26,pulse:true});
+    else button({id:'career',x:70,y:446,w:220,h:54,style:'green',icon:'flag',label:'ZUR KARRIERE',fs:18});
+  }
+  wrapText('Kisten gibt es für Level-Aufstiege, Boss-Siege, 3-Sterne-Level, besondere Karriere-Level und die Tages-Challenge.',W/2,560,300,17,13,C.muted,'center','n');
+}
+
+/* =====================================================================
+   KARRIERE-KARTE
+   ===================================================================== */
+function nodePos(i){return{x:W/2+Math.sin(i*1.15+0.4)*92,y:608-i*47};}
+function drawCareer(){
+  drawWorld(demo);bgDim(0.82);
+  header('KARRIERE');
+  for(let c=0;c<4;c++){
+    const open=chapterOpen(c),Ch=CHAPTERS[c];
+    button({id:'ch:'+c,x:10+c*86,y:62,w:80,h:34,style:ccur===c?'gold':open?'dark':'off',label:open?['1 Vorstadt','2 City','3 Wüste','4 Berg'][c]:'',icon:open?null:'lock',iconSize:16,fs:11,noAnim:true});
+  }
+  const Ch=CHAPTERS[ccur],open=chapterOpen(ccur);
+  txtShadow(Ch.name.toUpperCase(),16,128,22,'#fff','left','h');
+  txt(Ch.desc,16,146,12,C.muted,'left');
+  drawIcon('star',W-70,121,18,C.tape);txt(chapterStars(ccur)+'/30',W-14,128,16,'#fff','right','h');
+  // Pfad
+  ctx.lineCap='round';
+  for(let i=0;i<9;i++){
+    const a=nodePos(i),b=nodePos(i+1);
+    ctx.strokeStyle=C.ink;ctx.lineWidth=16;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+    ctx.strokeStyle=S.career[ccur+'-'+i]?Ch.col:'#3a4562';ctx.lineWidth=10;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,255,0.35)';ctx.lineWidth=2;ctx.setLineDash([6,8]);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.setLineDash([]);
+  }
+  ctx.lineCap='butt';
+  for(let i=0;i<10;i++){
+    const p=nodePos(i),st=S.career[ccur+'-'+i]||0,lo=levelOpen(ccur,i),boss=i===9;
+    const nxt=lo&&!st,r=boss?25:20,pr=press&&press.id==='lvl:'+i&&press.inside;
+    const pulse=nxt?1+0.08*Math.sin(time*5):1;
+    ctx.save();ctx.translate(p.x,p.y+(pr?2:0));ctx.scale(pulse,pulse);
+    ctx.fillStyle='rgba(0,0,0,0.35)';ctx.beginPath();ctx.arc(0,5,r,0,TAU);ctx.fill();
+    const g=ctx.createLinearGradient(0,-r,0,r);
+    if(st){g.addColorStop(0,shade(Ch.col,0.35));g.addColorStop(1,Ch.col);}
+    else if(lo){g.addColorStop(0,'#ffffff');g.addColorStop(1,'#cfd6e6');}
+    else{g.addColorStop(0,'#5c6680');g.addColorStop(1,'#3a425a');}
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.3)';ctx.beginPath();ctx.ellipse(0,-r*0.45,r*0.6,r*0.28,0,0,TAU);ctx.fill();
+    ctx.strokeStyle=C.ink;ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.stroke();
+    if(!lo)drawIcon('lock',0,0,16,'#9aa3b8');
+    else if(boss)drawIcon('skull',0,0,24,st?'#fff':C.ink);
+    else{ctx.textBaseline='middle';ctx.font='18px '+FT;ctx.textAlign='center';ctx.lineJoin='round';ctx.lineWidth=4;ctx.strokeStyle=st?shade(Ch.col,-0.5):'#ffffff';ctx.strokeText(String(i+1),0,1);txt(String(i+1),0,1,18,st?'#fff':C.ink,'center','h');ctx.textBaseline='alphabetic';}
+    ctx.restore();
+    if(st||lo)for(let k=0;k<3;k++){const sx=p.x+(k-1)*12,sy=p.y+r+7;drawIcon('star',sx,sy+1,13,C.ink);drawIcon('star',sx,sy,11,k<st?C.tape:'#3a4562');}
+    if(nxt){ctx.globalAlpha=0.6+0.4*Math.sin(time*5);txt('▼',p.x,p.y-r-8,14,C.tape,'center','h');ctx.globalAlpha=1;}
+    if(lo)hotspot('lvl:'+i,p.x-r-6,p.y-r-6,r*2+12,r*2+12);
+  }
+  if(!open){
+    ctx.fillStyle='rgba(16,22,42,0.75)';ctx.fillRect(0,160,W,H-160);
+    panel(40,300,280,120,{});
+    drawIcon('lock',W/2,334,30,C.tape);
+    txtShadow('KAPITEL GESPERRT',W/2,372,20,'#fff','center','h');
+    txt('Benötigt '+Ch.req+' ★  (du hast '+totalStars()+')',W/2,396,14,C.tape,'center');
+  }
+}
+
+/* =====================================================================
+   ADMIN-BILDSCHIRM
+   ===================================================================== */
+function adminRows(){
+  const onOff=v=>v?'AN':'AUS';
+  return[
+    ['h','GELD & FORTSCHRITT'],
+    ['b','+ $ 10.000','adm:m10'],['b','+ $ 100.000','adm:m100'],['b','Geld auf 0','adm:m0'],
+    ['b','+1 Level','adm:lvl'],['b','+5 Beutekisten','adm:crates'],
+    ['h','FREISCHALTEN'],
+    ['b','Alle Autos kaufen','adm:cars'],['b','Alle Upgrades auf Maximum','adm:ups'],['b','Alles Styling freischalten','adm:style'],
+    ['b','Karriere: alle Level 3 ★','adm:c3'],['b','Karriere zurücksetzen','adm:creset'],
+    ['b','Missionen neu würfeln','adm:mis'],['b','Tagesbelohnung & Challenge zurücksetzen','adm:daily'],
+    ['b','Alle Erfolge freischalten','adm:achAll'],['b','Erfolge zurücksetzen','adm:achReset'],
+    ['h','IM SPIEL'],
+    ['t','Unverwundbar','adm:god',onOff(ADM.god)],
+    ['t','Alles entsperrt (Karte/Autos)','adm:unlock',onOff(ADM.unlock)],
+    ['t','Start-Fahndungsstufe','adm:stars',ADM.startStars?ADM.startStars+' ★':'NORMAL'],
+    ['t','Spieltempo','adm:speed',String(ADM.timeScale).replace('.',',')+'×'],
+    ['t','Event erzwingen','adm:event',ADM.forceEvent?EVENT_NAMES[ADM.forceEvent]:'ZUFALL']
+  ];
+}
+function drawAdmin(){
+  drawGarageBg();
+  header('ADMIN');
+  const rows=adminRows();
+  scrollArea(62,H-6,rows.length*48+20,y0=>{
+    rows.forEach((r,k)=>{
+      const y=y0+6+k*48;
+      if(r[0]==='h'){txt(r[1],16,y+32,13,C.tape,'left','h');return;}
+      panel(10,y,W-20,42,{r:10});
+      txt(r[1],24,y+27,14,'#fff','left');
+      if(r[0]==='b')button({id:r[2],x:W-104,y:y+6,w:84,h:28,style:'blue',label:'LOS',fs:13,noAnim:true});
+      else button({id:r[2],x:W-134,y:y+6,w:114,h:28,style:r[3]==='AN'?'green':'dark',label:r[3],fs:12,noAnim:true});
+    });
+  });
+}
+function adminAction(a){
+  const all=(1<<16)-1;
+  switch(a){
+    case'm10':S.money+=10000;break;case'm100':S.money+=100000;break;case'm0':S.money=0;break;
+    case'lvl':S.level++;S.crates++;break;case'crates':S.crates+=5;break;
+    case'cars':S.owned=S.owned.map(()=>true);break;
+    case'ups':S.up=S.up.map(u=>u.map(()=>UMAX));break;
+    case'style':S.cust.forEach(c=>{c.po=all;c.fo=all;c.no=all;c.do=all;});break;
+    case'c3':for(let c=0;c<4;c++)for(let i=0;i<10;i++)S.career[c+'-'+i]=3;break;
+    case'creset':S.career={};break;
+    case'mis':S.missions=[];fillMissions();break;
+    case'daily':S.daily.last='';S.dailyCh={date:''};break;
+    case'achAll':for(const x of ACH)S.ach[x.id]=1;break;
+    case'achReset':S.ach={};break;
+    case'god':ADM.god=!ADM.god;break;
+    case'unlock':ADM.unlock=!ADM.unlock;break;
+    case'stars':ADM.startStars=(ADM.startStars+1)%6;break;
+    case'speed':{const v=[1,0.5,2];ADM.timeScale=v[(v.indexOf(ADM.timeScale)+1)%v.length];break;}
+    case'event':{const i=ADM.forceEvent?EVENT_KEYS.indexOf(ADM.forceEvent):-1;ADM.forceEvent=i+1<EVENT_KEYS.length?EVENT_KEYS[i+1]:null;break;}
+  }
+  save();toast('Admin: ausgeführt','#2f8fff','gear');
 }
 
 /* =====================================================================
@@ -3784,10 +4246,21 @@ function onBtn(id){
   SFX.click();
   const [k,arg]=id.split(':');const n=parseInt(arg,10);
   switch(k){
-    case'play':setScreen('prep');break;
-    case'start':startRun();break;
-    case'again':startRun();break;
-    case'restart':stopEngine();stopSiren();startRun();break;
+    case'play':curLevel=null;setScreen('prep');break;
+    case'start':startRun(null);break;
+    case'again':startRun(curLevel);break;
+    case'restart':stopEngine();stopSiren();startRun(curLevel);break;
+    case'career':case'map':stopEngine();stopSiren();G=null;if(curLevel&&!curLevel.daily)ccur=curLevel.ch;setScreen('career');break;
+    case'ch':ccur=n;break;
+    case'lvl':if(levelOpen(ccur,n))modal={kind:'level',t:0,L:careerLevel(ccur,n)};break;
+    case'lvlStart':{const L=modal.L;modal=null;startRun(L);break;}
+    case'next':if(endInfo&&endInfo.cr){const L=endInfo.cr.L;startRun(careerLevel(L.ch,L.i+1));}break;
+    case'dailych':modal={kind:'level',t:0,L:dailyChallenge()};break;
+    case'crates':crateAnim=null;setScreen('crates');break;
+    case'openCrate':if(S.crates>0&&!crateAnim){S.crates--;crateAnim={t:0,r:rollCrate()};save();tone(200,0.8,'sawtooth',0.05,0,600);}break;
+    case'crateOk':crateAnim=null;checkAch();break;
+    case'admin':if(adminFreigeschaltet())setScreen('admin');break;
+    case'adm':adminAction(arg);break;
     case'garage':gi=S.sel;gtab=0;stopEngine();stopSiren();setScreen('garage');garageEnter();break;
     case'missions':setScreen('missions');break;
     case'ach':setScreen('ach');break;
@@ -3809,6 +4282,7 @@ function onBtn(id){
     case'buy':{
       const c=CARS[gi];
       if(S.owned[gi])break;
+      if(carLocked(gi)){toast('Gesperrt','#ff5252','lock','Schließe Karriere-Kapitel '+(c.req+1)+' ab');SFX.deny();break;}
       if(S.money>=c.price){S.money-=c.price;S.owned[gi]=true;S.sel=gi;save();toast('Gekauft: '+c.name,'#ffd600','car','Viel Spaß beim Flüchten!');SFX.buy();garageCelebrate('#ffd600',true);vib(40);checkAch();}
       else{toast('Nicht genug Geld!','#ff5252','coin','Dir fehlen $ '+fmt(c.price-S.money));SFX.deny();}
       break;
@@ -3879,7 +4353,7 @@ function hitBtn(p,list){
   for(let i=list.length-1;i>=0;i--){const b=list[i];if(p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h)return b;}
   return null;
 }
-const SCROLLERS={ach:1,stats:1};
+const SCROLLERS={ach:1,stats:1,admin:1};
 cv.addEventListener('pointerdown',e=>{
   e.preventDefault();initAudio();
   if(splash){endSplash();return;}
@@ -3941,8 +4415,8 @@ addEventListener('keydown',e=>{
   }
   if(k==='Enter'&&!modal){
     if(screen==='menu')setScreen('prep');
-    else if(screen==='prep')startRun();
-    else if(screen==='over'&&endInfo&&endInfo.t>1)startRun();
+    else if(screen==='prep')startRun(null);
+    else if(screen==='over'&&endInfo&&endInfo.t>1)startRun(curLevel);
   }
 });
 addEventListener('keyup',e=>{
@@ -3972,6 +4446,9 @@ function draw(){
   else if(screen==='ach')drawAch();
   else if(screen==='stats')drawStats();
   else if(screen==='settings')drawSettings();
+  else if(screen==='career')drawCareer();
+  else if(screen==='crates')drawCrates();
+  else if(screen==='admin')drawAdmin();
   else if(G){
     drawWorld(G);
     if(screen==='game')drawHUD(G);
@@ -3996,7 +4473,7 @@ function loop(now){
   for(const t of toasts)t.t-=dt;
   toasts=toasts.filter(t=>t.t>0);
   try{
-    if(screen==='game'&&G)updateGame(dt);
+    if(screen==='game'&&G)updateGame(dt*ADM.timeScale);
     else if(screen==='over'&&G){
       if(G.shake>0)G.shake=Math.max(0,G.shake-dt*20);
       if(G.flash>0)G.flash-=dt;
@@ -4021,10 +4498,11 @@ if(document.fonts&&document.fonts.load){
   document.fonts.load('800 20px "Nunito"').catch(()=>{});
   document.fonts.load('600 20px "Nunito"').catch(()=>{});
 }
-if(!splash&&dailyAvailable())setTimeout(()=>{if(screen==='menu'&&!modal)modal={kind:'daily',t:0};},900);
+if(!splash&&dailyAvailable())setTimeout(()=>{if(screen==='menu'&&!modal&&dailyAvailable())modal={kind:'daily',t:0};},900);
 requestAnimationFrame(loop);
 window.__flucht={get S(){return S;},get G(){return G;},get screen(){return screen;},get endInfo(){return endInfo;},startRun:startRun,onBtn:onBtn,setScreen:setScreen,
   step:dt=>{if(screen==='game'&&G){updateGame(dt);draw();}},keys:keys,
+  get ADM(){return ADM;},careerLevel:careerLevel,startEvent:(ev)=>{if(G)startEvent(G,ev);},get endInfoCr(){return endInfo&&endInfo.cr;},
   sheet:()=>{screen='sheet';ctx.setTransform(cv.width/W,0,0,cv.height/H,0,0);ctx.fillStyle='#7d8590';ctx.fillRect(0,0,W,H);
     const list=GORDER.map(i=>playerSpec(i)).concat(Object.values(COPS).map(K=>({shape:K.shape,w:K.w,h:K.h,color:'#fff',livery:K.livery})),TRAFFIC.map(T=>({shape:T.shape,w:T.w,h:T.h,color:'#90a4ae'})));
     list.forEach((sp,k)=>{const col=k%6,row=Math.floor(k/6);ctx.save();ctx.translate(30+col*60,52+row*118);ctx.scale(1.35,1.35);drawVehicle(sp,0,0,0);ctx.restore();});}};
