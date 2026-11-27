@@ -1,0 +1,504 @@
+{
+    "type": "Scene",
+    "props": {
+        "width": 720,
+        "runtime": "PanelGameRun.js",
+        "height": 1280
+    },
+    "compId": 2,
+    "child": [{
+        "type": "Box",
+        "props": {
+            "var": "end",
+            "top": 0,
+            "right": 0,
+            "left": 0,
+            "bottom": 0
+        },
+        "compId": 300
+    }, {
+        "type": "Box",
+        "props": {
+            "y": 0,
+            "x": 0,
+            "var": "youXiZhong",
+            "top": 0,
+            "right": 0,
+            "left": 0,
+            "bottom": 0
+        },
+        "compId": 276,
+        "child": [{
+            "type": "Image",
+            "props": {
+                "skin": "UIRes/game/Image_game_07.png",
+                "right": 0,
+                "centerY": -475
+            },
+            "compId": 1017,
+            "child": [{
+                "type": "Image",
+                "props": {
+                    "y": -31.5,
+                    "x": -16,
+                    "skin": "UIRes/game/Image_game_10.png"
+                },
+                "compId": 1018
+            }, {
+                "type": "Image",
+                "props": {
+                    "y": 15.5,
+                    "x": 23,
+                    "skin": "UIRes/game/Image_game_11.png"
+                },
+                "compId": 1019
+            }, {
+                "type": "Image",
+                "props": {
+                    "y": 32,
+                    "x": 204,
+                    "var": "paiMing1",
+                    "skin": "UIRes/game/name1.png",
+                    "anchorY": 0.5,
+                    "anchorX": 0.5
+                },
+                "compId": 1020
+            }, {
+                "type": "Image",
+                "props": {
+                    "skin": "UIRes/game/Image_game_36.png",
+                    "right": 20,
+                    "centerY": 0
+                },
+                "compId": 1036,
+                "child": [{
+                    "type": "Label",
+                    "props": {
+                        "y": 2,
+                        "x": 2.5,
+                        "width": 87,
+                        "var": "paiNum1",
+                        "valign": "middle",
+                        "text": "99999",
+                        "height": 33,
+                        "font": "font06",
+                        "align": "center"
+                    },
+                    "compId": 1037
+                }]
+            }]
+        }, {
+            "type": "Image",
+            "props": {
+                "x": 0,
+                "skin": "UIRes/game/Image_game_08.png",
+                "right": 0,
+                "centerY": -400
+            },
+            "compId": 1021,
+            "child": [{
+                "type": "Image",
+                "props": {
+                    "y": 15.5,
+                    "x": 23,
+                    "skin": "UIRes/game/Image_game_12.png"
+                },
+                "compId": 1023
+            }, {
+                "type": "Image",
+                "props": {
+                    "y": 32,
+                    "x": 188,
+                    "var": "paiMing2",
+                    "skin": "UIRes/game/name2.png",
+                    "anchorY": 0.5,
+                    "anchorX": 0.5
+                },
+                "compId": 1024
+            }, {
+                "type": "Image",
+                "props": {
+                    "skin": "UIRes/game/Image_game_36.png",
+                    "right": 20,
+                    "centerY": 0
+                },
+                "compId": 1038,
+                "child": [{
+                    "type": "Label",
+                    "props": {
+                        "y": 2,
+                        "x": 2.5,
+                        "width": 87,
+                        "var": "paiNum2",
+                        "valign": "middle",
+                        "text": "99999",
+                        "height": 33,
+                        "font": "font06",
+                        "align": "center"
+                    },
+                    "compId": 1039
+                }]
+            }]
+        }, {
+            "type": "Image",
+            "props": {
+                "x": 0,
+                "skin": "UIRes/game/Image_game_09.png",
+                "right": 0,
+                "centerY": -325
+            },
+            "compId": 1025,
+            "child": [{
+                "type": "Image",
+                "props": {
+                    "y": 15.5,
+                    "x": 23,
+                    "skin": "UIRes/game/Image_game_13.png"
+                },
+                "compId": 1026
+            }, {
+                "type": "Image",
+                "props": {
+                    "y": 31,
+                    "x": 170,
+                    "var": "paiMing3",
+                    "skin": "UIRes/game/name3.png",
+                    "anchorY": 0.5,
+                    "anchorX": 0.5
+                },
+                "compId": 1027
+            }, {
+                "type": "Image",
+                "props": {
+                    "y": 0,
+                    "x": 0,
+                    "skin": "UIRes/game/Image_game_36.png",
+                    "right": 20,
+                    "centerY": 0
+                },
+                "compId": 1040,
+                "child": [{
+                    "type": "Label",
+                    "props": {
+                        "y": 2,
+                        "x": 2.5,
+                        "width": 87,
+                        "var": "paiNum3",
+                        "valign": "middle",
+                        "text": "99999",
+                        "height": 33,
+                        "font": "font06",
+                        "align": "center"
+                    },
+                    "compId": 1041
+                }]
+            }]
+        }, {
+            "type": "Image",
+            "props": {
+                "skin": "UIRes/game/Image_game_03.png",
+                "left": 0,
+                "centerY": -401
+            },
+            "compId": 1028,
+            "child": [{
+                "type": "Label",
+                "props": {
+                    "y": 5,
+                    "x": 12,
+                    "width": 162,
+                    "var": "timeAll",
+                    "valign": "middle",
+                    "text": "00:59",
+                    "height": 72,
+                    "font": "font03",
+                    "align": "center"
+                },
+                "compId": 1029
+            }]
+        }, {
+            "type": "Image",
+            "props": {
+                "x": 0,
+                "skin": "UIRes/game/Image_game_04.png",
+                "left": 0,
+                "centerY": -305,
+                "visible":false
+            },
+            "compId": 1030,
+            "child": [{
+                "type": "Image",
+                "props": {
+                    "y": 11.5,
+                    "x": 15,
+                    "skin": "UIRes/game/Image_game_06.png"
+                },
+                "compId": 1032
+            }, {
+                "type": "Label",
+                "props": {
+                    "y": 5,
+                    "x": 56,
+                    "width": 90,
+                    "var": "chiNpc",
+                    "valign": "middle",
+                    "text": "5",
+                    "scaleY": 0.5,
+                    "scaleX": 0.5,
+                    "height": 72,
+                    "font": "font03",
+                    "align": "center"
+                },
+                "compId": 1031
+            }]
+        }, {
+            "type": "Label",
+            "props": {
+                "width": 406,
+                "var": "daoJiShi",
+                "valign": "middle",
+                "text": "00:05",
+                "height": 138,
+                "font": "font04",
+                "centerY": -200,
+                "centerX": 0,
+                "align": "center"
+            },
+            "compId": 1034
+        }]
+    }, {
+        "type": "Box",
+        "props": {
+            "y": 0,
+            "x": 0,
+            "var": "bg",
+            "top": 0,
+            "right": 0,
+            "name": "bg",
+            "left": 0,
+            "bottom": 0
+        },
+        "compId": 136
+    }, {
+        "type": "Image",
+        "props": {
+            "var": "zhiYin1",
+            "skin": "UIRes/main/Image_main_02.png",
+            "centerY": 200,
+            "centerX": 0
+        },
+        "compId": 731,
+        "child": [{
+            "type": "Image",
+            "props": {
+                "y": 63,
+                "x": 262,
+                "skin": "UIRes/main/Image_main_01.png"
+            },
+            "compId": 1035
+        }]
+    }, {
+        "type": "Image",
+        "props": {
+            "y": 784,
+            "x": 529,
+            "var": "qianBg",
+            "top": 144,
+            "skin": "UIRes/repeat/Image_repeat_05.png",
+            "right": 38
+        },
+        "compId": 1042,
+        "child": [{
+            "type": "Label",
+            "props": {
+                "y": 7,
+                "x": 13.5,
+                "width": 109,
+                "var": "qian",
+                "valign": "middle",
+                "text": "99999",
+                "height": 40,
+                "font": "font01",
+                "align": "center"
+            },
+            "compId": 1043
+        }, {
+            "type": "Image",
+            "props": {
+                "y": 0,
+                "x": 120,
+                "skin": "UIRes/repeat/Image_repeat_04.png"
+            },
+            "compId": 1044
+        }]
+    }, {
+        "type": "Box",
+        "props": {
+            "width": 720,
+            "var": "anNiu",
+            "height": 1,
+            "centerY": 0,
+            "centerX": 0,
+            "alpha": 1
+        },
+        "compId": 35,
+        "child": [{
+            "type": "Box",
+            "props": {
+                "y": -185,
+                "x": 85,
+                "width": 150,
+                "var": "addQianBtn",
+                "left": 10,
+                "height": 100,
+                "centerY": -185,
+                "anchorY": 0.5,
+                "anchorX": 0.5
+            },
+            "compId": 262,
+            "child": [{
+                "type": "Image",
+                "props": {
+                    "skin": "UIRes/main/Button_main_02.png",
+                    "centerY": -1,
+                    "centerX": 0
+                },
+                "compId": 263
+            }, {
+                "type": "Image",
+                "props": {
+                    "skin": "UIRes/main/Image_main_06.png",
+                    "centerY": 55,
+                    "centerX": -52
+                },
+                "compId": 260
+            }, {
+                "type": "Image",
+                "props": {
+                    "skin": "UIRes/main/Image_main_05.png",
+                    "centerY": 54,
+                    "centerX": 18
+                },
+                "compId": 296
+            }, {
+                "type": "Label",
+                "props": {
+                    "width": 101,
+                    "valign": "middle",
+                    "text": "+2000",
+                    "scaleY": 0.9,
+                    "scaleX": 0.9,
+                    "height": 30,
+                    "font": "font02",
+                    "centerY": 24,
+                    "centerX": -3,
+                    "align": "center"
+                },
+                "compId": 269
+            }]
+        }, {
+            "type": "Button",
+            "props": {
+                "var": "shop",
+                "stateNum": 1,
+                "skin": "UIRes/main/Button_main_01.png",
+                "left": 32,
+                "centerY": -32
+            },
+            "compId": 967,
+            "child": [{
+                "type": "Image",
+                "props": {
+                    "y": 77,
+                    "x": 20,
+                    "skin": "UIRes/main/Image_main_03.png"
+                },
+                "compId": 968
+            }]
+        }]
+    }, {
+        "type": "Image",
+        "props": {
+            "y": 1031,
+            "x": 417,
+            "name": "joy",
+            "anchorY": 0.5,
+            "anchorX": 0.5
+        },
+        "compId": 641,
+        "child": [{
+            "type": "Image",
+            "props": {
+                "y": 125,
+                "x": 125,
+                "name": "small",
+                "anchorY": 0.5,
+                "anchorX": 0.5
+            },
+            "compId": 642
+        }]
+    }, {
+        "type": "Script",
+        "props": {
+            "runtime": "joyStickControler.js"
+        },
+        "compId": 1015
+    }],
+    "animations": [{
+        "nodes": [{
+            "target": 1035,
+            "keyframes": {
+                "scaleY": [{
+                    "value": 1,
+                    "tweenMethod": "linearNone",
+                    "tween": true,
+                    "target": 1035,
+                    "key": "scaleY",
+                    "index": 0
+                }, {
+                    "value": 0.8,
+                    "tweenMethod": "linearNone",
+                    "tween": true,
+                    "target": 1035,
+                    "key": "scaleY",
+                    "index": 10
+                }, {
+                    "value": 1,
+                    "tweenMethod": "linearNone",
+                    "tween": true,
+                    "target": 1035,
+                    "key": "scaleY",
+                    "index": 20
+                }],
+                "scaleX": [{
+                    "value": 1,
+                    "tweenMethod": "linearNone",
+                    "tween": true,
+                    "target": 1035,
+                    "key": "scaleX",
+                    "index": 0
+                }, {
+                    "value": 0.8,
+                    "tweenMethod": "linearNone",
+                    "tween": true,
+                    "target": 1035,
+                    "key": "scaleX",
+                    "index": 10
+                }, {
+                    "value": 1,
+                    "tweenMethod": "linearNone",
+                    "tween": true,
+                    "target": 1035,
+                    "key": "scaleX",
+                    "index": 20
+                }]
+            }
+        }],
+        "name": "ani1",
+        "id": 1,
+        "frameRate": 24,
+        "action": 2
+    }],
+    "loadList": ["UIRes/game/Image_game_07.png", "UIRes/game/Image_game_10.png", "UIRes/game/Image_game_11.png", "UIRes/game/name1.png", "UIRes/game/Image_game_36.png", "UIRes/game/Image_game_08.png", "UIRes/game/Image_game_12.png", "UIRes/game/name2.png", "UIRes/game/Image_game_09.png", "UIRes/game/Image_game_13.png", "UIRes/game/name3.png", "UIRes/game/Image_game_03.png", "UIRes/game/Image_game_04.png", "UIRes/game/Image_game_06.png", "UIRes/main/Image_main_02.png", "UIRes/main/Image_main_01.png", "UIRes/repeat/Image_repeat_05.png", "UIRes/repeat/Image_repeat_04.png", "UIRes/main/Button_main_02.png", "UIRes/main/Image_main_06.png", "UIRes/main/Image_main_05.png", "UIRes/main/Button_main_01.png", "UIRes/main/Image_main_03.png"],
+    "loadList3D": []
+}
