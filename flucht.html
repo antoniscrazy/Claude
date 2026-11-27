@@ -379,7 +379,7 @@ function initAudio(){
 function applyVolumes(){
   if(!AU.ctx)return;
   AU.sfx.gain.value=S.set.sfx?1:0;
-  AU.mus.gain.value=S.set.music?0.24:0;
+  AU.mus.gain.value=S.set.music?0.5:0;
   if(!S.set.sfx){stopEngine();stopSiren();}
 }
 function panFor(x){return x==null?0:clamp((x-180)/200,-0.9,0.9);}
@@ -495,55 +495,89 @@ function loopNoise(brown,ft,f,q){
   const g=a.createGain();g.gain.value=0;s.connect(fl);fl.connect(g);g.connect(AU.sfx);s.start(0,Math.random());
   return{s:s,f:fl,g:g};
 }
+/* --- Motor: Zündung für Zündung synthetisiert (V8 mit unregelmäßigem Bollern) --- */
+const UNEVEN=[1,0.74,1.12,0.7,1.06,0.82,0.97,0.66];
 function startEngine(){
   if(!AU.ctx||!S.set.sfx||AU.eng)return;
   try{
-    const a=AU.ctx;
-    const o1=a.createOscillator(),o2=a.createOscillator(),o3=a.createOscillator();
-    o1.type='sawtooth';o2.type='sawtooth';o3.type='sine';o2.detune.value=8;
-    const mix=a.createGain();mix.gain.value=0.5;
-    const sh=a.createWaveShaper();sh.curve=shaperCurve(6);
-    const lp=a.createBiquadFilter();lp.type='lowpass';lp.Q.value=2.5;lp.frequency.value=600;
-    const am=a.createGain();am.gain.value=1;
-    const lfo=a.createOscillator(),lfoG=a.createGain();lfo.type='sine';lfo.frequency.value=12;lfoG.gain.value=0.25;
-    lfo.connect(lfoG);lfoG.connect(am.gain);
+    const a=AU.ctx,sr=a.sampleRate;
+    const E={rpm:850,rpmT:850,load:0.25,loadT:0.25,ph:0,k:0,env:0,amp:0,rph:0,l1:0,l2:0,pop:0,popE:0,shift:0,spool:0,boost:false,gear:1};
+    const sp=a.createScriptProcessor(1024,0,1);
+    sp.onaudioprocess=ev=>{
+      const o=ev.outputBuffer.getChannelData(0),n=o.length;
+      const lt=E.shift>0?0.04:E.loadT;
+      for(let i=0;i<n;i++){
+        E.rpm+=(E.rpmT-E.rpm)*0.00045;
+        E.load+=(lt-E.load)*0.0018;
+        E.ph+=E.rpm/30/sr; // V8: 4 Zündungen pro Kurbelumdrehung
+        if(E.ph>=1){E.ph-=1;E.k=(E.k+1)&7;E.env=1;E.rph=0;E.amp=UNEVEN[E.k]*(0.3+E.load*0.8)*(0.88+Math.random()*0.24);}
+        E.env*=1-1/(sr*(0.0024+0.0048*(1-E.load)));
+        E.rph+=(95+E.rpm*0.028)/sr;
+        let s=E.env*E.amp*(Math.sin(E.rph*6.2832)*0.9+(Math.random()*2-1)*(0.08+0.3*E.load));
+        // Fehlzündungen beim Gaswegnehmen
+        if(E.pop>0){if(Math.random()<E.pop*0.0011)E.popE=0.9+Math.random()*0.6;}
+        if(E.popE>0.002){s+=E.popE*(Math.random()*2-1);E.popE*=0.9955;}
+        // Auspuff-Resonanz (zweistufiger Tiefpass, öffnet mit Last)
+        const fc=160+E.load*1100+E.rpm*0.09,ca=1-Math.exp(-6.2832*fc/sr);
+        E.l1+=(s-E.l1)*ca;E.l2+=(E.l1-E.l2)*ca;
+        o[i]=E.l2*1.9+s*0.015;
+      }
+      if(E.shift>0)E.shift-=n/sr;
+      if(E.pop>0)E.pop=Math.max(0,E.pop-n/sr);
+    };
+    const hp=a.createBiquadFilter();hp.type='highpass';hp.frequency.value=32;
+    const body=a.createBiquadFilter();body.type='peaking';body.frequency.value=105;body.gain.value=6;body.Q.value=0.8;
+    const pres=a.createBiquadFilter();pres.type='peaking';pres.frequency.value=1800;pres.gain.value=-4;pres.Q.value=0.7;
+    const sh=a.createWaveShaper();sh.curve=shaperCurve(2.2);
     const out=a.createGain();out.gain.value=0;
-    o1.connect(mix);o2.connect(mix);o3.connect(mix);mix.connect(sh);sh.connect(lp);lp.connect(am);am.connect(out);out.connect(AU.sfx);
-    [o1,o2,o3,lfo].forEach(o=>o.start());
-    AU.eng={o1:o1,o2:o2,o3:o3,lfo:lfo,lp:lp,out:out,rpm:900,gear:1};
-    AU.amb={tire:loopNoise(false,'bandpass',2200,3),wind:loopNoise(true,'lowpass',500,0.5),rain:loopNoise(false,'lowpass',3500,0.5),hiss:loopNoise(false,'bandpass',2500,0.8)};
-  }catch(e){}
+    sp.connect(hp);hp.connect(body);body.connect(pres);pres.connect(sh);sh.connect(out);out.connect(AU.sfx);
+    const rs=a.createGain();rs.gain.value=0.06;out.connect(rs);rs.connect(AU.rev);
+    const turbo=a.createOscillator(),tg=a.createGain();turbo.type='sine';turbo.frequency.value=2200;tg.gain.value=0;turbo.connect(tg);tg.connect(AU.sfx);turbo.start();
+    E.sp=sp;E.out=out;E.turbo=turbo;E.tg=tg;E.intake=loopNoise(false,'bandpass',900,1.4);
+    AU.eng=E;
+    AU.amb={tire:loopNoise(false,'bandpass',2200,3),wind:loopNoise(true,'lowpass',500,0.5),rain:loopNoise(false,'lowpass',3500,0.5)};
+  }catch(e){console.error('Motor-Sound',e);}
 }
-function engineUpdate(speed,boost){
+/* rev={rpm,load} überschreibt die Berechnung (z. B. Gasstöße im Countdown) */
+function engineUpdate(speed,boost,rev){
   if(!AU.eng)return;
   try{
     const a=AU.ctx,t=a.currentTime,E=AU.eng;
-    const max=G&&G.st?G.st.max*1.35:600,f=clamp(speed/max,0,1);
-    // 5 Gänge: Drehzahl steigt im Gang und fällt beim Schalten
-    const gears=[0,0.18,0.36,0.56,0.78,1.01];let gear=1;
-    while(gear<5&&f>gears[gear])gear++;
-    const gf=(f-gears[gear-1])/(gears[gear]-gears[gear-1]);
-    const rpm=speed<5?850:2200+clamp(gf,0,1)*4300+(boost?400:0);
-    E.rpm+=(rpm-E.rpm)*0.18;
-    const fr=E.rpm/60*2; // V8: 4 Zündungen pro Umdrehung / 2
-    E.o1.frequency.setTargetAtTime(fr,t,0.03);E.o2.frequency.setTargetAtTime(fr*1.003,t,0.03);E.o3.frequency.setTargetAtTime(fr*0.5,t,0.03);
-    E.lfo.frequency.setTargetAtTime(fr*0.25,t,0.05);
-    E.lp.frequency.setTargetAtTime(300+E.rpm*0.22+(boost?900:0),t,0.05);
-    E.out.gain.setTargetAtTime(0.05+f*0.04+(boost?0.03:0),t,0.08);
-    if(gear!==E.gear){if(gear>E.gear){nz({dur:0.12,vol:0.12,f:900,ft:'bandpass',q:2});}E.gear=gear;}
-    // Umgebung
+    const max=G&&G.st?G.st.max:450;
+    let rpmT,load;
+    if(rev){rpmT=rev.rpm;load=rev.load;}
+    else{
+      const f=clamp(speed/(max*1.38),0,1),gears=[0,0.15,0.31,0.49,0.69,1.01];
+      let gear=1;while(gear<5&&f>gears[gear])gear++;
+      const gf=clamp((f-gears[gear-1])/(gears[gear]-gears[gear-1]),0,1);
+      rpmT=speed<8?850:2000+gf*4600+(boost?250:0);
+      if(gear>E.gear&&speed>20){E.shift=0.12;E.rpm=Math.min(E.rpm,rpmT+600);nz({dur:0.07,vol:0.12,f:700,ft:'bandpass',q:2});if(Math.random()<0.6)E.pop=0.3;}
+      E.gear=gear;
+      const tgt=max*(boost?1.38:1);
+      load=boost?1:clamp(0.22+(tgt-speed)/(max*0.16),0.16,1);
+    }
+    if(E.loadT-load>0.35)E.pop=Math.max(E.pop,0.45); // Gas weg: Knallen im Auspuff
+    E.rpmT=rpmT;E.loadT=load;
+    E.out.gain.setTargetAtTime(0.05+0.12*E.load,t,0.06);
+    E.intake.g.gain.setTargetAtTime(E.load*E.rpm/7000*0.025,t,0.05);
+    E.intake.f.frequency.setTargetAtTime(500+E.rpm*0.28,t,0.05);
+    // Turbolader: pfeift mit Nitro, bläst beim Loslassen ab
+    E.spool+=((boost?1:0)-E.spool)*(boost?0.04:0.12);
+    E.tg.gain.setTargetAtTime(E.spool*0.012,t,0.05);
+    E.turbo.frequency.setTargetAtTime(1600+E.spool*3600,t,0.08);
+    if(E.boost&&!boost){nz({dur:0.55,vol:0.2,f:2500,f2:8000,ft:'highpass',att:0.01});E.pop=0.5;}
+    E.boost=boost;
     const A=AU.amb;
     if(A){
-      const sk=G&&G.skidding?1:0;
+      const f=clamp(speed/(max*1.38),0,1),sk=G&&G.skidding?1:0;
       A.tire.g.gain.setTargetAtTime(sk*0.06,t,0.05);A.tire.f.frequency.setTargetAtTime(1800+Math.sin(t*13)*400,t,0.02);
-      A.wind.g.gain.setTargetAtTime(f*f*0.18,t,0.2);A.wind.f.frequency.setTargetAtTime(250+f*900,t,0.2);
+      A.wind.g.gain.setTargetAtTime(f*f*0.16,t,0.2);A.wind.f.frequency.setTargetAtTime(250+f*900,t,0.2);
       const rn=G&&G.weather==='rain'?G.wAmt:0;A.rain.g.gain.setTargetAtTime(rn*0.05,t,0.5);
-      A.hiss.g.gain.setTargetAtTime(boost?0.05:0,t,0.08);
     }
   }catch(e){}
 }
 function stopEngine(){
-  try{if(AU.eng){['o1','o2','o3','lfo'].forEach(k=>AU.eng[k].stop());}}catch(e){}
+  try{if(AU.eng){AU.eng.sp.onaudioprocess=null;AU.eng.sp.disconnect();AU.eng.turbo.stop();AU.eng.intake.s.stop();}}catch(e){}
   try{if(AU.amb){for(const k in AU.amb)AU.amb[k].s.stop();}}catch(e){}
   AU.eng=null;AU.amb=null;
 }
@@ -571,54 +605,121 @@ function stopSiren(){
   AU.siren=null;
 }
 
-/* --- Musik-Sequencer (A-Moll, 128 BPM) --- */
-const CHORDS=[[110,130.8,164.8],[87.3,110,130.8],[130.8,164.8,196],[98,123.5,146.8]];
-const BASSPAT=[1,0,0,1,0,0,1,0,1,0,1,1,0,0,1,0];
-const LEADPAT=[0,2,1,2,0,2,1,2,0,2,1,2,2,1,0,1];
+/* --- Musik: Menü = Lo-Fi/Cinematic, Fahrt = Synthwave (mit Hall, keine Chiptune-Töne) --- */
+const mf=n=>440*Math.pow(2,(n-69)/12);
+const PROG=[ // Grundton, Akkord-Stimmen (MIDI)
+  [45,[60,64,67,71]],   // Am9
+  [41,[57,60,64,67]],   // Fmaj9
+  [48,[55,59,64,67]],   // Cmaj7
+  [43,[59,62,64,67]]    // G6
+];
+const MELO=[76,74,72,69,67,72,74,76];
+let MUS=null;
+function musInit(){
+  const a=AU.ctx;
+  MUS={rev:a.createConvolver(),crk:null};
+  MUS.rev.buffer=makeImpulse(a,3,2.6);
+  const rg=a.createGain();rg.gain.value=0.5;MUS.rev.connect(rg);rg.connect(AU.mus);
+  // Schallplattenknistern
+  const len=a.sampleRate*3,b=a.createBuffer(1,len,a.sampleRate),d=b.getChannelData(0);
+  for(let i=0;i<len;i++){d[i]=(Math.random()*2-1)*0.006;if(Math.random()<0.0003)d[i]=(Math.random()*2-1)*0.5;}
+  const s=a.createBufferSource();s.buffer=b;s.loop=true;
+  const f=a.createBiquadFilter();f.type='bandpass';f.frequency.value=2500;f.Q.value=0.5;
+  const g=a.createGain();g.gain.value=0;s.connect(f);f.connect(g);g.connect(AU.mus);s.start();
+  MUS.crk=g;
+}
+function mvoice(t,dur,vol,att,rev){
+  const a=AU.ctx,g=a.createGain();
+  g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(vol,t+att);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  g.connect(AU.mus);
+  if(rev){const r=a.createGain();r.gain.value=rev;g.connect(r);r.connect(MUS.rev);}
+  return g;
+}
+function rhodes(f,t,dur,vol){
+  try{
+    const a=AU.ctx,c=a.createOscillator(),m=a.createOscillator(),mg=a.createGain(),lp=a.createBiquadFilter();
+    c.frequency.value=f;m.frequency.value=f;
+    mg.gain.setValueAtTime(f*1.6,t);mg.gain.exponentialRampToValueAtTime(f*0.15,t+0.4);
+    m.connect(mg);mg.connect(c.frequency);
+    lp.type='lowpass';lp.frequency.value=2600;
+    const g=mvoice(t,dur,vol,0.006,0.35);c.connect(lp);lp.connect(g);
+    c.start(t);m.start(t);c.stop(t+dur+0.05);m.stop(t+dur+0.05);
+  }catch(e){}
+}
+function pad(fs,t,dur,vol,bright){
+  try{
+    const a=AU.ctx,lp=a.createBiquadFilter();lp.type='lowpass';lp.Q.value=0.6;
+    lp.frequency.setValueAtTime(bright?900:550,t);lp.frequency.linearRampToValueAtTime(bright?1600:900,t+dur*0.6);
+    const g=mvoice(t,dur,vol,dur*0.35,0.6);lp.connect(g);
+    for(const f of fs)for(const dt of[-7,7]){const o=a.createOscillator();o.type='sawtooth';o.frequency.value=f;o.detune.value=dt;o.connect(lp);o.start(t);o.stop(t+dur+0.05);}
+  }catch(e){}
+}
+function subBass(f,t,dur,vol){
+  try{const a=AU.ctx,o=a.createOscillator(),o2=a.createOscillator();o.type='sine';o2.type='triangle';o.frequency.value=f;o2.frequency.value=f;
+    const g=mvoice(t,dur,vol,0.01,0);const g2=a.createGain();g2.gain.value=0.25;o.connect(g);o2.connect(g2);g2.connect(g);
+    o.start(t);o2.start(t);o.stop(t+dur+0.05);o2.stop(t+dur+0.05);}catch(e){}
+}
+function synthBass(f,t,dur,vol){
+  try{const a=AU.ctx,o=a.createOscillator(),o2=a.createOscillator(),lp=a.createBiquadFilter();
+    o.type='sawtooth';o2.type='sawtooth';o.frequency.value=f;o2.frequency.value=f;o2.detune.value=-10;
+    lp.type='lowpass';lp.Q.value=4;lp.frequency.setValueAtTime(1400,t);lp.frequency.exponentialRampToValueAtTime(180,t+dur);
+    const g=mvoice(t,dur,vol,0.004,0);o.connect(lp);o2.connect(lp);lp.connect(g);
+    o.start(t);o2.start(t);o.stop(t+dur+0.05);o2.stop(t+dur+0.05);}catch(e){}
+}
+function pluck(f,t,vol){
+  try{const a=AU.ctx,o=a.createOscillator(),lp=a.createBiquadFilter();o.type='sawtooth';o.frequency.value=f;
+    lp.type='lowpass';lp.Q.value=2;lp.frequency.setValueAtTime(3500,t);lp.frequency.exponentialRampToValueAtTime(300,t+0.18);
+    const g=mvoice(t,0.3,vol,0.003,0.45);o.connect(lp);lp.connect(g);o.start(t);o.stop(t+0.35);}catch(e){}
+}
+function kick(t,vol,soft){
+  try{const a=AU.ctx,o=a.createOscillator(),g=mvoice(t,soft?0.32:0.38,vol,0.002,0);
+    o.frequency.setValueAtTime(soft?95:130,t);o.frequency.exponentialRampToValueAtTime(42,t+0.15);o.connect(g);o.start(t);o.stop(t+0.42);
+    if(!soft)noise(0.015,vol*0.25,t-a.currentTime,3000,'lowpass',AU.mus);}catch(e){}
+}
+function snare(t,vol,soft){
+  try{const a=AU.ctx,s=a.createBufferSource(),f=a.createBiquadFilter(),g=mvoice(t,soft?0.22:0.26,vol,0.002,soft?0.25:0.45);
+    s.buffer=AU.noiseBuf;f.type='bandpass';f.frequency.value=soft?1500:1900;f.Q.value=0.7;s.connect(f);f.connect(g);s.start(t,Math.random());s.stop(t+0.3);
+    const o=a.createOscillator(),og=mvoice(t,0.1,vol*0.5,0.002,0);o.frequency.setValueAtTime(200,t);o.frequency.exponentialRampToValueAtTime(140,t+0.1);o.connect(og);o.start(t);o.stop(t+0.12);}catch(e){}
+}
+function hat(t,vol,open){
+  try{const a=AU.ctx,s=a.createBufferSource(),f=a.createBiquadFilter(),g=mvoice(t,open?0.18:0.035,vol,0.001,0.1);
+    s.buffer=AU.noiseBuf;f.type='highpass';f.frequency.value=7500;s.connect(f);f.connect(g);s.start(t,Math.random());s.stop(t+0.2);}catch(e){}
+}
 function musicTick(){
   const a=AU.ctx;if(!a)return;
-  const sd=60/128/4;
-  while(AU.nextT<a.currentTime+0.12){
-    if(S.set.music&&a.state==='running')schedStep(AU.step,AU.nextT);
+  if(!MUS)musInit();
+  const I=AU.intensity,bpm=I>0?112:80,sd=60/bpm/4;
+  try{MUS.crk.gain.setTargetAtTime(S.set.music&&I===0?1:0,a.currentTime,0.3);}catch(e){}
+  if(AU.nextT<a.currentTime-0.5)AU.nextT=a.currentTime+0.05;
+  while(AU.nextT<a.currentTime+0.15){
+    if(S.set.music&&a.state==='running')schedStep(AU.step,AU.nextT,sd);
     AU.nextT+=sd;AU.step=(AU.step+1)%64;
   }
 }
-function mtone(f,t,d,type,v,dest){
-  try{
-    const a=AU.ctx,o=a.createOscillator(),g=a.createGain();
-    o.type=type;o.frequency.setValueAtTime(f,t);
-    g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(v,t+0.01);
-    g.gain.exponentialRampToValueAtTime(0.0001,t+d);
-    o.connect(g);g.connect(dest||AU.mus);o.start(t);o.stop(t+d+0.02);
-  }catch(e){}
-}
-function schedStep(step,t){
-  const a=AU.ctx,s=step%16,ch=CHORDS[Math.floor(step/16)%4],I=AU.intensity;
-  // Kick
-  if(s%4===0&&(I>0||s%8===0)){
-    try{
-      const o=a.createOscillator(),g=a.createGain();
-      o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(42,t+0.12);
-      g.gain.setValueAtTime(0.9,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.2);
-      o.connect(g);g.connect(AU.mus);o.start(t);o.stop(t+0.22);
-    }catch(e){}
+function schedStep(step,t,sd){
+  const s=step%16,bar=Math.floor(step/16)%4,P=PROG[bar],I=AU.intensity;
+  if(I===0){
+    // ---- Menü: Lo-Fi / Cinematic ----
+    const sw=(s%2===1)?sd*0.28:0,tt=t+sw;
+    if(s===0){pad(P[1].map(mf),t,sd*16+0.4,0.04,false);subBass(mf(P[0]),t,sd*7,0.36);
+      P[1].forEach((n,i)=>rhodes(mf(n),t+i*0.022,2.6,0.12));}
+    if(s===8)subBass(mf(P[0]+7),t,sd*6,0.26);
+    if(s===11)P[1].slice(1).forEach((n,i)=>rhodes(mf(n),tt+i*0.018,1.2,0.06));
+    if(bar%2===1&&(s===6||s===14))rhodes(mf(MELO[(bar*3+s)%MELO.length]),tt,1.4,0.09);
+    if(s===0||s===10)kick(tt,0.65,true);
+    if(s===4||s===12)snare(tt,0.22,true);
+    if(s%2===0)hat(tt,s%4===2?0.08:0.05,false);
+  }else{
+    // ---- Fahrt: Synthwave ----
+    if(s===0){pad(P[1].map(n=>mf(n-12)),t,sd*16+0.2,0.018,true);if(I>2&&bar===0)hat(t,0.12,true);}
+    if(s%4===0)kick(t,0.6,false);
+    if(s===4||s===12)snare(t,0.28,false);
+    if(I>1?true:s%2===0)hat(t,s%4===2?0.06:0.03,false);
+    if(s%2===0)synthBass(mf(P[0]+(s%4===2?12:0)),t,sd*1.8,0.11);
+    if(I>1){const arp=[0,1,2,3,2,1];pluck(mf(P[1][arp[s%6]]+12),t,0.035);}
+    if(I>2&&(s===14||s===15))snare(t,0.12,false);
   }
-  // Snare
-  if(I>0&&(s===4||s===12)){
-    const tt=t-a.currentTime;
-    noise(0.16,0.35,tt,1800,'highpass',AU.mus);
-    mtone(190,t,0.08,'triangle',0.2);
-  }
-  // Hi-Hat
-  if(s%2===0||I>1){
-    noise(0.03,s%4===2?0.16:0.08,t-a.currentTime,7500,'highpass',AU.mus);
-  }
-  // Bass
-  if(BASSPAT[s])mtone(ch[0]*(s%8===6?2:1),t,0.16,'sawtooth',0.16);
-  // Pad (Menü) / Lead (hohe Fahndung)
-  if(s===0)for(const f of ch)mtone(f*2,t,1.8,'triangle',0.035);
-  if(I>1&&s%2===0)mtone(ch[LEADPAT[s]]*4,t,0.14,'triangle',0.035);
-  if(I>2&&s%2===1)mtone(ch[LEADPAT[(s+5)%16]]*8,t,0.1,'sine',0.02);
 }
 
 /* =====================================================================
@@ -1784,7 +1885,9 @@ function updateGame(dt){
     g.cd-=dt;
     const n=Math.ceil(g.cd-0.8);
     if(n!==g.cdLast){g.cdLast=n;if(n>0)tone(520,0.18,'square',0.09);else{tone(1040,0.35,'square',0.1);SFX.nitroOn();vib(40);}}
-    engineUpdate(80+Math.sin(time*30)*40*(g.cd<1.5?1:0.3),false);
+    // Gasstöße an der Ampel, kurz vor LOS Vollgas
+    const blip=Math.sin(time*2.6)>0.35;
+    engineUpdate(0,false,g.cd<1.2?{rpm:4600+Math.sin(time*11)*500,load:0.95}:{rpm:blip?3600:950,load:blip?0.9:0.2});
     updateParticles(g,dt,0);
     return;
   }
