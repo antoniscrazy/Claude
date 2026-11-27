@@ -93,7 +93,9 @@ fetch(ENTRY)
     html = html.replace(/<meta http-equiv="Content-Security-Policy"[^>]*>/i, "");
     // Der lokale Server hat hier Mock-SDKs eingefuegt; das machen wir genauso.
     html = html.replace(/<script src="\/sdk\.js"><\/script>/, "");
-    const tags = '<script>window.__GX_CONFIG__=' + JSON.stringify(GXCFG).replace(/</g, "\\u003c") + '<\/script>'
+    // Das Spiel baut seine Pfade aus einer relativen Angabe; im srcdoc-Frame wird daraus about://... . Wir machen sie absolut.
+    const LANGBASE = '<script>(function(B){Object.defineProperty(window,"xz_lang_file_url",{configurable:true,set:function(v){this.__x=B+String(v);},get:function(){return this.__x;}});})(' + JSON.stringify(BASEDIR) + ')<\/script>';
+    const tags = LANGBASE + '<script>window.__GX_CONFIG__=' + JSON.stringify(GXCFG).replace(/</g, "\\u003c") + '<\/script>'
       + INJECT.map(s => '<script src="' + s + '"><\/script>').join('');
     html = html.replace(/<head[^>]*>/i, m => m + '<base href="' + BASEDIR + '">' + BLOCK + tags);
     document.getElementById("game").srcdoc = html;
