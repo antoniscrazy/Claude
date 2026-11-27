@@ -2,12 +2,12 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Granny 3</title>
 <!-- Nur eigener Ursprung, raw.githubusercontent (fester Commit), blob/data. Fremde Skripte (GameMonetize-Werbung) werden blockiert. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' blob: data: https://raw.githubusercontent.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://raw.githubusercontent.com; connect-src 'self' blob: data: https://raw.githubusercontent.com; worker-src blob: 'self'; style-src 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob: data:">
 <style>
-  html, body { margin: 0; height: 100%; background: #111; color: #fff; font-family: sans-serif; overflow: hidden; }
+  html, body { touch-action: manipulation; margin: 0; height: 100%; background: #111; color: #fff; font-family: sans-serif; overflow: hidden; }
   body { display: flex; flex-direction: column; }
   #bar { flex: 0 0 auto; display: flex; justify-content: flex-end; padding: 6px 12px; background: #111; }
   #wrap { flex: 1 1 auto; position: relative; min-height: 0; }
@@ -42,6 +42,15 @@
 #look{display:none;position:fixed;top:46px;right:0;width:45%;bottom:210px;z-index:8;touch-action:none}
 #look.show{display:block}
 </style>
+<script>
+document.addEventListener('gesturestart',function(e){e.preventDefault();},{passive:false});
+document.addEventListener('gesturechange',function(e){e.preventDefault();},{passive:false});
+document.addEventListener('gestureend',function(e){e.preventDefault();},{passive:false});
+document.addEventListener('touchmove',function(e){ if(e.touches.length>1) e.preventDefault(); },{passive:false});
+var __lastTouchEnd=0;
+document.addEventListener('touchend',function(e){ var n=Date.now(); if(n-__lastTouchEnd<350) e.preventDefault(); __lastTouchEnd=n; },{passive:false});
+document.addEventListener('dblclick',function(e){ e.preventDefault(); },{passive:false});
+</script>
 </head>
 <body>
 <div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>

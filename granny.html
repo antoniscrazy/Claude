@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><title>Granny</title><style>html,body{margin:0;height:100%;background:#111;color:#fff;font-family:sans-serif;overflow:hidden}body{display:flex;flex-direction:column}#bar{flex:0 0 auto;display:flex;justify-content:flex-end;padding:6px 12px;background:#111}#moki-back{padding:9px 16px;border-radius:999px;background:linear-gradient(90deg,#00e5a8,#ffd23f);color:#04201a;font:800 14px 'Segoe UI',system-ui,sans-serif;text-decoration:none;box-shadow:0 3px 12px rgba(0,0,0,.5);opacity:.92}#wrap{flex:1 1 auto;position:relative;min-height:0}#c{position:absolute;inset:0;width:100%;height:100%;display:block;background:#000;outline:none;touch-action:none}#ld{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;width:70%;max-width:360px}#pb{height:10px;border-radius:5px;background:rgba(255,255,255,.15);overflow:hidden;margin-top:8px}#pf{height:100%;width:0;background:#00e5a8}</style><style>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover"><title>Granny</title><style>html,body{margin:0;height:100%;background:#111;color:#fff;font-family:sans-serif;overflow:hidden}body{display:flex;flex-direction:column}#bar{flex:0 0 auto;display:flex;justify-content:flex-end;padding:6px 12px;background:#111}#moki-back{padding:9px 16px;border-radius:999px;background:linear-gradient(90deg,#00e5a8,#ffd23f);color:#04201a;font:800 14px 'Segoe UI',system-ui,sans-serif;text-decoration:none;box-shadow:0 3px 12px rgba(0,0,0,.5);opacity:.92}#wrap{flex:1 1 auto;position:relative;min-height:0}#c{position:absolute;inset:0;width:100%;height:100%;display:block;background:#000;outline:none;touch-action:none}#ld{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;width:70%;max-width:360px}#pb{height:10px;border-radius:5px;background:rgba(255,255,255,.15);overflow:hidden;margin-top:8px}#pf{height:100%;width:0;background:#00e5a8}</style><style>
 #jz{position:fixed;left:0;bottom:0;width:50%;height:60%;z-index:9;touch-action:none}
 #jb{position:fixed;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;background:rgba(255,255,255,.10);border:2px solid rgba(255,255,255,.3);display:none;pointer-events:none;z-index:9}
 #jk{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:rgba(255,255,255,.35)}
@@ -18,6 +18,15 @@
 #look{display:none;position:fixed;top:46px;right:0;width:45%;bottom:210px;z-index:8;touch-action:none}
 #look.show{display:block}
 </style>
+<script>
+document.addEventListener('gesturestart',function(e){e.preventDefault();},{passive:false});
+document.addEventListener('gesturechange',function(e){e.preventDefault();},{passive:false});
+document.addEventListener('gestureend',function(e){e.preventDefault();},{passive:false});
+document.addEventListener('touchmove',function(e){ if(e.touches.length>1) e.preventDefault(); },{passive:false});
+var __lastTouchEnd=0;
+document.addEventListener('touchend',function(e){ var n=Date.now(); if(n-__lastTouchEnd<350) e.preventDefault(); __lastTouchEnd=n; },{passive:false});
+document.addEventListener('dblclick',function(e){ e.preventDefault(); },{passive:false});
+</script>
 </head>
 <body>
 <div id="bar"><a id="moki-back" href="https://mokiorg.netlify.app">&larr; Back to Moki</a></div>
