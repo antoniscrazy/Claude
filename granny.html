@@ -132,10 +132,10 @@ async function get(f, kind) { const r = await fetch(BASE + f); if (!r.ok) throw 
     setKeys(want);
   }
   function jEnd(){ jid=null; jb.style.display="none"; jk.style.transform=""; setKeys(new Set()); }
-  jz.addEventListener("pointerdown",e=>{ e.preventDefault(); jid=e.pointerId; jz.setPointerCapture(e.pointerId); ox=e.clientX; oy=e.clientY; jb.style.left=ox+"px"; jb.style.top=oy+"px"; jb.style.display="block"; });
-  jz.addEventListener("pointermove",e=>{ if(e.pointerId===jid) jMove(e); });
-  jz.addEventListener("pointerup",e=>{ if(e.pointerId===jid) jEnd(); });
-  jz.addEventListener("pointercancel",jEnd);
+  jz.addEventListener("touchstart",e=>{ e.preventDefault(); if(jid!==null) return; const t=e.changedTouches[0]; jid=t.identifier; ox=t.clientX; oy=t.clientY; jb.style.left=ox+"px"; jb.style.top=oy+"px"; jb.style.display="block"; },{passive:false});
+  jz.addEventListener("touchmove",e=>{ e.preventDefault(); for(const t of e.changedTouches){ if(t.identifier===jid) jMove(t); } },{passive:false});
+  jz.addEventListener("touchend",e=>{ for(const t of e.changedTouches){ if(t.identifier===jid) jEnd(); } });
+  jz.addEventListener("touchcancel",jEnd);
   // Knoepfe rechts: halten = gedrueckt
   function mouse(type){ const c=canvas(); const r=c.getBoundingClientRect(); c.dispatchEvent(new MouseEvent(type,{button:0,buttons:type==="mouseup"?0:1,clientX:vx(),clientY:vy(),bubbles:true,cancelable:true})); }
   function vx(){ const r=canvas().getBoundingClientRect(); return r.left+r.width/2; }
@@ -170,10 +170,10 @@ async function get(f, kind) { const r = await fetch(BASE + f); if (!r.ok) throw 
     if(lid!==null||Math.abs(accX)>0.5||Math.abs(accY)>0.5){ raf=requestAnimationFrame(step); } else { raf=0; accX=0; accY=0; }
   }
   ["touchstart","touchmove"].forEach(t=>look.addEventListener(t,e=>e.preventDefault(),{passive:false}));
-  look.addEventListener("pointerdown",e=>{ e.preventDefault(); lid=e.pointerId; lx=e.clientX; ly=e.clientY; vX=vx(); vY=vy(); look.setPointerCapture(e.pointerId); if(!raf) raf=requestAnimationFrame(step); });
-  look.addEventListener("pointermove",e=>{ if(e.pointerId!==lid) return; accX+=e.clientX-lx; accY+=e.clientY-ly; lx=e.clientX; ly=e.clientY; });
-  const endLook=e=>{ if(e.pointerId===lid) lid=null; };
-  look.addEventListener("pointerup",endLook); look.addEventListener("pointercancel",endLook);
+  look.addEventListener("touchstart",e=>{ e.preventDefault(); if(lid!==null) return; const t=e.changedTouches[0]; lid=t.identifier; lx=t.clientX; ly=t.clientY; vX=vx(); vY=vy(); if(!raf) raf=requestAnimationFrame(step); },{passive:false});
+  look.addEventListener("touchmove",e=>{ e.preventDefault(); for(const t of e.changedTouches){ if(t.identifier===lid){ accX+=t.clientX-lx; accY+=t.clientY-ly; lx=t.clientX; ly=t.clientY; } } },{passive:false});
+  const endLook=e=>{ for(const t of e.changedTouches){ if(t.identifier===lid) lid=null; } };
+  look.addEventListener("touchend",endLook); look.addEventListener("touchcancel",endLook);
   function vx2(){ return vx(); } function vy2(){ return vy(); }
   function show(){ jz.classList.add("show"); rb.classList.add("show"); pz.classList.add("show"); look.classList.add("show"); }
   function hide(){ jz.classList.remove("show"); rb.classList.remove("show"); pz.classList.remove("show"); look.classList.remove("show"); jEnd(); }
