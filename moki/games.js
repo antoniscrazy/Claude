@@ -1092,6 +1092,18 @@ window.MOKI_GAMES = [
     featured: false
   },
   {
+    id: "flucht",
+    title: "Flucht!",
+    url: "#/play/flucht",
+    category: "Fahren",
+    image: "flucht.jpg",
+    colors: ["#f5a623", "#c0392b"],
+    description: "Verfolgungsjagd von oben: Entkomme der Polizei, sammle Münzen und schalte neue Autos frei.",
+    added: "2026-11-27",
+    splash: { tag: "Moki Original", by: "Von Tim" },
+    featured: false
+  },
+  {
     id: "granny2",
     title: "Granny 2",
     url: "#/play/granny2",

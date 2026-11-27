@@ -12,6 +12,7 @@
   const J = { get(k, d) { try { const v = JSON.parse(LS.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }, set(k, v) { try { LS.setItem(k, JSON.stringify(v)); } catch (e) {} } };
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const toast = msg => { if (typeof mtoast === "function") mtoast(msg); };
+  let isAdmin = false;   // nur im Speicher, wird vom Server bestaetigt (nicht aus localStorage gelesen)
   let acct = J.get(KEY, null), snap = J.get(SNAP, {}), seq = +LS.getItem(SEQ) || 0, busy = false, lastPush = 0, lastRun = 0, nextPull = 0, hold = 0, holdN = 0, warned = false, sent = [];
   const SKIP = {};
 
@@ -147,7 +148,7 @@
     if (!acct) return 0;
     const w = await rpc("moki_acc_who", { p_token: acct.token });
     if (w.err === "session") { logoutLocal(); toast("Du wurdest abgemeldet. Bitte melde dich neu an."); return 0; }
-    acct.name = w.name; acct.bytes = w.bytes; acct.quota = w.quota || acct.quota; J.set(KEY, acct); renderBtn();
+    isAdmin = !!w.admin; acct.name = w.name; acct.bytes = w.bytes; acct.quota = w.quota || acct.quota; J.set(KEY, acct); renderBtn();
     if (!(w.seq > seq)) return 0;
     const r = await rpc("moki_sync_pull", { p_token: acct.token, p_since: seq });
     if (!r.ok) return 0;
@@ -186,7 +187,7 @@
     }
     busy = false; renderBtn();
   }
-  function logoutLocal() { acct = null; LS.removeItem(KEY); renderBtn(); }
+  function logoutLocal() { acct = null; isAdmin = false; LS.removeItem(KEY); renderBtn(); }
   setInterval(() => { if (acct && !document.hidden) sync({ deep: !!document.getElementById("player"), gap: 110000 }); }, 120000);
   document.addEventListener("visibilitychange", () => { if (!acct) return; if (document.hidden) sync({ deep: true, gap: 30000, noPull: true }); else sync({ gap: 110000 }); });
   addEventListener("pagehide", () => { if (acct) sync({ deep: true, gap: 30000, noPull: true }); });
@@ -237,7 +238,7 @@
       try {
         const r = await rpc(mode === "in" ? "moki_acc_login" : "moki_acc_register", { p_name: name, p_pw: pw });
         if (!r.ok) { $("#ac-e").textContent = ERR[r.err] || "Das hat nicht geklappt."; bt.disabled = false; bt.textContent = mode === "in" ? "Anmelden" : "Konto erstellen"; return; }
-        acct = { name: r.name, token: r.token, bytes: r.bytes || 0, quota: r.quota || 20000000 }; J.set(KEY, acct); seq = 0; LS.setItem(SEQ, "0"); snap = {}; J.set(SNAP, snap);
+        isAdmin = !!r.admin; acct = { name: r.name, token: r.token, bytes: r.bytes || 0, quota: r.quota || 20000000 }; J.set(KEY, acct); seq = 0; LS.setItem(SEQ, "0"); snap = {}; J.set(SNAP, snap);
         renderBtn(); o.close(); toast(mode === "in" ? "Angemeldet als " + r.name : "Konto erstellt. Willkommen, " + r.name + "!"); hold = 0; warned = false; sync({ deep: true, first: true, force: true });
       } catch (e) { $("#ac-e").textContent = ERR.net; bt.disabled = false; bt.textContent = mode === "in" ? "Anmelden" : "Konto erstellen"; }
     };
@@ -258,5 +259,5 @@
   document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("#acc"); if (!b) return; e.preventDefault(); if (acct) menuDialog(); else authDialog("in"); });
   renderBtn(); setTimeout(renderBtn, 600);
   if (acct) setTimeout(() => sync({ first: true, force: true }), 1200);
-  window.MOKI_ACC = { html: { auth: authHtml, menu: menuHtml }, get name() { return acct && acct.name; }, sync: () => sync({ deep: true, force: true }) };
+  window.MOKI_ACC = { html: { auth: authHtml, menu: menuHtml }, get name() { return acct && acct.name; }, get admin() { return !!(acct && isAdmin); }, sync: () => sync({ deep: true, force: true }) };
 })();

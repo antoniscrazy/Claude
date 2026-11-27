@@ -356,9 +356,9 @@ home();   // erster Aufbau erst hier, damit alle Funktionen oben bereit sind
 
 // ---- Eingebaute Spiele (Launcher-Huellen): Hash "#/play/<id>" oeffnet das Spiel im Vollbild-Player ----
 function openPlayer(id) {
-  let html = (window.MOKI_LAUNCH || {})[id];
+  let html = (window.MOKI_LAUNCH || {})[id], gm = null;
   if (html) {   // Spielname ganz links in der Leiste neben "Back to Moki"
-    const gm = games.find(g => g.id === id) || (window.MOKI_XMAS_GAMES || []).find(g => g.id === id);
+    gm = games.find(g => g.id === id) || (window.MOKI_XMAS_GAMES || []).find(g => g.id === id);
     if (gm && html.includes('<div id="bar">')) {
       html = html.replace('<div id="bar">', () => '<div id="bar"><span id="moki-gt">' + esc(gm.title) + '</span>')
         .replace("</head>", () => "<style>#bar{justify-content:space-between!important;align-items:center!important;gap:12px}#moki-gt{color:#fff;font:800 15px 'Segoe UI',system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;opacity:.92}#moki-back{flex:none}" + (window.MOKI_XMAS_BARCSS || "") + "</style></head>");
@@ -371,6 +371,23 @@ function openPlayer(id) {
   el.querySelector("iframe").srcdoc = html;
   document.body.appendChild(el);
   document.documentElement.classList.add("player-open");
+  if (gm && gm.splash) {   // beim direkten Aufruf per Link sind die Skripte evtl. noch nicht ganz geladen: kurz warten
+    let tries = 0; const t = setInterval(() => { if (!el.isConnected || ++tries > 60) return clearInterval(t); if (window.MOKI_SPLASH) { clearInterval(t); moniSplash(el, gm.splash); } }, 50);
+  }
+}
+// Moki-Original: Logo-Animation vor dem Spiel (wie bei den Spielen aus dem Moki Studio), das Spiel laedt dahinter schon
+function moniSplash(el, o) {
+  const sp = document.createElement("div"); sp.className = "splash orig";
+  sp.setAttribute("aria-label", o.tag + (o.by ? ", " + o.by : ""));
+  sp.innerHTML = `<canvas class="fxc" aria-hidden="true"></canvas><div class="flash go" aria-hidden="true"></div>
+    <section class="st boom on"><i class="wave w1"></i><i class="wave w2"></i><i class="wave w3"></i>
+    <div class="biglogo">${MOKI_SPLASH.LOGO("osl" + Date.now().toString(36))}</div><p class="btag otag">${esc(o.tag)}</p>${o.by ? `<p class="btag by">${esc(o.by)}</p>` : ""}</section>`;
+  el.appendChild(sp);
+  let done = false;
+  const finish = () => { if (done) return; done = true; sp.classList.add("out"); setTimeout(() => { sp.remove(); const f = el.querySelector("iframe"); if (f) f.focus(); }, matchMedia("(prefers-reduced-motion: reduce)").matches ? 50 : 900); };
+  sp.addEventListener("click", finish);
+  MOKI_SPLASH.burst(sp.querySelector(".fxc"), () => done || !el.isConnected);
+  setTimeout(finish, matchMedia("(prefers-reduced-motion: reduce)").matches ? 1400 : 3900);
 }
 function closePlayer(silent) {
   const el = document.getElementById("player");

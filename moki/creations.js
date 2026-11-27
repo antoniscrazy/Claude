@@ -52,6 +52,7 @@
     })(t0);
   }
 
+  window.MOKI_SPLASH = { LOGO, burst };   // auch fuer Moki-Originals im eingebauten Player
   // ---------- Spiel-Seite ----------
   let play = null;   // { slug, el, html, token }
   function saveKey(slug) { return "moki_save_" + slug; }
