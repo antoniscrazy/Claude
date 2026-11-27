@@ -67,8 +67,8 @@ window.YaGames = { init: function () { var ys = {
     GameplayAPI: { start: function () {}, stop: function () {} }
   },
   adv: {
-    showRewardedVideo: function (o) { var c = (o && o.callbacks) || {}; c.onOpen && c.onOpen(); c.onRewarded && c.onRewarded(); c.onClose && c.onClose(true); return Promise.resolve(); },
-    showFullscreenAdv: function (o) { var c = (o && o.callbacks) || {}; c.onOpen && c.onOpen(); c.onClose && c.onClose(false); return Promise.resolve(); }
+    showRewardedVideo: function (o) { var c = (o && o.callbacks) || {}; setTimeout(function(){ c.onOpen && c.onOpen(); }, 50); setTimeout(function(){ c.onRewarded && c.onRewarded(); }, 400); setTimeout(function(){ c.onClose && c.onClose(true); }, 800); return Promise.resolve(); },
+    showFullscreenAdv: function (o) { var c = (o && o.callbacks) || {}; setTimeout(function(){ c.onOpen && c.onOpen(); }, 50); setTimeout(function(){ c.onClose && c.onClose(false); }, 600); return Promise.resolve(); }
   },
   getPlayer: function () { return Promise.reject(new Error("no player")); },
   getPayments: function () { return Promise.resolve(window.payments); },
