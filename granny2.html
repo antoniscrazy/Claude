@@ -8,10 +8,16 @@
 #jz{position:fixed;left:0;bottom:0;width:50%;height:60%;z-index:9;touch-action:none}
 #jb{position:fixed;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;background:rgba(255,255,255,.10);border:2px solid rgba(255,255,255,.3);display:none;pointer-events:none;z-index:9}
 #jk{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:rgba(255,255,255,.35)}
-#rb{position:fixed;right:14px;bottom:110px;display:none;grid-template-columns:repeat(3,64px);gap:12px;z-index:9}
-#rb.show{display:grid}
-#rb button{width:64px;height:64px;border-radius:50%;border:2px solid rgba(255,255,255,.35);background:rgba(0,0,0,.35);color:#fff;font:800 13px system-ui,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+#rb{position:fixed;left:0;top:0;width:100%;height:100%;display:none;z-index:9;pointer-events:none}
+#rb.show{display:block}
+#rb button{position:absolute;transform:translate(-50%,-50%);width:58px;height:58px;border-radius:50%;border:2px solid rgba(255,255,255,.6);background:rgba(0,0,0,.25);color:#fff;font:800 13px system-ui,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none;pointer-events:auto}
 #rb button.on{background:rgba(0,229,168,.6)}
+#rb #b_e{left:72%;top:49%}
+#rb #b_sp{left:80%;top:49%;background:rgba(255,210,63,.45)}
+#rb #b_c{left:91%;top:36%}
+#rb #b_r{left:72%;top:66%}
+#rb #b_f{left:80%;top:66%}
+#rb #fire{left:88%;top:66%;width:64px;height:64px}
 #pz{display:none;position:fixed;left:12px;top:56px;width:46px;height:46px;border-radius:50%;border:2px solid rgba(255,255,255,.4);background:rgba(0,0,0,.4);color:#fff;font:800 15px system-ui,sans-serif;z-index:10;touch-action:none}
 #pz.show{display:block}
 #look{display:none;position:fixed;top:46px;right:0;width:45%;bottom:210px;z-index:8;touch-action:none}
@@ -88,7 +94,7 @@ const tx = document.getElementById("tx"), pf = document.getElementById("pf");
 <div id="look"></div>
 <div id="jz"><div id="jb"><div id="jk"></div></div></div>
 <button id="pz" type="button">II</button>
-<div id="rb"><button data-k="e" type="button">E</button><button data-k="sp" type="button">Space</button><button data-k="c" type="button">C</button><button data-k="r" type="button">R</button><button data-k="f" type="button">F</button><button id="fire" type="button">Feuer</button></div>
+<div id="rb"><button id="b_e" data-k="e" type="button">E</button><button id="b_sp" data-k="sp" type="button">&#9423;</button><button id="b_c" data-k="c" type="button">C</button><button id="b_r" data-k="r" type="button">R</button><button id="b_f" data-k="f" type="button">F</button><button id="fire" type="button">Feuer</button></div>
 <script>
 (function(){
   const $=id=>document.getElementById(id);
