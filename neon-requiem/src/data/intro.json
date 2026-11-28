@@ -1,0 +1,25 @@
+{
+  "$comment": "Eröffnungssequenz des Prologs. 'at' = Sekunden nach Spielstart. Typen: card (Titelkarte), line (Untertitel), objective, knock (Klopfen auslösen, sobald 'afterExamined' Objekte untersucht wurden ODER 'fallbackAt' Sekunden vergangen sind).",
+  "card": {
+    "place": { "de": "KREUZBERG-UNTERSTADT · NEO-BERLIN", "en": "KREUZBERG UNDERCITY · NEO-BERLIN" },
+    "time": "02:47",
+    "sub": { "de": "Tag 41 des Regens", "en": "Day 41 of the rain" }
+  },
+  "monologue": [
+    { "at": 4.5, "speaker": "Kai", "text": { "de": "Einundvierzig Tage Regen. Die Stadt ertrinkt nicht. Sie gewöhnt sich dran.", "en": "Forty-one days of rain. The city isn't drowning. It's getting used to it." } },
+    { "at": 10.5, "speaker": "Kai", "text": { "de": "Mein Büro. Über der Ramen-Bar von Frau Okafor. Riecht nach Brühe, Kippen und verpassten Chancen.", "en": "My office. Above Mrs Okafor's ramen bar. Smells of broth, cigarettes and missed chances." } },
+    { "at": 17.5, "speaker": "Kai", "text": { "de": "Keine Aufträge seit Wochen. Nur das Koi da draußen leistet mir Gesellschaft.", "en": "No jobs in weeks. Only that koi out there keeps me company." } }
+  ],
+  "objectives": {
+    "look": { "de": "Sieh dich im Büro um", "en": "Look around the office" },
+    "door": { "de": "Jemand hämmert an die Tür", "en": "Someone is pounding on the door" }
+  },
+  "knock": {
+    "afterExamined": 3,
+    "fallbackAt": 95,
+    "lines": [
+      { "delay": 1.2, "speaker": "Kai", "text": { "de": "Um diese Uhrzeit klopft nur Ärger. Und Ärger klopft nie zweimal.", "en": "At this hour only trouble knocks. And trouble never knocks twice." } },
+      { "delay": 5.5, "speaker": "Kai", "text": { "de": "… Er klopft ein drittes Mal.", "en": "...It knocks a third time." } }
+    ]
+  }
+}

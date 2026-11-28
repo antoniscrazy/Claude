@@ -1,0 +1,23 @@
+{
+  "name": "neon-requiem",
+  "version": "0.1.0",
+  "description": "NEON REQUIEM – Neo-Berlin 2089. 3D-Cyberpunk-Detektivspiel im Browser.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "postprocessing": "^6.39.6",
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.187.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.4.0"
+  },
+  "private": true,
+  "type": "module"
+}

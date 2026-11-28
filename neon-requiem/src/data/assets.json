@@ -1,0 +1,4 @@
+{
+  "$comment": "Austauschbare Modelle. null = prozeduraler Platzhalter. Pfad relativ zu /public, z. B. 'models/kai.glb'. Erwartete Animations-Clips: Idle, Walk, Run (Namen per 'clips' umbenennbar). Neue Modelle bitte in CREDITS.md eintragen.",
+  "kai": { "model": null, "scale": 1, "clips": { "idle": "Idle", "walk": "Walk", "run": "Run" } }
+}

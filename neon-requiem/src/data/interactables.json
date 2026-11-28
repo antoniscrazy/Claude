@@ -1,0 +1,144 @@
+{
+  "$comment": "Untersuchbare Objekte im Büro. 'anchor' verweist auf einen Ankerpunkt aus Props.ts. 'lines' wird nacheinander als Kai-Monolog gezeigt; bei erneutem Untersuchen 'repeat'. 'flag' wird beim ersten Untersuchen gesetzt.",
+  "office": [
+    {
+      "id": "coffee",
+      "anchor": "coffee",
+      "radius": 1.3,
+      "label": { "de": "Kaffee", "en": "Coffee" },
+      "flag": "seen_coffee",
+      "lines": [
+        { "de": "Kalter Kaffee. Dampft trotzdem.", "en": "Cold coffee. Still steaming." },
+        { "de": "Billiger Wärmebecher von KORVUS. Das Einzige, was ich bei der Entlassung behalten durfte. Heizt nur noch die Lüge.", "en": "A cheap KORVUS heat mug. The only thing they let me keep. These days it only warms the lie." }
+      ],
+      "repeat": [{ "de": "Ich trink ihn nicht. Ich schau ihm nur beim Dampfen zu. Wie dem Rest der Stadt.", "en": "I don't drink it. I just watch it steam. Like the rest of this city." }]
+    },
+    {
+      "id": "ashtray",
+      "anchor": "ashtray",
+      "radius": 1.3,
+      "label": { "de": "Aschenbecher", "en": "Ashtray" },
+      "flag": "seen_ashtray",
+      "lines": [
+        { "de": "Neun Kippen. Gestern waren es acht. Ich nenn das Fortschritt.", "en": "Nine butts. Yesterday it was eight. I call that progress." },
+        { "de": "Eine glimmt noch. Ich erinnere mich nicht, sie angezündet zu haben.", "en": "One's still burning. I don't remember lighting it." }
+      ],
+      "repeat": [{ "de": "Die Asche ist das Ehrlichste in diesem Raum.", "en": "The ash is the most honest thing in this room." }]
+    },
+    {
+      "id": "terminal",
+      "anchor": "terminal",
+      "radius": 1.4,
+      "label": { "de": "Terminal", "en": "Terminal" },
+      "flag": "seen_terminal",
+      "lines": [
+        { "de": "KORVUS-Netz: gesperrt. Grund: entlassen. Wenigstens sind die Maschinen ehrlich.", "en": "KORVUS net: locked. Reason: terminated. At least the machines are honest." },
+        { "de": "Wetterdienst meldet Tag 41. 'Netzstörung in Bearbeitung.' Seit 41 Tagen in Bearbeitung.", "en": "Weather service says day 41. 'Grid fault being handled.' Being handled for 41 days." }
+      ],
+      "repeat": [{ "de": "Der Cursor blinkt, als würde er auf ein Geständnis warten.", "en": "The cursor blinks like it's waiting for a confession." }]
+    },
+    {
+      "id": "window",
+      "anchor": "window",
+      "radius": 2.2,
+      "label": { "de": "Fenster", "en": "Window" },
+      "flag": "seen_window",
+      "lines": [
+        { "de": "Das Koi schwimmt seit drei Jahren über der Straße. Wirbt für nichts. Niemand weiß, wem es gehört.", "en": "That koi's been swimming over the street for three years. Advertises nothing. Nobody knows who owns it." },
+        { "de": "Ganz hinten der KORVUS-Wetterturm. Der Ring an der Spitze pulsiert. Wie ein Herz, das jemand anderem gehört.", "en": "Way back, the KORVUS weather tower. The ring on top pulses. Like a heart that belongs to someone else." }
+      ],
+      "repeat": [{ "de": "Regen. Immer noch. Die Stadt hat vergessen, wie trockene Luft riecht.", "en": "Rain. Still. The city has forgotten what dry air smells like." }]
+    },
+    {
+      "id": "puddle",
+      "anchor": "puddle",
+      "radius": 1.3,
+      "label": { "de": "Pfütze", "en": "Puddle" },
+      "flag": "seen_puddle",
+      "lines": [
+        { "de": "Das Fenster leckt. Der Vermieter sagt, das sei 'Charakter'. Ich zahle also Miete für Charakter.", "en": "The window leaks. The landlord calls it 'character'. So I pay rent for character." }
+      ],
+      "repeat": [{ "de": "Tropf. Tropf. Die einzige Uhr hier, die nicht lügt.", "en": "Drip. Drip. The only clock in here that doesn't lie." }]
+    },
+    {
+      "id": "photo",
+      "anchor": "photo",
+      "radius": 1.3,
+      "label": { "de": "Foto", "en": "Photo" },
+      "flag": "seen_photo",
+      "lines": [
+        { "de": "Hale und ich. KORVUS-Weihnachtsfeier, 2084. Sie lacht. Ich auch. Einer von uns hat gelogen.", "en": "Hale and me. KORVUS Christmas party, 2084. She's laughing. So am I. One of us was lying." }
+      ],
+      "repeat": [{ "de": "Ich sollte es wegwerfen. Mach ich morgen. Wie seit vier Jahren.", "en": "I should throw it out. Tomorrow. Like the last four years." }]
+    },
+    {
+      "id": "phone",
+      "anchor": "phone",
+      "radius": 1.3,
+      "label": { "de": "Telefon", "en": "Phone" },
+      "flag": "seen_phone",
+      "lines": [
+        { "de": "Eine Nachricht. Unbekannte Nummer. Nur Rauschen … und darunter etwas wie Regen, rückwärts abgespielt.", "en": "One message. Unknown number. Just static... and under it something like rain, played backwards." }
+      ],
+      "repeat": [{ "de": "Ich hör sie mir nicht nochmal an. Rückwärts-Regen ist kein gutes Omen.", "en": "I'm not playing it again. Backwards rain is a bad omen." }]
+    },
+    {
+      "id": "bottle",
+      "anchor": "bottle",
+      "radius": 1.3,
+      "label": { "de": "Whisky", "en": "Whisky" },
+      "flag": "seen_bottle",
+      "lines": [
+        { "de": "Synthetischer Whisky, 'Highland-Aroma'. Die Highlands sind seit 2070 ein Rechenzentrum.", "en": "Synthetic whisky, 'Highland flavour'. The Highlands have been a data centre since 2070." }
+      ],
+      "repeat": [{ "de": "Später. Wenn die Nacht es verdient hat.", "en": "Later. When the night has earned it." }]
+    },
+    {
+      "id": "poster",
+      "anchor": "poster",
+      "radius": 1.5,
+      "label": { "de": "Plakat", "en": "Poster" },
+      "lines": [
+        { "de": "'Der letzte Sommer'. Hab den Film nie gesehen. Ich mag nur die Vorstellung, dass es mal einen gab.", "en": "'The Last Summer'. Never saw it. I just like the idea that there was one." }
+      ]
+    },
+    {
+      "id": "cabinet",
+      "anchor": "cabinet",
+      "radius": 1.4,
+      "label": { "de": "Aktenschrank", "en": "File cabinet" },
+      "lines": [
+        { "de": "Untreue Ehemänner, entlaufene Haustier-Drohnen, ein verschwundener Kühlschrank. Meine größten Erfolge.", "en": "Cheating husbands, runaway pet drones, one missing fridge. My greatest hits." }
+      ]
+    },
+    {
+      "id": "clock",
+      "anchor": "clock",
+      "radius": 2.2,
+      "label": { "de": "Wanduhr", "en": "Wall clock" },
+      "lines": [
+        { "de": "Kurz vor drei. Die Stunde, in der nur noch Detektive, Diebe und Regen arbeiten.", "en": "Almost three. The hour when only detectives, thieves and rain are still working." }
+      ]
+    },
+    {
+      "id": "couch",
+      "anchor": "couch",
+      "radius": 1.6,
+      "label": { "de": "Couch", "en": "Couch" },
+      "lines": [
+        { "de": "Mein Schlafzimmer, Esszimmer und Wartebereich. Die Federn kennen meine Rückenwirbel beim Namen.", "en": "My bedroom, dining room and waiting area. The springs know my vertebrae by name." }
+      ]
+    },
+    {
+      "id": "door",
+      "anchor": "door",
+      "radius": 1.5,
+      "label": { "de": "Tür", "en": "Door" },
+      "requiresFlag": "knocked",
+      "lines": [
+        { "de": "Ich lege die Hand auf die Klinke. Das Metall ist kalt. Auf der anderen Seite atmet jemand schwer.", "en": "I put my hand on the handle. The metal is cold. On the other side someone is breathing hard." },
+        { "de": "[Ende von Meilenstein 1 – der Prolog geht in M2 weiter.]", "en": "[End of milestone 1 – the prologue continues in M2.]" }
+      ]
+    }
+  ]
+}
